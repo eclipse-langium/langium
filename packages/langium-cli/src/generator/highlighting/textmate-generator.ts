@@ -10,7 +10,7 @@ import { collectKeywords } from '../langium-util.js';
 
 /* eslint-disable dot-notation */
 
-export interface TextMateGrammar {
+interface TextMateGrammar {
     repository: Repository;
     readonly scopeName: string;
     readonly patterns: Pattern[];
@@ -21,11 +21,11 @@ export interface TextMateGrammar {
     readonly firstLineMatch?: string;
 }
 
-export interface Repository {
+interface Repository {
     [name: string]: Pattern;
 }
 
-export interface Pattern {
+interface Pattern {
     id?: number;
     readonly include?: string;
     readonly name?: string;
@@ -43,7 +43,7 @@ export interface Pattern {
     readonly applyEndPatternLast?: boolean;
 }
 
-export interface Captures {
+interface Captures {
     [captureId: string]: Pattern;
 }
 
