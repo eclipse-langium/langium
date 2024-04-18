@@ -2,7 +2,7 @@
 
 ## v3.0.2 (Apr. 2024)
 
-Exported the textmate syntax highlighting under `langium-cli/textmate`. This allows us to import the highlightiing for the Langium playground.
+Exported the textmate syntax highlighting under `langium-cli/textmate`. This enables importing the highlighting code for the Langium playground.
 
 ## v3.0.1 (Feb. 2024)
 
