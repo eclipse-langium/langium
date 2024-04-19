@@ -1003,9 +1003,8 @@ describe('Prohibit empty parser rules', async () => {
         hidden terminal WS: /\\s+/;
         `;
         const validationResult = await validate(grammarWithGroups);
-        expect(validationResult.diagnostics).toHaveLength(3);
+        expect(validationResult.diagnostics).toHaveLength(2);
         detectEmptyRule(validationResult, 6, 12, 6, 57);
-        detectEmptyRule(validationResult, 13, 12, 13, 50);
         detectEmptyRule(validationResult, 14, 12, 14, 55);
     });
 
@@ -1024,18 +1023,17 @@ describe('Prohibit empty parser rules', async () => {
         I returns string: '/' ID ('.' ID)*;
         
         J: Student | Teacher;
-        Teacher: 'Teacher' Name;
+        Teacher: 'Teacher' Name Tel;
         Student: 'Student' Name;
         fragment Name: name=ID?;
+        fragment Tel: 'telephone' ':' number=NUM;
 
         terminal ID: /[a-zA-Z]+/;
+        terminal NUM: /[0-9]+/;
         hidden terminal WS: /\\s+/;
         `;
         const validationResult = await validate(specialGrammar);
-        expect(validationResult.diagnostics).toHaveLength(4);
-        detectEmptyRule(validationResult, 6, 11, 6, 18);
-        detectEmptyRule(validationResult, 7, 17, 7, 59);
+        expect(validationResult.diagnostics).toHaveLength(1);
         detectEmptyRule(validationResult, 10, 26, 10, 35);
-        detectEmptyRule(validationResult, 16, 23, 16, 31);
     });
 });

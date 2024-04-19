@@ -415,8 +415,8 @@ export class LangiumGrammarValidator {
 
     checkEmptyParserRule(parserRule: ast.ParserRule, accept: ValidationAcceptor): void {
         // Rule body needs to be set.
-        // Entry rules may consume no input.
-        if (!parserRule.definition || parserRule.entry) {
+        // Entry rules and fragments may consume no input.
+        if (!parserRule.definition || parserRule.entry || parserRule.fragment) {
             return;
         }
 
@@ -426,9 +426,9 @@ export class LangiumGrammarValidator {
             if (element.cardinality === '?' || element.cardinality === '*') {
                 return true;
             }
-            // Actions themselves consume nothing.
+            // Actions themselves count as non-optional.
             if (ast.isAction(element)) {
-                return true;
+                return false;
             }
             // Assignments with ?= consume nothing, groups without + too.
             if (ast.isAssignment(element)) {
@@ -438,12 +438,9 @@ export class LangiumGrammarValidator {
             if (ast.isUnorderedGroup(element)) {
                 return false;
             }
-            // Alternatives consume nothing if one alternative does,
-            // Ordered groups if all elements consume nothing.
-            if (ast.isAlternatives(element)) {
-                return element.elements.some(mayConsumeEmpty);
-            }
-            if (ast.isGroup(element)) {
+            // Ordered groups consume if all elements do so;
+            // and alternative groups, too.
+            if (ast.isGroup(element) || ast.isAlternatives(element)) {
                 return element.elements.every(mayConsumeEmpty);
             }
             // Else, assert that we consume _something_.
