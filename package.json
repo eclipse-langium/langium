@@ -47,7 +47,7 @@
   },
   "workspaces": [
     "packages/langium",
-    "packages/langium-railrod",
+    "packages/langium-railroad",
     "packages/langium-cli",
     "packages/langium-sprotty",
     "packages/langium-vscode",
