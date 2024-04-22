@@ -6,8 +6,8 @@
 
 import { type Grammar, GrammarAST, GrammarUtils, RegExpUtils } from 'langium';
 import { type Generated, expandToNode, joinToNode, toString } from 'langium/generate';
-import type { LangiumLanguageConfig } from '../../package.js';
-import { collectKeywords } from '../util.js';
+import type { LangiumLanguageConfig } from '../../package-types.js';
+import { collectKeywords } from '../langium-util.js';
 
 /**
  * Monarch Language Definition, describes aspects & token categories of target language

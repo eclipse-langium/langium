@@ -5,7 +5,7 @@
  ******************************************************************************/
 
 import type { AstNode, Grammar, LangiumDocument, Mutable } from 'langium';
-import type { LangiumConfig, LangiumLanguageConfig} from './package.js';
+import type { LangiumConfig, LangiumLanguageConfig} from './package-types.js';
 import { URI } from 'langium';
 import { loadConfig } from './package.js';
 import { AstUtils, GrammarAST } from 'langium';
@@ -17,8 +17,10 @@ import { generateModule } from './generator/module-generator.js';
 import { generateTextMate } from './generator/highlighting/textmate-generator.js';
 import { generateMonarch } from './generator/highlighting/monarch-generator.js';
 import { generatePrismHighlighting } from './generator/highlighting/prism-generator.js';
-import { elapsedTime, getTime, getUserChoice, log, schema } from './generator/util.js';
-import { getFilePath, RelativePath } from './package.js';
+import { elapsedTime, getTime, log } from './generator/langium-util.js';
+import { getUserChoice, schema } from './generator/node-util.js';
+import { RelativePath } from './package-types.js';
+import { getFilePath } from './package.js';
 import { validateParser } from './parser-validation.js';
 import { generateTypesFile } from './generator/types-generator.js';
 import { createGrammarDiagramHtml, createGrammarDiagramSvg } from 'langium-railroad';

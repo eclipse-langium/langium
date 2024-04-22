@@ -4,10 +4,10 @@
  * terms of the MIT License, which is available in the project root.
  ******************************************************************************/
 
-import type { LangiumConfig } from '../../src/package.js';
+import type { LangiumConfig } from '../../src/package-types.js';
 import { EmptyFileSystem, URI, type Grammar } from 'langium';
 import { describe, expect, test } from 'vitest';
-import { RelativePath } from '../../src/package.js';
+import { RelativePath } from '../../src/package-types.js';
 import { serializeGrammar } from '../../src/generator/grammar-serializer.js';
 import { createLangiumGrammarServices } from 'langium/grammar';
 import { expandToString } from 'langium/generate';

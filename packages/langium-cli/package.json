@@ -1,6 +1,6 @@
 {
   "name": "langium-cli",
-  "version": "3.0.1",
+  "version": "3.0.2",
   "description": "CLI for Langium - the language engineering tool",
   "homepage": "https://langium.org",
   "engines": {
@@ -27,6 +27,10 @@
     ".": {
       "import": "./lib/index.js",
       "types": "./lib/index.d.ts"
+    },
+    "./textmate": {
+      "import": "./lib/generator/highlighting/textmate-generator.js",
+      "types": "./lib/generator/highlighting/textmate-generator.d.ts"
     }
   },
   "type": "module",

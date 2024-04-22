@@ -6,7 +6,7 @@
 import type { Grammar, LangiumCoreServices } from 'langium';
 import { joinToNode, toString } from 'langium/generate';
 import { collectAst, LangiumGrammarGrammar } from 'langium/grammar';
-import { collectKeywords } from './util.js';
+import { collectKeywords } from './langium-util.js';
 
 export function generateTypesFile(services: LangiumCoreServices, grammars: Grammar[]): string {
     const { unions, interfaces } = collectAst(grammars, services.shared.workspace.LangiumDocuments);

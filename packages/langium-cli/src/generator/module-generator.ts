@@ -6,8 +6,8 @@
 
 import type { Grammar, IParserConfig } from 'langium';
 import { type Generated, expandToNode, joinToNode, toString } from 'langium/generate';
-import type { LangiumConfig, LangiumLanguageConfig } from '../package.js';
-import { generatedHeader } from './util.js';
+import type { LangiumConfig, LangiumLanguageConfig } from '../package-types.js';
+import { generatedHeader } from './node-util.js';
 
 export function generateModule(grammars: Grammar[], config: LangiumConfig, grammarConfigMap: Map<Grammar, LangiumLanguageConfig>): string {
     const grammarsWithName = grammars.filter(grammar => !!grammar.name);
