@@ -1,6 +1,6 @@
 {
   "name": "langium-cli",
-  "version": "3.0.2",
+  "version": "3.0.3",
   "description": "CLI for Langium - the language engineering tool",
   "homepage": "https://langium.org",
   "engines": {

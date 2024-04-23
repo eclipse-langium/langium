@@ -15,14 +15,6 @@ export function log(level: 'log' | 'warn' | 'error', options: { watch?: boolean 
     }
 }
 
-let start = process.hrtime();
-
-export function elapsedTime(): string {
-    const elapsed = process.hrtime(start)[1] / 1000000; // divide by a million to get nano to milli
-    start = process.hrtime(); // reset the timer
-    return elapsed.toFixed();
-}
-
 export function getTime(): string {
     const date = new Date();
     return `[${chalk.gray(`${padZeroes(date.getHours())}:${padZeroes(date.getMinutes())}:${padZeroes(date.getSeconds())}`)}] `;

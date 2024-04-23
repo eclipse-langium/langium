@@ -22,7 +22,7 @@
         "@typescript-eslint/parser": "~7.3.1",
         "@typescript-eslint/eslint-plugin": "~7.3.1",
         "eslint": "~8.57.0",
-        "langium-cli": "~3.0.2",
+        "langium-cli": "~3.0.3",
         "typescript": "~5.1.6"
     },
     "volta": {
