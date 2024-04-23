@@ -57,3 +57,11 @@ export async function getUserChoice<R extends string>(text: string, values: R[],
 export const cliVersion = getLangiumCliVersion();
 export const generatedHeader = getGeneratedHeader();
 export const schema = fs.readJson(path.resolve(getDirname(), '../../langium-config-schema.json'), { encoding: 'utf-8' });
+
+let start = process.hrtime();
+
+export function elapsedTime(): string {
+    const elapsed = process.hrtime(start)[1] / 1000000; // divide by a million to get nano to milli
+    start = process.hrtime(); // reset the timer
+    return elapsed.toFixed();
+}
