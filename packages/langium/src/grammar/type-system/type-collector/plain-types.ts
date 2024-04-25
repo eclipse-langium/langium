@@ -237,6 +237,8 @@ function typeEquals(first: PlainPropertyType, second: PlainPropertyType): boolea
         return typeEquals(first.referenceType, second.referenceType);
     } else if (isPlainValueType(first) && isPlainValueType(second)) {
         return first.value === second.value;
+    } else if (isPlainPrimitiveType(first) && isPlainPrimitiveType(second)) {
+        return first.primitive === second.primitive;
     } else {
         return false;
     }

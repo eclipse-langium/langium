@@ -831,55 +831,55 @@ describe('generated types from declared types include all of them', () => {
 
 });
 
-// TODO @msujew: Test case for https://github.com/eclipse-langium/langium/issues/775
-// describe('type merging runs in non-exponential time', () => {
-//
-//     test('grammar with many optional groups is processed correctly', async () => {
-//         const grammarServices = createLangiumGrammarServices(EmptyFileSystem).grammar;
-//         const document = await parseHelper<Grammar>(grammarServices)(`
-//         grammar Test
-//
-//         entry Model:
-//             (title1=INT ';')?
-//             (title2=INT ';')?
-//             (title3=INT ';')?
-//             (title4=INT ';')?
-//             (title5=INT ';')?
-//             (title6=INT ';')?
-//             (title7=INT ';')?
-//             (title8=INT ';')?
-//             (title9=INT ';')?
-//             (title10=INT ';')?
-//             (title11=INT ';')?
-//             (title12=INT ';')?
-//             (title13=INT ';')?
-//             (title14=INT ';')?
-//             (title15=INT ';')?
-//             (title16=INT ';')?
-//             (title17=INT ';')?
-//             (title18=INT ';')?
-//             (title19=INT ';')?
-//             (title20=INT ';')?
-//             (title21=INT ';')?
-//             (title22=INT ';')?
-//             (title23=INT ';')?
-//             (title24=INT ';')?
-//             (title25=INT ';')?
-//             (title26=INT ';')?
-//             (title27=INT ';')?
-//             (title28=INT ';')?
-//             (title29=INT ';')?
-//             (title30=INT ';')?
-//         ;
-//         terminal INT returns number: ('0'..'9')+;
-//         `);
-//         const { interfaces } = collectAst(document.parseResult.value);
-//         const model = interfaces[0];
-//         expect(model.properties).toHaveLength(30);
-//         expect(model.properties.every(e => e.optional)).toBeTruthy();
-//     });
-//
-// });
+// https://github.com/eclipse-langium/langium/issues/775
+describe('type merging runs in non-exponential time', () => {
+
+    test('grammar with many optional groups is processed correctly', async () => {
+        const grammarServices = createLangiumGrammarServices(EmptyFileSystem).grammar;
+        const document = await parseHelper<Grammar>(grammarServices)(`
+        grammar Test
+
+        entry Model:
+            (title1=INT ';')?
+            (title2=INT ';')?
+            (title3=INT ';')?
+            (title4=INT ';')?
+            (title5=INT ';')?
+            (title6=INT ';')?
+            (title7=INT ';')?
+            (title8=INT ';')?
+            (title9=INT ';')?
+            (title10=INT ';')?
+            (title11=INT ';')?
+            (title12=INT ';')?
+            (title13=INT ';')?
+            (title14=INT ';')?
+            (title15=INT ';')?
+            (title16=INT ';')?
+            (title17=INT ';')?
+            (title18=INT ';')?
+            (title19=INT ';')?
+            (title20=INT ';')?
+            (title21=INT ';')?
+            (title22=INT ';')?
+            (title23=INT ';')?
+            (title24=INT ';')?
+            (title25=INT ';')?
+            (title26=INT ';')?
+            (title27=INT ';')?
+            (title28=INT ';')?
+            (title29=INT ';')?
+            (title30=INT ';')?
+        ;
+        terminal INT returns number: ('0'..'9')+;
+        `);
+        const { interfaces } = collectAst(document.parseResult.value);
+        const model = interfaces[0];
+        expect(model.properties).toHaveLength(30);
+        expect(model.properties.every(e => e.optional)).toBeTruthy();
+    });
+
+});
 
 const services = createLangiumGrammarServices(EmptyFileSystem).grammar;
 const helper = parseHelper<Grammar>(services);
