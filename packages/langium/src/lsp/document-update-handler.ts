@@ -4,7 +4,8 @@
  * terms of the MIT License, which is available in the project root.
  ******************************************************************************/
 
-import { DidChangeWatchedFilesNotification, FileChangeType, type DidChangeWatchedFilesParams, type DidChangeWatchedFilesRegistrationOptions, type TextDocumentChangeEvent } from 'vscode-languageserver';
+import type { TextDocumentWillSaveEvent, DidChangeWatchedFilesParams, DidChangeWatchedFilesRegistrationOptions, TextDocumentChangeEvent, TextEdit } from 'vscode-languageserver';
+import { DidChangeWatchedFilesNotification, FileChangeType } from 'vscode-languageserver';
 import { stream } from '../utils/stream.js';
 import { URI } from '../utils/uri-utils.js';
 import type { DocumentBuilder } from '../workspace/document-builder.js';
@@ -13,21 +14,32 @@ import type { WorkspaceLock } from '../workspace/workspace-lock.js';
 import type { LangiumSharedServices } from './lsp-services.js';
 import type { WorkspaceManager } from '../workspace/workspace-manager.js';
 import type { ServiceRegistry } from '../service-registry.js';
+import type { MaybePromise } from '../utils/promise-utils.js';
 
 /**
  * Shared service for handling text document changes and watching relevant files.
  */
 export interface DocumentUpdateHandler {
 
+    didOpenDocument?(event: TextDocumentChangeEvent<TextDocument>): void;
+
     /**
      * A content change event was triggered by the `TextDocuments` service.
      */
-    didChangeContent(change: TextDocumentChangeEvent<TextDocument>): void;
+    didChangeContent?(event: TextDocumentChangeEvent<TextDocument>): void;
+
+    willSaveDocument?(event: TextDocumentWillSaveEvent<TextDocument>): void;
+
+    willSaveDocumentWaitUntil?(event: TextDocumentWillSaveEvent<TextDocument>): MaybePromise<TextEdit[]>;
+
+    didSaveDocument?(event: TextDocumentChangeEvent<TextDocument>): void;
+
+    didCloseDocument?(event: TextDocumentChangeEvent<TextDocument>): void;
 
     /**
      * The client detected changes to files and folders watched by the language client.
      */
-    didChangeWatchedFiles(params: DidChangeWatchedFilesParams): void;
+    didChangeWatchedFiles?(params: DidChangeWatchedFilesParams): void;
 
 }
 

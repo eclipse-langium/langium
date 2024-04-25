@@ -98,6 +98,7 @@ export class DefaultLanguageServer implements LanguageServer {
     }
 
     protected buildInitializeResult(_params: InitializeParams): InitializeResult {
+        const documentUpdateHandler = this.services.lsp.DocumentUpdateHandler;
         const fileOperationOptions = this.services.lsp.FileOperationHandler?.fileOperationOptions;
         const allServices: readonly LangiumCoreAndPartialLSPServices[] = this.services.ServiceRegistry.all;
         const hasFormattingService = this.hasService(e => e.lsp?.Formatter);
@@ -136,7 +137,15 @@ export class DefaultLanguageServer implements LanguageServer {
                 executeCommandProvider: commandNames && {
                     commands: commandNames
                 },
-                textDocumentSync: TextDocumentSyncKind.Incremental,
+                textDocumentSync: {
+                    change: documentUpdateHandler.didChangeContent
+                        ? TextDocumentSyncKind.Incremental
+                        : TextDocumentSyncKind.None,
+                    openClose: Boolean(documentUpdateHandler.didOpenDocument) || Boolean(documentUpdateHandler.didCloseDocument),
+                    save: Boolean(documentUpdateHandler.didSaveDocument),
+                    willSave: Boolean(documentUpdateHandler.willSaveDocument),
+                    willSaveWaitUntil: Boolean(documentUpdateHandler.willSaveDocumentWaitUntil)
+                },
                 completionProvider: hasCompletionProvider ? completionOptions : undefined,
                 referencesProvider: hasReferencesProvider,
                 documentSymbolProvider: hasDocumentSymbolProvider,
@@ -267,8 +276,27 @@ export function startLanguageServer(services: LangiumSharedServices): void {
 export function addDocumentUpdateHandler(connection: Connection, services: LangiumSharedServices): void {
     const handler = services.lsp.DocumentUpdateHandler;
     const documents = services.workspace.TextDocuments;
-    documents.onDidChangeContent(change => handler.didChangeContent(change));
-    connection.onDidChangeWatchedFiles(params => handler.didChangeWatchedFiles(params));
+    if (handler.didOpenDocument) {
+        documents.onDidOpen(change => handler.didOpenDocument!(change));
+    }
+    if (handler.didChangeContent) {
+        documents.onDidChangeContent(change => handler.didChangeContent!(change));
+    }
+    if (handler.didCloseDocument) {
+        documents.onDidClose(change => handler.didCloseDocument!(change));
+    }
+    if (handler.didSaveDocument) {
+        documents.onDidSave(change => handler.didSaveDocument!(change));
+    }
+    if (handler.willSaveDocument) {
+        documents.onWillSave(event => handler.willSaveDocument!(event));
+    }
+    if (handler.willSaveDocumentWaitUntil) {
+        documents.onWillSaveWaitUntil(event => handler.willSaveDocumentWaitUntil!(event));
+    }
+    if (handler.didChangeWatchedFiles) {
+        connection.onDidChangeWatchedFiles(params => handler.didChangeWatchedFiles!(params));
+    }
 }
 
 export function addFileOperationHandler(connection: Connection, services: LangiumSharedServices): void {
