@@ -8,7 +8,7 @@ import type { AstNode, Properties } from 'langium';
 import type { GrammarAST as GrammarTypes } from 'langium';
 import type { ValidationResult } from 'langium/test';
 import { afterEach, beforeAll, describe, expect, test } from 'vitest';
-import { DiagnosticSeverity, Position, Range } from 'vscode-languageserver';
+import { DiagnosticSeverity } from 'vscode-languageserver';
 import { AstUtils, EmptyFileSystem, GrammarAST } from 'langium';
 import { IssueCodes, createLangiumGrammarServices } from 'langium/grammar';
 import { clearDocuments, expectError, expectIssue, expectNoIssues, expectWarning, parseHelper, validationHelper } from 'langium/test';
@@ -913,11 +913,13 @@ describe('Cross-reference to type union is only valid if all alternatives are AS
     });
 });
 
-function detectEmptyRule(validationResult: ValidationResult, line1: number, col1: number, line2: number, col2: number) {
+function detectEmptyRule(validationResult: ValidationResult<GrammarTypes.Grammar>, ruleName: string) {
+    const rule = validationResult.document.parseResult.value.rules
+        .filter(rule => rule.$type === 'ParserRule' && rule.name === ruleName)[0];
+
     expectError(validationResult,
         /This parser rule would succeed without consuming input/, {
-            code: IssueCodes.ParsingRuleEmpty,
-            range: Range.create(Position.create(line1, col1), Position.create(line2, col2))
+            node: rule, property: 'name'
         });
 }
 
@@ -958,8 +960,8 @@ describe('Prohibit empty parser rules', async () => {
 
         const validationResult = await validate(grammarWithMultiplicity);
         expect(validationResult.diagnostics).toHaveLength(2);
-        detectEmptyRule(validationResult, 6, 8, 6, 18);
-        detectEmptyRule(validationResult, 8, 8, 8, 21);
+        detectEmptyRule(validationResult, 'MultAssign');
+        detectEmptyRule(validationResult, 'MultOneAssign');
     });
 
     test('Optional assignments and cardinality', async () => {
@@ -976,8 +978,8 @@ describe('Prohibit empty parser rules', async () => {
         `;
         const validationResult = await validate(grammarWithOptionals);
         expect(validationResult.diagnostics).toHaveLength(2);
-        detectEmptyRule(validationResult, 5, 8, 5, 9);
-        detectEmptyRule(validationResult, 6, 8, 6, 9);
+        detectEmptyRule(validationResult, 'C');
+        detectEmptyRule(validationResult, 'D');
     });
 
     test('Unordered groups and alternatives', async () => {
@@ -1003,8 +1005,8 @@ describe('Prohibit empty parser rules', async () => {
         `;
         const validationResult = await validate(grammarWithGroups);
         expect(validationResult.diagnostics).toHaveLength(2);
-        detectEmptyRule(validationResult, 6, 8, 6, 10);
-        detectEmptyRule(validationResult, 14, 8, 14, 10);
+        detectEmptyRule(validationResult, 'B2');
+        detectEmptyRule(validationResult, 'D3');
     });
 
     test('Actions, guard conditions, fragments, data types', async () => {
@@ -1031,7 +1033,7 @@ describe('Prohibit empty parser rules', async () => {
         `;
         const validationResult = await validate(specialGrammar);
         expect(validationResult.diagnostics).toHaveLength(2);
-        detectEmptyRule(validationResult, 6, 8, 6, 9);
-        detectEmptyRule(validationResult, 10, 8, 10, 9);
+        detectEmptyRule(validationResult, 'E');
+        detectEmptyRule(validationResult, 'H');
     });
 });
