@@ -280,6 +280,18 @@ describe('validate declared types', () => {
             property: 'name'
         });
     });
+
+    test('Can assign a data type rule to a property with its base type', async () => {
+        const validationResult = await validate(`
+            interface RuleType { prop : string };
+            Rule returns RuleType: prop = MyDataType;
+            // The computed type for 'MyDataType' is INT, but its declared is string
+            // The type system should respect the declared type
+            MyDataType returns string: INT;
+            terminal INT returns number: /[0-9]+/;
+        `);
+        expectNoIssues(validationResult);
+    });
 });
 
 describe('validate declared default value properties', () => {
