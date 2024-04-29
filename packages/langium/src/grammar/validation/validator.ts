@@ -414,7 +414,7 @@ export class LangiumGrammarValidator {
     }
 
     checkEmptyParserRule(parserRule: ast.ParserRule, accept: ValidationAcceptor): void {
-        // Rule body needs to be set.
+        // Rule body needs to be set;
         // Entry rules and fragments may consume no input.
         if (!parserRule.definition || parserRule.entry || parserRule.fragment) {
             return;
@@ -426,20 +426,15 @@ export class LangiumGrammarValidator {
             if (element.cardinality === '?' || element.cardinality === '*') {
                 return true;
             }
-            // Actions themselves count as non-optional.
+            // Actions themselves count as optional.
             if (ast.isAction(element)) {
-                return false;
-            }
-            // Assignments with ?= consume nothing, groups without + too.
-            if (ast.isAssignment(element)) {
-                return element.operator === '?=';
+                return true;
             }
             // Unordered groups consume something.
             if (ast.isUnorderedGroup(element)) {
                 return false;
             }
-            // Ordered groups consume if all elements do so;
-            // and alternative groups, too.
+            // Ordered groups consume if all elements do so, and alternative groups, too.
             if (ast.isGroup(element) || ast.isAlternatives(element)) {
                 return element.elements.every(mayConsumeEmpty);
             }
@@ -448,7 +443,7 @@ export class LangiumGrammarValidator {
 
         };
         if (mayConsumeEmpty(parserRule.definition)) {
-            accept('error', 'This parser rule would succeed without consuming input.', { node: parserRule, property: 'definition', code: IssueCodes.ParsingRuleEmpty });
+            accept('error', 'This parser rule would succeed without consuming input.', { node: parserRule, property: 'name', code: IssueCodes.ParsingRuleEmpty });
         }
     }
 

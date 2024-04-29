@@ -958,8 +958,8 @@ describe('Prohibit empty parser rules', async () => {
 
         const validationResult = await validate(grammarWithMultiplicity);
         expect(validationResult.diagnostics).toHaveLength(2);
-        detectEmptyRule(validationResult, 6, 20, 6, 32);
-        detectEmptyRule(validationResult, 8, 23, 8, 39);
+        detectEmptyRule(validationResult, 6, 8, 6, 18);
+        detectEmptyRule(validationResult, 8, 8, 8, 21);
     });
 
     test('Optional assignments and cardinality', async () => {
@@ -975,13 +975,12 @@ describe('Prohibit empty parser rules', async () => {
         hidden terminal WS: /\\s+/;
         `;
         const validationResult = await validate(grammarWithOptionals);
-        expect(validationResult.diagnostics).toHaveLength(3);
-        detectEmptyRule(validationResult, 4, 11, 4, 18);
-        detectEmptyRule(validationResult, 5, 11, 5, 19);
-        detectEmptyRule(validationResult, 6, 11, 6, 18);
+        expect(validationResult.diagnostics).toHaveLength(2);
+        detectEmptyRule(validationResult, 5, 8, 5, 9);
+        detectEmptyRule(validationResult, 6, 8, 6, 9);
     });
 
-    test('Unordered groups', async () => {
+    test('Unordered groups and alternatives', async () => {
         const grammarWithGroups = `
         grammar GroupGrammars
 
@@ -1004,8 +1003,8 @@ describe('Prohibit empty parser rules', async () => {
         `;
         const validationResult = await validate(grammarWithGroups);
         expect(validationResult.diagnostics).toHaveLength(2);
-        detectEmptyRule(validationResult, 6, 12, 6, 57);
-        detectEmptyRule(validationResult, 14, 12, 14, 55);
+        detectEmptyRule(validationResult, 6, 8, 6, 10);
+        detectEmptyRule(validationResult, 14, 8, 14, 10);
     });
 
     test('Actions, guard conditions, fragments, data types', async () => {
@@ -1023,17 +1022,16 @@ describe('Prohibit empty parser rules', async () => {
         I returns string: '/' ID ('.' ID)*;
         
         J: Student | Teacher;
-        Teacher: 'Teacher' Name Tel;
+        Teacher: 'Teacher' Name;
         Student: 'Student' Name;
         fragment Name: name=ID?;
-        fragment Tel: 'telephone' ':' number=NUM;
 
         terminal ID: /[a-zA-Z]+/;
-        terminal NUM: /[0-9]+/;
         hidden terminal WS: /\\s+/;
         `;
         const validationResult = await validate(specialGrammar);
-        expect(validationResult.diagnostics).toHaveLength(1);
-        detectEmptyRule(validationResult, 10, 26, 10, 35);
+        expect(validationResult.diagnostics).toHaveLength(2);
+        detectEmptyRule(validationResult, 6, 8, 6, 9);
+        detectEmptyRule(validationResult, 10, 8, 10, 9);
     });
 });
