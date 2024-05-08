@@ -70,7 +70,7 @@ class TypeGraph {
     private iterate(root: TypePart, paths: TypePath[]): TypePath[] {
         const finished = paths.filter(e => e.next.length === 0);
         do {
-            const next = this.recurse(root, paths, []);
+            const next = this.recurse(root, paths);
             const unfinished: TypePath[] = [];
             for (const path of next) {
                 if (path.next.length > 0) {
@@ -85,13 +85,13 @@ class TypeGraph {
         return finished;
     }
 
-    private recurse(root: TypePart, paths: TypePath[], ends: TypePart[]): TypePath[] {
+    private recurse(root: TypePart, paths: TypePath[], end?: TypePart): TypePath[] {
         const all: TypePath[] = [];
         for (const path of paths) {
             const node = path.current;
-            if (node !== ends[0] && node.children.length > 0) {
+            if (node !== end && node.children.length > 0) {
                 const nextPaths = this.applyNext(root, path);
-                const subPaths = this.recurse(root, nextPaths, node.end ? [node.end, ...ends] : ends);
+                const subPaths = this.recurse(root, nextPaths, node.end ?? end);
                 all.push(...subPaths);
             } else {
                 all.push(path);
