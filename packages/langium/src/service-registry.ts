@@ -4,7 +4,8 @@
  * terms of the MIT License, which is available in the project root.
  ******************************************************************************/
 
-import type { LangiumCoreServices } from './services.js';
+import type { LangiumCoreServices, LangiumSharedCoreServices } from './services.js';
+import type { TextDocumentProvider } from './workspace/documents.js';
 import { UriUtils, type URI } from './utils/uri-utils.js';
 
 /**
@@ -41,30 +42,30 @@ export interface ServiceRegistry {
 export class DefaultServiceRegistry implements ServiceRegistry {
 
     protected singleton?: LangiumCoreServices;
-    protected map?: Record<string, LangiumCoreServices>;
+    protected idMap = new Map<string, LangiumCoreServices>();
+    protected extMap = new Map<string, LangiumCoreServices>();
+
+    protected readonly textDocuments?: TextDocumentProvider;
+
+    constructor(services?: LangiumSharedCoreServices) {
+        this.textDocuments = services?.workspace.TextDocuments;
+    }
 
     register(language: LangiumCoreServices): void {
-        if (!this.singleton && !this.map) {
-            // This is the first language to be registered; store it as singleton.
+        const data = language.LanguageMetaData;
+        for (const ext of data.fileExtensions) {
+            const existing = this.extMap.get(ext);
+            if (existing) {
+                console.warn(`The file extension ${ext} is used by multiple languages. It is now assigned to '${data.languageId}'.`);
+            }
+            this.extMap.set(ext, language);
+        }
+        this.idMap.set(data.languageId, language);
+        if (this.idMap.size === 1) {
             this.singleton = language;
             return;
-        }
-        if (!this.map) {
-            this.map = {};
-            if (this.singleton) {
-                // Move the previous singleton instance to the new map.
-                for (const ext of this.singleton.LanguageMetaData.fileExtensions) {
-                    this.map[ext] = this.singleton;
-                }
-                this.singleton = undefined;
-            }
-        }
-        // Store the language services in the map.
-        for (const ext of language.LanguageMetaData.fileExtensions) {
-            if (this.map[ext] !== undefined && this.map[ext] !== language) {
-                console.warn(`The file extension ${ext} is used by multiple languages. It is now assigned to '${language.LanguageMetaData.languageId}'.`);
-            }
-            this.map[ext] = language;
+        } else {
+            this.singleton = undefined;
         }
     }
 
@@ -72,13 +73,24 @@ export class DefaultServiceRegistry implements ServiceRegistry {
         if (this.singleton !== undefined) {
             return this.singleton;
         }
-        if (this.map === undefined) {
+        if (this.idMap.size === 0) {
             throw new Error('The service registry is empty. Use `register` to register the services of a language.');
         }
+        const languageId = this.textDocuments?.get(uri.toString())?.languageId;
+        if (languageId !== undefined) {
+            const services = this.idMap.get(languageId);
+            if (services) {
+                return services;
+            }
+        }
         const ext = UriUtils.extname(uri);
-        const services = this.map[ext];
+        const services = this.extMap.get(ext);
         if (!services) {
-            throw new Error(`The service registry contains no services for the extension '${ext}'.`);
+            if (languageId) {
+                throw new Error(`The service registry contains no services for the extension '${ext}' for language '${languageId}'.`);
+            } else {
+                throw new Error(`The service registry contains no services for the extension '${ext}'.`);
+            }
         }
         return services;
     }
@@ -93,12 +105,6 @@ export class DefaultServiceRegistry implements ServiceRegistry {
     }
 
     get all(): readonly LangiumCoreServices[] {
-        if (this.singleton !== undefined) {
-            return [this.singleton];
-        }
-        if (this.map !== undefined) {
-            return Object.values(this.map);
-        }
-        return [];
+        return Array.from(this.idMap.values());
     }
 }
