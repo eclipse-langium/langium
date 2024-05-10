@@ -6,7 +6,7 @@
 
 /* eslint-disable @typescript-eslint/no-explicit-any */
 
-import type { LangiumCoreServices, LangiumSharedCoreServices, TextDocumentProvider } from 'langium';
+import type { LangiumCoreServices, LangiumSharedCoreServices, Module, PartialLangiumSharedCoreServices, TextDocumentProvider } from 'langium';
 import { describe, expect, test } from 'vitest';
 import { DefaultServiceRegistry, EmptyFileSystem, URI, createDefaultSharedCoreModule, inject, TextDocument } from 'langium';
 
@@ -43,11 +43,12 @@ describe('DefaultServiceRegistry', () => {
     });
 
     function createSharedCoreServices(id?: string): LangiumSharedCoreServices {
-        return inject(createDefaultSharedCoreModule(EmptyFileSystem), {
+        const textDocumentsModule: Module<LangiumSharedCoreServices, PartialLangiumSharedCoreServices> = {
             workspace: {
                 TextDocuments: (id ? (() => createTextDocuments(id)) : undefined)
             }
-        } as any);
+        };
+        return inject(createDefaultSharedCoreModule(EmptyFileSystem), textDocumentsModule);
     }
 
     function createTextDocuments(id: string): TextDocumentProvider {
