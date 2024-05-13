@@ -45,6 +45,13 @@ export class DefaultServiceRegistry implements ServiceRegistry {
     protected idMap = new Map<string, LangiumCoreServices>();
     protected extMap = new Map<string, LangiumCoreServices>();
 
+    /**
+     * @deprecated Use the new `extMap` property instead.
+     */
+    protected get map(): Map<string, LangiumCoreServices> | undefined {
+        return this.extMap;
+    }
+
     protected readonly textDocuments?: TextDocumentProvider;
 
     constructor(services?: LangiumSharedCoreServices) {
@@ -63,7 +70,6 @@ export class DefaultServiceRegistry implements ServiceRegistry {
         this.idMap.set(data.languageId, language);
         if (this.idMap.size === 1) {
             this.singleton = language;
-            return;
         } else {
             this.singleton = undefined;
         }
