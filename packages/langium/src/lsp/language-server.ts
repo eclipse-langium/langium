@@ -138,10 +138,8 @@ export class DefaultLanguageServer implements LanguageServer {
                     commands: commandNames
                 },
                 textDocumentSync: {
-                    change: documentUpdateHandler.didChangeContent
-                        ? TextDocumentSyncKind.Incremental
-                        : TextDocumentSyncKind.None,
-                    openClose: Boolean(documentUpdateHandler.didOpenDocument) || Boolean(documentUpdateHandler.didCloseDocument),
+                    change: TextDocumentSyncKind.Incremental,
+                    openClose: true,
                     save: Boolean(documentUpdateHandler.didSaveDocument),
                     willSave: Boolean(documentUpdateHandler.willSaveDocument),
                     willSaveWaitUntil: Boolean(documentUpdateHandler.willSaveDocumentWaitUntil)
