@@ -107,7 +107,7 @@ export interface DefaultSharedCoreModuleContext {
  */
 export function createDefaultSharedCoreModule(context: DefaultSharedCoreModuleContext): Module<LangiumSharedCoreServices, LangiumDefaultSharedCoreServices> {
     return {
-        ServiceRegistry: () => new DefaultServiceRegistry(),
+        ServiceRegistry: (services) => new DefaultServiceRegistry(services),
         workspace: {
             LangiumDocuments: (services) => new DefaultLangiumDocuments(services),
             LangiumDocumentFactory: (services) => new DefaultLangiumDocumentFactory(services),
