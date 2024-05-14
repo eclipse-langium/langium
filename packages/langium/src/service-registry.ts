@@ -42,14 +42,14 @@ export interface ServiceRegistry {
 export class DefaultServiceRegistry implements ServiceRegistry {
 
     protected singleton?: LangiumCoreServices;
-    protected idMap = new Map<string, LangiumCoreServices>();
-    protected extMap = new Map<string, LangiumCoreServices>();
+    protected readonly languageIdMap = new Map<string, LangiumCoreServices>();
+    protected readonly fileExtensionMap = new Map<string, LangiumCoreServices>();
 
     /**
-     * @deprecated Use the new `extMap` property instead.
+     * @deprecated Use the new `fileExtensionMap` (or `languageIdMap`) property instead.
      */
     protected get map(): Map<string, LangiumCoreServices> | undefined {
-        return this.extMap;
+        return this.fileExtensionMap;
     }
 
     protected readonly textDocuments?: TextDocumentProvider;
@@ -61,14 +61,13 @@ export class DefaultServiceRegistry implements ServiceRegistry {
     register(language: LangiumCoreServices): void {
         const data = language.LanguageMetaData;
         for (const ext of data.fileExtensions) {
-            const existing = this.extMap.get(ext);
-            if (existing) {
+            if (this.fileExtensionMap.has(ext)) {
                 console.warn(`The file extension ${ext} is used by multiple languages. It is now assigned to '${data.languageId}'.`);
             }
-            this.extMap.set(ext, language);
+            this.fileExtensionMap.set(ext, language);
         }
-        this.idMap.set(data.languageId, language);
-        if (this.idMap.size === 1) {
+        this.languageIdMap.set(data.languageId, language);
+        if (this.languageIdMap.size === 1) {
             this.singleton = language;
         } else {
             this.singleton = undefined;
@@ -79,18 +78,18 @@ export class DefaultServiceRegistry implements ServiceRegistry {
         if (this.singleton !== undefined) {
             return this.singleton;
         }
-        if (this.idMap.size === 0) {
+        if (this.languageIdMap.size === 0) {
             throw new Error('The service registry is empty. Use `register` to register the services of a language.');
         }
         const languageId = this.textDocuments?.get(uri.toString())?.languageId;
         if (languageId !== undefined) {
-            const services = this.idMap.get(languageId);
+            const services = this.languageIdMap.get(languageId);
             if (services) {
                 return services;
             }
         }
         const ext = UriUtils.extname(uri);
-        const services = this.extMap.get(ext);
+        const services = this.fileExtensionMap.get(ext);
         if (!services) {
             if (languageId) {
                 throw new Error(`The service registry contains no services for the extension '${ext}' for language '${languageId}'.`);
@@ -111,6 +110,6 @@ export class DefaultServiceRegistry implements ServiceRegistry {
     }
 
     get all(): readonly LangiumCoreServices[] {
-        return Array.from(this.idMap.values());
+        return Array.from(this.languageIdMap.values());
     }
 }
