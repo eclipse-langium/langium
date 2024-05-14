@@ -19,6 +19,7 @@ interface TypePart {
     ruleCalls: string[]
     parents: TypePart[]
     children: TypePart[]
+    end?: TypePart
     actionWithAssignment: boolean
 }
 
@@ -40,6 +41,7 @@ interface TypeCollectionContext {
 
 interface TypePath {
     alt: TypeAlternative
+    current: TypePart
     next: TypePart[]
 }
 
@@ -53,20 +55,57 @@ class TypeGraph {
     }
 
     getTypes(): TypePath[] {
-        const rootType: TypeAlternative = {
-            name: this.root.name!,
-            properties: this.root.properties,
-            ruleCalls: this.root.ruleCalls,
-            super: []
-        };
-        if (this.root.children.length === 0) {
-            return [{ alt: rootType, next: [] }];
-        } else {
-            return this.applyNext(this.root, {
-                alt: rootType,
-                next: this.root.children
-            });
+        return this.iterate(this.root, [{
+            alt: {
+                name: this.root.name!,
+                properties: this.root.properties,
+                ruleCalls: this.root.ruleCalls,
+                super: []
+            },
+            current: this.root,
+            next: this.root.children
+        }]);
+    }
+
+    private iterate(root: TypePart, paths: TypePath[]): TypePath[] {
+        const finished = paths.filter(e => e.next.length === 0);
+        do {
+            const next = this.recurse(root, paths);
+            const unfinished: TypePath[] = [];
+            for (const path of next) {
+                if (path.next.length > 0) {
+                    unfinished.push(path);
+                } else {
+                    finished.push(path);
+                }
+            }
+            paths = unfinished;
+        } while (paths.length > 0);
+
+        return finished;
+    }
+
+    private recurse(root: TypePart, paths: TypePath[], end?: TypePart): TypePath[] {
+        const all: TypePath[] = [];
+        for (const path of paths) {
+            const node = path.current;
+            if (node !== end && node.children.length > 0) {
+                const nextPaths = this.applyNext(root, path);
+                const subPaths = this.recurse(root, nextPaths, node.end ?? end);
+                all.push(...subPaths);
+            } else {
+                all.push(path);
+            }
         }
+        const map = new MultiMap<TypePart, TypePath>();
+        for (const path of all) {
+            map.add(path.current, path);
+        }
+        const unique: TypePath[] = [];
+        for (const [node, groupedPaths] of map.entriesGroupedByKey()) {
+            unique.push(...flattenTypes(groupedPaths, node));
+        }
+        return unique;
     }
 
     private applyNext(root: TypePart, nextPath: TypePath): TypePath[] {
@@ -80,6 +119,7 @@ class TypeGraph {
                 // We already add a new path, since the next part of the part refers to a new inferred type
                 paths.push({
                     alt: copyTypeAlternative(split),
+                    current: part,
                     next: []
                 });
             }
@@ -101,16 +141,13 @@ class TypeGraph {
             split.ruleCalls.push(...part.ruleCalls);
             const path: TypePath = {
                 alt: split,
+                current: part,
                 next: part.children
             };
-            if (path.next.length === 0) {
-                path.alt.super = path.alt.super.filter(e => e !== path.alt.name);
-                paths.push(path);
-            } else {
-                paths.push(...this.applyNext(root, path));
-            }
+            path.alt.super = path.alt.super.filter(e => e !== path.alt.name);
+            paths.push(path);
         }
-        return flattenTypes(paths);
+        return paths;
     }
 
     private splitType(type: TypeAlternative, count: number): TypeAlternative[] {
@@ -307,9 +344,9 @@ function getRuleTypes(context: TypeCollectionContext, rule: ParserRule): TypePat
     const type = newTypePart(rule);
     const graph = new TypeGraph(context, type);
     if (rule.definition) {
-        collectElement(graph, graph.root, rule.definition);
+        type.end = collectElement(graph, graph.root, rule.definition);
     }
-    return graph.getTypes();
+    return flattenTypes(graph.getTypes(), type.end ?? newTypePart());
 }
 
 function newTypePart(element?: ParserRule | Action | string): TypePart {
@@ -341,7 +378,9 @@ function collectElement(graph: TypeGraph, current: TypePart, element: AbstractEl
             const altType = graph.connect(current, newTypePart());
             children.push(collectElement(graph, altType, alt));
         }
-        return graph.merge(...children);
+        const mergeNode = graph.merge(...children);
+        current.end = mergeNode;
+        return mergeNode;
     } else if (isGroup(element) || isUnorderedGroup(element)) {
         let groupNode = graph.connect(current, newTypePart());
         let skipNode: TypePart | undefined;
@@ -352,7 +391,9 @@ function collectElement(graph: TypeGraph, current: TypePart, element: AbstractEl
             groupNode = collectElement(graph, groupNode, item);
         }
         if (skipNode) {
-            return graph.merge(skipNode, groupNode);
+            const mergeNode = graph.merge(skipNode, groupNode);
+            current.end = mergeNode;
+            return mergeNode;
         } else {
             return groupNode;
         }
@@ -479,7 +520,9 @@ function getFragmentProperties(fragment: ParserRule, context: TypeCollectionCont
 function calculateInterfaces(alternatives: TypePath[]): PlainInterface[] {
     const interfaces = new Map<string, PlainInterface>();
     const ruleCallAlternatives: TypeAlternative[] = [];
-    const flattened = flattenTypes(alternatives).map(e => e.alt);
+    const flattened = alternatives.length > 0
+        ? flattenTypes(alternatives, alternatives[0].current).map(e => e.alt)
+        : [];
 
     for (const flat of flattened) {
         const interfaceType: PlainInterface = {
@@ -516,14 +559,14 @@ function calculateInterfaces(alternatives: TypePath[]): PlainInterface[] {
     return Array.from(interfaces.values());
 }
 
-function flattenTypes(alternatives: TypePath[]): TypePath[] {
+function flattenTypes(alternatives: TypePath[], part: TypePart): TypePath[] {
     const nameToAlternatives = alternatives.reduce((acc, e) => acc.add(e.alt.name, e), new MultiMap<string, TypePath>());
     const types: TypePath[] = [];
 
     for (const [name, namedAlternatives] of nameToAlternatives.entriesGroupedByKey()) {
         const properties: PlainProperty[] = [];
         const ruleCalls = new Set<string>();
-        const type: TypePath = { alt: { name, properties, ruleCalls: [], super: [] }, next: [] };
+        const type: TypePath = { alt: { name, properties, ruleCalls: [], super: [] }, next: [], current: part };
         for (const path of namedAlternatives) {
             const alt = path.alt;
             type.alt.super.push(...alt.super);
@@ -541,6 +584,7 @@ function flattenTypes(alternatives: TypePath[]): TypePath[] {
             alt.ruleCalls.forEach(ruleCall => ruleCalls.add(ruleCall));
         }
         for (const path of namedAlternatives) {
+            type.next = Array.from(new Set(type.next));
             const alt = path.alt;
             // A type with rule calls is not a real member of the type
             // Any missing properties are therefore not associated with the current type
