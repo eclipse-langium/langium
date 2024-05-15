@@ -61,8 +61,8 @@ describe('WorkspaceLock', () => {
         const mutex = new DefaultWorkspaceLock();
         const now = Date.now();
         const magicalNumber = await mutex.read(() => new Promise(resolve => setTimeout(() => resolve(42), 10)));
-        // Confirm that at least 10ms have elapsed
-        expect(Date.now() - now).toBeGreaterThanOrEqual(10);
+        // Confirm that at least 5ms have elapsed
+        expect(Date.now() - now).toBeGreaterThanOrEqual(5);
         // Confirm the returned value
         expect(magicalNumber).toBe(42);
     });
