@@ -286,6 +286,47 @@ describe('One name for terminal and non-terminal rules', () => {
 
 });
 
+describe('check the default value converter for data type rules using terminal rules', () => {
+    const grammar = `
+    grammar Test
+
+    entry Main:
+        propInteger=INT_value
+        propBoolean=BOOLEAN_value
+        propString=STRING_value;
+
+    INT_value returns number: MY_INT;
+    BOOLEAN_value returns boolean: MY_BOOLEAN;
+    STRING_value returns string: MY_ID;
+
+    terminal MY_INT returns number: /((-|\\+)?[0-9]+)/;
+    terminal MY_BOOLEAN returns string: /(true)|(false)/;
+    terminal MY_ID returns string: /[a-zA-Z]+/;
+
+    hidden terminal WS: /\\s+/;
+    `;
+
+    let parser: LangiumParser;
+    beforeEach(async () => {
+        parser = await parserFromGrammar(grammar);
+    });
+
+    test('Should have no definition errors', () => {
+        expect(parser.definitionErrors).toHaveLength(0);
+    });
+
+    test.only('string vs number', async () => {
+        const result = parser.parse('123 true abc');
+        expect(result.lexerErrors.length).toBe(0);
+        expect(result.parserErrors.length).toBe(0);
+        const value = result.value as unknown as { propInteger: number, propBoolean: boolean, propString: string };
+        expect(value.propInteger).not.toBe('123');
+        expect(value.propInteger).toBe(123);
+        expect(value.propBoolean).toBe(true);
+        expect(value.propString).toBe('abc');
+    });
+});
+
 describe('Boolean value converter', () => {
     const content = `
     grammar G

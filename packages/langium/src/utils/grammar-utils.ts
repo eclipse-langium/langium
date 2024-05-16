@@ -437,7 +437,7 @@ export function getRuleType(rule: ast.AbstractRule): string {
     if (ast.isTerminalRule(rule)) {
         return rule.type?.name ?? 'string';
     } else {
-        return isDataTypeRule(rule) ? rule.name : getExplicitRuleType(rule) ?? rule.name;
+        return getExplicitRuleType(rule) ?? rule.name;
     }
 }
 

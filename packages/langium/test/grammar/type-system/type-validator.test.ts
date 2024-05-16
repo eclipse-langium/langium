@@ -245,7 +245,7 @@ describe('validate declared types', () => {
                 propA: Mytype;
             }
             interface B {
-                propB: string;
+                propB: Mytype | string;
             }
             RuleA returns A: propA='a';
             RuleB returns B: propB=DTB;
