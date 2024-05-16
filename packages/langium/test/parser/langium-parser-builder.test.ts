@@ -315,7 +315,7 @@ describe('check the default value converter for data type rules using terminal r
         expect(parser.definitionErrors).toHaveLength(0);
     });
 
-    test.only('string vs number', async () => {
+    test('string vs number', async () => {
         const result = parser.parse('123 true abc');
         expect(result.lexerErrors.length).toBe(0);
         expect(result.parserErrors.length).toBe(0);
