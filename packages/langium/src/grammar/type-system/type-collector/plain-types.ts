@@ -210,18 +210,30 @@ function plainToPropertyType(type: PlainPropertyType, union: UnionType | undefin
 }
 
 export function mergePropertyTypes(first: PlainPropertyType, second: PlainPropertyType): PlainPropertyType {
-    const flattenedFirst = flattenPlainType(first);
-    const flattenedSecond = flattenPlainType(second);
-    for (const second of flattenedSecond) {
-        if (!includesType(flattenedFirst, second)) {
-            flattenedFirst.push(second);
+    const { union: flattenedFirstUnion, array: flattenedFirstArray } = flattenPlainType(first);
+    const { union: flattenedSecondUnion, array: flattenedSecondArray } = flattenPlainType(second);
+    for (const second of flattenedSecondUnion) {
+        if (!includesType(flattenedFirstUnion, second)) {
+            flattenedFirstUnion.push(second);
         }
     }
-    if (flattenedFirst.length === 1) {
-        return flattenedFirst[0];
+    for (const second of flattenedSecondArray) {
+        if (!includesType(flattenedFirstArray, second)) {
+            flattenedFirstArray.push(second);
+        }
+    }
+    if (flattenedFirstArray.length > 0) {
+        flattenedFirstUnion.push({
+            elementType: flattenedFirstArray.length === 1 ? flattenedFirstArray[0] : {
+                types: flattenedFirstArray
+            }
+        });
+    }
+    if (flattenedFirstUnion.length === 1) {
+        return flattenedFirstUnion[0];
     } else {
         return {
-            types: flattenedFirst
+            types: flattenedFirstUnion
         };
     }
 }
@@ -244,10 +256,22 @@ function typeEquals(first: PlainPropertyType, second: PlainPropertyType): boolea
     }
 }
 
-export function flattenPlainType(type: PlainPropertyType): PlainPropertyType[] {
+export function flattenPlainType(type: PlainPropertyType): { union: PlainPropertyType[], array: PlainPropertyType[] } {
     if (isPlainPropertyUnion(type)) {
-        return type.types.flatMap(e => flattenPlainType(e));
+        const flattened = type.types.flatMap(e => flattenPlainType(e));
+        return {
+            union: flattened.map(e => e.union).flat(),
+            array: flattened.map(e => e.array).flat()
+        };
+    } else if (isPlainArrayType(type)) {
+        return {
+            array: flattenPlainType(type.elementType).union,
+            union: []
+        };
     } else {
-        return [type];
+        return {
+            array: [],
+            union: [type]
+        };
     }
 }

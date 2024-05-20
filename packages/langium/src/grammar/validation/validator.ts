@@ -823,7 +823,7 @@ export class LangiumGrammarValidator {
                 const flattened = flattenPlainType(plainType);
                 let hasRef = false;
                 let hasNonRef = false;
-                for (const flat of flattened) {
+                for (const flat of flattened.union.concat(flattened.array)) {
                     if (isPlainReferenceType(flat)) {
                         hasRef = true;
                     } else if (!isPlainReferenceType(flat)) {
