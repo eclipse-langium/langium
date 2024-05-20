@@ -472,10 +472,14 @@ export class DefaultCompletionProvider implements CompletionProvider {
         }
         acceptor(context, {
             label: keyword.value,
-            kind: CompletionItemKind.Keyword,
+            kind: this.getKeywordCompletionItemKind(keyword),
             detail: 'Keyword',
             sortText: '1'
         });
+    }
+
+    protected getKeywordCompletionItemKind(_keyword: ast.Keyword): CompletionItemKind {
+        return CompletionItemKind.Keyword;
     }
 
     protected filterKeyword(context: CompletionContext, keyword: ast.Keyword): boolean {
