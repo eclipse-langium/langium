@@ -11,6 +11,7 @@ import { createLangiumGrammarServices, createServicesForGrammar } from 'langium/
 import { DefaultCompletionProvider } from 'langium/lsp';
 import type { LangiumServices, PartialLangiumServices } from 'langium/lsp';
 import { clearDocuments, expectCompletion, parseHelper } from 'langium/test';
+import { MarkupContent } from 'vscode-languageserver';
 
 describe('Langium completion provider', () => {
 
@@ -175,6 +176,39 @@ describe('Completion within alternatives', () => {
             text,
             index: 0,
             expectedItems: ['A']
+        });
+    });
+
+    test('Should show documentation on completion items', async () => {
+        const grammar = `
+        grammar g
+        entry Model: (elements+=(Person | Greeting))*;
+        Person: 'person' name=ID;
+        Greeting: 'hello' (person=[Person:ID]);
+        terminal ID: /\\^?[_a-zA-Z][\\w_]*/;
+        hidden terminal WS: /\\s+/;
+        hidden terminal ML_COMMENT: /\\/\\*[\\s\\S]*?\\*\\//;
+        `;
+
+        const services = await createServicesForGrammar({ grammar });
+        const completion = expectCompletion(services);
+        const text = `
+        /** Hello this is A */
+        person A
+        hello <|>
+        `;
+
+        await completion({
+            text,
+            index: 0,
+            expectedItems: ['Hello this is A'],
+            itemToString: item => {
+                if (MarkupContent.is(item.documentation)) {
+                    return item.documentation.value;
+                } else {
+                    return item.documentation ?? '';
+                }
+            }
         });
     });
 
