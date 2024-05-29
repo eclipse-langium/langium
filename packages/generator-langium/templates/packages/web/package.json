@@ -1,0 +1,37 @@
+{
+    "name": "<%= extension-name %>-web",
+    "description": "The web specific package",
+    "version": "0.0.1",
+    "type": "module",
+    "engines": {
+        "node": ">=18.0.0"
+    },
+    "files": [
+        "out",
+        "src"
+    ],
+    "scripts": {
+        "build": "vite build",
+        "bundle:serve": "http-server ./dist --port 5175",
+        "dev": "vite",
+        "dev:debug": "vite --debug --force",
+        "serve": "npm run dev"
+    },
+    "dependencies": {
+        "@codingame/monaco-vscode-editor-service-override": "~5.2.0",
+        "@codingame/monaco-vscode-keybindings-service-override": "~5.2.0",
+        "monaco-editor": "npm:@codingame/monaco-vscode-editor-api@~5.2.0",
+        "monaco-editor-wrapper": "~5.2.0",
+        "monaco-languageclient": "~8.5.0",
+        "vscode": "npm:@codingame/monaco-vscode-api@~5.2.0"
+    },
+    "devDependencies": {
+        "@codingame/esbuild-import-meta-url-plugin": "~1.0.2",
+        "vite": "~5.2.12",
+        "http-server": "~14.1.1"    
+    },
+    "volta": {
+        "node": "18.20.3",
+        "npm": "10.7.0"
+    }
+}

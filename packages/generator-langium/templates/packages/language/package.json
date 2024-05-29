@@ -1,0 +1,44 @@
+{
+    "name": "<%= extension-name %>-language",
+    "description": "The language specific package",
+    "version": "0.0.1",
+    "type": "module",
+    "engines": {
+        "node": ">=18.0.0"
+    },
+    "files": [
+        "out",
+        "src"
+    ],
+    "main": "./out/index.js",
+    "module": "./out/index.js",
+    "exports": {
+      ".": {
+        "types": "./out/index.d.ts",
+        "default": "./out/index.js"
+      }
+    },
+    "typesVersions": {
+      "*": {
+        ".": [
+          "out/index"
+        ]
+      }
+    },
+    "scripts": {
+        "build": "echo 'No build step'",
+        "langium:generate": "langium generate",
+        "langium:watch": "langium generate --watch"
+    },
+    "dependencies": {
+        "langium": "~3.0.0"        
+    },
+    "devDependencies": {
+        "langium-cli": "~3.0.3",
+        "vitest": "~1.6.0"
+    },
+    "volta": {
+        "node": "18.20.3",
+        "npm": "10.7.0"
+    }
+}

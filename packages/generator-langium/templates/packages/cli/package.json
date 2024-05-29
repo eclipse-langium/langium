@@ -1,0 +1,31 @@
+{
+    "name": "<%= extension-name %>-cli",
+    "description": "The cli specific package",
+    "version": "0.0.1",
+    "type": "module",
+    "engines": {
+        "node": ">=18.0.0"
+    },
+    "files": [
+        "bin",
+        "out",
+        "src"
+    ],
+    "bin": {
+        "<%= language-id %>-cli": "./bin/cli.js"
+    },
+    "scripts": {
+        "build": "echo 'No build step'"
+    },
+    "dependencies": {
+        "<%= extension-name %>-language": "0.0.1",
+        "chalk": "~5.3.0",
+        "commander": "~11.0.0"
+    },
+    "devDependencies": {  
+    },
+    "volta": {
+        "node": "18.20.3",
+        "npm": "10.7.0"
+    }
+}
