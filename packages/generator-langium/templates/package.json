@@ -1,0 +1,34 @@
+{
+    "name": "<%= extension-name %>",
+    "description": "Base workspace package",
+    "version": "0.0.1",
+    "type": "module",
+    "private": true,    
+    "files": [
+        "out",
+        "src"
+    ],
+    "scripts": {
+        "compile": "tsc -b tsconfig.build.json",
+        "watch": "tsc -b tsconfig.build.json --watch",
+        "build": "npm run compile && npm run build --workspaces",
+        "lint": "eslint src --ext ts",
+        "langium:generate": "npm run --workspace packages/language langium:generate",
+        "langium:watch": "npm run --workspace packages/language langium:watch",
+        "test": "vitest run"
+    },
+    "devDependencies": {
+        "@types/node": "^18.0.0",
+        "@typescript-eslint/parser": "~7.11.0",
+        "@typescript-eslint/eslint-plugin": "~7.11.0",
+        "eslint": "~8.57.0",
+        "typescript": "~5.4.5"
+    },
+    "volta": {
+        "node": "18.20.3",
+        "npm": "10.7.0"
+    },
+    "workspaces": [
+        "packages/language"
+    ]
+}
