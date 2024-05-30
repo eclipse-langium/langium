@@ -12,6 +12,7 @@ import { DefaultCompletionProvider } from 'langium/lsp';
 import type { LangiumServices, PartialLangiumServices } from 'langium/lsp';
 import { clearDocuments, expectCompletion, parseHelper } from 'langium/test';
 import { MarkupContent } from 'vscode-languageserver';
+import * as assert from 'assert';
 
 describe('Langium completion provider', () => {
 
@@ -206,7 +207,7 @@ describe('Completion within alternatives', () => {
                 if (MarkupContent.is(item.documentation)) {
                     return item.documentation.value;
                 } else {
-                    return item.documentation ?? '';
+                    assert.fail('Completion item should be of type `MarkupContent`.');
                 }
             }
         });
