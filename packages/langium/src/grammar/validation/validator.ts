@@ -450,7 +450,7 @@ export class LangiumGrammarValidator {
             return true;
         };
         if (!consumesAnything(parserRule.definition)) {
-            accept('error', 'This parser rule potentially consumes no input.', { node: parserRule, property: 'name', code: IssueCodes.ParsingRuleEmpty });
+            accept('warning', 'This parser rule potentially consumes no input.', { node: parserRule, property: 'name', code: IssueCodes.ParsingRuleEmpty });
         }
     }
 

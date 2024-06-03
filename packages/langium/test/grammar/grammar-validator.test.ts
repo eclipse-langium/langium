@@ -919,7 +919,7 @@ describe('Prohibit empty parser rules', async () => {
         for (const rule of validationResult.document.parseResult.value.rules) {
             if (GrammarAST.isParserRule(rule)) {
                 if (ruleNames.includes(rule.name)) {
-                    expectError(validationResult, 'This parser rule potentially consumes no input.', {
+                    expectWarning(validationResult, 'This parser rule potentially consumes no input.', {
                         node: rule, property: 'name'
                     });
                 } else {
