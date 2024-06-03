@@ -204,11 +204,8 @@ describe('Completion within alternatives', () => {
             index: 0,
             expectedItems: ['Hello this is A'],
             itemToString: item => {
-                if (MarkupContent.is(item.documentation)) {
-                    return item.documentation.value;
-                } else {
-                    assert.fail('Completion item should be of type `MarkupContent`.');
-                }
+                assert(MarkupContent.is(item.documentation), 'Completion item should be of type `MarkupContent`.');
+                return item.documentation.value;
             }
         });
     });
