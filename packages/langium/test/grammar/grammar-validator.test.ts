@@ -912,3 +912,108 @@ describe('Cross-reference to type union is only valid if all alternatives are AS
         expectNoIssues(validationResult);
     });
 });
+
+describe('Prohibit empty parser rules', async () => {
+
+    function detectEmptyRules(validationResult: ValidationResult<GrammarTypes.Grammar>, ...ruleNames: string[]) {
+        for (const rule of validationResult.document.parseResult.value.rules) {
+            if (GrammarAST.isParserRule(rule)) {
+                if (ruleNames.includes(rule.name)) {
+                    expectWarning(validationResult, 'This parser rule potentially consumes no input.', {
+                        node: rule, property: 'name'
+                    });
+                } else {
+                    expectNoIssues(validationResult, {
+                        node: rule, property: 'name', message: 'This parser rule potentially consumes no input.'
+                    });
+                }
+            }
+        }
+    }
+
+    test('Keywords, Rule calls, cross references', async () => {
+        const grammarWithoutOptionals = `
+        Name: name=ID;
+        Ref: 'Hello' 'to' who=[Name:ID];
+        Call: Name;
+        Word returns string: 'word';
+
+        terminal ID: /[a-zA-Z]/+;
+        hidden terminal WS: /\\s+/;`;
+        const validationResult = await validate(grammarWithoutOptionals);
+        detectEmptyRules(validationResult);
+    });
+
+    test('Optional cardinality', async () => {
+        const grammarWithOptionals = `
+        B: (x=ID);
+        C: (x=ID)?;
+        D: (x=ID)*;
+
+        terminal ID: /[a-zA-Z]+/;
+        `;
+        const validationResult = await validate(grammarWithOptionals);
+        detectEmptyRules(validationResult, 'C', 'D');
+    });
+
+    test('Alternatives', async () => {
+        const grammarWithGroups = `
+        A: (name=ID  | 'test');
+        B: (name=ID? | 'test');
+        C: (name=ID  | 'test')?;
+
+        terminal ID: /[a-zA-Z]+/;
+        `;
+        const validationResult = await validate(grammarWithGroups);
+        expect(validationResult.diagnostics).toHaveLength(2);
+        detectEmptyRules(validationResult, 'B', 'C');
+    });
+
+    test('Groups', async () => {
+        const grammarWithGroups = `
+        A: name=ID 'test';
+        B: name=ID? 'test';
+        C: name=ID? 'test'?;
+
+        terminal ID: /[a-zA-Z]+/;
+        `;
+        const validationResult = await validate(grammarWithGroups);
+        detectEmptyRules(validationResult, 'C');
+    });
+
+    test('Unordered Groups', async () => {
+        const grammarWithGroups = `
+        A: (name=ID & 'test');
+
+        terminal ID: /[a-zA-Z]+/;
+        `;
+        const validationResult = await validate(grammarWithGroups);
+        detectEmptyRules(validationResult, 'A');
+    });
+
+    test('Actions', async () => {
+        const specialGrammar = `
+        A: {infer Empty};
+        B: {infer Value} name=ID?;
+        C: {infer Value} name=ID;
+
+        terminal ID: /[a-zA-Z]+/;
+        `;
+        const validationResult = await validate(specialGrammar);
+        detectEmptyRules(validationResult, 'A', 'B');
+    });
+
+    test('Fragments and entry rules', async () => {
+        const specialGrammar = `
+        grammar Test
+        entry Rule: items+=Item*;
+        Item: name=ID Content;
+        EmptyItem: Content;
+        fragment Content: value=ID?;
+
+        terminal ID: /[a-zA-Z]+/;
+        `;
+        const validationResult = await validate(specialGrammar);
+        detectEmptyRules(validationResult, 'EmptyItem');
+    });
+});

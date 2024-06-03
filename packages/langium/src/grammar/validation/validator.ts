@@ -42,6 +42,7 @@ export function registerValidationChecks(services: LangiumGrammarServices): void
         ParserRule: [
             validator.checkParserRuleDataType,
             validator.checkRuleParametersUsed,
+            validator.checkEmptyParserRule,
             validator.checkParserRuleReservedName,
         ],
         TerminalRule: [
@@ -112,6 +113,7 @@ export namespace IssueCodes {
     export const MissingReturns = 'missing-returns';
     export const SuperfluousInfer = 'superfluous-infer';
     export const OptionalUnorderedGroup = 'optional-unordered-group';
+    export const ParsingRuleEmpty = 'parsing-rule-empty';
 }
 
 export class LangiumGrammarValidator {
@@ -408,6 +410,47 @@ export class LangiumGrammarValidator {
         } catch {
             // In case the terminal can't be transformed into a regex, we throw an error
             // As this indicates unresolved cross references or parser errors, we can ignore this here
+        }
+    }
+
+    checkEmptyParserRule(parserRule: ast.ParserRule, accept: ValidationAcceptor): void {
+        // Rule body needs to be set;
+        // Entry rules and fragments may consume no input.
+        if (!parserRule.definition || parserRule.entry || parserRule.fragment) {
+            return;
+        }
+
+        const consumesAnything = (element: ast.AbstractElement): boolean => {
+            // First, check cardinality of the element.
+            if (element.cardinality === '?' || element.cardinality === '*') {
+                return false;
+            }
+            // Actions themselves count as optional.
+            if (ast.isAction(element)) {
+                return false;
+            }
+            // Unordered groups act as alternatives surrounded by `*`
+            if (ast.isUnorderedGroup(element)) {
+                return false;
+            }
+            // Only one element of the group needs to consume something
+            if (ast.isGroup(element)) {
+                return element.elements.some(consumesAnything);
+            }
+            // Every altneratives needs to consume something
+            if (ast.isAlternatives(element)) {
+                return element.elements.every(consumesAnything);
+            }
+            // If the element is a direct rule call
+            // We need to check whether the element consumes anything
+            if (ast.isRuleCall(element) && element.rule.ref?.definition) {
+                return consumesAnything(element.rule.ref.definition);
+            }
+            // Else, assert that we consume something.
+            return true;
+        };
+        if (!consumesAnything(parserRule.definition)) {
+            accept('warning', 'This parser rule potentially consumes no input.', { node: parserRule, property: 'name', code: IssueCodes.ParsingRuleEmpty });
         }
     }
 
