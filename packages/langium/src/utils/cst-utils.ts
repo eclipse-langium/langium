@@ -81,13 +81,14 @@ export enum RangeComparison {
     After = 1,
     OverlapFront = 2,
     OverlapBack = 3,
-    Inside = 4
+    Inside = 4,
+    Outside = 5,
 }
 
 export function compareRange(range: Range, to: Range): RangeComparison {
-    if (range.end.line < to.start.line || (range.end.line === to.start.line && range.end.character < range.start.character)) {
+    if (range.end.line < to.start.line || (range.end.line === to.start.line && range.end.character <= to.start.character)) {
         return RangeComparison.Before;
-    } else if (range.start.line > to.end.line || (range.start.line === to.end.line && range.start.character > to.end.character)) {
+    } else if (range.start.line > to.end.line || (range.start.line === to.end.line && range.start.character >= to.end.character)) {
         return RangeComparison.After;
     }
     const startInside = range.start.line > to.start.line || (range.start.line === to.start.line && range.start.character >= to.start.character);
@@ -96,8 +97,10 @@ export function compareRange(range: Range, to: Range): RangeComparison {
         return RangeComparison.Inside;
     } else if (startInside) {
         return RangeComparison.OverlapBack;
-    } else {
+    } else if (endInside) {
         return RangeComparison.OverlapFront;
+    } else {
+        return RangeComparison.Outside;
     }
 }
 
