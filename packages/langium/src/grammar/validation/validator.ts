@@ -443,7 +443,7 @@ export class LangiumGrammarValidator {
             }
             // If the element is a direct rule call
             // We need to check whether the element consumes anything
-            if (ast.isRuleCall(element) && element.rule.ref) {
+            if (ast.isRuleCall(element) && element.rule.ref?.definition) {
                 return consumesAnything(element.rule.ref.definition);
             }
             // Else, assert that we consume something.
