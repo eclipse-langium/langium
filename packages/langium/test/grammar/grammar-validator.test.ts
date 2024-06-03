@@ -913,22 +913,26 @@ describe('Cross-reference to type union is only valid if all alternatives are AS
     });
 });
 
-function detectEmptyRule(validationResult: ValidationResult<GrammarTypes.Grammar>, ruleName: string) {
-    const rule = validationResult.document.parseResult.value.rules
-        .filter(rule => rule.$type === 'ParserRule' && rule.name === ruleName)[0];
-
-    expectError(validationResult,
-        /This parser rule would succeed without consuming input/, {
-            node: rule, property: 'name'
-        });
-}
-
 describe('Prohibit empty parser rules', async () => {
+
+    function detectEmptyRules(validationResult: ValidationResult<GrammarTypes.Grammar>, ...ruleNames: string[]) {
+        for (const rule of validationResult.document.parseResult.value.rules) {
+            if (GrammarAST.isParserRule(rule)) {
+                if (ruleNames.includes(rule.name)) {
+                    expectError(validationResult, 'This parser rule potentially consumes no input.', {
+                        node: rule, property: 'name'
+                    });
+                } else {
+                    expectNoIssues(validationResult, {
+                        node: rule, property: 'name', message: 'This parser rule potentially consumes no input.'
+                    });
+                }
+            }
+        }
+    }
+
     test('Keywords, Rule calls, cross references', async () => {
         const grammarWithoutOptionals = `
-        grammar KWRefGrammar
-
-        entry Key: (Name Ref Call) | Word;
         Name: name=ID;
         Ref: 'Hello' 'to' who=[Name:ID];
         Call: Name;
@@ -937,103 +941,79 @@ describe('Prohibit empty parser rules', async () => {
         terminal ID: /[a-zA-Z]/+;
         hidden terminal WS: /\\s+/;`;
         const validationResult = await validate(grammarWithoutOptionals);
-        expectNoIssues(validationResult);
+        detectEmptyRules(validationResult);
     });
 
-    test('Multiple assignments and cardinality', async () => {
-        const grammarWithMultiplicity = `
-        grammar MultiplicityGrammar
-
-        entry Key: (MultAssign | PlusAssign | MultOneAssign | PlusOneAssign);
-
-        PlusAssign: (ids+=ID)+;
-        MultAssign: (nums+=NUM)*;
-
-        MultOneAssign: (what='number')*;
-        PlusOneAssign: 
-            (who='names')+;
-
-        hidden terminal WS: /\\s/+;
-        terminal ID: /[a-zA-z]+/;
-        terminal NUM: /[0-9]+/;
-        `;
-
-        const validationResult = await validate(grammarWithMultiplicity);
-        expect(validationResult.diagnostics).toHaveLength(2);
-        detectEmptyRule(validationResult, 'MultAssign');
-        detectEmptyRule(validationResult, 'MultOneAssign');
-    });
-
-    test('Optional assignments and cardinality', async () => {
+    test('Optional cardinality', async () => {
         const grammarWithOptionals = `
-        grammar OptionalsGrammar
-
-        entry A: 'optionals' y=(D | B | C);
-        B: (x?=ID) ;
-        C: (x?=ID)? ;
-        D: (x=ID)? ;
+        B: (x=ID);
+        C: (x=ID)?;
+        D: (x=ID)*;
 
         terminal ID: /[a-zA-Z]+/;
-        hidden terminal WS: /\\s+/;
         `;
         const validationResult = await validate(grammarWithOptionals);
-        expect(validationResult.diagnostics).toHaveLength(2);
-        detectEmptyRule(validationResult, 'C');
-        detectEmptyRule(validationResult, 'D');
+        detectEmptyRules(validationResult, 'C', 'D');
     });
 
-    test('Unordered groups and alternatives', async () => {
+    test('Alternatives', async () => {
         const grammarWithGroups = `
-        grammar GroupGrammars
-
-        entry A: 'groups' (B | B2 | C | D);
-
-        B: 'from' source=ID 'to' target=ID;
-        B2: ('path' 'from' source=ID)? ('to' target+=ID)*;
-
-        C: ('name' name = ID) & (number=NUM);
-
-        D: D1 | D2 | D3;
-
-        D1: 'city' city=ID | 'town' town=ID;
-        D2: ('state' state=ID) | ('land' land=ID)?;
-        D3: ('website' site=ID)? | ('mail' address=ID)?;
+        A: (name=ID  | 'test');
+        B: (name=ID? | 'test');
+        C: (name=ID  | 'test')?;
 
         terminal ID: /[a-zA-Z]+/;
-        terminal NUM: /[0-9]+/;
-        hidden terminal WS: /\\s+/;
         `;
         const validationResult = await validate(grammarWithGroups);
         expect(validationResult.diagnostics).toHaveLength(2);
-        detectEmptyRule(validationResult, 'B2');
-        detectEmptyRule(validationResult, 'D3');
+        detectEmptyRules(validationResult, 'B', 'C');
     });
 
-    test('Actions, guard conditions, fragments, data types', async () => {
-        const specialGrammar = `
-        grammar SpecialGrammar
-
-        interface Empty {}
-        entry Main: E | F<true> | H | I | J;
-
-        E: {Empty};
-        F<bool>: <bool> (res='true')? | <!bool> res=G<true>;
-        G<bool>: <bool> truth='maybe' | <!bool> truth='never'; 
-
-        H returns string: (ID '.')*;
-        I returns string: '/' ID ('.' ID)*;
-        
-        J: Student | Teacher;
-        Teacher: 'Teacher' Name;
-        Student: 'Student' Name;
-        fragment Name: name=ID?;
+    test('Groups', async () => {
+        const grammarWithGroups = `
+        A: name=ID 'test';
+        B: name=ID? 'test';
+        C: name=ID? 'test'?;
 
         terminal ID: /[a-zA-Z]+/;
-        hidden terminal WS: /\\s+/;
+        `;
+        const validationResult = await validate(grammarWithGroups);
+        detectEmptyRules(validationResult, 'C');
+    });
+
+    test('Unordered Groups', async () => {
+        const grammarWithGroups = `
+        A: (name=ID & 'test');
+
+        terminal ID: /[a-zA-Z]+/;
+        `;
+        const validationResult = await validate(grammarWithGroups);
+        detectEmptyRules(validationResult, 'A');
+    });
+
+    test('Actions', async () => {
+        const specialGrammar = `
+        A: {infer Empty};
+        B: {infer Value} name=ID?;
+        C: {infer Value} name=ID;
+
+        terminal ID: /[a-zA-Z]+/;
         `;
         const validationResult = await validate(specialGrammar);
-        expect(validationResult.diagnostics).toHaveLength(2);
-        detectEmptyRule(validationResult, 'E');
-        detectEmptyRule(validationResult, 'H');
+        detectEmptyRules(validationResult, 'A', 'B');
+    });
+
+    test('Fragments and entry rules', async () => {
+        const specialGrammar = `
+        grammar Test
+        entry Rule: items+=Item*;
+        Item: name=ID Content;
+        EmptyItem: Content;
+        fragment Content: value=ID?;
+
+        terminal ID: /[a-zA-Z]+/;
+        `;
+        const validationResult = await validate(specialGrammar);
+        detectEmptyRules(validationResult, 'EmptyItem');
     });
 });

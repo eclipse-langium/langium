@@ -420,30 +420,37 @@ export class LangiumGrammarValidator {
             return;
         }
 
-        // Process definition; report problem for the rule itself.
-        const mayConsumeEmpty = (element: ast.AbstractElement): boolean => {
+        const consumesAnything = (element: ast.AbstractElement): boolean => {
             // First, check cardinality of the element.
             if (element.cardinality === '?' || element.cardinality === '*') {
-                return true;
+                return false;
             }
             // Actions themselves count as optional.
             if (ast.isAction(element)) {
-                return true;
+                return false;
             }
-            // Unordered groups consume something.
+            // Unordered groups act as alternatives surrounded by `*`
             if (ast.isUnorderedGroup(element)) {
                 return false;
             }
-            // Ordered groups consume if all elements do so, and alternative groups, too.
-            if (ast.isGroup(element) || ast.isAlternatives(element)) {
-                return element.elements.every(mayConsumeEmpty);
+            // Only one element of the group needs to consume something
+            if (ast.isGroup(element)) {
+                return element.elements.some(consumesAnything);
             }
-            // Else, assert that we consume _something_.
-            return false;
-
+            // Every altneratives needs to consume something
+            if (ast.isAlternatives(element)) {
+                return element.elements.every(consumesAnything);
+            }
+            // If the element is a direct rule call
+            // We need to check whether the element consumes anything
+            if (ast.isRuleCall(element) && element.rule.ref) {
+                return consumesAnything(element.rule.ref.definition);
+            }
+            // Else, assert that we consume something.
+            return true;
         };
-        if (mayConsumeEmpty(parserRule.definition)) {
-            accept('error', 'This parser rule would succeed without consuming input.', { node: parserRule, property: 'name', code: IssueCodes.ParsingRuleEmpty });
+        if (!consumesAnything(parserRule.definition)) {
+            accept('error', 'This parser rule potentially consumes no input.', { node: parserRule, property: 'name', code: IssueCodes.ParsingRuleEmpty });
         }
     }
 
