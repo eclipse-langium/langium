@@ -56,12 +56,13 @@ describe('Grammar serializer', () => {
         const config: LangiumConfig = {
             projectName: 'Magic',
             languages: [],
+            mode: 'development',
             [RelativePath]: '/path/to/magic',
         };
 
         const grammarText = expandToString`
         grammar Test
-        entry Model: name='\${';
+        entry Model: template='\${' backtick='\`' single="'";
         `;
 
         const document = grammarServices.shared.workspace.LangiumDocumentFactory.fromString<Grammar>(grammarText, URI.file('test.langium'));
@@ -73,7 +74,41 @@ describe('Grammar serializer', () => {
         const moduleString = serializeGrammar(grammarServices.grammar, [grammar], config);
 
         // assert
+        // Escapes `${` sequence correctly
         expect(moduleString).toMatch('"value": "\\${"');
+        // Escapes the "`" character correctly
+        expect(moduleString).toMatch('"value": "\\`');
+        // Does not escape single quotes
+        expect(moduleString).toMatch('"value": "\'"');
+    });
+
+    test('should escape single quotes in production mode', async () => {
+        // arrange
+        const config: LangiumConfig = {
+            projectName: 'Magic',
+            languages: [],
+            mode: 'production',
+            [RelativePath]: '/path/to/magic',
+        };
+
+        const grammarText = expandToString`
+        grammar Test
+        entry Model: single="'" backtick='\`';
+        `;
+
+        const document = grammarServices.shared.workspace.LangiumDocumentFactory.fromString<Grammar>(grammarText, URI.file('test.langium'));
+        grammarServices.shared.workspace.LangiumDocuments.addDocument(document);
+        await grammarServices.shared.workspace.DocumentBuilder.build([document]);
+        const grammar = document.parseResult.value;
+
+        // act
+        const moduleString = serializeGrammar(grammarServices.grammar, [grammar], config);
+
+        // assert
+        // Escapes single quote character correctly
+        expect(moduleString).toMatch('"value":"\\\'"');
+        // Does not escape backticks
+        expect(moduleString).toMatch('"value":"`"');
     });
 
 });
