@@ -18,7 +18,9 @@ import type { NodeKindProvider } from '../node-kind-provider.js';
 import type { FuzzyMatcher } from '../fuzzy-matcher.js';
 import type { GrammarConfig } from '../../languages/grammar-config.js';
 import type { Lexer } from '../../parser/lexer.js';
+import type { DocumentationProvider } from '../../documentation/documentation-provider.js';
 import type { IToken } from 'chevrotain';
+import type { MarkupContent } from 'vscode-languageserver';
 import { CompletionItemKind, CompletionList, Position } from 'vscode-languageserver';
 import * as ast from '../../languages/generated/ast.js';
 import { assignMandatoryProperties, getContainerOfType } from '../../utils/ast-utils.js';
@@ -120,6 +122,7 @@ export interface CompletionProvider {
 export class DefaultCompletionProvider implements CompletionProvider {
 
     protected readonly completionParser: LangiumCompletionParser;
+    protected readonly documentationProvider: DocumentationProvider;
     protected readonly scopeProvider: ScopeProvider;
     protected readonly grammar: ast.Grammar;
     protected readonly nameProvider: NameProvider;
@@ -139,6 +142,7 @@ export class DefaultCompletionProvider implements CompletionProvider {
         this.fuzzyMatcher = services.shared.lsp.FuzzyMatcher;
         this.grammarConfig = services.parser.GrammarConfig;
         this.astReflection = services.shared.AstReflection;
+        this.documentationProvider = services.documentation.DocumentationProvider;
     }
 
     async getCompletion(document: LangiumDocument, params: CompletionParams): Promise<CompletionList | undefined> {
@@ -428,9 +432,9 @@ export class DefaultCompletionProvider implements CompletionProvider {
                 property: assignment.feature
             };
             try {
-                this.getReferenceCandidates(refInfo, context).forEach(
-                    c => acceptor(context, this.createReferenceCompletionItem(c))
-                );
+                for (const candidate of this.getReferenceCandidates(refInfo, context)) {
+                    acceptor(context, this.createReferenceCompletionItem(candidate));
+                }
             } catch (err) {
                 console.error(err);
             }
@@ -452,18 +456,34 @@ export class DefaultCompletionProvider implements CompletionProvider {
 
     /**
      * Override this method to change how reference completion items are created.
+     *
      * To change the `kind` of a completion item, override the `NodeKindProvider` service instead.
+     * To change the `documentation`, override the `DocumentationProvider` service instead.
      *
      * @param nodeDescription The description of a reference candidate
      * @returns A partial completion item
      */
     protected createReferenceCompletionItem(nodeDescription: AstNodeDescription): CompletionValueItem {
+        const kind = this.nodeKindProvider.getCompletionItemKind(nodeDescription);
+        const documentation = this.getReferenceDocumentation(nodeDescription);
         return {
             nodeDescription,
-            kind: this.nodeKindProvider.getCompletionItemKind(nodeDescription),
+            kind,
+            documentation,
             detail: nodeDescription.type,
             sortText: '0'
         };
+    }
+
+    protected getReferenceDocumentation(nodeDescription: AstNodeDescription): MarkupContent | string | undefined {
+        if (!nodeDescription.node) {
+            return undefined;
+        }
+        const documentationText = this.documentationProvider.getDocumentation(nodeDescription.node);
+        if (!documentationText) {
+            return undefined;
+        }
+        return { kind: 'markdown', value: documentationText };
     }
 
     protected completionForKeyword(context: CompletionContext, keyword: ast.Keyword, acceptor: CompletionAcceptor): MaybePromise<void> {
