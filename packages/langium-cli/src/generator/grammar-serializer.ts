@@ -41,9 +41,13 @@ export function serializeGrammar(services: LangiumCoreServices, grammars: Gramma
                 });
                 // The json serializer returns strings with \n line delimiter by default
                 // We need to translate these line endings to the OS specific line ending
-                const json = normalizeEOL(serializedGrammar
+                let json = normalizeEOL(serializedGrammar
                     .replace(/\\/g, '\\\\')
                     .replace(new RegExp(delimiter, 'g'), '\\' + delimiter));
+                if (!production) {
+                    // Escape ${ in template strings
+                    json = json.replace(/\${/g, '\\${');
+                }
                 return expandToNode`
 
                     let loaded${grammar.name}Grammar: Grammar | undefined;
