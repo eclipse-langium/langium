@@ -212,30 +212,32 @@ function plainToPropertyType(type: PlainPropertyType, union: UnionType | undefin
 export function mergePropertyTypes(first: PlainPropertyType, second: PlainPropertyType): PlainPropertyType {
     const { union: flattenedFirstUnion, array: flattenedFirstArray } = flattenPlainType(first);
     const { union: flattenedSecondUnion, array: flattenedSecondArray } = flattenPlainType(second);
-    for (const second of flattenedSecondUnion) {
-        if (!includesType(flattenedFirstUnion, second)) {
-            flattenedFirstUnion.push(second);
-        }
-    }
-    for (const second of flattenedSecondArray) {
-        if (!includesType(flattenedFirstArray, second)) {
-            flattenedFirstArray.push(second);
-        }
-    }
-    if (flattenedFirstArray.length > 0) {
-        flattenedFirstUnion.push({
-            elementType: flattenedFirstArray.length === 1 ? flattenedFirstArray[0] : {
-                types: flattenedFirstArray
+    const flattenedUnion = mergeTypeUnion(flattenedFirstUnion, flattenedSecondUnion);
+    const flattenedArray = mergeTypeUnion(flattenedFirstArray, flattenedSecondArray);
+    if (flattenedArray.length > 0) {
+        flattenedUnion.push({
+            elementType: flattenedArray.length === 1 ? flattenedArray[0] : {
+                types: flattenedArray
             }
         });
     }
-    if (flattenedFirstUnion.length === 1) {
-        return flattenedFirstUnion[0];
+    if (flattenedUnion.length === 1) {
+        return flattenedUnion[0];
     } else {
         return {
-            types: flattenedFirstUnion
+            types: flattenedUnion
         };
     }
+}
+
+function mergeTypeUnion(first: PlainPropertyType[], second: PlainPropertyType[]): PlainPropertyType[] {
+    const result = [...first];
+    for (const type of second) {
+        if (!includesType(result, type)) {
+            result.push(type);
+        }
+    }
+    return result;
 }
 
 function includesType(list: PlainPropertyType[], value: PlainPropertyType): boolean {
