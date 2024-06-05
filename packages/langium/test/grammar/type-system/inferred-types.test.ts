@@ -798,6 +798,30 @@ describe('types of `$container` and `$type` are correct', () => {
             }
         `);
     });
+
+    test('Should merge types of array properties', async () => {
+        const expected = expandToString`
+            export interface A extends AstNode {
+                readonly $type: 'A';
+                values: Array<number | string>;
+            }
+        `;
+        await expectTypes(`
+            A: values+=ID values+=NUMBER;
+            terminal ID returns string: /string/;
+            terminal NUMBER returns number: /number/;
+        `, expected);
+        await expectTypes(`
+            A: (values+=ID | values+=NUMBER)+;
+            terminal ID returns string: /string/;
+            terminal NUMBER returns number: /number/;
+        `, expected);
+        await expectTypes(`
+            A: values+=(ID | NUMBER)+;
+            terminal ID returns string: /string/;
+            terminal NUMBER returns number: /number/;
+        `, expected);
+    });
 });
 
 // https://github.com/eclipse-langium/langium/issues/744
