@@ -281,7 +281,7 @@ describe('validate declared types', () => {
         });
     });
 
-    test('Can assign a data type rule to a property with its base type', async () => {
+    test('Can assign a data type rule to a property with its base type #1', async () => {
         const validationResult = await validate(`
             interface RuleType { prop : string };
             Rule returns RuleType: prop = MyDataType;
@@ -289,6 +289,18 @@ describe('validate declared types', () => {
             // The type system should respect the declared type
             MyDataType returns string: INT;
             terminal INT returns number: /[0-9]+/;
+        `);
+        expectNoIssues(validationResult);
+    });
+
+    test('Can assign a data type rule to a property with its base type #2', async () => {
+        const validationResult = await validate(`
+            interface RuleType { prop : number };
+            Rule returns RuleType: prop = MyDataType;
+            // The computed type for 'MyDataType' is INT, but its declared is number
+            // The type system should respect the declared type
+            MyDataType returns number: INT;
+            terminal INT returns string: /[0-9]+/;
         `);
         expectNoIssues(validationResult);
     });

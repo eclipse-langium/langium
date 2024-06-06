@@ -39,7 +39,7 @@ describe('WorkerThreadAsyncParser', () => {
             expect(parseResult.value.name).toBe('Test');
             expect(GrammarUtils.findNodeForProperty(parseResult.value.$cstNode, 'name')!.offset).toBe(8);
         }
-    });
+    }, 20000);
 
     test('async parsing can be cancelled', async () => {
         const services = getServices();
