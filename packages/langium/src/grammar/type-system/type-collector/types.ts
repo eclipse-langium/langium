@@ -7,7 +7,7 @@
 import { expandToNode, expandToStringWithNL, joinToNode, toString, type Generated } from '../../../generate/index.js';
 import type { CstNode } from '../../../syntax-tree.js';
 import type { Action, Assignment, TypeAttribute } from '../../../languages/generated/ast.js';
-import { distinctAndSorted } from '../types-util.js';
+import { distinctAndSorted, escapeQuotes } from '../types-util.js';
 
 export interface Property {
     name: string;
@@ -381,7 +381,7 @@ export function propertyTypeToString(type?: PropertyType, mode: 'AstType' | 'Dec
         return type.primitive;
     } else if (isStringType(type)) {
         const delimiter = mode === 'AstType' ? "'" : '"';
-        return `${delimiter}${type.string}${delimiter}`;
+        return `${delimiter}${escapeQuotes(type.string, delimiter)}${delimiter}`;
     }
     throw new Error('Invalid type');
 }

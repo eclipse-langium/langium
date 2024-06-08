@@ -106,7 +106,7 @@ export type RequirementsAndTestsAstType = {
 export class RequirementsAndTestsAstReflection extends AbstractAstReflection {
 
     getAllTypes(): string[] {
-        return ['Contact', 'Environment', 'Requirement', 'RequirementModel', 'Test', 'TestModel'];
+        return [Contact, Environment, Requirement, RequirementModel, Test, TestModel];
     }
 
     protected override computeIsSubtype(subtype: string, supertype: string): boolean {
@@ -120,11 +120,11 @@ export class RequirementsAndTestsAstReflection extends AbstractAstReflection {
     getReferenceType(refInfo: ReferenceInfo): string {
         const referenceId = `${refInfo.container.$type}:${refInfo.property}`;
         switch (referenceId) {
-            case 'Requirement:environments':
-            case 'Test:environments': {
+            case "Requirement:environments":
+            case "Test:environments": {
                 return Environment;
             }
-            case 'Test:requirements': {
+            case "Test:requirements": {
                 return Requirement;
             }
             default: {
@@ -135,60 +135,60 @@ export class RequirementsAndTestsAstReflection extends AbstractAstReflection {
 
     getTypeMetaData(type: string): TypeMetaData {
         switch (type) {
-            case 'Contact': {
+            case Contact: {
                 return {
-                    name: 'Contact',
+                    name: Contact,
                     properties: [
-                        { name: 'user_name' }
+                        { name: "user_name" }
                     ]
                 };
             }
-            case 'Environment': {
+            case Environment: {
                 return {
-                    name: 'Environment',
+                    name: Environment,
                     properties: [
-                        { name: 'description' },
-                        { name: 'name' }
+                        { name: "description" },
+                        { name: "name" }
                     ]
                 };
             }
-            case 'Requirement': {
+            case Requirement: {
                 return {
-                    name: 'Requirement',
+                    name: Requirement,
                     properties: [
-                        { name: 'environments', defaultValue: [] },
-                        { name: 'name' },
-                        { name: 'text' }
+                        { name: "environments", defaultValue: [] },
+                        { name: "name" },
+                        { name: "text" }
                     ]
                 };
             }
-            case 'RequirementModel': {
+            case RequirementModel: {
                 return {
-                    name: 'RequirementModel',
+                    name: RequirementModel,
                     properties: [
-                        { name: 'contact' },
-                        { name: 'environments', defaultValue: [] },
-                        { name: 'requirements', defaultValue: [] }
+                        { name: "contact" },
+                        { name: "environments", defaultValue: [] },
+                        { name: "requirements", defaultValue: [] }
                     ]
                 };
             }
-            case 'Test': {
+            case Test: {
                 return {
-                    name: 'Test',
+                    name: Test,
                     properties: [
-                        { name: 'environments', defaultValue: [] },
-                        { name: 'name' },
-                        { name: 'requirements', defaultValue: [] },
-                        { name: 'testFile' }
+                        { name: "environments", defaultValue: [] },
+                        { name: "name" },
+                        { name: "requirements", defaultValue: [] },
+                        { name: "testFile" }
                     ]
                 };
             }
-            case 'TestModel': {
+            case TestModel: {
                 return {
-                    name: 'TestModel',
+                    name: TestModel,
                     properties: [
-                        { name: 'contact' },
-                        { name: 'tests', defaultValue: [] }
+                        { name: "contact" },
+                        { name: "tests", defaultValue: [] }
                     ]
                 };
             }

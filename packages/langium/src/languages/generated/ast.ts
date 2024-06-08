@@ -638,7 +638,7 @@ export type LangiumGrammarAstType = {
 export class LangiumGrammarAstReflection extends AbstractAstReflection {
 
     getAllTypes(): string[] {
-        return ['AbstractElement', 'AbstractRule', 'AbstractType', 'Action', 'Alternatives', 'ArrayLiteral', 'ArrayType', 'Assignment', 'BooleanLiteral', 'CharacterRange', 'Condition', 'Conjunction', 'CrossReference', 'Disjunction', 'EndOfFile', 'Grammar', 'GrammarImport', 'Group', 'InferredType', 'Interface', 'Keyword', 'NamedArgument', 'NegatedToken', 'Negation', 'NumberLiteral', 'Parameter', 'ParameterReference', 'ParserRule', 'ReferenceType', 'RegexToken', 'ReturnType', 'RuleCall', 'SimpleType', 'StringLiteral', 'TerminalAlternatives', 'TerminalGroup', 'TerminalRule', 'TerminalRuleCall', 'Type', 'TypeAttribute', 'TypeDefinition', 'UnionType', 'UnorderedGroup', 'UntilToken', 'ValueLiteral', 'Wildcard'];
+        return [AbstractElement, AbstractRule, AbstractType, Action, Alternatives, ArrayLiteral, ArrayType, Assignment, BooleanLiteral, CharacterRange, Condition, Conjunction, CrossReference, Disjunction, EndOfFile, Grammar, GrammarImport, Group, InferredType, Interface, Keyword, NamedArgument, NegatedToken, Negation, NumberLiteral, Parameter, ParameterReference, ParserRule, ReferenceType, RegexToken, ReturnType, RuleCall, SimpleType, StringLiteral, TerminalAlternatives, TerminalGroup, TerminalRule, TerminalRuleCall, Type, TypeAttribute, TypeDefinition, UnionType, UnorderedGroup, UntilToken, ValueLiteral, Wildcard];
     }
 
     protected override computeIsSubtype(subtype: string, supertype: string): boolean {
@@ -702,26 +702,26 @@ export class LangiumGrammarAstReflection extends AbstractAstReflection {
     getReferenceType(refInfo: ReferenceInfo): string {
         const referenceId = `${refInfo.container.$type}:${refInfo.property}`;
         switch (referenceId) {
-            case 'Action:type':
-            case 'CrossReference:type':
-            case 'Interface:superTypes':
-            case 'ParserRule:returnType':
-            case 'SimpleType:typeRef': {
+            case "Action:type":
+            case "CrossReference:type":
+            case "Interface:superTypes":
+            case "ParserRule:returnType":
+            case "SimpleType:typeRef": {
                 return AbstractType;
             }
-            case 'Grammar:hiddenTokens':
-            case 'ParserRule:hiddenTokens':
-            case 'RuleCall:rule': {
+            case "Grammar:hiddenTokens":
+            case "ParserRule:hiddenTokens":
+            case "RuleCall:rule": {
                 return AbstractRule;
             }
-            case 'Grammar:usedGrammars': {
+            case "Grammar:usedGrammars": {
                 return Grammar;
             }
-            case 'NamedArgument:parameter':
-            case 'ParameterReference:parameter': {
+            case "NamedArgument:parameter":
+            case "ParameterReference:parameter": {
                 return Parameter;
             }
-            case 'TerminalRuleCall:rule': {
+            case "TerminalRuleCall:rule": {
                 return TerminalRule;
             }
             default: {
@@ -732,408 +732,408 @@ export class LangiumGrammarAstReflection extends AbstractAstReflection {
 
     getTypeMetaData(type: string): TypeMetaData {
         switch (type) {
-            case 'AbstractElement': {
+            case AbstractElement: {
                 return {
-                    name: 'AbstractElement',
+                    name: AbstractElement,
                     properties: [
-                        { name: 'cardinality' },
-                        { name: 'lookahead' }
+                        { name: "cardinality" },
+                        { name: "lookahead" }
                     ]
                 };
             }
-            case 'ArrayLiteral': {
+            case ArrayLiteral: {
                 return {
-                    name: 'ArrayLiteral',
+                    name: ArrayLiteral,
                     properties: [
-                        { name: 'elements', defaultValue: [] }
+                        { name: "elements", defaultValue: [] }
                     ]
                 };
             }
-            case 'ArrayType': {
+            case ArrayType: {
                 return {
-                    name: 'ArrayType',
+                    name: ArrayType,
                     properties: [
-                        { name: 'elementType' }
+                        { name: "elementType" }
                     ]
                 };
             }
-            case 'BooleanLiteral': {
+            case BooleanLiteral: {
                 return {
-                    name: 'BooleanLiteral',
+                    name: BooleanLiteral,
                     properties: [
-                        { name: 'true', defaultValue: false }
+                        { name: "true", defaultValue: false }
                     ]
                 };
             }
-            case 'Conjunction': {
+            case Conjunction: {
                 return {
-                    name: 'Conjunction',
+                    name: Conjunction,
                     properties: [
-                        { name: 'left' },
-                        { name: 'right' }
+                        { name: "left" },
+                        { name: "right" }
                     ]
                 };
             }
-            case 'Disjunction': {
+            case Disjunction: {
                 return {
-                    name: 'Disjunction',
+                    name: Disjunction,
                     properties: [
-                        { name: 'left' },
-                        { name: 'right' }
+                        { name: "left" },
+                        { name: "right" }
                     ]
                 };
             }
-            case 'Grammar': {
+            case Grammar: {
                 return {
-                    name: 'Grammar',
+                    name: Grammar,
                     properties: [
-                        { name: 'definesHiddenTokens', defaultValue: false },
-                        { name: 'hiddenTokens', defaultValue: [] },
-                        { name: 'imports', defaultValue: [] },
-                        { name: 'interfaces', defaultValue: [] },
-                        { name: 'isDeclared', defaultValue: false },
-                        { name: 'name' },
-                        { name: 'rules', defaultValue: [] },
-                        { name: 'types', defaultValue: [] },
-                        { name: 'usedGrammars', defaultValue: [] }
+                        { name: "definesHiddenTokens", defaultValue: false },
+                        { name: "hiddenTokens", defaultValue: [] },
+                        { name: "imports", defaultValue: [] },
+                        { name: "interfaces", defaultValue: [] },
+                        { name: "isDeclared", defaultValue: false },
+                        { name: "name" },
+                        { name: "rules", defaultValue: [] },
+                        { name: "types", defaultValue: [] },
+                        { name: "usedGrammars", defaultValue: [] }
                     ]
                 };
             }
-            case 'GrammarImport': {
+            case GrammarImport: {
                 return {
-                    name: 'GrammarImport',
+                    name: GrammarImport,
                     properties: [
-                        { name: 'path' }
+                        { name: "path" }
                     ]
                 };
             }
-            case 'InferredType': {
+            case InferredType: {
                 return {
-                    name: 'InferredType',
+                    name: InferredType,
                     properties: [
-                        { name: 'name' }
+                        { name: "name" }
                     ]
                 };
             }
-            case 'Interface': {
+            case Interface: {
                 return {
-                    name: 'Interface',
+                    name: Interface,
                     properties: [
-                        { name: 'attributes', defaultValue: [] },
-                        { name: 'name' },
-                        { name: 'superTypes', defaultValue: [] }
+                        { name: "attributes", defaultValue: [] },
+                        { name: "name" },
+                        { name: "superTypes", defaultValue: [] }
                     ]
                 };
             }
-            case 'NamedArgument': {
+            case NamedArgument: {
                 return {
-                    name: 'NamedArgument',
+                    name: NamedArgument,
                     properties: [
-                        { name: 'calledByName', defaultValue: false },
-                        { name: 'parameter' },
-                        { name: 'value' }
+                        { name: "calledByName", defaultValue: false },
+                        { name: "parameter" },
+                        { name: "value" }
                     ]
                 };
             }
-            case 'Negation': {
+            case Negation: {
                 return {
-                    name: 'Negation',
+                    name: Negation,
                     properties: [
-                        { name: 'value' }
+                        { name: "value" }
                     ]
                 };
             }
-            case 'NumberLiteral': {
+            case NumberLiteral: {
                 return {
-                    name: 'NumberLiteral',
+                    name: NumberLiteral,
                     properties: [
-                        { name: 'value' }
+                        { name: "value" }
                     ]
                 };
             }
-            case 'Parameter': {
+            case Parameter: {
                 return {
-                    name: 'Parameter',
+                    name: Parameter,
                     properties: [
-                        { name: 'name' }
+                        { name: "name" }
                     ]
                 };
             }
-            case 'ParameterReference': {
+            case ParameterReference: {
                 return {
-                    name: 'ParameterReference',
+                    name: ParameterReference,
                     properties: [
-                        { name: 'parameter' }
+                        { name: "parameter" }
                     ]
                 };
             }
-            case 'ParserRule': {
+            case ParserRule: {
                 return {
-                    name: 'ParserRule',
+                    name: ParserRule,
                     properties: [
-                        { name: 'dataType' },
-                        { name: 'definesHiddenTokens', defaultValue: false },
-                        { name: 'definition' },
-                        { name: 'entry', defaultValue: false },
-                        { name: 'fragment', defaultValue: false },
-                        { name: 'hiddenTokens', defaultValue: [] },
-                        { name: 'inferredType' },
-                        { name: 'name' },
-                        { name: 'parameters', defaultValue: [] },
-                        { name: 'returnType' },
-                        { name: 'wildcard', defaultValue: false }
+                        { name: "dataType" },
+                        { name: "definesHiddenTokens", defaultValue: false },
+                        { name: "definition" },
+                        { name: "entry", defaultValue: false },
+                        { name: "fragment", defaultValue: false },
+                        { name: "hiddenTokens", defaultValue: [] },
+                        { name: "inferredType" },
+                        { name: "name" },
+                        { name: "parameters", defaultValue: [] },
+                        { name: "returnType" },
+                        { name: "wildcard", defaultValue: false }
                     ]
                 };
             }
-            case 'ReferenceType': {
+            case ReferenceType: {
                 return {
-                    name: 'ReferenceType',
+                    name: ReferenceType,
                     properties: [
-                        { name: 'referenceType' }
+                        { name: "referenceType" }
                     ]
                 };
             }
-            case 'ReturnType': {
+            case ReturnType: {
                 return {
-                    name: 'ReturnType',
+                    name: ReturnType,
                     properties: [
-                        { name: 'name' }
+                        { name: "name" }
                     ]
                 };
             }
-            case 'SimpleType': {
+            case SimpleType: {
                 return {
-                    name: 'SimpleType',
+                    name: SimpleType,
                     properties: [
-                        { name: 'primitiveType' },
-                        { name: 'stringType' },
-                        { name: 'typeRef' }
+                        { name: "primitiveType" },
+                        { name: "stringType" },
+                        { name: "typeRef" }
                     ]
                 };
             }
-            case 'StringLiteral': {
+            case StringLiteral: {
                 return {
-                    name: 'StringLiteral',
+                    name: StringLiteral,
                     properties: [
-                        { name: 'value' }
+                        { name: "value" }
                     ]
                 };
             }
-            case 'TerminalRule': {
+            case TerminalRule: {
                 return {
-                    name: 'TerminalRule',
+                    name: TerminalRule,
                     properties: [
-                        { name: 'definition' },
-                        { name: 'fragment', defaultValue: false },
-                        { name: 'hidden', defaultValue: false },
-                        { name: 'name' },
-                        { name: 'type' }
+                        { name: "definition" },
+                        { name: "fragment", defaultValue: false },
+                        { name: "hidden", defaultValue: false },
+                        { name: "name" },
+                        { name: "type" }
                     ]
                 };
             }
-            case 'Type': {
+            case Type: {
                 return {
-                    name: 'Type',
+                    name: Type,
                     properties: [
-                        { name: 'name' },
-                        { name: 'type' }
+                        { name: "name" },
+                        { name: "type" }
                     ]
                 };
             }
-            case 'TypeAttribute': {
+            case TypeAttribute: {
                 return {
-                    name: 'TypeAttribute',
+                    name: TypeAttribute,
                     properties: [
-                        { name: 'defaultValue' },
-                        { name: 'isOptional', defaultValue: false },
-                        { name: 'name' },
-                        { name: 'type' }
+                        { name: "defaultValue" },
+                        { name: "isOptional", defaultValue: false },
+                        { name: "name" },
+                        { name: "type" }
                     ]
                 };
             }
-            case 'UnionType': {
+            case UnionType: {
                 return {
-                    name: 'UnionType',
+                    name: UnionType,
                     properties: [
-                        { name: 'types', defaultValue: [] }
+                        { name: "types", defaultValue: [] }
                     ]
                 };
             }
-            case 'Action': {
+            case Action: {
                 return {
-                    name: 'Action',
+                    name: Action,
                     properties: [
-                        { name: 'cardinality' },
-                        { name: 'feature' },
-                        { name: 'inferredType' },
-                        { name: 'lookahead' },
-                        { name: 'operator' },
-                        { name: 'type' }
+                        { name: "cardinality" },
+                        { name: "feature" },
+                        { name: "inferredType" },
+                        { name: "lookahead" },
+                        { name: "operator" },
+                        { name: "type" }
                     ]
                 };
             }
-            case 'Alternatives': {
+            case Alternatives: {
                 return {
-                    name: 'Alternatives',
+                    name: Alternatives,
                     properties: [
-                        { name: 'cardinality' },
-                        { name: 'elements', defaultValue: [] },
-                        { name: 'lookahead' }
+                        { name: "cardinality" },
+                        { name: "elements", defaultValue: [] },
+                        { name: "lookahead" }
                     ]
                 };
             }
-            case 'Assignment': {
+            case Assignment: {
                 return {
-                    name: 'Assignment',
+                    name: Assignment,
                     properties: [
-                        { name: 'cardinality' },
-                        { name: 'feature' },
-                        { name: 'lookahead' },
-                        { name: 'operator' },
-                        { name: 'terminal' }
+                        { name: "cardinality" },
+                        { name: "feature" },
+                        { name: "lookahead" },
+                        { name: "operator" },
+                        { name: "terminal" }
                     ]
                 };
             }
-            case 'CharacterRange': {
+            case CharacterRange: {
                 return {
-                    name: 'CharacterRange',
+                    name: CharacterRange,
                     properties: [
-                        { name: 'cardinality' },
-                        { name: 'left' },
-                        { name: 'lookahead' },
-                        { name: 'right' }
+                        { name: "cardinality" },
+                        { name: "left" },
+                        { name: "lookahead" },
+                        { name: "right" }
                     ]
                 };
             }
-            case 'CrossReference': {
+            case CrossReference: {
                 return {
-                    name: 'CrossReference',
+                    name: CrossReference,
                     properties: [
-                        { name: 'cardinality' },
-                        { name: 'deprecatedSyntax', defaultValue: false },
-                        { name: 'lookahead' },
-                        { name: 'terminal' },
-                        { name: 'type' }
+                        { name: "cardinality" },
+                        { name: "deprecatedSyntax", defaultValue: false },
+                        { name: "lookahead" },
+                        { name: "terminal" },
+                        { name: "type" }
                     ]
                 };
             }
-            case 'EndOfFile': {
+            case EndOfFile: {
                 return {
-                    name: 'EndOfFile',
+                    name: EndOfFile,
                     properties: [
-                        { name: 'cardinality' },
-                        { name: 'lookahead' }
+                        { name: "cardinality" },
+                        { name: "lookahead" }
                     ]
                 };
             }
-            case 'Group': {
+            case Group: {
                 return {
-                    name: 'Group',
+                    name: Group,
                     properties: [
-                        { name: 'cardinality' },
-                        { name: 'elements', defaultValue: [] },
-                        { name: 'guardCondition' },
-                        { name: 'lookahead' }
+                        { name: "cardinality" },
+                        { name: "elements", defaultValue: [] },
+                        { name: "guardCondition" },
+                        { name: "lookahead" }
                     ]
                 };
             }
-            case 'Keyword': {
+            case Keyword: {
                 return {
-                    name: 'Keyword',
+                    name: Keyword,
                     properties: [
-                        { name: 'cardinality' },
-                        { name: 'lookahead' },
-                        { name: 'value' }
+                        { name: "cardinality" },
+                        { name: "lookahead" },
+                        { name: "value" }
                     ]
                 };
             }
-            case 'NegatedToken': {
+            case NegatedToken: {
                 return {
-                    name: 'NegatedToken',
+                    name: NegatedToken,
                     properties: [
-                        { name: 'cardinality' },
-                        { name: 'lookahead' },
-                        { name: 'terminal' }
+                        { name: "cardinality" },
+                        { name: "lookahead" },
+                        { name: "terminal" }
                     ]
                 };
             }
-            case 'RegexToken': {
+            case RegexToken: {
                 return {
-                    name: 'RegexToken',
+                    name: RegexToken,
                     properties: [
-                        { name: 'cardinality' },
-                        { name: 'lookahead' },
-                        { name: 'regex' }
+                        { name: "cardinality" },
+                        { name: "lookahead" },
+                        { name: "regex" }
                     ]
                 };
             }
-            case 'RuleCall': {
+            case RuleCall: {
                 return {
-                    name: 'RuleCall',
+                    name: RuleCall,
                     properties: [
-                        { name: 'arguments', defaultValue: [] },
-                        { name: 'cardinality' },
-                        { name: 'lookahead' },
-                        { name: 'rule' }
+                        { name: "arguments", defaultValue: [] },
+                        { name: "cardinality" },
+                        { name: "lookahead" },
+                        { name: "rule" }
                     ]
                 };
             }
-            case 'TerminalAlternatives': {
+            case TerminalAlternatives: {
                 return {
-                    name: 'TerminalAlternatives',
+                    name: TerminalAlternatives,
                     properties: [
-                        { name: 'cardinality' },
-                        { name: 'elements', defaultValue: [] },
-                        { name: 'lookahead' }
+                        { name: "cardinality" },
+                        { name: "elements", defaultValue: [] },
+                        { name: "lookahead" }
                     ]
                 };
             }
-            case 'TerminalGroup': {
+            case TerminalGroup: {
                 return {
-                    name: 'TerminalGroup',
+                    name: TerminalGroup,
                     properties: [
-                        { name: 'cardinality' },
-                        { name: 'elements', defaultValue: [] },
-                        { name: 'lookahead' }
+                        { name: "cardinality" },
+                        { name: "elements", defaultValue: [] },
+                        { name: "lookahead" }
                     ]
                 };
             }
-            case 'TerminalRuleCall': {
+            case TerminalRuleCall: {
                 return {
-                    name: 'TerminalRuleCall',
+                    name: TerminalRuleCall,
                     properties: [
-                        { name: 'cardinality' },
-                        { name: 'lookahead' },
-                        { name: 'rule' }
+                        { name: "cardinality" },
+                        { name: "lookahead" },
+                        { name: "rule" }
                     ]
                 };
             }
-            case 'UnorderedGroup': {
+            case UnorderedGroup: {
                 return {
-                    name: 'UnorderedGroup',
+                    name: UnorderedGroup,
                     properties: [
-                        { name: 'cardinality' },
-                        { name: 'elements', defaultValue: [] },
-                        { name: 'lookahead' }
+                        { name: "cardinality" },
+                        { name: "elements", defaultValue: [] },
+                        { name: "lookahead" }
                     ]
                 };
             }
-            case 'UntilToken': {
+            case UntilToken: {
                 return {
-                    name: 'UntilToken',
+                    name: UntilToken,
                     properties: [
-                        { name: 'cardinality' },
-                        { name: 'lookahead' },
-                        { name: 'terminal' }
+                        { name: "cardinality" },
+                        { name: "lookahead" },
+                        { name: "terminal" }
                     ]
                 };
             }
-            case 'Wildcard': {
+            case Wildcard: {
                 return {
-                    name: 'Wildcard',
+                    name: Wildcard,
                     properties: [
-                        { name: 'cardinality' },
-                        { name: 'lookahead' }
+                        { name: "cardinality" },
+                        { name: "lookahead" }
                     ]
                 };
             }

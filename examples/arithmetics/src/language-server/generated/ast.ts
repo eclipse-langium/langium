@@ -144,7 +144,7 @@ export type ArithmeticsAstType = {
 export class ArithmeticsAstReflection extends AbstractAstReflection {
 
     getAllTypes(): string[] {
-        return ['AbstractDefinition', 'BinaryExpression', 'DeclaredParameter', 'Definition', 'Evaluation', 'Expression', 'FunctionCall', 'Module', 'NumberLiteral', 'Statement'];
+        return [AbstractDefinition, BinaryExpression, DeclaredParameter, Definition, Evaluation, Expression, FunctionCall, Module, NumberLiteral, Statement];
     }
 
     protected override computeIsSubtype(subtype: string, supertype: string): boolean {
@@ -172,7 +172,7 @@ export class ArithmeticsAstReflection extends AbstractAstReflection {
     getReferenceType(refInfo: ReferenceInfo): string {
         const referenceId = `${refInfo.container.$type}:${refInfo.property}`;
         switch (referenceId) {
-            case 'FunctionCall:func': {
+            case "FunctionCall:func": {
                 return AbstractDefinition;
             }
             default: {
@@ -183,65 +183,65 @@ export class ArithmeticsAstReflection extends AbstractAstReflection {
 
     getTypeMetaData(type: string): TypeMetaData {
         switch (type) {
-            case 'BinaryExpression': {
+            case BinaryExpression: {
                 return {
-                    name: 'BinaryExpression',
+                    name: BinaryExpression,
                     properties: [
-                        { name: 'left' },
-                        { name: 'operator' },
-                        { name: 'right' }
+                        { name: "left" },
+                        { name: "operator" },
+                        { name: "right" }
                     ]
                 };
             }
-            case 'DeclaredParameter': {
+            case DeclaredParameter: {
                 return {
-                    name: 'DeclaredParameter',
+                    name: DeclaredParameter,
                     properties: [
-                        { name: 'name' }
+                        { name: "name" }
                     ]
                 };
             }
-            case 'Definition': {
+            case Definition: {
                 return {
-                    name: 'Definition',
+                    name: Definition,
                     properties: [
-                        { name: 'args', defaultValue: [] },
-                        { name: 'expr' },
-                        { name: 'name' }
+                        { name: "args", defaultValue: [] },
+                        { name: "expr" },
+                        { name: "name" }
                     ]
                 };
             }
-            case 'Evaluation': {
+            case Evaluation: {
                 return {
-                    name: 'Evaluation',
+                    name: Evaluation,
                     properties: [
-                        { name: 'expression' }
+                        { name: "expression" }
                     ]
                 };
             }
-            case 'FunctionCall': {
+            case FunctionCall: {
                 return {
-                    name: 'FunctionCall',
+                    name: FunctionCall,
                     properties: [
-                        { name: 'args', defaultValue: [] },
-                        { name: 'func' }
+                        { name: "args", defaultValue: [] },
+                        { name: "func" }
                     ]
                 };
             }
-            case 'Module': {
+            case Module: {
                 return {
-                    name: 'Module',
+                    name: Module,
                     properties: [
-                        { name: 'name' },
-                        { name: 'statements', defaultValue: [] }
+                        { name: "name" },
+                        { name: "statements", defaultValue: [] }
                     ]
                 };
             }
-            case 'NumberLiteral': {
+            case NumberLiteral: {
                 return {
-                    name: 'NumberLiteral',
+                    name: NumberLiteral,
                     properties: [
-                        { name: 'value' }
+                        { name: "value" }
                     ]
                 };
             }

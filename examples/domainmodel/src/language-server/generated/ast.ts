@@ -113,7 +113,7 @@ export type DomainModelAstType = {
 export class DomainModelAstReflection extends AbstractAstReflection {
 
     getAllTypes(): string[] {
-        return ['AbstractElement', 'DataType', 'Domainmodel', 'Entity', 'Feature', 'PackageDeclaration', 'Type'];
+        return [AbstractElement, DataType, Domainmodel, Entity, Feature, PackageDeclaration, Type];
     }
 
     protected override computeIsSubtype(subtype: string, supertype: string): boolean {
@@ -135,10 +135,10 @@ export class DomainModelAstReflection extends AbstractAstReflection {
     getReferenceType(refInfo: ReferenceInfo): string {
         const referenceId = `${refInfo.container.$type}:${refInfo.property}`;
         switch (referenceId) {
-            case 'Entity:superType': {
+            case "Entity:superType": {
                 return Entity;
             }
-            case 'Feature:type': {
+            case "Feature:type": {
                 return Type;
             }
             default: {
@@ -149,48 +149,48 @@ export class DomainModelAstReflection extends AbstractAstReflection {
 
     getTypeMetaData(type: string): TypeMetaData {
         switch (type) {
-            case 'DataType': {
+            case DataType: {
                 return {
-                    name: 'DataType',
+                    name: DataType,
                     properties: [
-                        { name: 'name' }
+                        { name: "name" }
                     ]
                 };
             }
-            case 'Domainmodel': {
+            case Domainmodel: {
                 return {
-                    name: 'Domainmodel',
+                    name: Domainmodel,
                     properties: [
-                        { name: 'elements', defaultValue: [] }
+                        { name: "elements", defaultValue: [] }
                     ]
                 };
             }
-            case 'Entity': {
+            case Entity: {
                 return {
-                    name: 'Entity',
+                    name: Entity,
                     properties: [
-                        { name: 'features', defaultValue: [] },
-                        { name: 'name' },
-                        { name: 'superType' }
+                        { name: "features", defaultValue: [] },
+                        { name: "name" },
+                        { name: "superType" }
                     ]
                 };
             }
-            case 'Feature': {
+            case Feature: {
                 return {
-                    name: 'Feature',
+                    name: Feature,
                     properties: [
-                        { name: 'many', defaultValue: false },
-                        { name: 'name' },
-                        { name: 'type' }
+                        { name: "many", defaultValue: false },
+                        { name: "name" },
+                        { name: "type" }
                     ]
                 };
             }
-            case 'PackageDeclaration': {
+            case PackageDeclaration: {
                 return {
-                    name: 'PackageDeclaration',
+                    name: PackageDeclaration,
                     properties: [
-                        { name: 'elements', defaultValue: [] },
-                        { name: 'name' }
+                        { name: "elements", defaultValue: [] },
+                        { name: "name" }
                     ]
                 };
             }

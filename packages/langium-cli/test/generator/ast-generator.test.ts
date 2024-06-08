@@ -167,6 +167,25 @@ describe('Ast generator', () => {
         }
     `);
 
+    testGeneratedInterface('should escape string delimiters in property type', `
+        grammar TestGrammar
+            
+        entry Test: value="'test'";
+
+        hidden terminal WS: /\\s+/;
+    `, expandToString`
+        export interface Test extends AstNode {
+            readonly $type: 'Test';
+            value: '\\\'test\\\'';
+        }
+
+        export const Test = 'Test';
+
+        export function isTest(item: unknown): item is Test {
+            return reflection.isInstance(item, Test);
+        }
+    `);
+
     testGeneratedAst('should generate checker functions for datatype rules of type number', `
         grammar TestGrammar
 
@@ -305,19 +324,53 @@ describe('Ast generator', () => {
     `, expandToString`
         getTypeMetaData(type: string): TypeMetaData {
                 switch (type) {
-                    case 'IAmArray': {
+                    case IAmArray: {
                         return {
-                            name: 'IAmArray',
+                            name: IAmArray,
                             properties: [
-                                { name: 'elements', defaultValue: [] }
+                                { name: "elements", defaultValue: [] }
                             ]
                         };
                     }
-                    case 'DeclaredArray': {
+                    case DeclaredArray: {
                         return {
-                            name: 'DeclaredArray',
+                            name: DeclaredArray,
                             properties: [
-                                { name: 'elements', defaultValue: [] }
+                                { name: "elements", defaultValue: [] }
+                            ]
+                        };
+                    }
+                    default: {
+                        return {
+                            name: type,
+                            properties: []
+                        };
+                    }
+                }
+            }
+        }`
+    );
+
+    testTypeMetaData('should generate escaped default value', `
+        grammar TestGrammar
+             
+        interface Test {
+            value: string = '"test"';
+        }
+          
+        Test returns Test:
+            value=ID;
+
+        hidden terminal WS: /\\s+/;
+        terminal ID: /[_a-zA-Z][\\w_]*/;
+    `, expandToString`
+        getTypeMetaData(type: string): TypeMetaData {
+                switch (type) {
+                    case Test: {
+                        return {
+                            name: Test,
+                            properties: [
+                                { name: "value", defaultValue: "\\"test\\"" }
                             ]
                         };
                     }
@@ -347,6 +400,10 @@ async function testTerminalConstants(grammar: string, expected: string) {
     const end = typesFileContent.indexOf('};', start) + 2;
     const relevantPart = typesFileContent.substring(start, end).trim();
     expect(relevantPart).toEqual(expectedPart);
+}
+
+function testGeneratedInterface(name: string, grammar: string, expected: string): void {
+    testGenerated(name, grammar, expected, 'export interface', 'export type testAstType');
 }
 
 function testGeneratedAst(name: string, grammar: string, expected: string): void {

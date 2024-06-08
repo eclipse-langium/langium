@@ -91,7 +91,7 @@ export type StatemachineAstType = {
 export class StatemachineAstReflection extends AbstractAstReflection {
 
     getAllTypes(): string[] {
-        return ['Command', 'Event', 'State', 'Statemachine', 'Transition'];
+        return [Command, Event, State, Statemachine, Transition];
     }
 
     protected override computeIsSubtype(subtype: string, supertype: string): boolean {
@@ -105,14 +105,14 @@ export class StatemachineAstReflection extends AbstractAstReflection {
     getReferenceType(refInfo: ReferenceInfo): string {
         const referenceId = `${refInfo.container.$type}:${refInfo.property}`;
         switch (referenceId) {
-            case 'State:actions': {
+            case "State:actions": {
                 return Command;
             }
-            case 'Statemachine:init':
-            case 'Transition:state': {
+            case "Statemachine:init":
+            case "Transition:state": {
                 return State;
             }
-            case 'Transition:event': {
+            case "Transition:event": {
                 return Event;
             }
             default: {
@@ -123,50 +123,50 @@ export class StatemachineAstReflection extends AbstractAstReflection {
 
     getTypeMetaData(type: string): TypeMetaData {
         switch (type) {
-            case 'Command': {
+            case Command: {
                 return {
-                    name: 'Command',
+                    name: Command,
                     properties: [
-                        { name: 'name' }
+                        { name: "name" }
                     ]
                 };
             }
-            case 'Event': {
+            case Event: {
                 return {
-                    name: 'Event',
+                    name: Event,
                     properties: [
-                        { name: 'name' }
+                        { name: "name" }
                     ]
                 };
             }
-            case 'State': {
+            case State: {
                 return {
-                    name: 'State',
+                    name: State,
                     properties: [
-                        { name: 'actions', defaultValue: [] },
-                        { name: 'name' },
-                        { name: 'transitions', defaultValue: [] }
+                        { name: "actions", defaultValue: [] },
+                        { name: "name" },
+                        { name: "transitions", defaultValue: [] }
                     ]
                 };
             }
-            case 'Statemachine': {
+            case Statemachine: {
                 return {
-                    name: 'Statemachine',
+                    name: Statemachine,
                     properties: [
-                        { name: 'commands', defaultValue: [] },
-                        { name: 'events', defaultValue: [] },
-                        { name: 'init' },
-                        { name: 'name' },
-                        { name: 'states', defaultValue: [] }
+                        { name: "commands", defaultValue: [] },
+                        { name: "events", defaultValue: [] },
+                        { name: "init" },
+                        { name: "name" },
+                        { name: "states", defaultValue: [] }
                     ]
                 };
             }
-            case 'Transition': {
+            case Transition: {
                 return {
-                    name: 'Transition',
+                    name: Transition,
                     properties: [
-                        { name: 'event' },
-                        { name: 'state' }
+                        { name: "event" },
+                        { name: "state" }
                     ]
                 };
             }
