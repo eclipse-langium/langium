@@ -304,7 +304,18 @@ function isTypeAssignableInternal(from: PropertyType | undefined, to: PropertyTy
         result = isArrayType(to) && isTypeAssignableInternal(from.elementType, to.elementType, visited);
     } else if (isValueType(from)) {
         if (isUnionType(from.value)) {
-            result = isTypeAssignableInternal(from.value.type, to, visited);
+            if (from.value.dataType) {
+                // We can test the primitive data type directly
+                // This potentially skips a expensive recursive call
+                // This also helps in case the computed internal data type does not fit the declared data type
+                const primitiveType: PrimitiveType = {
+                    primitive: from.value.dataType
+                };
+                result = isTypeAssignableInternal(primitiveType, to, visited);
+            }
+            if (!result) {
+                result = isTypeAssignableInternal(from.value.type, to, visited);
+            }
         } else if (!isValueType(to)) {
             result = false;
         } else if (isUnionType(to.value)) {
