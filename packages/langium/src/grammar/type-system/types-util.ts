@@ -209,7 +209,7 @@ export function findAstTypes(type: PropertyType): string[] {
     return findAstTypesInternal(type, new Set());
 }
 
-export function findAstTypesInternal(type: PropertyType, visited: Set<PropertyType>): string[] {
+function findAstTypesInternal(type: PropertyType, visited: Set<PropertyType>): string[] {
     if (visited.has(type)) {
         return [];
     } else {
@@ -231,12 +231,21 @@ export function findAstTypesInternal(type: PropertyType, visited: Set<PropertyTy
 }
 
 export function isAstType(type: PropertyType): boolean {
+    return isAstTypeInternal(type, new Set());
+}
+
+export function isAstTypeInternal(type: PropertyType, visited: Set<PropertyType>): boolean {
+    if (visited.has(type)) {
+        return false;
+    } else {
+        visited.add(type);
+    }
     if (isPropertyUnion(type)) {
-        return type.types.every(isAstType);
+        return type.types.every(e => isAstTypeInternal(e, visited));
     } else if (isValueType(type)) {
         const value = type.value;
         if ('type' in value) {
-            return isAstType(value.type);
+            return isAstTypeInternal(value.type, visited);
         } else {
             // Is definitely an interface type
             return true;

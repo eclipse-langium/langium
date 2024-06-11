@@ -340,6 +340,23 @@ describe('Inferred types', () => {
             }
         `);
     });
+
+    test('Infer mixed types with action and rule call', async () => {
+        await expectTypes(`
+            entry X: {infer Y} value='Y' | Z;
+            Z: value='Z';
+        `, expandToString`
+            export interface Y extends AstNode {
+                readonly $type: 'Y';
+                value: 'Y';
+            }
+            export interface Z extends AstNode {
+                readonly $type: 'Z';
+                value: 'Z';
+            }
+            export type X = Y | Z;
+        `);
+    });
 });
 
 describe('inferred types that are used by the grammar', () => {
