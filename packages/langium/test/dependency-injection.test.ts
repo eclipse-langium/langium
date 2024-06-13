@@ -183,7 +183,7 @@ describe('The inject function', () => {
         ]);
         expect(api[0]).toBe(true);
         expect(api[1]).toBe(1);
-        expect(api[2]).toBeUndefined();
+        expect(api[2 as any]).toBeUndefined();
     });
 
     test('should work with objects', () => {

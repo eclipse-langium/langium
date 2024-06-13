@@ -133,6 +133,14 @@ describe('Stream.concat', () => {
         expect(a.concat(b).concat(c).toArray()).toEqual(['a', 'b', 'c']);
     });
 
+    test('idempotency', () => {
+        const a = s.stream(['a']);
+        const b = s.stream(['b']);
+        const c = a.concat(b);
+        expect(c.toArray()).toEqual(['a', 'b']);
+        expect(c.toArray()).toEqual(['a', 'b']);
+    });
+
     test('nested concatenation', () => {
         const a = s.stream(['a']);
         const b = s.stream(['b']);
@@ -534,6 +542,13 @@ describe('Stream.distinct', () => {
         expect(stream.distinct().toArray()).toEqual(['a', 'b', 'c']);
     });
 
+    test('idempotency', () => {
+        const stream = s.stream(['a', 'b', 'c']);
+        const distinct = stream.distinct();
+        expect(distinct.toArray()).toEqual(['a', 'b', 'c']);
+        expect(distinct.toArray()).toEqual(['a', 'b', 'c']);
+    });
+
     test('different items with different types stay the same', () => {
         const stream = s.stream(['a', 1, true]);
         expect(stream.distinct().toArray()).toEqual(['a', 1, true]);
@@ -589,6 +604,14 @@ describe('Stream.exclude', () => {
         const a = s.stream(['a', 'b']);
         const b = s.stream(['b', 'c']);
         expect(a.exclude(b).toArray()).toEqual(['a']);
+    });
+
+    test('idempotency', () => {
+        const a = s.stream(['a', 'b']);
+        const b = s.stream(['b', 'c']);
+        const excluded = a.exclude(b);
+        expect(excluded.toArray()).toEqual(['a']);
+        expect(excluded.toArray()).toEqual(['a']);
     });
 
     test('should not change on non-overlapping values', () => {
