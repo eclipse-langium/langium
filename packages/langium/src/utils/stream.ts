@@ -326,9 +326,8 @@ export class StreamImpl<S, T> implements Stream<T> {
     }
 
     concat<T2>(other: Iterable<T2>): Stream<T | T2> {
-        const iterator = other[Symbol.iterator]();
-        return new StreamImpl<{ first: S, firstDone: boolean }, T | T2>(
-            () => ({ first: this.startFn(), firstDone: false }),
+        return new StreamImpl<{ first: S, firstDone: boolean, iterator: Iterator<T2, unknown, undefined> }, T | T2>(
+            () => ({ first: this.startFn(), firstDone: false, iterator: other[Symbol.iterator]() }),
             state => {
                 let result: IteratorResult<T | T2>;
                 if (!state.firstDone) {
@@ -341,7 +340,7 @@ export class StreamImpl<S, T> implements Stream<T> {
                     state.firstDone = true;
                 }
                 do {
-                    result = iterator.next();
+                    result = state.iterator.next();
                     if (!result.done) {
                         return result;
                     }
@@ -646,16 +645,23 @@ export class StreamImpl<S, T> implements Stream<T> {
     }
 
     distinct<Key = T>(by?: (element: T) => Key): Stream<T> {
-        const set = new Set<T | Key>();
-        return this.filter(e => {
-            const value = by ? by(e) : e;
-            if (set.has(value)) {
-                return false;
-            } else {
-                set.add(value);
-                return true;
+        return new StreamImpl<{ set: Set<Key | T>, internalState: S }, T>(
+            () => ({ set: new Set<Key | T>(), internalState: this.startFn() }),
+            state => {
+                let result: IteratorResult<T>;
+                do {
+                    result = this.nextFn(state.internalState);
+                    if (!result.done) {
+                        const value = by ? by(result.value) : result.value;
+                        if (!state.set.has(value)) {
+                            state.set.add(value);
+                            return result;
+                        }
+                    }
+                } while (!result.done);
+                return DONE_RESULT;
             }
-        });
+        );
     }
 
     exclude<Key = T>(other: Iterable<T>, key?: (element: T) => Key): Stream<T> {
