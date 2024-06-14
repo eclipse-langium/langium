@@ -90,7 +90,7 @@ describe('Check yeoman generator works', () => {
         const context = createHelpers({}).run(path.join(moduleRoot));
 
         // generate in examples
-        const targetRoot = path.resolve(packageTestDir, '../../../examples/generator-tests/test1');
+        const targetRoot = path.resolve(packageTestDir, './generator-tests/test1');
         const extensionName = answersForCore.extensionName;
 
         // remove examples/hello-world (if existing) now and finally (don't delete everything else in examples)
@@ -129,7 +129,7 @@ describe('Check yeoman generator works', () => {
         const context = createHelpers({}).run<LangiumGenerator>(path.join(moduleRoot));
 
         // generate in examples
-        const targetRoot = path.resolve(packageTestDir, '../../../examples/generator-tests/test2');
+        const targetRoot = path.resolve(packageTestDir, './generator-tests/test2');
         const extensionName = 'hello-world';
 
         // remove examples/hello-world (if existing) now and finally (don't delete everything else in examples)
@@ -179,7 +179,7 @@ describe('Check yeoman generator works', () => {
         const context = createHelpers({}).run<LangiumGenerator>(path.join(moduleRoot));
 
         // generate in examples
-        const targetRoot = path.resolve(packageTestDir, '../../../examples/generator-tests/test3');
+        const targetRoot = path.resolve(packageTestDir, './generator-tests/test3');
         const extensionName = 'hello-world';
 
         // remove examples/hello-world (if existing) now and finally (don't delete everything else in examples)
