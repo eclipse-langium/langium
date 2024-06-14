@@ -144,7 +144,7 @@ export type ArithmeticsAstType = {
 export class ArithmeticsAstReflection extends AbstractAstReflection {
 
     getAllTypes(): string[] {
-        return ['AbstractDefinition', 'BinaryExpression', 'DeclaredParameter', 'Definition', 'Evaluation', 'Expression', 'FunctionCall', 'Module', 'NumberLiteral', 'Statement'];
+        return [AbstractDefinition, BinaryExpression, DeclaredParameter, Definition, Evaluation, Expression, FunctionCall, Module, NumberLiteral, Statement];
     }
 
     protected override computeIsSubtype(subtype: string, supertype: string): boolean {
@@ -183,9 +183,9 @@ export class ArithmeticsAstReflection extends AbstractAstReflection {
 
     getTypeMetaData(type: string): TypeMetaData {
         switch (type) {
-            case 'BinaryExpression': {
+            case BinaryExpression: {
                 return {
-                    name: 'BinaryExpression',
+                    name: BinaryExpression,
                     properties: [
                         { name: 'left' },
                         { name: 'operator' },
@@ -193,17 +193,17 @@ export class ArithmeticsAstReflection extends AbstractAstReflection {
                     ]
                 };
             }
-            case 'DeclaredParameter': {
+            case DeclaredParameter: {
                 return {
-                    name: 'DeclaredParameter',
+                    name: DeclaredParameter,
                     properties: [
                         { name: 'name' }
                     ]
                 };
             }
-            case 'Definition': {
+            case Definition: {
                 return {
-                    name: 'Definition',
+                    name: Definition,
                     properties: [
                         { name: 'args', defaultValue: [] },
                         { name: 'expr' },
@@ -211,35 +211,35 @@ export class ArithmeticsAstReflection extends AbstractAstReflection {
                     ]
                 };
             }
-            case 'Evaluation': {
+            case Evaluation: {
                 return {
-                    name: 'Evaluation',
+                    name: Evaluation,
                     properties: [
                         { name: 'expression' }
                     ]
                 };
             }
-            case 'FunctionCall': {
+            case FunctionCall: {
                 return {
-                    name: 'FunctionCall',
+                    name: FunctionCall,
                     properties: [
                         { name: 'args', defaultValue: [] },
                         { name: 'func' }
                     ]
                 };
             }
-            case 'Module': {
+            case Module: {
                 return {
-                    name: 'Module',
+                    name: Module,
                     properties: [
                         { name: 'name' },
                         { name: 'statements', defaultValue: [] }
                     ]
                 };
             }
-            case 'NumberLiteral': {
+            case NumberLiteral: {
                 return {
-                    name: 'NumberLiteral',
+                    name: NumberLiteral,
                     properties: [
                         { name: 'value' }
                     ]

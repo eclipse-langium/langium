@@ -244,3 +244,11 @@ export function isAstType(type: PropertyType): boolean {
     }
     return false;
 }
+
+export function escapeQuotes(str: string, type: '"' | "'" = '"'): string {
+    if (type === '"') {
+        return str.replace(/"/g, '\\"');
+    } else {
+        return str.replace(/'/g, "\\'");
+    }
+}

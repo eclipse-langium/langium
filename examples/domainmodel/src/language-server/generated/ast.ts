@@ -113,7 +113,7 @@ export type DomainModelAstType = {
 export class DomainModelAstReflection extends AbstractAstReflection {
 
     getAllTypes(): string[] {
-        return ['AbstractElement', 'DataType', 'Domainmodel', 'Entity', 'Feature', 'PackageDeclaration', 'Type'];
+        return [AbstractElement, DataType, Domainmodel, Entity, Feature, PackageDeclaration, Type];
     }
 
     protected override computeIsSubtype(subtype: string, supertype: string): boolean {
@@ -149,25 +149,25 @@ export class DomainModelAstReflection extends AbstractAstReflection {
 
     getTypeMetaData(type: string): TypeMetaData {
         switch (type) {
-            case 'DataType': {
+            case DataType: {
                 return {
-                    name: 'DataType',
+                    name: DataType,
                     properties: [
                         { name: 'name' }
                     ]
                 };
             }
-            case 'Domainmodel': {
+            case Domainmodel: {
                 return {
-                    name: 'Domainmodel',
+                    name: Domainmodel,
                     properties: [
                         { name: 'elements', defaultValue: [] }
                     ]
                 };
             }
-            case 'Entity': {
+            case Entity: {
                 return {
-                    name: 'Entity',
+                    name: Entity,
                     properties: [
                         { name: 'features', defaultValue: [] },
                         { name: 'name' },
@@ -175,9 +175,9 @@ export class DomainModelAstReflection extends AbstractAstReflection {
                     ]
                 };
             }
-            case 'Feature': {
+            case Feature: {
                 return {
-                    name: 'Feature',
+                    name: Feature,
                     properties: [
                         { name: 'many', defaultValue: false },
                         { name: 'name' },
@@ -185,9 +185,9 @@ export class DomainModelAstReflection extends AbstractAstReflection {
                     ]
                 };
             }
-            case 'PackageDeclaration': {
+            case PackageDeclaration: {
                 return {
-                    name: 'PackageDeclaration',
+                    name: PackageDeclaration,
                     properties: [
                         { name: 'elements', defaultValue: [] },
                         { name: 'name' }

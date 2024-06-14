@@ -8,7 +8,7 @@ import { type Generated, expandToNode, joinToNode, toString } from 'langium/gene
 import type { AstTypes, Property, PropertyDefaultValue } from 'langium/grammar';
 import type { LangiumConfig } from '../package-types.js';
 import { AstUtils, MultiMap, GrammarAST } from 'langium';
-import { collectAst, collectTypeHierarchy, findReferenceTypes, isAstType, mergeTypesAndInterfaces } from 'langium/grammar';
+import { collectAst, collectTypeHierarchy, findReferenceTypes, isAstType, mergeTypesAndInterfaces, escapeQuotes } from 'langium/grammar';
 import { generatedHeader } from './node-util.js';
 import { collectTerminalRegexps } from './langium-util.js';
 
@@ -54,7 +54,7 @@ function generateAstReflection(config: LangiumConfig, astTypes: AstTypes): Gener
         export class ${config.projectName}AstReflection extends AbstractAstReflection {
 
             getAllTypes(): string[] {
-                return [${typeNames.map(e => `'${e}'`).join(', ')}];
+                return [${typeNames.join(', ')}];
             }
 
             protected override computeIsSubtype(subtype: string, supertype: string): boolean {
@@ -85,9 +85,9 @@ function buildTypeMetaDataMethod(astTypes: AstTypes): Generated {
                         const props = interfaceType.superProperties;
                         return (props.length > 0)
                             ? expandToNode`
-                                case '${interfaceType.name}': {
+                                case ${interfaceType.name}: {
                                     return {
-                                        name: '${interfaceType.name}',
+                                        name: ${interfaceType.name},
                                         properties: [
                                             ${buildPropertyType(props)}
                                         ]
@@ -119,7 +119,7 @@ function buildPropertyType(props: Property[]): Generated {
         all,
         property => {
             const defaultValue = stringifyDefaultValue(property.defaultValue);
-            return `{ name: '${property.name}'${defaultValue ? `, defaultValue: ${defaultValue}` : ''} }`;
+            return `{ name: '${escapeQuotes(property.name, "'")}'${defaultValue ? `, defaultValue: ${defaultValue}` : ''} }`;
         },
         { separator: ',', appendNewLineIfNotEmpty: true}
     );
@@ -127,7 +127,8 @@ function buildPropertyType(props: Property[]): Generated {
 
 function stringifyDefaultValue(value?: PropertyDefaultValue): string | undefined {
     if (typeof value === 'string') {
-        return `"${value}"`;
+        // Escape all double quotes
+        return `'${escapeQuotes(value, "'")}'`;
     } else if (Array.isArray(value)) {
         return `[${value.map(e => stringifyDefaultValue(e)).join(', ')}]`;
     } else if (value !== undefined) {
@@ -147,7 +148,7 @@ function buildReferenceTypeMethod(crossReferenceTypes: CrossReferenceType[]): Ge
                 joinToNode(
                     buckets.entriesGroupedByKey(),
                     ([target, refs]) => expandToNode`
-                        ${joinToNode(refs, ref => `case '${ref}':`, { appendNewLineIfNotEmpty: true, skipNewLineAfterLastItem: true})} {
+                        ${joinToNode(refs, ref => `case '${escapeQuotes(ref, "'")}':`, { appendNewLineIfNotEmpty: true, skipNewLineAfterLastItem: true})} {
                             return ${target};
                         }
                     `,

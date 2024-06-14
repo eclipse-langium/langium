@@ -638,7 +638,7 @@ export type LangiumGrammarAstType = {
 export class LangiumGrammarAstReflection extends AbstractAstReflection {
 
     getAllTypes(): string[] {
-        return ['AbstractElement', 'AbstractRule', 'AbstractType', 'Action', 'Alternatives', 'ArrayLiteral', 'ArrayType', 'Assignment', 'BooleanLiteral', 'CharacterRange', 'Condition', 'Conjunction', 'CrossReference', 'Disjunction', 'EndOfFile', 'Grammar', 'GrammarImport', 'Group', 'InferredType', 'Interface', 'Keyword', 'NamedArgument', 'NegatedToken', 'Negation', 'NumberLiteral', 'Parameter', 'ParameterReference', 'ParserRule', 'ReferenceType', 'RegexToken', 'ReturnType', 'RuleCall', 'SimpleType', 'StringLiteral', 'TerminalAlternatives', 'TerminalGroup', 'TerminalRule', 'TerminalRuleCall', 'Type', 'TypeAttribute', 'TypeDefinition', 'UnionType', 'UnorderedGroup', 'UntilToken', 'ValueLiteral', 'Wildcard'];
+        return [AbstractElement, AbstractRule, AbstractType, Action, Alternatives, ArrayLiteral, ArrayType, Assignment, BooleanLiteral, CharacterRange, Condition, Conjunction, CrossReference, Disjunction, EndOfFile, Grammar, GrammarImport, Group, InferredType, Interface, Keyword, NamedArgument, NegatedToken, Negation, NumberLiteral, Parameter, ParameterReference, ParserRule, ReferenceType, RegexToken, ReturnType, RuleCall, SimpleType, StringLiteral, TerminalAlternatives, TerminalGroup, TerminalRule, TerminalRuleCall, Type, TypeAttribute, TypeDefinition, UnionType, UnorderedGroup, UntilToken, ValueLiteral, Wildcard];
     }
 
     protected override computeIsSubtype(subtype: string, supertype: string): boolean {
@@ -732,60 +732,60 @@ export class LangiumGrammarAstReflection extends AbstractAstReflection {
 
     getTypeMetaData(type: string): TypeMetaData {
         switch (type) {
-            case 'AbstractElement': {
+            case AbstractElement: {
                 return {
-                    name: 'AbstractElement',
+                    name: AbstractElement,
                     properties: [
                         { name: 'cardinality' },
                         { name: 'lookahead' }
                     ]
                 };
             }
-            case 'ArrayLiteral': {
+            case ArrayLiteral: {
                 return {
-                    name: 'ArrayLiteral',
+                    name: ArrayLiteral,
                     properties: [
                         { name: 'elements', defaultValue: [] }
                     ]
                 };
             }
-            case 'ArrayType': {
+            case ArrayType: {
                 return {
-                    name: 'ArrayType',
+                    name: ArrayType,
                     properties: [
                         { name: 'elementType' }
                     ]
                 };
             }
-            case 'BooleanLiteral': {
+            case BooleanLiteral: {
                 return {
-                    name: 'BooleanLiteral',
+                    name: BooleanLiteral,
                     properties: [
                         { name: 'true', defaultValue: false }
                     ]
                 };
             }
-            case 'Conjunction': {
+            case Conjunction: {
                 return {
-                    name: 'Conjunction',
+                    name: Conjunction,
                     properties: [
                         { name: 'left' },
                         { name: 'right' }
                     ]
                 };
             }
-            case 'Disjunction': {
+            case Disjunction: {
                 return {
-                    name: 'Disjunction',
+                    name: Disjunction,
                     properties: [
                         { name: 'left' },
                         { name: 'right' }
                     ]
                 };
             }
-            case 'Grammar': {
+            case Grammar: {
                 return {
-                    name: 'Grammar',
+                    name: Grammar,
                     properties: [
                         { name: 'definesHiddenTokens', defaultValue: false },
                         { name: 'hiddenTokens', defaultValue: [] },
@@ -799,25 +799,25 @@ export class LangiumGrammarAstReflection extends AbstractAstReflection {
                     ]
                 };
             }
-            case 'GrammarImport': {
+            case GrammarImport: {
                 return {
-                    name: 'GrammarImport',
+                    name: GrammarImport,
                     properties: [
                         { name: 'path' }
                     ]
                 };
             }
-            case 'InferredType': {
+            case InferredType: {
                 return {
-                    name: 'InferredType',
+                    name: InferredType,
                     properties: [
                         { name: 'name' }
                     ]
                 };
             }
-            case 'Interface': {
+            case Interface: {
                 return {
-                    name: 'Interface',
+                    name: Interface,
                     properties: [
                         { name: 'attributes', defaultValue: [] },
                         { name: 'name' },
@@ -825,9 +825,9 @@ export class LangiumGrammarAstReflection extends AbstractAstReflection {
                     ]
                 };
             }
-            case 'NamedArgument': {
+            case NamedArgument: {
                 return {
-                    name: 'NamedArgument',
+                    name: NamedArgument,
                     properties: [
                         { name: 'calledByName', defaultValue: false },
                         { name: 'parameter' },
@@ -835,41 +835,41 @@ export class LangiumGrammarAstReflection extends AbstractAstReflection {
                     ]
                 };
             }
-            case 'Negation': {
+            case Negation: {
                 return {
-                    name: 'Negation',
+                    name: Negation,
                     properties: [
                         { name: 'value' }
                     ]
                 };
             }
-            case 'NumberLiteral': {
+            case NumberLiteral: {
                 return {
-                    name: 'NumberLiteral',
+                    name: NumberLiteral,
                     properties: [
                         { name: 'value' }
                     ]
                 };
             }
-            case 'Parameter': {
+            case Parameter: {
                 return {
-                    name: 'Parameter',
+                    name: Parameter,
                     properties: [
                         { name: 'name' }
                     ]
                 };
             }
-            case 'ParameterReference': {
+            case ParameterReference: {
                 return {
-                    name: 'ParameterReference',
+                    name: ParameterReference,
                     properties: [
                         { name: 'parameter' }
                     ]
                 };
             }
-            case 'ParserRule': {
+            case ParserRule: {
                 return {
-                    name: 'ParserRule',
+                    name: ParserRule,
                     properties: [
                         { name: 'dataType' },
                         { name: 'definesHiddenTokens', defaultValue: false },
@@ -885,25 +885,25 @@ export class LangiumGrammarAstReflection extends AbstractAstReflection {
                     ]
                 };
             }
-            case 'ReferenceType': {
+            case ReferenceType: {
                 return {
-                    name: 'ReferenceType',
+                    name: ReferenceType,
                     properties: [
                         { name: 'referenceType' }
                     ]
                 };
             }
-            case 'ReturnType': {
+            case ReturnType: {
                 return {
-                    name: 'ReturnType',
+                    name: ReturnType,
                     properties: [
                         { name: 'name' }
                     ]
                 };
             }
-            case 'SimpleType': {
+            case SimpleType: {
                 return {
-                    name: 'SimpleType',
+                    name: SimpleType,
                     properties: [
                         { name: 'primitiveType' },
                         { name: 'stringType' },
@@ -911,17 +911,17 @@ export class LangiumGrammarAstReflection extends AbstractAstReflection {
                     ]
                 };
             }
-            case 'StringLiteral': {
+            case StringLiteral: {
                 return {
-                    name: 'StringLiteral',
+                    name: StringLiteral,
                     properties: [
                         { name: 'value' }
                     ]
                 };
             }
-            case 'TerminalRule': {
+            case TerminalRule: {
                 return {
-                    name: 'TerminalRule',
+                    name: TerminalRule,
                     properties: [
                         { name: 'definition' },
                         { name: 'fragment', defaultValue: false },
@@ -931,18 +931,18 @@ export class LangiumGrammarAstReflection extends AbstractAstReflection {
                     ]
                 };
             }
-            case 'Type': {
+            case Type: {
                 return {
-                    name: 'Type',
+                    name: Type,
                     properties: [
                         { name: 'name' },
                         { name: 'type' }
                     ]
                 };
             }
-            case 'TypeAttribute': {
+            case TypeAttribute: {
                 return {
-                    name: 'TypeAttribute',
+                    name: TypeAttribute,
                     properties: [
                         { name: 'defaultValue' },
                         { name: 'isOptional', defaultValue: false },
@@ -951,17 +951,17 @@ export class LangiumGrammarAstReflection extends AbstractAstReflection {
                     ]
                 };
             }
-            case 'UnionType': {
+            case UnionType: {
                 return {
-                    name: 'UnionType',
+                    name: UnionType,
                     properties: [
                         { name: 'types', defaultValue: [] }
                     ]
                 };
             }
-            case 'Action': {
+            case Action: {
                 return {
-                    name: 'Action',
+                    name: Action,
                     properties: [
                         { name: 'cardinality' },
                         { name: 'feature' },
@@ -972,9 +972,9 @@ export class LangiumGrammarAstReflection extends AbstractAstReflection {
                     ]
                 };
             }
-            case 'Alternatives': {
+            case Alternatives: {
                 return {
-                    name: 'Alternatives',
+                    name: Alternatives,
                     properties: [
                         { name: 'cardinality' },
                         { name: 'elements', defaultValue: [] },
@@ -982,9 +982,9 @@ export class LangiumGrammarAstReflection extends AbstractAstReflection {
                     ]
                 };
             }
-            case 'Assignment': {
+            case Assignment: {
                 return {
-                    name: 'Assignment',
+                    name: Assignment,
                     properties: [
                         { name: 'cardinality' },
                         { name: 'feature' },
@@ -994,9 +994,9 @@ export class LangiumGrammarAstReflection extends AbstractAstReflection {
                     ]
                 };
             }
-            case 'CharacterRange': {
+            case CharacterRange: {
                 return {
-                    name: 'CharacterRange',
+                    name: CharacterRange,
                     properties: [
                         { name: 'cardinality' },
                         { name: 'left' },
@@ -1005,9 +1005,9 @@ export class LangiumGrammarAstReflection extends AbstractAstReflection {
                     ]
                 };
             }
-            case 'CrossReference': {
+            case CrossReference: {
                 return {
-                    name: 'CrossReference',
+                    name: CrossReference,
                     properties: [
                         { name: 'cardinality' },
                         { name: 'deprecatedSyntax', defaultValue: false },
@@ -1017,18 +1017,18 @@ export class LangiumGrammarAstReflection extends AbstractAstReflection {
                     ]
                 };
             }
-            case 'EndOfFile': {
+            case EndOfFile: {
                 return {
-                    name: 'EndOfFile',
+                    name: EndOfFile,
                     properties: [
                         { name: 'cardinality' },
                         { name: 'lookahead' }
                     ]
                 };
             }
-            case 'Group': {
+            case Group: {
                 return {
-                    name: 'Group',
+                    name: Group,
                     properties: [
                         { name: 'cardinality' },
                         { name: 'elements', defaultValue: [] },
@@ -1037,9 +1037,9 @@ export class LangiumGrammarAstReflection extends AbstractAstReflection {
                     ]
                 };
             }
-            case 'Keyword': {
+            case Keyword: {
                 return {
-                    name: 'Keyword',
+                    name: Keyword,
                     properties: [
                         { name: 'cardinality' },
                         { name: 'lookahead' },
@@ -1047,9 +1047,9 @@ export class LangiumGrammarAstReflection extends AbstractAstReflection {
                     ]
                 };
             }
-            case 'NegatedToken': {
+            case NegatedToken: {
                 return {
-                    name: 'NegatedToken',
+                    name: NegatedToken,
                     properties: [
                         { name: 'cardinality' },
                         { name: 'lookahead' },
@@ -1057,9 +1057,9 @@ export class LangiumGrammarAstReflection extends AbstractAstReflection {
                     ]
                 };
             }
-            case 'RegexToken': {
+            case RegexToken: {
                 return {
-                    name: 'RegexToken',
+                    name: RegexToken,
                     properties: [
                         { name: 'cardinality' },
                         { name: 'lookahead' },
@@ -1067,9 +1067,9 @@ export class LangiumGrammarAstReflection extends AbstractAstReflection {
                     ]
                 };
             }
-            case 'RuleCall': {
+            case RuleCall: {
                 return {
-                    name: 'RuleCall',
+                    name: RuleCall,
                     properties: [
                         { name: 'arguments', defaultValue: [] },
                         { name: 'cardinality' },
@@ -1078,9 +1078,9 @@ export class LangiumGrammarAstReflection extends AbstractAstReflection {
                     ]
                 };
             }
-            case 'TerminalAlternatives': {
+            case TerminalAlternatives: {
                 return {
-                    name: 'TerminalAlternatives',
+                    name: TerminalAlternatives,
                     properties: [
                         { name: 'cardinality' },
                         { name: 'elements', defaultValue: [] },
@@ -1088,9 +1088,9 @@ export class LangiumGrammarAstReflection extends AbstractAstReflection {
                     ]
                 };
             }
-            case 'TerminalGroup': {
+            case TerminalGroup: {
                 return {
-                    name: 'TerminalGroup',
+                    name: TerminalGroup,
                     properties: [
                         { name: 'cardinality' },
                         { name: 'elements', defaultValue: [] },
@@ -1098,9 +1098,9 @@ export class LangiumGrammarAstReflection extends AbstractAstReflection {
                     ]
                 };
             }
-            case 'TerminalRuleCall': {
+            case TerminalRuleCall: {
                 return {
-                    name: 'TerminalRuleCall',
+                    name: TerminalRuleCall,
                     properties: [
                         { name: 'cardinality' },
                         { name: 'lookahead' },
@@ -1108,9 +1108,9 @@ export class LangiumGrammarAstReflection extends AbstractAstReflection {
                     ]
                 };
             }
-            case 'UnorderedGroup': {
+            case UnorderedGroup: {
                 return {
-                    name: 'UnorderedGroup',
+                    name: UnorderedGroup,
                     properties: [
                         { name: 'cardinality' },
                         { name: 'elements', defaultValue: [] },
@@ -1118,9 +1118,9 @@ export class LangiumGrammarAstReflection extends AbstractAstReflection {
                     ]
                 };
             }
-            case 'UntilToken': {
+            case UntilToken: {
                 return {
-                    name: 'UntilToken',
+                    name: UntilToken,
                     properties: [
                         { name: 'cardinality' },
                         { name: 'lookahead' },
@@ -1128,9 +1128,9 @@ export class LangiumGrammarAstReflection extends AbstractAstReflection {
                     ]
                 };
             }
-            case 'Wildcard': {
+            case Wildcard: {
                 return {
-                    name: 'Wildcard',
+                    name: Wildcard,
                     properties: [
                         { name: 'cardinality' },
                         { name: 'lookahead' }
