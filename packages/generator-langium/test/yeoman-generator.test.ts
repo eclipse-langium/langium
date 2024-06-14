@@ -301,10 +301,9 @@ const PACKAGE_JSON_EXPECTATION_WEB: Record<string, any> = {
     files: ['out', 'src'],
     scripts: {
         'build': 'vite build',
-        'bundle:serve': 'http-server ./dist --port 5175',
         'dev': 'vite',
         'dev:debug': 'vite --debug --force',
-        'serve': 'npm run dev'
+        'serve': 'vite preview'
     },
     dependencies: {
         '@codingame/monaco-vscode-editor-service-override': '~5.2.0',
@@ -316,8 +315,7 @@ const PACKAGE_JSON_EXPECTATION_WEB: Record<string, any> = {
     },
     devDependencies: {
         '@codingame/esbuild-import-meta-url-plugin': '~1.0.2',
-        'vite': '~5.2.13',
-        'http-server': '~14.1.1'
+        'vite': '~5.2.13'
     },
     volta: {
         node: '18.20.3',
