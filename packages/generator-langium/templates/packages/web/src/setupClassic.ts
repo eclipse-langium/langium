@@ -11,7 +11,8 @@ export const setupConfigClassic = (): UserConfig => {
                 codeResources: {
                     main: {
                         text: '// <%= RawLanguageName %> is running in the web!',
-                        uri: '/workspace/hello-world.<%= file-extension %>',
+                        fileExt: '<%= file-glob-extension %>',
+                        enforceLanguageId: '<%= language-id %>'
                     }
                 },
                 languageDef: {
