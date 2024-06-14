@@ -34,8 +34,7 @@
         "langium": "~3.0.0"        
     },
     "devDependencies": {
-        "langium-cli": "~3.0.3",
-        "vitest": "~1.6.0"
+        "langium-cli": "~3.0.3"
     },
     "volta": {
         "node": "18.20.3",

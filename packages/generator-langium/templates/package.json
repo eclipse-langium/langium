@@ -1,9 +1,9 @@
 {
-    "name": "<%= extension-name %>",
+    "name": "<%= extension-name %>-base",
     "description": "Base workspace package",
     "version": "0.0.1",
     "type": "module",
-    "private": true,    
+    "private": true,
     "files": [
         "out",
         "src"
@@ -14,13 +14,12 @@
         "build": "npm run compile && npm run build --workspaces",
         "lint": "eslint src --ext ts",
         "langium:generate": "npm run --workspace packages/language langium:generate",
-        "langium:watch": "npm run --workspace packages/language langium:watch",
-        "test": "vitest run"
+        "langium:watch": "npm run --workspace packages/language langium:watch"
     },
     "devDependencies": {
         "@types/node": "^18.0.0",
-        "@typescript-eslint/parser": "~7.11.0",
-        "@typescript-eslint/eslint-plugin": "~7.11.0",
+        "@typescript-eslint/parser": "~7.13.0",
+        "@typescript-eslint/eslint-plugin": "~7.13.0",
         "eslint": "~8.57.0",
         "typescript": "~5.4.5"
     },

@@ -179,6 +179,7 @@ export class LangiumGenerator extends Generator {
         const pathBase = path.join(__dirname, BASE_DIR);
         this.sourceRoot(pathBase);
         const mainPackageJson = this.fs.readJSON(path.join(this.sourceRoot(), 'package.json'));
+        const tsConfigBuildJson = this.fs.readJSON(path.join(this.sourceRoot(), 'tsconfig.build.json'));
 
         const baseFiles = [
             '.eslintrc.json',
@@ -197,24 +198,43 @@ export class LangiumGenerator extends Generator {
         this.fs.copy(this.templatePath('gitignore.txt'), this._extensionPath('.gitignore'));
 
         this.sourceRoot(path.join(__dirname, `${BASE_DIR}/${PACKAGE_LANGUAGE}`));
-        // omit .vscode-extensions.json for now
         const languageFiles = [
             'package.json',
             'langium-config.json',
             'langium-quickstart.md',
             'tsconfig.json',
             'tsconfig.src.json',
-            'tsconfig.test.json',
             'vitest.config.ts',
             'src',
-            'test'
         ];
+        if (this.answers.includeTest) {
+            languageFiles.push('tsconfig.test.json');
+            languageFiles.push('test');
+        }
         for (const path of languageFiles) {
             this.fs.copy(
                 this.templatePath(path),
                 this._extensionPath(`${PACKAGE_LANGUAGE}/${path}`),
                 templateCopyOptions
             );
+        }
+
+        if (this.answers.includeTest) {
+            mainPackageJson.scripts.test = 'npm run --workspace packages/language test';
+
+            // ensure reference is directly behind ./packages/language/tsconfig.src.json
+            tsConfigBuildJson.references.push({ path: './packages/language/tsconfig.test.json' });
+
+            const languagePackageJson = this.fs.readJSON(this._extensionPath('packages/language/package.json'));
+            languagePackageJson.devDependencies.vitest = '~1.6.0';
+            languagePackageJson.scripts.test = 'vitest run';
+            this.fs.delete(this._extensionPath('packages/language/package.json'));
+            this.fs.writeJSON(this._extensionPath('packages/language/package.json'), languagePackageJson, undefined, 4);
+
+            const extensionsJson = this.fs.readJSON(this._extensionPath('.vscode/extensions.json'));
+            extensionsJson.recommendations.push('vitest.explorer');
+            this.fs.delete(this._extensionPath('.vscode/extensions.json'));
+            this.fs.writeJSON(this._extensionPath('.vscode/extensions.json'), extensionsJson, undefined, 4);
         }
 
         if (this.answers.includeCLI) {
@@ -233,6 +253,7 @@ export class LangiumGenerator extends Generator {
                 );
             }
             mainPackageJson.workspaces.push('packages/cli');
+            tsConfigBuildJson.references.push({ path: './packages/cli/tsconfig.json' });
         }
 
         if (this.answers.includeWeb) {
@@ -254,6 +275,7 @@ export class LangiumGenerator extends Generator {
                 );
             }
             mainPackageJson.workspaces.push('packages/web');
+            tsConfigBuildJson.references.push({ path: './packages/web/tsconfig.json' });
         }
 
         if (this.answers.includeVSCode) {
@@ -274,44 +296,14 @@ export class LangiumGenerator extends Generator {
                 );
             }
             mainPackageJson.workspaces.push('packages/extension');
+            tsConfigBuildJson.references.push({ path: './packages/extension/tsconfig.json' });
         }
 
         this.fs.writeJSON(this._extensionPath('.package.json'), mainPackageJson, undefined, 4);
-        this.fs.copy(
-            this._extensionPath('.package.json'),
-            this._extensionPath('package.json'),
-            templateCopyOptions
-        );
-        this.fs.delete(this._extensionPath('.package.json'));
+        this.fs.move(this._extensionPath('.package.json'), this._extensionPath('package.json'), templateCopyOptions);
 
-        // if (this.answers.includeTest) {
-        //     this.sourceRoot(path.join(__dirname, TEMPLATE_TEST_DIR));
-
-        //     this.fs.copy(
-        //         this.templatePath('.'),
-        //         this._extensionPath(),
-        //         templateCopyOptions
-        //     );
-
-        //     // update the scripts section in the package.json to use 'tsconfig.src.json' for building
-        //     const pkgJson = this.fs.readJSON(this.templatePath('.package.json'));
-        //     this.fs.extendJSON(this._extensionPath('package-template.json'), pkgJson, undefined, 4);
-
-        //     // update the 'includes' property in the existing 'tsconfig.json' and adds '"noEmit": true'
-        //     const tsconfigJson = this.fs.readJSON(this.templatePath('.tsconfig.json'));
-        //     this.fs.extendJSON(this._extensionPath('tsconfig.json'), tsconfigJson, undefined, 4);
-
-        //     // the initial '.vscode/extensions.json' can't be extended as above, as it contains comments, which is tolerated by vscode,
-        //     //  but not by `this.fs.extendJSON(...)`, so
-        //     this.fs.copy(this.templatePath('.vscode-extensions.json'), this._extensionPath('.vscode/extensions.json'), templateCopyOptions);
-        // }
-
-        // this.fs.copy(
-        //     this._extensionPath('package-template.json'),
-        //     this._extensionPath('package.json'),
-        //     templateCopyOptions
-        // );
-        // this.fs.delete(this._extensionPath('package-template.json'));
+        this.fs.writeJSON(this._extensionPath('.tsconfig.build.json'), tsConfigBuildJson, undefined, 4);
+        this.fs.move(this._extensionPath('.tsconfig.build.json'), this._extensionPath('tsconfig.build.json'), templateCopyOptions);
     }
 
     async install(): Promise<void> {
@@ -322,7 +314,9 @@ export class LangiumGenerator extends Generator {
             this.spawnSync('npm', ['install'], opts);
         }
         this.spawnSync('npm', ['run', 'langium:generate'], opts);
-        this.spawnSync('npm', ['run', 'build'], opts);
+        if(!this.args.includes('skip-build')) {
+            this.spawnSync('npm', ['run', 'build'], opts);
+        }
     }
 
     async end(): Promise<void> {
