@@ -227,7 +227,7 @@ function copyTypePart(value: TypePart): TypePart {
         children: [],
         parents: [],
         actionWithAssignment: value.actionWithAssignment,
-        ruleCalls: [...value.ruleCalls],
+        ruleCalls: value.ruleCalls.slice(),
         properties: value.properties.map(copyProperty),
     };
 }
@@ -236,7 +236,7 @@ function copyTypeAlternative(value: TypeAlternative): TypeAlternative {
     return {
         name: value.name,
         super: value.super,
-        ruleCalls: value.ruleCalls,
+        ruleCalls: value.ruleCalls.slice(),
         properties: value.properties.map(e => copyProperty(e))
     };
 }
