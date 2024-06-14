@@ -433,6 +433,28 @@ export function getActionType(action: ast.Action): string | undefined {
     return undefined; // not inferring and not referencing a valid type
 }
 
+/**
+ * This function is used at development time (for code generation and the internal type system) to get the type of the AST node produced by the given rule.
+ * For data type rules, the name of the rule is returned,
+ * e.g. "INT_value returns number: MY_INT;" returns "INT_value".
+ * @param rule the given rule
+ * @returns the name of the AST node type of the rule
+ */
+export function getRuleTypeName(rule: ast.AbstractRule): string {
+    if (ast.isTerminalRule(rule)) {
+        return rule.type?.name ?? 'string';
+    } else {
+        return isDataTypeRule(rule) ? rule.name : getExplicitRuleType(rule) ?? rule.name;
+    }
+}
+
+/**
+ * This function is used at runtime to get the actual type of the values produced by the given rule at runtime.
+ * For data type rules, the name of the declared return type of the rule is returned (if any),
+ * e.g. "INT_value returns number: MY_INT;" returns "number".
+ * @param rule the given rule
+ * @returns the name of the type of the produced values of the rule at runtime
+ */
 export function getRuleType(rule: ast.AbstractRule): string {
     if (ast.isTerminalRule(rule)) {
         return rule.type?.name ?? 'string';
