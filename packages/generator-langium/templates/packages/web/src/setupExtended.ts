@@ -14,7 +14,7 @@ export const setupConfigExtended = (): UserConfig => {
                 codeResources: {
                     main: {
                         text: '// <%= RawLanguageName %> is running in the web!',
-                        uri: '/workspace/hello-world.<%= file-extension %>',
+                        uri: '/workspace/hello-world.<%= file-glob-extension %>',
                     }
                 },
                 extensions: [{
@@ -29,7 +29,7 @@ export const setupConfigExtended = (): UserConfig => {
                             languages: [{
                                 id: '<%= language-id %>',
                                 extensions: [
-                                    '.<%= language-id %>'
+                                    '.<%= file-glob-extension %>'
                                 ],
                                 configuration: './language-configuration.json'
                             }],
@@ -41,7 +41,7 @@ export const setupConfigExtended = (): UserConfig => {
                         }
                     },
                     filesOrContents: extensionFilesOrContents,
-                }],                
+                }],
                 userConfiguration: {
                     json: JSON.stringify({
                         'workbench.colorTheme': 'Default Dark Modern',
