@@ -328,7 +328,7 @@ describe('Ast generator', () => {
                         return {
                             name: IAmArray,
                             properties: [
-                                { name: "elements", defaultValue: [] }
+                                { name: 'elements', defaultValue: [] }
                             ]
                         };
                     }
@@ -336,7 +336,7 @@ describe('Ast generator', () => {
                         return {
                             name: DeclaredArray,
                             properties: [
-                                { name: "elements", defaultValue: [] }
+                                { name: 'elements', defaultValue: [] }
                             ]
                         };
                     }
@@ -355,7 +355,7 @@ describe('Ast generator', () => {
         grammar TestGrammar
              
         interface Test {
-            value: string = '"test"';
+            value: string = "'test'";
         }
           
         Test returns Test:
@@ -370,7 +370,7 @@ describe('Ast generator', () => {
                         return {
                             name: Test,
                             properties: [
-                                { name: "value", defaultValue: "\\"test\\"" }
+                                { name: 'value', defaultValue: '\\'test\\'' }
                             ]
                         };
                     }

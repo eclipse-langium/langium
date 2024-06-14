@@ -187,9 +187,9 @@ export class ArithmeticsAstReflection extends AbstractAstReflection {
                 return {
                     name: BinaryExpression,
                     properties: [
-                        { name: "left" },
-                        { name: "operator" },
-                        { name: "right" }
+                        { name: 'left' },
+                        { name: 'operator' },
+                        { name: 'right' }
                     ]
                 };
             }
@@ -197,7 +197,7 @@ export class ArithmeticsAstReflection extends AbstractAstReflection {
                 return {
                     name: DeclaredParameter,
                     properties: [
-                        { name: "name" }
+                        { name: 'name' }
                     ]
                 };
             }
@@ -205,9 +205,9 @@ export class ArithmeticsAstReflection extends AbstractAstReflection {
                 return {
                     name: Definition,
                     properties: [
-                        { name: "args", defaultValue: [] },
-                        { name: "expr" },
-                        { name: "name" }
+                        { name: 'args', defaultValue: [] },
+                        { name: 'expr' },
+                        { name: 'name' }
                     ]
                 };
             }
@@ -215,7 +215,7 @@ export class ArithmeticsAstReflection extends AbstractAstReflection {
                 return {
                     name: Evaluation,
                     properties: [
-                        { name: "expression" }
+                        { name: 'expression' }
                     ]
                 };
             }
@@ -223,8 +223,8 @@ export class ArithmeticsAstReflection extends AbstractAstReflection {
                 return {
                     name: FunctionCall,
                     properties: [
-                        { name: "args", defaultValue: [] },
-                        { name: "func" }
+                        { name: 'args', defaultValue: [] },
+                        { name: 'func' }
                     ]
                 };
             }
@@ -232,8 +232,8 @@ export class ArithmeticsAstReflection extends AbstractAstReflection {
                 return {
                     name: Module,
                     properties: [
-                        { name: "name" },
-                        { name: "statements", defaultValue: [] }
+                        { name: 'name' },
+                        { name: 'statements', defaultValue: [] }
                     ]
                 };
             }
@@ -241,7 +241,7 @@ export class ArithmeticsAstReflection extends AbstractAstReflection {
                 return {
                     name: NumberLiteral,
                     properties: [
-                        { name: "value" }
+                        { name: 'value' }
                     ]
                 };
             }

@@ -139,7 +139,7 @@ export class RequirementsAndTestsAstReflection extends AbstractAstReflection {
                 return {
                     name: Contact,
                     properties: [
-                        { name: "user_name" }
+                        { name: 'user_name' }
                     ]
                 };
             }
@@ -147,8 +147,8 @@ export class RequirementsAndTestsAstReflection extends AbstractAstReflection {
                 return {
                     name: Environment,
                     properties: [
-                        { name: "description" },
-                        { name: "name" }
+                        { name: 'description' },
+                        { name: 'name' }
                     ]
                 };
             }
@@ -156,9 +156,9 @@ export class RequirementsAndTestsAstReflection extends AbstractAstReflection {
                 return {
                     name: Requirement,
                     properties: [
-                        { name: "environments", defaultValue: [] },
-                        { name: "name" },
-                        { name: "text" }
+                        { name: 'environments', defaultValue: [] },
+                        { name: 'name' },
+                        { name: 'text' }
                     ]
                 };
             }
@@ -166,9 +166,9 @@ export class RequirementsAndTestsAstReflection extends AbstractAstReflection {
                 return {
                     name: RequirementModel,
                     properties: [
-                        { name: "contact" },
-                        { name: "environments", defaultValue: [] },
-                        { name: "requirements", defaultValue: [] }
+                        { name: 'contact' },
+                        { name: 'environments', defaultValue: [] },
+                        { name: 'requirements', defaultValue: [] }
                     ]
                 };
             }
@@ -176,10 +176,10 @@ export class RequirementsAndTestsAstReflection extends AbstractAstReflection {
                 return {
                     name: Test,
                     properties: [
-                        { name: "environments", defaultValue: [] },
-                        { name: "name" },
-                        { name: "requirements", defaultValue: [] },
-                        { name: "testFile" }
+                        { name: 'environments', defaultValue: [] },
+                        { name: 'name' },
+                        { name: 'requirements', defaultValue: [] },
+                        { name: 'testFile' }
                     ]
                 };
             }
@@ -187,8 +187,8 @@ export class RequirementsAndTestsAstReflection extends AbstractAstReflection {
                 return {
                     name: TestModel,
                     properties: [
-                        { name: "contact" },
-                        { name: "tests", defaultValue: [] }
+                        { name: 'contact' },
+                        { name: 'tests', defaultValue: [] }
                     ]
                 };
             }

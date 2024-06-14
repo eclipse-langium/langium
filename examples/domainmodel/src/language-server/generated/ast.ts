@@ -153,7 +153,7 @@ export class DomainModelAstReflection extends AbstractAstReflection {
                 return {
                     name: DataType,
                     properties: [
-                        { name: "name" }
+                        { name: 'name' }
                     ]
                 };
             }
@@ -161,7 +161,7 @@ export class DomainModelAstReflection extends AbstractAstReflection {
                 return {
                     name: Domainmodel,
                     properties: [
-                        { name: "elements", defaultValue: [] }
+                        { name: 'elements', defaultValue: [] }
                     ]
                 };
             }
@@ -169,9 +169,9 @@ export class DomainModelAstReflection extends AbstractAstReflection {
                 return {
                     name: Entity,
                     properties: [
-                        { name: "features", defaultValue: [] },
-                        { name: "name" },
-                        { name: "superType" }
+                        { name: 'features', defaultValue: [] },
+                        { name: 'name' },
+                        { name: 'superType' }
                     ]
                 };
             }
@@ -179,9 +179,9 @@ export class DomainModelAstReflection extends AbstractAstReflection {
                 return {
                     name: Feature,
                     properties: [
-                        { name: "many", defaultValue: false },
-                        { name: "name" },
-                        { name: "type" }
+                        { name: 'many', defaultValue: false },
+                        { name: 'name' },
+                        { name: 'type' }
                     ]
                 };
             }
@@ -189,8 +189,8 @@ export class DomainModelAstReflection extends AbstractAstReflection {
                 return {
                     name: PackageDeclaration,
                     properties: [
-                        { name: "elements", defaultValue: [] },
-                        { name: "name" }
+                        { name: 'elements', defaultValue: [] },
+                        { name: 'name' }
                     ]
                 };
             }

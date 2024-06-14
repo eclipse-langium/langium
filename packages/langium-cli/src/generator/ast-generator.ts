@@ -119,7 +119,7 @@ function buildPropertyType(props: Property[]): Generated {
         all,
         property => {
             const defaultValue = stringifyDefaultValue(property.defaultValue);
-            return `{ name: "${escapeQuotes(property.name)}"${defaultValue ? `, defaultValue: ${defaultValue}` : ''} }`;
+            return `{ name: '${escapeQuotes(property.name, "'")}'${defaultValue ? `, defaultValue: ${defaultValue}` : ''} }`;
         },
         { separator: ',', appendNewLineIfNotEmpty: true}
     );
@@ -128,7 +128,7 @@ function buildPropertyType(props: Property[]): Generated {
 function stringifyDefaultValue(value?: PropertyDefaultValue): string | undefined {
     if (typeof value === 'string') {
         // Escape all double quotes
-        return `"${escapeQuotes(value)}"`;
+        return `'${escapeQuotes(value, "'")}'`;
     } else if (Array.isArray(value)) {
         return `[${value.map(e => stringifyDefaultValue(e)).join(', ')}]`;
     } else if (value !== undefined) {

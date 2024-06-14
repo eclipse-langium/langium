@@ -127,7 +127,7 @@ export class StatemachineAstReflection extends AbstractAstReflection {
                 return {
                     name: Command,
                     properties: [
-                        { name: "name" }
+                        { name: 'name' }
                     ]
                 };
             }
@@ -135,7 +135,7 @@ export class StatemachineAstReflection extends AbstractAstReflection {
                 return {
                     name: Event,
                     properties: [
-                        { name: "name" }
+                        { name: 'name' }
                     ]
                 };
             }
@@ -143,9 +143,9 @@ export class StatemachineAstReflection extends AbstractAstReflection {
                 return {
                     name: State,
                     properties: [
-                        { name: "actions", defaultValue: [] },
-                        { name: "name" },
-                        { name: "transitions", defaultValue: [] }
+                        { name: 'actions', defaultValue: [] },
+                        { name: 'name' },
+                        { name: 'transitions', defaultValue: [] }
                     ]
                 };
             }
@@ -153,11 +153,11 @@ export class StatemachineAstReflection extends AbstractAstReflection {
                 return {
                     name: Statemachine,
                     properties: [
-                        { name: "commands", defaultValue: [] },
-                        { name: "events", defaultValue: [] },
-                        { name: "init" },
-                        { name: "name" },
-                        { name: "states", defaultValue: [] }
+                        { name: 'commands', defaultValue: [] },
+                        { name: 'events', defaultValue: [] },
+                        { name: 'init' },
+                        { name: 'name' },
+                        { name: 'states', defaultValue: [] }
                     ]
                 };
             }
@@ -165,8 +165,8 @@ export class StatemachineAstReflection extends AbstractAstReflection {
                 return {
                     name: Transition,
                     properties: [
-                        { name: "event" },
-                        { name: "state" }
+                        { name: 'event' },
+                        { name: 'state' }
                     ]
                 };
             }
