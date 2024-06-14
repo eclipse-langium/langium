@@ -702,26 +702,26 @@ export class LangiumGrammarAstReflection extends AbstractAstReflection {
     getReferenceType(refInfo: ReferenceInfo): string {
         const referenceId = `${refInfo.container.$type}:${refInfo.property}`;
         switch (referenceId) {
-            case "Action:type":
-            case "CrossReference:type":
-            case "Interface:superTypes":
-            case "ParserRule:returnType":
-            case "SimpleType:typeRef": {
+            case 'Action:type':
+            case 'CrossReference:type':
+            case 'Interface:superTypes':
+            case 'ParserRule:returnType':
+            case 'SimpleType:typeRef': {
                 return AbstractType;
             }
-            case "Grammar:hiddenTokens":
-            case "ParserRule:hiddenTokens":
-            case "RuleCall:rule": {
+            case 'Grammar:hiddenTokens':
+            case 'ParserRule:hiddenTokens':
+            case 'RuleCall:rule': {
                 return AbstractRule;
             }
-            case "Grammar:usedGrammars": {
+            case 'Grammar:usedGrammars': {
                 return Grammar;
             }
-            case "NamedArgument:parameter":
-            case "ParameterReference:parameter": {
+            case 'NamedArgument:parameter':
+            case 'ParameterReference:parameter': {
                 return Parameter;
             }
-            case "TerminalRuleCall:rule": {
+            case 'TerminalRuleCall:rule': {
                 return TerminalRule;
             }
             default: {

@@ -172,7 +172,7 @@ export class ArithmeticsAstReflection extends AbstractAstReflection {
     getReferenceType(refInfo: ReferenceInfo): string {
         const referenceId = `${refInfo.container.$type}:${refInfo.property}`;
         switch (referenceId) {
-            case "FunctionCall:func": {
+            case 'FunctionCall:func': {
                 return AbstractDefinition;
             }
             default: {

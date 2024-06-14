@@ -135,10 +135,10 @@ export class DomainModelAstReflection extends AbstractAstReflection {
     getReferenceType(refInfo: ReferenceInfo): string {
         const referenceId = `${refInfo.container.$type}:${refInfo.property}`;
         switch (referenceId) {
-            case "Entity:superType": {
+            case 'Entity:superType': {
                 return Entity;
             }
-            case "Feature:type": {
+            case 'Feature:type': {
                 return Type;
             }
             default: {

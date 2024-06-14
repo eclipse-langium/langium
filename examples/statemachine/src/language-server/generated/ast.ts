@@ -105,14 +105,14 @@ export class StatemachineAstReflection extends AbstractAstReflection {
     getReferenceType(refInfo: ReferenceInfo): string {
         const referenceId = `${refInfo.container.$type}:${refInfo.property}`;
         switch (referenceId) {
-            case "State:actions": {
+            case 'State:actions': {
                 return Command;
             }
-            case "Statemachine:init":
-            case "Transition:state": {
+            case 'Statemachine:init':
+            case 'Transition:state': {
                 return State;
             }
-            case "Transition:event": {
+            case 'Transition:event': {
                 return Event;
             }
             default: {

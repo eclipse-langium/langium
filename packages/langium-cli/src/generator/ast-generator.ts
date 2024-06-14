@@ -148,7 +148,7 @@ function buildReferenceTypeMethod(crossReferenceTypes: CrossReferenceType[]): Ge
                 joinToNode(
                     buckets.entriesGroupedByKey(),
                     ([target, refs]) => expandToNode`
-                        ${joinToNode(refs, ref => `case "${escapeQuotes(ref)}":`, { appendNewLineIfNotEmpty: true, skipNewLineAfterLastItem: true})} {
+                        ${joinToNode(refs, ref => `case '${escapeQuotes(ref, "'")}':`, { appendNewLineIfNotEmpty: true, skipNewLineAfterLastItem: true})} {
                             return ${target};
                         }
                     `,

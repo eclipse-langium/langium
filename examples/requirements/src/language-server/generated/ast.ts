@@ -120,11 +120,11 @@ export class RequirementsAndTestsAstReflection extends AbstractAstReflection {
     getReferenceType(refInfo: ReferenceInfo): string {
         const referenceId = `${refInfo.container.$type}:${refInfo.property}`;
         switch (referenceId) {
-            case "Requirement:environments":
-            case "Test:environments": {
+            case 'Requirement:environments':
+            case 'Test:environments': {
                 return Environment;
             }
-            case "Test:requirements": {
+            case 'Test:requirements': {
                 return Requirement;
             }
             default: {
