@@ -42,19 +42,19 @@ describe('Check yeoman generator works', () => {
         targetRoot + '/packages/language/src/syntaxes/hello-world.monarch.ts',
         targetRoot + '/packages/language/src/generated/ast.ts',
         targetRoot + '/packages/language/src/generated/grammar.ts',
-        targetRoot + '/packages/language/src/generated/module.ts',
+        targetRoot + '/packages/language/src/generated/module.ts'
     ];
 
     const filesTest = (targetRoot: string) => [
         targetRoot + '/packages/language/tsconfig.test.json',
-        targetRoot + '/packages/language/test/linking/linking.test.ts',
-        targetRoot + '/packages/language/test/parsing/parsing.test.ts',
-        targetRoot + '/packages/language/test/validating/validating.test.ts',
+        targetRoot + '/packages/language/test/linking.test.ts',
+        targetRoot + '/packages/language/test/parsing.test.ts',
+        targetRoot + '/packages/language/test/validating.test.ts'
     ];
 
     const filesCli = (targetRoot: string) => [
         targetRoot + '/packages/cli/bin/cli.js',
-        targetRoot + '/packages/cli/src/cli-util.ts',
+        targetRoot + '/packages/cli/src/util.ts',
         targetRoot + '/packages/cli/src/generator.ts',
         targetRoot + '/packages/cli/src/main.ts',
         targetRoot + '/packages/cli/package.json',
@@ -86,7 +86,7 @@ describe('Check yeoman generator works', () => {
         targetRoot + '/packages/extension/tsconfig.json'
     ];
 
-    test('1 Should produce files for Core', async () => {
+    test('1 Should produce files for workspace and language (no test)', async () => {
         const context = createHelpers({}).run(path.join(moduleRoot));
 
         // generate in examples
@@ -125,7 +125,7 @@ describe('Check yeoman generator works', () => {
             });
     }, 120_000);
 
-    test('2 Should produce files for Core & CLI & test', async () => {
+    test('2 Should produce files for workspace and languag (plus test) and cli', async () => {
         const context = createHelpers({}).run<LangiumGenerator>(path.join(moduleRoot));
 
         // generate in examples
@@ -175,7 +175,7 @@ describe('Check yeoman generator works', () => {
             });
     }, 120_000);
 
-    test('3 Should produce files for Core & CLI & web & extension without tests', async () => {
+    test('3 Should produce files for workspace, language (no test), cli, web and extension', async () => {
         const context = createHelpers({}).run<LangiumGenerator>(path.join(moduleRoot));
 
         // generate in examples
@@ -232,16 +232,14 @@ describe('Check yeoman generator works', () => {
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 const PACKAGE_JSON_EXPECTATION: Record<string, any> = {
-    name: 'hello-world-base',
+    name: 'hello-world-workspace',
     description: 'Base workspace package',
     version: '0.0.1',
     type: 'module',
     private: true,
-    files: ['out', 'src'],
     scripts: {
-        'compile': 'tsc -b tsconfig.build.json',
         'watch': 'tsc -b tsconfig.build.json --watch',
-        'build': 'npm run compile && npm run build --workspaces',
+        'build': 'tsc -b tsconfig.build.json && npm run build --workspaces',
         'lint': 'eslint src --ext ts',
         'langium:generate': 'npm run --workspace packages/language langium:generate',
         'langium:watch': 'npm run --workspace packages/language langium:watch'

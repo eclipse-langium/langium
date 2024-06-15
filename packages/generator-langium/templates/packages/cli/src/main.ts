@@ -2,7 +2,7 @@ import type { Model } from '<%= language-id %>-language';
 import { create<%= LanguageName %>Services, <%= LanguageName %>LanguageMetaData } from '<%= language-id %>-language';
 import chalk from 'chalk';
 import { Command } from 'commander';
-import { extractAstNode } from './cli-util.js';
+import { extractAstNode } from './util.js';
 import { generateJavaScript } from './generator.js';
 import { NodeFileSystem } from 'langium/node';
 import * as url from 'node:url';

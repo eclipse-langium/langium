@@ -20,7 +20,6 @@ const PACKAGE_LANGUAGE = 'packages/language';
 const PACKAGE_CLI = 'packages/cli';
 const PACKAGE_WEB = 'packages/web';
 const PACKAGE_EXTENSION = 'packages/extension';
-// const TEMPLATE_TEST_DIR = '../templates/packages/language/test';
 const USER_DIR = '.';
 
 const EXTENSION_NAME = /<%= extension-name %>/g;
