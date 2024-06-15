@@ -273,33 +273,27 @@ export class LangiumParser extends AbstractLangiumParser {
     action($type: string, action: Action): void {
         if (!this.isRecording()) {
             let last = this.current;
-            // This branch is used for left recursive grammar rules.
-            // Those don't call `construct` before another action.
-            // Therefore, we need to call it here.
-            if (!last.$cstNode && action.feature && action.operator) {
-                last = this.construct(false);
-                const feature = last.$cstNode.feature;
-                this.nodeBuilder.buildCompositeNode(feature);
-            }
-            const newItem = { $type };
-            this.stack.pop();
-            this.stack.push(newItem);
             if (action.feature && action.operator) {
+                last = this.construct();
+                const node = this.nodeBuilder.buildCompositeNode(action);
+                node.content.push(last.$cstNode);
+                const newItem = { $type };
+                this.stack.push(newItem);
                 this.assign(action.operator, action.feature, last, last.$cstNode, false);
+            } else {
+                last.$type = $type;
             }
         }
     }
 
-    construct(pop = true): unknown {
+    construct(): unknown {
         if (this.isRecording()) {
             return undefined;
         }
         const obj = this.current;
         linkContentToContainer(obj);
         this.nodeBuilder.construct(obj);
-        if (pop) {
-            this.stack.pop();
-        }
+        this.stack.pop();
         if (isDataTypeNode(obj)) {
             return this.converter.convert(obj.value, obj.$cstNode);
         } else {
@@ -354,6 +348,16 @@ export class LangiumParser extends AbstractLangiumParser {
                 existingValue.push(...newValue);
                 target[name] = existingValue;
             }
+        }
+        // The target was parsed from a unassigned subrule
+        // After the subrule construction, it received a cst node
+        // This CST node will later be overriden by the cst node builder
+        // To prevent references to stale AST nodes in the CST,
+        // we need to remove the reference here
+        const targetCstNode = target.$cstNode;
+        if (targetCstNode) {
+            targetCstNode.astNode = undefined;
+            target.$cstNode = undefined;
         }
         return target;
     }

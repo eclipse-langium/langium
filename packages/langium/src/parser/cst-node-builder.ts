@@ -133,7 +133,7 @@ export abstract class AbstractCstNode implements CstNode {
         return node;
     }
 
-    set astNode(value: AstNode) {
+    set astNode(value: AstNode | undefined) {
         this._astNode = value;
     }
 

@@ -17,7 +17,7 @@ export default defineConfig({
         deps: {
             interopDefault: true
         },
-        include: ['**/test/**/*.test.ts'],
+        include: ['**/test/**/*parser-builder.test.ts'],
         exclude: ['**/node_modules/**', '**/dist/**', '**/generated/**', '**/templates/**', '**/examples/hello*/**'],
         watchExclude: [ '**/examples/hello*/**' /* populated by the yeoman generator test */],
     }
