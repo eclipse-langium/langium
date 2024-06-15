@@ -2,7 +2,7 @@ import type { Model } from '<%= language-id %>-language';
 import { expandToNode, joinToNode, toString } from 'langium/generate';
 import * as fs from 'node:fs';
 import * as path from 'node:path';
-import { extractDestinationAndName } from './cli-util.js';
+import { extractDestinationAndName } from './util.js';
 
 export function generateJavaScript(model: Model, filePath: string, destination: string | undefined): string {
     const data = extractDestinationAndName(filePath, destination);

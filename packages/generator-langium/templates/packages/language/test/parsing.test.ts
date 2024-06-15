@@ -2,7 +2,8 @@ import { beforeAll, describe, expect, test } from "vitest";
 import { EmptyFileSystem, type LangiumDocument } from "langium";
 import { expandToString as s } from "langium/generate";
 import { parseHelper } from "langium/test";
-import { create<%= LanguageName %>Services, isModel, Model } from "<%= language-id %>-language";
+import type { Model } from "<%= language-id %>-language";
+import { create<%= LanguageName %>Services, isModel } from "<%= language-id %>-language";
 
 let services: ReturnType<typeof create<%= LanguageName %>Services>;
 let parse:    ReturnType<typeof parseHelper<Model>>;
@@ -54,6 +55,6 @@ function checkDocumentValid(document: LangiumDocument): string | undefined {
           ${document.parseResult.parserErrors.map(e => e.message).join('\n  ')}
     `
         || document.parseResult.value === undefined && `ParseResult is 'undefined'.`
-        || !isModel(document.parseResult.value) && `Root AST object is a ${document.parseResult.value.$type}, expected a '${Model}'.`
+        || !isModel(document.parseResult.value) && `Root AST object is a ${document.parseResult.value.$type}, expected a Model'.`
         || undefined;
 }
