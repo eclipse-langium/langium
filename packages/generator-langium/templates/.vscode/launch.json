@@ -10,11 +10,12 @@
             "type": "extensionHost",
             "request": "launch",
             "args": [
-                "--extensionDevelopmentPath=${workspaceFolder}"
+                "--extensionDevelopmentPath=${workspaceFolder}/packages/extension"
             ],
             "sourceMaps": true,
             "outFiles": [
-                "${workspaceFolder}/out/**/*.js"
+                "${workspaceFolder}/packages/language/out/**/*.js",
+                "${workspaceFolder}/packages/extension/out/**/*.js"
             ]
         },
         {
@@ -27,7 +28,8 @@
             ],
             "sourceMaps": true,
             "outFiles": [
-                "${workspaceFolder}/out/**/*.js",
+                "${workspaceFolder}/packages/language/out/**/*.js",
+                "${workspaceFolder}/packages/extension/out/**/*.js",
                 "${workspaceFolder}/node_modules/langium"
             ]
         }
