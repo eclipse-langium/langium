@@ -396,11 +396,11 @@ export function getExplicitRuleType(rule: ast.ParserRule): string | undefined {
         return rule.dataType;
     } else if (rule.returnType) {
         const refType = rule.returnType.ref;
-        if(refType) {
+        if (refType) {
             // check if we need to check Action as return type
             if (ast.isParserRule(refType)) {
                 return refType.name;
-            }  else if(ast.isInterface(refType) || ast.isType(refType)) {
+            } else if (ast.isInterface(refType) || ast.isType(refType)) {
                 return refType.name;
             }
         }
