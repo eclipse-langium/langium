@@ -16,7 +16,7 @@ import type { ValueConverter } from './value-converter.js';
 import { defaultParserErrorProvider, EmbeddedActionsParser, LLkLookaheadStrategy } from 'chevrotain';
 import { LLStarLookaheadStrategy } from 'chevrotain-allstar';
 import { isAssignment, isCrossReference, isKeyword } from '../languages/generated/ast.js';
-import { getTypeName, isDataTypeRule } from '../utils/grammar-utils.js';
+import { getExplicitRuleType } from '../utils/grammar-utils.js';
 import { assignMandatoryProperties, getContainerOfType, linkContentToContainer } from '../utils/ast-utils.js';
 import { CstNodeBuilder } from './cst-node-builder.js';
 
@@ -51,19 +51,70 @@ interface AssignmentElement {
     isCrossRef: boolean
 }
 
+/**
+ * Base interface for all parsers. Mainly used by the `parser-builder-base.ts` to perform work on different kinds of parsers.
+ * The main use cases are:
+ * * AST parser: Based on a string, create an AST for the current grammar
+ * * Completion parser: Based on a partial string, identify the current position of the input within the grammar
+ */
 export interface BaseParser {
+    /**
+     * Adds a new parser rule to the parser
+     */
     rule(rule: ParserRule, impl: RuleImpl): RuleResult;
+    /**
+     * Returns the executable rule function for the specified rule name
+     */
     getRule(name: string): RuleResult | undefined;
+    /**
+     * Performs alternatives parsing (the `|` operation in EBNF/Langium)
+     */
     alternatives(idx: number, choices: Array<IOrAlt<any>>): void;
+    /**
+     * Parses the callback as optional (the `?` operation in EBNF/Langium)
+     */
     optional(idx: number, callback: DSLMethodOpts<unknown>): void;
+    /**
+     * Parses the callback 0 or more times (the `*` operation in EBNF/Langium)
+     */
     many(idx: number, callback: DSLMethodOpts<unknown>): void;
+    /**
+     * Parses the callback 1 or more times (the `+` operation in EBNF/Langium)
+     */
     atLeastOne(idx: number, callback: DSLMethodOpts<unknown>): void;
+    /**
+     * Consumes a specific token type from the token input stream.
+     * Requires a unique index within the rule for a specific token type.
+     */
     consume(idx: number, tokenType: TokenType, feature: AbstractElement): void;
+    /**
+     * Invokes the executable function for a given parser rule.
+     * Requires a unique index within the rule for a specific sub rule.
+     * Arguments can be supplied to the rule invocation for semantic predicates
+     */
     subrule(idx: number, rule: RuleResult, feature: AbstractElement, args: Args): void;
+    /**
+     * Executes a grammar action that modifies the currently active AST node
+     */
     action($type: string, action: Action): void;
+    /**
+     * Finishes construction of the current AST node. Only used by the AST parser.
+     */
     construct(): unknown;
+    /**
+     * Whether the parser is currently actually in use or in "recording mode".
+     * Recording mode is activated once when the parser is analyzing itself.
+     * During this phase, no input exists and therefore no AST should be constructed
+     */
     isRecording(): boolean;
+    /**
+     * Current state of the unordered groups
+     */
     get unorderedGroups(): Map<string, boolean[]>;
+    /**
+     * The rule stack indicates the indices of rules that are currently invoked,
+     * in order of their invocation.
+     */
     getRuleStack(): number[];
 }
 
@@ -155,13 +206,24 @@ export class LangiumParser extends AbstractLangiumParser {
     }
 
     rule(rule: ParserRule, impl: RuleImpl): RuleResult {
-        const type = rule.fragment ? undefined : isDataTypeRule(rule) ? DatatypeSymbol : getTypeName(rule);
+        const type = this.computeRuleType(rule);
         const ruleMethod = this.wrapper.DEFINE_RULE(withRuleSuffix(rule.name), this.startImplementation(type, impl).bind(this));
         this.allRules.set(rule.name, ruleMethod);
         if (rule.entry) {
             this.mainRule = ruleMethod;
         }
         return ruleMethod;
+    }
+
+    private computeRuleType(rule: ParserRule): string | symbol | undefined {
+        if (rule.fragment) {
+            return undefined;
+        } else if (rule.dataType) {
+            return DatatypeSymbol;
+        } else {
+            const explicit = getExplicitRuleType(rule);
+            return explicit ?? rule.name;
+        }
     }
 
     parse<T extends AstNode = AstNode>(input: string, options: ParserOptions = {}): ParseResult<T> {
@@ -273,33 +335,27 @@ export class LangiumParser extends AbstractLangiumParser {
     action($type: string, action: Action): void {
         if (!this.isRecording()) {
             let last = this.current;
-            // This branch is used for left recursive grammar rules.
-            // Those don't call `construct` before another action.
-            // Therefore, we need to call it here.
-            if (!last.$cstNode && action.feature && action.operator) {
-                last = this.construct(false);
-                const feature = last.$cstNode.feature;
-                this.nodeBuilder.buildCompositeNode(feature);
-            }
-            const newItem = { $type };
-            this.stack.pop();
-            this.stack.push(newItem);
             if (action.feature && action.operator) {
+                last = this.construct();
+                const node = this.nodeBuilder.buildCompositeNode(action);
+                node.content.push(last.$cstNode);
+                const newItem = { $type };
+                this.stack.push(newItem);
                 this.assign(action.operator, action.feature, last, last.$cstNode, false);
+            } else {
+                last.$type = $type;
             }
         }
     }
 
-    construct(pop = true): unknown {
+    construct(): unknown {
         if (this.isRecording()) {
             return undefined;
         }
         const obj = this.current;
         linkContentToContainer(obj);
         this.nodeBuilder.construct(obj);
-        if (pop) {
-            this.stack.pop();
-        }
+        this.stack.pop();
         if (isDataTypeNode(obj)) {
             return this.converter.convert(obj.value, obj.$cstNode);
         } else {
@@ -354,6 +410,16 @@ export class LangiumParser extends AbstractLangiumParser {
                 existingValue.push(...newValue);
                 target[name] = existingValue;
             }
+        }
+        // The target was parsed from a unassigned subrule
+        // After the subrule construction, it received a cst node
+        // This CST node will later be overriden by the cst node builder
+        // To prevent references to stale AST nodes in the CST,
+        // we need to remove the reference here
+        const targetCstNode = target.$cstNode;
+        if (targetCstNode) {
+            targetCstNode.astNode = undefined;
+            target.$cstNode = undefined;
         }
         return target;
     }

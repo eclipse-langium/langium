@@ -6,8 +6,8 @@
 
 import type { TokenType, TokenVocabulary } from 'chevrotain';
 import type { AstNode, CstNode, GenericAstNode, Grammar, GrammarAST, LangiumParser, ParseResult, TokenBuilderOptions } from 'langium';
-import { EmptyFileSystem, DefaultTokenBuilder } from 'langium';
-import { describe, expect, test, onTestFailed, beforeEach } from 'vitest';
+import { EmptyFileSystem, DefaultTokenBuilder, GrammarUtils } from 'langium';
+import { describe, expect, test, onTestFailed, beforeAll } from 'vitest';
 import { createLangiumGrammarServices, createServicesForGrammar } from 'langium/grammar';
 import { expandToString } from 'langium/generate';
 import { parseHelper } from 'langium/test';
@@ -37,7 +37,7 @@ describe('Predicated grammar rules with alternatives', () => {
 
     let parser: LangiumParser;
 
-    beforeEach(async () => {
+    beforeAll(async () => {
         parser = await parserFromGrammar(content);
     });
 
@@ -91,7 +91,7 @@ describe('Predicated groups', () => {
 
     let parser: LangiumParser;
 
-    beforeEach(async () => {
+    beforeAll(async () => {
         parser = await parserFromGrammar(content);
     });
 
@@ -180,7 +180,7 @@ describe('Handle unordered group', () => {
 
     let parser: LangiumParser;
 
-    beforeEach(async () => {
+    beforeAll(async () => {
         parser = await parserFromGrammar(content);
     });
 
@@ -295,7 +295,7 @@ describe('Boolean value converter', () => {
 
     let parser: LangiumParser;
 
-    beforeEach(async () => {
+    beforeAll(async () => {
         parser = await parserFromGrammar(content);
     });
 
@@ -327,7 +327,7 @@ describe('BigInt Parser value converter', () => {
 
     let parser: LangiumParser;
 
-    beforeEach(async () => {
+    beforeAll(async () => {
         parser = await parserFromGrammar(content);
     });
 
@@ -360,7 +360,7 @@ describe('Date Parser value converter', () => {
 
     let parser: LangiumParser;
 
-    beforeEach(async () => {
+    beforeAll(async () => {
         parser = await parserFromGrammar(content);
     });
 
@@ -403,7 +403,7 @@ describe('Parser calls value converter', () => {
 
     let parser: LangiumParser;
 
-    beforeEach(async () => {
+    beforeAll(async () => {
         parser = await parserFromGrammar(content);
     });
 
@@ -529,7 +529,7 @@ describe('MultiMode Lexing', () => {
 
     let parser: LangiumParser;
 
-    beforeEach(async () => {
+    beforeAll(async () => {
         const services = await createServicesForGrammar({
             grammar,
             module: {
@@ -667,7 +667,7 @@ describe('Parsing default values', () => {
 
     let parser: LangiumParser;
 
-    beforeEach(async () => {
+    beforeAll(async () => {
         parser = await parserFromGrammar(grammar);
     });
 
@@ -734,6 +734,114 @@ describe('ALL(*) parser', () => {
         expect(result.parserErrors).toHaveLength(0);
         expect(result.value.$type).toBe('B');
     });
+});
+
+describe('Parsing actions', () => {
+
+    test('Using normal action preserves object fields', async () => {
+        const grammar = `
+        grammar Test
+        entry A: a='a' ({infer B} b='b');
+        hidden terminal WS: /\\s+/;
+        `;
+        const services = await createServicesForGrammar({ grammar });
+        const parseResult = services.parser.LangiumParser.parse('a b').value as GenericAstNode;
+        expect(parseResult.$type).toBe('B');
+        expect(parseResult).toHaveProperty('a', 'a');
+        expect(parseResult).toHaveProperty('b', 'b');
+    });
+
+    test('Yield correct CST with previous assignment', async () => {
+        await testCorrectAssignedActions(`
+            grammar Test
+            entry Main: value=A;
+            A: a='a' ({infer B.previous=current} b='b')*;
+            hidden terminal WS: /\\s+/;
+        `);
+    });
+
+    test('Yield correct CST with previous unassigned rulecall', async () => {
+        await testCorrectAssignedActions(`
+            grammar Test
+            entry Main: value=Item;
+            Item: A ({infer B.previous=current} b='b')*;
+            A: a='a';
+            hidden terminal WS: /\\s+/;
+        `);
+    });
+
+    async function testCorrectAssignedActions(grammar: string): Promise<void> {
+        const services = await createServicesForGrammar({ grammar });
+        const parseResult = services.parser.LangiumParser.parse('a b b b').value as GenericAstNode;
+        const value = parseResult.value as GenericAstNode;
+        expect(value.$type).toBe('B');
+        expect(value.$cstNode).toBeDefined();
+        expect(value.$cstNode!.text).toBe('a b b b');
+        const previous1 = value.previous as GenericAstNode;
+        expect(previous1.$type).toBe('B');
+        expect(previous1.$cstNode).toBeDefined();
+        expect(previous1.$cstNode!.text).toBe('a b b');
+        const previous2 = previous1.previous as GenericAstNode;
+        expect(previous2.$type).toBe('B');
+        expect(previous2.$cstNode).toBeDefined();
+        expect(previous2.$cstNode!.text).toBe('a b');
+        const previous3 = previous2.previous as GenericAstNode;
+        expect(previous3.$type).toBe('A');
+        expect(previous3.$cstNode).toBeDefined();
+        expect(previous3.$cstNode!.text).toBe('a');
+    }
+});
+
+describe('Unassigned subrules', () => {
+    const content = `
+        grammar SubrulesCST
+        entry Entry: X;
+        X: Visibility? (A | B) Body;
+        fragment Visibility: visibility=('public' | 'protected' | 'private');
+        fragment Body: '{' (children+=X)* '}';
+        A: 'A' value1=INT (C | D)?;
+        B: 'B' value1=INT (C | D)?;
+        C: 'C' value2=INT;
+        D: 'D' value2=INT;
+        
+        terminal ID: /\\^?[_a-zA-Z][\\w_]*/;
+        terminal INT returns number: /\\d+/;
+        hidden terminal WS: /\\s+/;
+    `;
+    let parser: LangiumParser;
+
+    beforeAll(async () => {
+        parser = await parserFromGrammar(content);
+    });
+
+    const testProps = (text: string, ...props: string[]): void => {
+        const result = parser.parse(text);
+        expect(result.lexerErrors).toHaveLength(0);
+        expect(result.parserErrors).toHaveLength(0);
+
+        const cst = result.value.$cstNode;
+        const element = cst?.astNode;
+        expect(element).toBeDefined();
+        expect(element).toBe(result.value);
+        props.forEach(prop => {
+            const propCst = GrammarUtils.findNodeForProperty(cst, prop);
+            expect(propCst).toBeDefined();
+            expect(element).toBe(propCst?.astNode);
+        });
+    };
+
+    test('CST prior to the subrule contains valid AST element', () => {
+        testProps('public A 100 {}', 'visibility');
+    });
+
+    test('Subrule CST contains valid AST element', async () => {
+        testProps('public A 100 {}', 'value1');
+    });
+
+    test('Nested subrule CST contains valid AST element', async () => {
+        testProps('public A 100 C 100 {}', 'value1', 'value2');
+    });
+
 });
 
 describe('Handling EOF', () => {
