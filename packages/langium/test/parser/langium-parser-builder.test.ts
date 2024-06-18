@@ -751,13 +751,26 @@ describe('Parsing actions', () => {
         expect(parseResult).toHaveProperty('b', 'b');
     });
 
-    test('Yield correct CST', async () => {
-        const grammar = `
-        grammar Test
-        entry Main: value=A;
-        A: a='a' ({infer B.previous=current} b='b')*;
-        hidden terminal WS: /\\s+/;
-        `;
+    test('Yield correct CST with previous assignment', async () => {
+        await testCorrectAssignedActions(`
+            grammar Test
+            entry Main: value=A;
+            A: a='a' ({infer B.previous=current} b='b')*;
+            hidden terminal WS: /\\s+/;
+        `);
+    });
+
+    test('Yield correct CST with previous unassigned rulecall', async () => {
+        await testCorrectAssignedActions(`
+            grammar Test
+            entry Main: value=Item;
+            Item: A ({infer B.previous=current} b='b')*;
+            A: a='a';
+            hidden terminal WS: /\\s+/;
+        `);
+    });
+
+    async function testCorrectAssignedActions(grammar: string): Promise<void> {
         const services = await createServicesForGrammar({ grammar });
         const parseResult = services.parser.LangiumParser.parse('a b b b').value as GenericAstNode;
         const value = parseResult.value as GenericAstNode;
@@ -776,8 +789,7 @@ describe('Parsing actions', () => {
         expect(previous3.$type).toBe('A');
         expect(previous3.$cstNode).toBeDefined();
         expect(previous3.$cstNode!.text).toBe('a');
-    });
-
+    }
 });
 
 describe('Unassigned subrules', () => {
