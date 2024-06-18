@@ -201,6 +201,60 @@ describe('Ast generator', () => {
         }
     `);
 
+    testGeneratedAst('check generated property with datatype rule of type number: single-value', `
+        grammar TestGrammar
+
+        Node: num=A;
+        A returns number: '1';
+            
+        hidden terminal WS: /\\s+/;
+        terminal ID: /[_a-zA-Z][\\w_]*/;
+    `, expandToString`
+        export type A = number;
+            
+        export function isA(item: unknown): item is A {
+            return typeof item === 'number';
+        }
+
+        export interface Node extends AstNode {
+            readonly $type: 'Node';
+            num: A;
+        }
+
+        export const Node = 'Node';
+
+        export function isNode(item: unknown): item is Node {
+            return reflection.isInstance(item, Node);
+        }
+    `);
+
+    testGeneratedAst('check generated property with datatype rule of type number: multi-value', `
+        grammar TestGrammar
+
+        Node: num+=A*;
+        A returns number: '1';
+            
+        hidden terminal WS: /\\s+/;
+        terminal ID: /[_a-zA-Z][\\w_]*/;
+    `, expandToString`
+        export type A = number;
+            
+        export function isA(item: unknown): item is A {
+            return typeof item === 'number';
+        }
+
+        export interface Node extends AstNode {
+            readonly $type: 'Node';
+            num: Array<A>;
+        }
+
+        export const Node = 'Node';
+
+        export function isNode(item: unknown): item is Node {
+            return reflection.isInstance(item, Node);
+        }
+    `);
+
     testGeneratedAst('should generate checker functions for datatype rules of type boolean', `
         grammar TestGrammar
 

@@ -11,7 +11,7 @@ import { MultiMap } from '../../../utils/collections.js';
 import { isAlternatives, isKeyword, isParserRule, isAction, isGroup, isUnorderedGroup, isAssignment, isRuleCall, isCrossReference, isTerminalRule } from '../../../languages/generated/ast.js';
 import { getTypeNameWithoutError, isPrimitiveGrammarType } from '../../internal-grammar-util.js';
 import { mergePropertyTypes } from './plain-types.js';
-import { isOptionalCardinality, terminalRegex, getRuleType } from '../../../utils/grammar-utils.js';
+import { isOptionalCardinality, terminalRegex, getRuleTypeName } from '../../../utils/grammar-utils.js';
 
 interface TypePart {
     name?: string
@@ -470,7 +470,7 @@ function findTypes(terminal: AbstractElement, types: TypeCollection): void {
     } else if (isKeyword(terminal)) {
         types.types.add(`'${terminal.value}'`);
     } else if (isRuleCall(terminal) && terminal.rule.ref) {
-        types.types.add(getRuleType(terminal.rule.ref));
+        types.types.add(getRuleTypeName(terminal.rule.ref));
     } else if (isCrossReference(terminal) && terminal.type.ref) {
         const refTypeName = getTypeNameWithoutError(terminal.type.ref);
         if (refTypeName) {
@@ -494,7 +494,7 @@ function addRuleCall(graph: TypeGraph, current: TypePart, ruleCall: RuleCall): v
             current.properties.push(...properties);
         }
     } else if (isParserRule(rule)) {
-        current.ruleCalls.push(getRuleType(rule));
+        current.ruleCalls.push(getRuleTypeName(rule));
     }
 }
 
