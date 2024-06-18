@@ -307,7 +307,7 @@ describe('check the default value converter for data type rules using terminal r
     `;
 
     let parser: LangiumParser;
-    beforeEach(async () => {
+    beforeAll(async () => {
         parser = await parserFromGrammar(grammar);
     });
 
