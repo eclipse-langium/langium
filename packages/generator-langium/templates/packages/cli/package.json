@@ -15,7 +15,9 @@
         "<%= language-id %>-cli": "./bin/cli.js"
     },
     "scripts": {
-        "build": "echo 'No build step'"
+        "clean": "shx rm -fr *.tsbuildinfo out",
+        "build": "echo 'No build step'",
+        "build:clean": "npm run clean && npm run build"
     },
     "dependencies": {
         "<%= extension-name %>-language": "0.0.1",

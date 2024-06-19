@@ -33,16 +33,19 @@ describe('Check yeoman generator works', () => {
         targetRoot + '/tsconfig.build.json',
         targetRoot + '/tsconfig.json',
         targetRoot + '/package.json',
+        targetRoot + '/README.md',
         targetRoot + '/.vscode/extensions.json',
         targetRoot + '/.vscode/launch.json',
         targetRoot + '/.vscode/tasks.json',
+        targetRoot + '/packages/language/README.md',
         targetRoot + '/packages/language/src/hello-world-module.ts',
         targetRoot + '/packages/language/src/hello-world-validator.ts',
         targetRoot + '/packages/language/src/hello-world.langium',
         targetRoot + '/packages/language/src/syntaxes/hello-world.monarch.ts',
         targetRoot + '/packages/language/src/generated/ast.ts',
         targetRoot + '/packages/language/src/generated/grammar.ts',
-        targetRoot + '/packages/language/src/generated/module.ts'
+        targetRoot + '/packages/language/src/generated/module.ts',
+        targetRoot + '/packages/language/syntaxes/hello-world.tmLanguage.json'
     ];
 
     const filesTest = (targetRoot: string) => [
@@ -57,6 +60,7 @@ describe('Check yeoman generator works', () => {
         targetRoot + '/packages/cli/src/util.ts',
         targetRoot + '/packages/cli/src/generator.ts',
         targetRoot + '/packages/cli/src/main.ts',
+        targetRoot + '/packages/cli/README.md',
         targetRoot + '/packages/cli/package.json',
         targetRoot + '/packages/cli/tsconfig.json'
     ];
@@ -73,7 +77,8 @@ describe('Check yeoman generator works', () => {
         targetRoot + '/packages/web/language-configuration.json',
         targetRoot + '/packages/web/package.json',
         targetRoot + '/packages/web/tsconfig.json',
-        targetRoot + '/packages/web/vite.config.ts'
+        targetRoot + '/packages/web/vite.config.ts',
+        targetRoot + '/packages/web/README.md',
     ];
 
     const filesExtension = (targetRoot: string) => [
@@ -81,6 +86,7 @@ describe('Check yeoman generator works', () => {
         targetRoot + '/packages/extension/src/language/main.ts',
         targetRoot + '/packages/extension/.vscodeignore',
         targetRoot + '/packages/extension/esbuild.mjs',
+        targetRoot + '/packages/extension/langium-quickstart.md',
         targetRoot + '/packages/extension/language-configuration.json',
         targetRoot + '/packages/extension/package.json',
         targetRoot + '/packages/extension/tsconfig.json'
@@ -238,8 +244,10 @@ const PACKAGE_JSON_EXPECTATION: Record<string, any> = {
     type: 'module',
     private: true,
     scripts: {
+        'clean': 'npm run clean --workspaces',
         'watch': 'tsc -b tsconfig.build.json --watch',
         'build': 'tsc -b tsconfig.build.json && npm run build --workspaces',
+        'build:clean': 'npm run clean && npm run build',
         'lint': 'eslint src --ext ts',
         'langium:generate': 'npm run --workspace packages/language langium:generate',
         'langium:watch': 'npm run --workspace packages/language langium:watch'
@@ -249,6 +257,7 @@ const PACKAGE_JSON_EXPECTATION: Record<string, any> = {
         '@typescript-eslint/eslint-plugin': '~7.13.0',
         '@typescript-eslint/parser': '~7.13.0',
         'eslint': '~8.57.0',
+        'shx':  '~0.3.4',
         'typescript': '~5.4.5'
     },
     volta: {
@@ -274,7 +283,9 @@ const PACKAGE_JSON_EXPECTATION_CLI: Record<string, any> = {
         'hello-world-cli': './bin/cli.js'
     },
     scripts: {
-        'build': "echo 'No build step'"
+        'clean': 'shx rm -fr *.tsbuildinfo out',
+        'build': "echo 'No build step'",
+        'build:clean': 'npm run clean && npm run build'
     },
     dependencies: {
         'hello-world-language': '0.0.1',
@@ -298,7 +309,9 @@ const PACKAGE_JSON_EXPECTATION_WEB: Record<string, any> = {
     },
     files: ['out', 'src'],
     scripts: {
+        'clean': 'shx rm -fr *.tsbuildinfo out dist',
         'build': 'vite build',
+        'build:clean': 'npm run clean && npm run build',
         'dev': 'vite',
         'dev:debug': 'vite --debug --force',
         'serve': 'vite preview'
@@ -351,8 +364,10 @@ const PACKAGE_JSON_EXPECTATION_EXTENSION: Record<string, any> = {
     ],
     main: './out/extension/main.cjs',
     scripts: {
+        'clean': 'shx rm -fr *.tsbuildinfo out',
         'vscode:prepublish': 'npm run build && npm run lint',
         'build': 'tsc -b tsconfig.json && node esbuild.mjs',
+        'build:clean': 'npm run clean && npm run build',
         'watch': 'concurrently -n tsc,esbuild -c blue,yellow "tsc -b tsconfig.json --watch" "node esbuild.mjs --watch"'
     },
     dependencies: {
