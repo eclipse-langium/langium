@@ -184,6 +184,7 @@ export class LangiumGenerator extends Generator {
             '.eslintrc.json',
             'tsconfig.json',
             'tsconfig.build.json',
+            'README.md',
             '.vscode'
         ];
         for (const path of baseFiles) {
@@ -200,7 +201,7 @@ export class LangiumGenerator extends Generator {
         const languageFiles = [
             'package.json',
             'langium-config.json',
-            'langium-quickstart.md',
+            'README.md',
             'tsconfig.json',
             'tsconfig.src.json',
             'vitest.config.ts',
@@ -241,6 +242,7 @@ export class LangiumGenerator extends Generator {
             const cliFiles = [
                 'package.json',
                 'tsconfig.json',
+                'README.md',
                 'bin',
                 'src'
             ];
@@ -260,6 +262,7 @@ export class LangiumGenerator extends Generator {
             const webFiles = [
                 'package.json',
                 'language-configuration.json',
+                'README.md',
                 'tsconfig.json',
                 'index.html',
                 'vite.config.ts',
@@ -282,6 +285,7 @@ export class LangiumGenerator extends Generator {
             const extensionFiles = [
                 '.vscodeignore',
                 'esbuild.mjs',
+                'langium-quickstart.md',
                 'language-configuration.json',
                 'package.json',
                 'tsconfig.json',

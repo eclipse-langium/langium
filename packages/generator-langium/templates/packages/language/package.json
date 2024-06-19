@@ -26,12 +26,14 @@
       }
     },
     "scripts": {
+        "clean": "shx rm -fr *.tsbuildinfo out",
         "build": "echo 'No build step'",
+        "build:clean": "npm run clean && npm run build",
         "langium:generate": "langium generate",
         "langium:watch": "langium generate --watch"
     },
     "dependencies": {
-        "langium": "~3.0.0"        
+        "langium": "~3.0.0"
     },
     "devDependencies": {
         "langium-cli": "~3.0.3"

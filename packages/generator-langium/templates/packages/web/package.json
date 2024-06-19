@@ -11,7 +11,9 @@
         "src"
     ],
     "scripts": {
+        "clean": "shx rm -fr *.tsbuildinfo out dist",
         "build": "vite build",
+        "build:clean": "npm run clean && npm run build",
         "dev": "vite",
         "dev:debug": "vite --debug --force",
         "serve": "vite preview"
