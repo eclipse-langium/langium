@@ -508,6 +508,47 @@ describe('Parser calls value converter', () => {
         // Any value that cannot be parsed correctly is automatically false
         expectEqual('d 2022-Peach', false);
     });
+
+    test('Enums are correctly parsed with types', async () => {
+        const parser = await parserFromGrammar(`
+            grammar Test
+
+            entry Main:
+                value=Enum;
+
+            Enum returns Enum: 'A' | 'B' | 'C';
+            type Enum: 'A' | 'B' | 'C';
+
+            hidden terminal WS: /\\s+/;
+        `);
+
+        const result = parser.parse('A');
+        expect(result.lexerErrors.length).toBe(0);
+        expect(result.parserErrors.length).toBe(0);
+        const value = result.value as unknown as { value: string };
+        expect(value.value).toBeTypeOf('string');
+        expect(value.value).toBe('A');
+    });
+
+    test('Enums are correctly parsed without types', async () => {
+        const parser = await parserFromGrammar(`
+            grammar Test
+
+            entry Main:
+                value=Enum;
+
+            Enum returns string: 'A' | 'B' | 'C';
+
+            hidden terminal WS: /\\s+/;
+        `);
+
+        const result = parser.parse('A');
+        expect(result.lexerErrors.length).toBe(0);
+        expect(result.parserErrors.length).toBe(0);
+        const value = result.value as unknown as { value: string };
+        expect(value.value).toBeTypeOf('string');
+        expect(value.value).toBe('A');
+    });
 });
 
 // Constructs a grammar w/ a special token-builder to support multi-mode lexing
