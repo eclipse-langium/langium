@@ -16,7 +16,7 @@ import type { ValueConverter } from './value-converter.js';
 import { defaultParserErrorProvider, EmbeddedActionsParser, LLkLookaheadStrategy } from 'chevrotain';
 import { LLStarLookaheadStrategy } from 'chevrotain-allstar';
 import { isAssignment, isCrossReference, isKeyword } from '../languages/generated/ast.js';
-import { getExplicitRuleType } from '../utils/grammar-utils.js';
+import { getExplicitRuleType, isDataTypeRule } from '../utils/grammar-utils.js';
 import { assignMandatoryProperties, getContainerOfType, linkContentToContainer } from '../utils/ast-utils.js';
 import { CstNodeBuilder } from './cst-node-builder.js';
 
@@ -218,7 +218,7 @@ export class LangiumParser extends AbstractLangiumParser {
     private computeRuleType(rule: ParserRule): string | symbol | undefined {
         if (rule.fragment) {
             return undefined;
-        } else if (rule.dataType) {
+        } else if (isDataTypeRule(rule)) {
             return DatatypeSymbol;
         } else {
             const explicit = getExplicitRuleType(rule);
