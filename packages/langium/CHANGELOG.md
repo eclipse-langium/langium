@@ -1,5 +1,23 @@
 # Change Log of `langium`
 
+## v3.1.0 (Jun. 2024)
+
+### General Improvements
+
+* Completion items now show the documentation of an element ([#1516](https://github.com/eclipse-langium/langium/pull/1516)).
+* Better support for text document LSP operations ([#1474](https://github.com/eclipse-langium/langium/pull/1474)).
+* Improve unknown file type handling in the language server ([#1455](https://github.com/eclipse-langium/langium/pull/1455), [#1492](https://github.com/eclipse-langium/langium/pull/1492)).
+* Emit an event after configuration section updates ([#1445](https://github.com/eclipse-langium/langium/pull/1445)).
+* Deleted files now have their diagnostics removed ([#1441](https://github.com/eclipse-langium/langium/pull/1441)).
+* A few improvements to the grammar language validation ([#1459](https://github.com/eclipse-langium/langium/pull/1459), [#1401](https://github.com/eclipse-langium/langium/pull/1401)).
+
+### Bug Fixes
+
+* Fixed cyclic formatter behavior ([#1550](https://github.com/eclipse-langium/langium/pull/1550)).
+* Fixed incorrect CST nodes after performing grammar actions ([#1547](https://github.com/eclipse-langium/langium/pull/1547)).
+* Fixed a few `Stream` idempotency issues ([#1545](https://github.com/eclipse-langium/langium/pull/1545)).
+* Fixed a bunch of grammar type system issues ([#1506](https://github.com/eclipse-langium/langium/pull/1506), [#1500](https://github.com/eclipse-langium/langium/pull/1500), [#1478](https://github.com/eclipse-langium/langium/pull/1478), [#1473](https://github.com/eclipse-langium/langium/pull/1473)).
+
 ## v3.0.0 (Feb. 2024)
 
 ### Smaller Bundles with Exports

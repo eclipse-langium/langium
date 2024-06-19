@@ -1,7 +1,7 @@
 {
   "name": "langium-vscode",
   "publisher": "langium",
-  "version": "3.0.0",
+  "version": "3.1.0",
   "displayName": "Langium",
   "description": "Support for the Langium Grammar Language",
   "homepage": "https://langium.org",
@@ -95,8 +95,8 @@
     "lint": "eslint src --ext ts"
   },
   "dependencies": {
-    "langium": "3.0.0",
-    "langium-railroad": "3.0.0",
+    "langium": "3.1.0",
+    "langium-railroad": "3.1.0",
     "vscode-languageserver": "~9.0.1",
     "ignore": "~5.2.4"
   },
