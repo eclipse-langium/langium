@@ -200,9 +200,11 @@ export abstract class AbstractFormatter implements Formatter {
         return false;
     }
 
-    protected isNecessary(edit: TextEdit, document: TextDocument): boolean {
-        const existing = document.getText(edit.range);
-        return existing !== edit.newText;
+    /**
+     * @deprecated This method has been deprecated with 3.1. It now always returns `true` and is no longer used by the default formatter implementation.
+     */
+    protected isNecessary(_edit: TextEdit, _document: TextDocument): boolean {
+        return true;
     }
 
     protected iterateCstFormatting(document: LangiumDocument, formattings: Map<string, FormattingAction>, options: FormattingOptions, range?: Range): TextEdit[] {
@@ -227,7 +229,7 @@ export abstract class AbstractFormatter implements Formatter {
                 if (prependFormatting) {
                     const nodeEdits = this.createTextEdit(lastNode, node, prependFormatting, context);
                     for (const edit of nodeEdits) {
-                        if (edit && this.insideRange(edit.range, range) && this.isNecessary(edit, document.textDocument)) {
+                        if (edit && this.insideRange(edit.range, range)) {
                             edits.push(edit);
                         }
                     }
@@ -240,7 +242,7 @@ export abstract class AbstractFormatter implements Formatter {
                     if (nextNode) {
                         const nodeEdits = this.createTextEdit(node, nextNode, appendFormatting, context);
                         for (const edit of nodeEdits) {
-                            if (edit && this.insideRange(edit.range, range) && this.isNecessary(edit, document.textDocument)) {
+                            if (edit && this.insideRange(edit.range, range)) {
                                 edits.push(edit);
                             }
                         }
@@ -250,7 +252,7 @@ export abstract class AbstractFormatter implements Formatter {
                 if (!prependFormatting && node.hidden) {
                     const hiddenEdits = this.createHiddenTextEdits(lastNode, node, undefined, context);
                     for (const edit of hiddenEdits) {
-                        if (edit && this.insideRange(edit.range, range) && this.isNecessary(edit, document.textDocument)) {
+                        if (edit && this.insideRange(edit.range, range)) {
                             edits.push(edit);
                         }
                     }
