@@ -1,5 +1,10 @@
 # Change Log of `langium-vscode`
 
+## v3.1.0 (Jun. 2023)
+
+* A few improvements to the grammar language validation ([#1459](https://github.com/eclipse-langium/langium/pull/1459), [#1401](https://github.com/eclipse-langium/langium/pull/1401)).
+* Fixed a bunch of grammar type system issues ([#1541](https://github.com/eclipse-langium/langium/pull/1541), [#1506](https://github.com/eclipse-langium/langium/pull/1506), [#1500](https://github.com/eclipse-langium/langium/pull/1500), [#1478](https://github.com/eclipse-langium/langium/pull/1478), [#1473](https://github.com/eclipse-langium/langium/pull/1473)).
+
 ## v2.1.0 (Nov. 2023)
 
 * Improve grammar language formatting ([#1185](https://github.com/eclipse-langium/langium/pull/1185)).

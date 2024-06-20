@@ -1,5 +1,9 @@
 # Change Log of `langium-cli`
 
+## v3.1.0 (Jun. 2024)
+
+Fixed string escaping for generated code ([#1537](https://github.com/eclipse-langium/langium/pull/1537), [#1514](https://github.com/eclipse-langium/langium/pull/1514)).
+
 ## v3.0.2 (Apr. 2024)
 
 Exported the textmate syntax highlighting under `langium-cli/textmate`. This enables importing the highlighting code for the Langium playground.
