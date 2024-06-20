@@ -48,10 +48,11 @@ jobs:
         npm run publish:latest --provenance --workspace=langium-statemachine-dsl
     - name: Publish VSCode Extension
       shell: bash
+      # Add this line to the publishing once we have a valid VSCE token available again
+      # vsce publish -i langium-vscode-$PACKAGE_VERSION.vsix -p ${{ secrets.VSCE_TOKEN }}
       run: |
         npm install -g @vscode/vsce ovsx
         cd packages/langium-vscode
         PACKAGE_VERSION=`npm pkg get version --workspaces=false | tr -d \"`
         vsce package
-        vsce publish -i langium-vscode-$PACKAGE_VERSION.vsix -p ${{ secrets.VSCE_TOKEN }}
         ovsx publish langium-vscode-$PACKAGE_VERSION.vsix -p ${{ secrets.OVSX_TOKEN }}
