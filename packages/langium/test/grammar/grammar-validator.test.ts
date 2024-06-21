@@ -183,7 +183,12 @@ describe('Langium grammar validation', () => {
         grammar Test
 
         entry Main:
-            Body* FQN* ID*;
+            // Fragment rule
+            Body*
+            // Data type rule
+            FQN*
+            // Terminal rule
+            ID*;
         fragment Body:
             value+='test';
         FQN returns string:
