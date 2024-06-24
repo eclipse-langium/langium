@@ -23,7 +23,6 @@ import * as ast from '../../languages/generated/ast.js';
 import { getTypeNameWithoutError, hasDataTypeReturn, isPrimitiveGrammarType, isStringGrammarType, resolveImport, resolveTransitiveImports } from '../internal-grammar-util.js';
 import { typeDefinitionToPropertyType } from '../type-system/type-collector/declared-types.js';
 import { flattenPlainType, isPlainReferenceType } from '../type-system/type-collector/plain-types.js';
-import { AstUtils } from '../../index.js';
 
 export function registerValidationChecks(services: LangiumGrammarServices): void {
     const registry = services.validation.ValidationRegistry;
@@ -731,20 +730,26 @@ export class LangiumGrammarValidator {
             }
             return result;
         };
-        // Locate called rule, ensure it is not a fragment.
-        const refersToFragment = call.rule.ref !== undefined && call.rule.ref.fragment;
-        // Data type rules do not cause problems, too.
-        const callInDataTypeRule = (AstUtils.getContainerOfType(call, ast.isParserRule))?.dataType !== undefined;
-        if (refersToFragment || callInDataTypeRule) {
+        const ref = call.rule.ref;
+        // Parsing an unassigned terminal rule is fine.
+        if (!ref || ast.isTerminalRule(ref)) {
+            return;
+        }
+        // Fragment or data type rules are fine too.
+        if (ref.fragment || isDataTypeRule(ref)) {
+            return;
+        }
+        // Multiple unassigned calls if inside a data type rule is fine too.
+        const parentRule = getContainerOfType(call, ast.isParserRule);
+        if (!parentRule || isDataTypeRule(parentRule)) {
             return;
         }
 
         const appearsMultipleTimes = findContainerWithCardinality(call) !== undefined;
-        const hasAssignment = AstUtils.getContainerOfType(call, ast.isAssignment) !== undefined;
+        const hasAssignment = getContainerOfType(call, ast.isAssignment) !== undefined;
         if (appearsMultipleTimes && !hasAssignment) {
-            accept('error', `Rule call ${call.rule.$refText} requires assignment when used with multiplicity.`, {
-                node: call,
-                property: 'cardinality'
+            accept('error', `Rule call '${ref.name}' requires assignment when parsed multiple times.`, {
+                node: call
             });
         }
     }

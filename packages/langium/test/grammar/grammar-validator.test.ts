@@ -156,7 +156,6 @@ describe('Langium grammar validation', () => {
             Plus+;
         List3:
             Exp+;
-        // addresses https://github.com/eclipse-langium/langium/pull/1437#pullrequestreview-1994232830
         List4:
             elems += (Minus | Div);
         
@@ -171,12 +170,35 @@ describe('Langium grammar validation', () => {
 
         const validationResult = await validate(grammar);
         expect(validationResult.diagnostics).to.have.length(2);
-        expectError(validationResult, 'Rule call Mult requires assignment when used with multiplicity.', {
-            property: 'cardinality'
+        expectError(validationResult, "Rule call 'Mult' requires assignment when parsed multiple times.", {
+            property: undefined
         });
-        expectError(validationResult, 'Rule call Plus requires assignment when used with multiplicity.', {
-            property: 'cardinality'
+        expectError(validationResult, "Rule call 'Plus' requires assignment when parsed multiple times.", {
+            property: undefined
         });
+    });
+
+    test('Rule calls with multiplicity - negative', async () => {
+        const grammar = `
+        grammar Test
+
+        entry Main:
+            // Fragment rule
+            Body*
+            // Data type rule
+            FQN*
+            // Terminal rule
+            ID*;
+        fragment Body:
+            value+='test';
+        FQN returns string:
+            ID ('.' ID)*;
+        
+        terminal ID: /[_a-zA-Z][\\w_]*/;
+        `.trim();
+
+        const validationResult = await validate(grammar);
+        expectNoIssues(validationResult);
     });
 });
 
