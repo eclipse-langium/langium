@@ -231,27 +231,30 @@ function findAstTypesInternal(type: PropertyType, visited: Set<PropertyType>): s
 }
 
 export function isAstType(type: PropertyType): boolean {
-    return isAstTypeInternal(type, new Set());
+    return isAstTypeInternal(type, new Map());
 }
 
-export function isAstTypeInternal(type: PropertyType, visited: Set<PropertyType>): boolean {
+export function isAstTypeInternal(type: PropertyType, visited: Map<PropertyType, boolean>): boolean {
     if (visited.has(type)) {
-        return false;
-    } else {
-        visited.add(type);
+        return visited.get(type)!;
     }
+
+    let result = false;
+
     if (isPropertyUnion(type)) {
-        return type.types.every(e => isAstTypeInternal(e, visited));
+        result = type.types.every(e => isAstTypeInternal(e, visited));
     } else if (isValueType(type)) {
         const value = type.value;
         if ('type' in value) {
-            return isAstTypeInternal(value.type, visited);
+            result = isAstTypeInternal(value.type, visited);
         } else {
             // Is definitely an interface type
-            return true;
+            result = true;
         }
     }
-    return false;
+
+    visited.set(type, result);
+    return result;
 }
 
 export function escapeQuotes(str: string, type: '"' | "'" = '"'): string {
