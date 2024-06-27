@@ -238,6 +238,10 @@ export function isAstTypeInternal(type: PropertyType, visited: Map<PropertyType,
     if (visited.has(type)) {
         return visited.get(type)!;
     }
+    // This is supposed to prevent infinite recursion.
+    // Setting this to true is a pretty safe assumption.
+    // Setting it to false might lead to false negatives for property unions.
+    visited.set(type, true);
 
     let result = false;
 

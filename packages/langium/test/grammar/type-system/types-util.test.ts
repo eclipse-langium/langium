@@ -5,7 +5,8 @@
  ******************************************************************************/
 
 import { describe, expect, test } from 'vitest';
-import { InterfaceType, isAstType } from 'langium/grammar';
+import type { ValueType } from 'langium/grammar';
+import { InterfaceType, UnionType, isAstType } from 'langium/grammar';
 
 describe('isAstType', () => {
 
@@ -72,6 +73,75 @@ describe('isAstType', () => {
                 }
             ]
         })).toBeFalsy();
+    });
+
+    test('Should return false for primitive union type with cycles', () => {
+        const unionType = new UnionType('Test');
+        const valueType: ValueType = {
+            value: unionType
+        };
+        unionType.type = {
+            types: [
+                {
+                    primitive: 'string'
+                },
+                valueType
+            ]
+        };
+        expect(isAstType(unionType.type)).toBeFalsy();
+    });
+
+    test('Should return true for interface union type with cycles', () => {
+        const unionType = new UnionType('A');
+        const valueType: ValueType = {
+            value: unionType
+        };
+        unionType.type = {
+            types: [
+                {
+                    value: new InterfaceType('B', true, false)
+                },
+                valueType
+            ]
+        };
+        expect(isAstType(unionType.type)).toBeTruthy();
+    });
+
+    test('Should return true for nested duplicate union types', () => {
+        const unionType1 = new UnionType('A');
+        const unionType2 = new UnionType('B');
+        const interfaceType1 = new InterfaceType('C', true, false);
+        const interfaceType2 = new InterfaceType('D', true, false);
+        unionType1.type = {
+            types: [
+                {
+                    value: interfaceType1
+                },
+                {
+                    value: unionType2
+                }
+            ]
+        };
+        unionType2.type = {
+            types: [
+                {
+                    value: interfaceType1 // duplicate
+                },
+                {
+                    value: interfaceType2
+                }
+            ]
+        };
+        expect(isAstType(unionType1.type)).toBeTruthy();
+    });
+
+    test('Should return true for cyclic AST type', () => {
+        const unionType = new UnionType('Test');
+        const type: ValueType = {
+            value: unionType
+        };
+        unionType.type = type;
+        expect(isAstType(type)).toBeTruthy();
     });
 
 });
