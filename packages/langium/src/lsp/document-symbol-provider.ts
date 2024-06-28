@@ -48,7 +48,7 @@ export class DefaultDocumentSymbolProvider implements DocumentSymbolProvider {
             const name = this.nameProvider.getName(astNode);
             return [{
                 kind: this.nodeKindProvider.getSymbolKind(astNode),
-                name: name ?? nameNode.text,
+                name: name === undefined || name.length === 0 ? nameNode.text : name,
                 range: node.range,
                 selectionRange: nameNode.range,
                 children: this.getChildSymbols(document, astNode)
