@@ -25,7 +25,6 @@ import { LangiumGrammarDefinitionProvider } from './lsp/grammar-definition.js';
 import { LangiumGrammarCallHierarchyProvider } from './lsp/grammar-call-hierarchy.js';
 import { LangiumGrammarValidationResourcesCollector } from './validation/validation-resources-collector.js';
 import { LangiumGrammarTypesValidator, registerTypeValidationChecks } from './validation/types-validator.js';
-import { interruptAndCheck } from '../utils/promise-utils.js';
 import { DocumentState } from '../workspace/documents.js';
 
 export type LangiumGrammarAddedServices = {
@@ -104,12 +103,9 @@ export function createLangiumGrammarServices(context: DefaultSharedModuleContext
 
 function addTypeCollectionPhase(sharedServices: LangiumSharedServices, grammarServices: LangiumGrammarServices) {
     const documentBuilder = sharedServices.workspace.DocumentBuilder;
-    documentBuilder.onBuildPhase(DocumentState.IndexedReferences, async (documents, cancelToken) => {
-        for (const document of documents) {
-            await interruptAndCheck(cancelToken);
-            const typeCollector = grammarServices.validation.ValidationResourcesCollector;
-            const grammar = document.parseResult.value as Grammar;
-            (document as LangiumGrammarDocument).validationResources = typeCollector.collectValidationResources(grammar);
-        }
+    documentBuilder.onDocumentPhase(DocumentState.IndexedReferences, async document => {
+        const typeCollector = grammarServices.validation.ValidationResourcesCollector;
+        const grammar = document.parseResult.value as Grammar;
+        (document as LangiumGrammarDocument).validationResources = typeCollector.collectValidationResources(grammar);
     });
 }
