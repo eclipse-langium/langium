@@ -33,10 +33,10 @@
         "langium:watch": "langium generate --watch"
     },
     "dependencies": {
-        "langium": "~3.0.0"
+        "langium": "~3.1.1"
     },
     "devDependencies": {
-        "langium-cli": "~3.0.3"
+        "langium-cli": "~3.1.0"
     },
     "volta": {
         "node": "18.20.3",

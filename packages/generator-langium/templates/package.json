@@ -15,11 +15,11 @@
     },
     "devDependencies": {
         "@types/node": "^18.0.0",
-        "@typescript-eslint/parser": "~7.13.0",
-        "@typescript-eslint/eslint-plugin": "~7.13.0",
+        "@typescript-eslint/parser": "~7.15.0",
+        "@typescript-eslint/eslint-plugin": "~7.15.0",
         "eslint": "~8.57.0",
         "shx":  "~0.3.4",
-        "typescript": "~5.4.5"
+        "typescript": "~5.5.3"
     },
     "volta": {
         "node": "18.20.3",
