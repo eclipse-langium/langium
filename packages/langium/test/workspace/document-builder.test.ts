@@ -5,11 +5,11 @@
  ******************************************************************************/
 
 import type { AstNode, Reference, ValidationChecks } from 'langium';
-import { DocumentState, TextDocument, URI, isOperationCancelled } from 'langium';
+import { AstUtils, DocumentState, TextDocument, URI, isOperationCancelled } from 'langium';
 import { createServicesForGrammar } from 'langium/grammar';
 import { setTextDocument } from 'langium/test';
 import { describe, expect, test } from 'vitest';
-import { CancellationTokenSource } from 'vscode-languageserver';
+import { CancellationToken, CancellationTokenSource } from 'vscode-languageserver';
 import { fail } from 'assert';
 
 describe('DefaultDocumentBuilder', () => {
@@ -317,6 +317,93 @@ describe('DefaultDocumentBuilder', () => {
         await builder.build([document], { validation: true });
     });
 
+    test("References are unlinked on update even though the document didn't change", async () => {
+        const services = await createServices();
+        const documentFactory = services.shared.workspace.LangiumDocumentFactory;
+        const documents = services.shared.workspace.LangiumDocuments;
+        const document = documentFactory.fromString(`
+            foo 1 A
+            foo 11 B
+            bar A
+            bar B
+        `, URI.parse('file:///test1.txt'));
+        documents.addDocument(document);
+
+        const builder = services.shared.workspace.DocumentBuilder;
+        await builder.build([document], { validation: true });
+        expect(document.state).toBe(DocumentState.Validated);
+        expect(document.references).toHaveLength(2);
+
+        setTextDocument(services, document.textDocument);
+        try {
+            // Immediately cancel the update to prevent the document from being rebuilt
+            await builder.update([document.uri], [], CancellationToken.Cancelled);
+            fail('The update is supposed to be cancelled');
+        } catch (err) {
+            expect(isOperationCancelled(err)).toBe(true);
+        }
+        expect(document.state).toBe(DocumentState.Changed);
+        expect(document.references).toHaveLength(0);
+        const astNodeReferences = AstUtils.streamAst(document.parseResult.value).flatMap(AstUtils.streamReferences).toArray();
+        expect(astNodeReferences).toHaveLength(2);
+        for (const ref of astNodeReferences) {
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
+            const defaultRef = ref.reference as any;
+            expect(defaultRef._ref).toBeUndefined();
+        }
+    });
+
+    test("References are unlinked on update even if the document didn't reach linked phase yet", async () => {
+        const services = await createServices();
+        const documentFactory = services.shared.workspace.LangiumDocumentFactory;
+        const documents = services.shared.workspace.LangiumDocuments;
+        const document = documentFactory.fromString(`
+            foo 1 A
+            foo 11 B
+            bar A
+            bar B
+        `, URI.parse('file:///test1.txt'));
+        documents.addDocument(document);
+
+        const tokenSource = new CancellationTokenSource();
+        const builder = services.shared.workspace.DocumentBuilder;
+        builder.onBuildPhase(DocumentState.ComputedScopes, () => {
+            tokenSource.cancel();
+        });
+        try {
+            await builder.build([document], undefined, tokenSource.token);
+            fail('The update is supposed to be cancelled');
+        } catch (err) {
+            expect(isOperationCancelled(err)).toBe(true);
+        }
+        expect(document.state).toBe(DocumentState.ComputedScopes);
+        expect(document.references).toHaveLength(0);
+
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        const first = (document.parseResult.value as any).foos[0].bar.ref;
+        expect(first).toBeDefined();
+        expect(first.$type).toBe('Bar');
+
+        expect(document.references).toHaveLength(1);
+
+        setTextDocument(services, document.textDocument);
+        try {
+            // Immediately cancel the update to prevent the document from being rebuilt
+            await builder.update([document.uri], [], CancellationToken.Cancelled);
+            fail('The update is supposed to be cancelled');
+        } catch (err) {
+            expect(isOperationCancelled(err)).toBe(true);
+        }
+        expect(document.state).toBe(DocumentState.Changed);
+        expect(document.references).toHaveLength(0);
+        const astNodeReferences = AstUtils.streamAst(document.parseResult.value).flatMap(AstUtils.streamReferences).toArray();
+        expect(astNodeReferences).toHaveLength(2);
+        for (const ref of astNodeReferences) {
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
+            const defaultRef = ref.reference as any;
+            expect(defaultRef._ref).toBeUndefined();
+        }
+    });
 });
 
 type TestAstType = {

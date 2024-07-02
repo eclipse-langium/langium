@@ -392,11 +392,13 @@ export interface LangiumDocuments {
 export class DefaultLangiumDocuments implements LangiumDocuments {
 
     protected readonly langiumDocumentFactory: LangiumDocumentFactory;
+    protected readonly serviceRegistry: ServiceRegistry;
 
     protected readonly documentMap: Map<string, LangiumDocument> = new Map();
 
     constructor(services: LangiumSharedCoreServices) {
         this.langiumDocumentFactory = services.workspace.LangiumDocumentFactory;
+        this.serviceRegistry = services.ServiceRegistry;
     }
 
     get all(): Stream<LangiumDocument> {
@@ -449,9 +451,10 @@ export class DefaultLangiumDocuments implements LangiumDocuments {
         const uriString = uri.toString();
         const langiumDoc = this.documentMap.get(uriString);
         if (langiumDoc) {
+            const linker = this.serviceRegistry.getServices(uri).references.Linker;
+            linker.unlink(langiumDoc);
             langiumDoc.state = DocumentState.Changed;
             langiumDoc.precomputedScopes = undefined;
-            langiumDoc.references = [];
             langiumDoc.diagnostics = undefined;
         }
         return langiumDoc;
