@@ -254,11 +254,11 @@ const PACKAGE_JSON_EXPECTATION: Record<string, any> = {
     },
     'devDependencies': {
         '@types/node': '^18.0.0',
-        '@typescript-eslint/eslint-plugin': '~7.13.0',
-        '@typescript-eslint/parser': '~7.13.0',
+        '@typescript-eslint/eslint-plugin': '~7.15.0',
+        '@typescript-eslint/parser': '~7.15.0',
         'eslint': '~8.57.0',
         'shx':  '~0.3.4',
-        'typescript': '~5.4.5'
+        'typescript': '~5.5.3'
     },
     volta: {
         'node': '18.20.3',
@@ -317,16 +317,16 @@ const PACKAGE_JSON_EXPECTATION_WEB: Record<string, any> = {
         'serve': 'vite preview'
     },
     dependencies: {
-        '@codingame/monaco-vscode-editor-service-override': '~5.2.0',
-        '@codingame/monaco-vscode-keybindings-service-override': '~5.2.0',
-        'monaco-editor': 'npm:@codingame/monaco-vscode-editor-api@~5.2.0',
-        'monaco-editor-wrapper': '~5.2.0',
-        'monaco-languageclient': '~8.5.0',
-        'vscode': 'npm:@codingame/monaco-vscode-api@~5.2.0'
+        '@codingame/monaco-vscode-editor-service-override': '~6.0.3',
+        '@codingame/monaco-vscode-keybindings-service-override': '~6.0.3',
+        'monaco-editor': 'npm:@codingame/monaco-vscode-editor-api@~6.0.3',
+        'monaco-editor-wrapper': '~5.3.1',
+        'monaco-languageclient': '~8.6.0',
+        'vscode': 'npm:@codingame/monaco-vscode-api@~6.0.3'
     },
     devDependencies: {
         '@codingame/esbuild-import-meta-url-plugin': '~1.0.2',
-        'vite': '~5.2.13'
+        'vite': '~5.3.2'
     },
     volta: {
         node: '18.20.3',
@@ -377,8 +377,8 @@ const PACKAGE_JSON_EXPECTATION_EXTENSION: Record<string, any> = {
     },
     devDependencies: {
         '@types/vscode': '~1.67.0',
-        'concurrently': '~8.2.1',
-        'esbuild': '~0.21.5'
+        'concurrently': '~8.2.2',
+        'esbuild': '~0.23.0'
     }
 };
 
