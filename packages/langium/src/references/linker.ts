@@ -114,9 +114,12 @@ export class DefaultLinker implements Linker {
                     message: `An error occurred while resolving reference to '${ref.$refText}': ${err}`
                 };
             }
+            // Add the reference to the document's array of references
+            // Only add if the reference has been not been resolved earlier
+            // Otherwise we end up with duplicates
+            // See also implementation of `buildReference`
+            document.references.push(ref);
         }
-        // Add the reference to the document's array of references
-        document.references.push(ref);
     }
 
     unlink(document: LangiumDocument): void {
@@ -159,6 +162,8 @@ export class DefaultLinker implements Linker {
                     }
                     this._ref = refData.node ?? refData.error;
                     this._nodeDescription = refData.descr;
+                    const document = getDocument(node);
+                    document.references.push(this);
                 }
                 return isAstNode(this._ref) ? this._ref : undefined;
             },
