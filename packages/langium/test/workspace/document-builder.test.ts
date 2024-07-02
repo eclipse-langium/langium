@@ -352,6 +352,58 @@ describe('DefaultDocumentBuilder', () => {
             expect(defaultRef._ref).toBeUndefined();
         }
     });
+
+    test("References are unlinked on update even if the document didn't reach linked phase yet", async () => {
+        const services = await createServices();
+        const documentFactory = services.shared.workspace.LangiumDocumentFactory;
+        const documents = services.shared.workspace.LangiumDocuments;
+        const document = documentFactory.fromString(`
+            foo 1 A
+            foo 11 B
+            bar A
+            bar B
+        `, URI.parse('file:///test1.txt'));
+        documents.addDocument(document);
+
+        const tokenSource = new CancellationTokenSource();
+        const builder = services.shared.workspace.DocumentBuilder;
+        builder.onBuildPhase(DocumentState.ComputedScopes, () => {
+            tokenSource.cancel();
+        });
+        try {
+            await builder.build([document], undefined, tokenSource.token);
+            fail('The update is supposed to be cancelled');
+        } catch (err) {
+            expect(isOperationCancelled(err)).toBe(true);
+        }
+        expect(document.state).toBe(DocumentState.ComputedScopes);
+        expect(document.references).toHaveLength(0);
+
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        const first = (document.parseResult.value as any).foos[0].bar.ref;
+        expect(first).toBeDefined();
+        expect(first.$type).toBe('Bar');
+
+        expect(document.references).toHaveLength(1);
+
+        setTextDocument(services, document.textDocument);
+        try {
+            // Immediately cancel the update to prevent the document from being rebuilt
+            await builder.update([document.uri], [], CancellationToken.Cancelled);
+            fail('The update is supposed to be cancelled');
+        } catch (err) {
+            expect(isOperationCancelled(err)).toBe(true);
+        }
+        expect(document.state).toBe(DocumentState.Changed);
+        expect(document.references).toHaveLength(0);
+        const astNodeReferences = AstUtils.streamAst(document.parseResult.value).flatMap(AstUtils.streamReferences).toArray();
+        expect(astNodeReferences).toHaveLength(2);
+        for (const ref of astNodeReferences) {
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
+            const defaultRef = ref.reference as any;
+            expect(defaultRef._ref).toBeUndefined();
+        }
+    });
 });
 
 type TestAstType = {
