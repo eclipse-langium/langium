@@ -13,7 +13,7 @@ import type { MaybePromise } from '../utils/promise-utils.js';
 import type { Deferred } from '../utils/promise-utils.js';
 import type { ValidationOptions } from '../validation/document-validator.js';
 import type { IndexManager } from '../workspace/index-manager.js';
-import type { LangiumDocument, LangiumDocuments, LangiumDocumentFactory } from './documents.js';
+import type { LangiumDocument, LangiumDocuments, LangiumDocumentFactory, TextDocumentProvider } from './documents.js';
 import { MultiMap } from '../utils/collections.js';
 import { OperationCancelled, interruptAndCheck, isOperationCancelled } from '../utils/promise-utils.js';
 import { stream } from '../utils/stream.js';
@@ -129,6 +129,7 @@ export class DefaultDocumentBuilder implements DocumentBuilder {
 
     protected readonly langiumDocuments: LangiumDocuments;
     protected readonly langiumDocumentFactory: LangiumDocumentFactory;
+    protected readonly textDocuments: TextDocumentProvider | undefined;
     protected readonly indexManager: IndexManager;
     protected readonly serviceRegistry: ServiceRegistry;
     protected readonly updateListeners: DocumentUpdateListener[] = [];
@@ -141,6 +142,7 @@ export class DefaultDocumentBuilder implements DocumentBuilder {
     constructor(services: LangiumSharedCoreServices) {
         this.langiumDocuments = services.workspace.LangiumDocuments;
         this.langiumDocumentFactory = services.workspace.LangiumDocumentFactory;
+        this.textDocuments = services.workspace.TextDocuments;
         this.indexManager = services.workspace.IndexManager;
         this.serviceRegistry = services.ServiceRegistry;
     }
@@ -223,20 +225,47 @@ export class DefaultDocumentBuilder implements DocumentBuilder {
         // Only allow interrupting the execution after all state changes are done
         await interruptAndCheck(cancelToken);
 
-        // Collect all documents that we should rebuild
-        const rebuildDocuments = this.langiumDocuments.all
-            .filter(doc =>
-                // This includes those that were reported as changed and those that we selected for relinking
-                doc.state < DocumentState.Linked
-                // This includes those for which a previous build has been cancelled
-                || !this.buildState.get(doc.uri.toString())?.completed
-            )
-            .toArray();
+        // Collect and sort all documents that we should rebuild
+        const rebuildDocuments = this.sortDocuments(
+            this.langiumDocuments.all
+                .filter(doc =>
+                    // This includes those that were reported as changed and those that we selected for relinking
+                    doc.state < DocumentState.Linked
+                    // This includes those for which a previous build has been cancelled
+                    || !this.buildState.get(doc.uri.toString())?.completed
+                )
+                .toArray()
+        );
         await this.buildDocuments(rebuildDocuments, this.updateBuildOptions, cancelToken);
     }
 
     protected async emitUpdate(changed: URI[], deleted: URI[]): Promise<void> {
         await Promise.all(this.updateListeners.map(listener => listener(changed, deleted)));
+    }
+
+    /**
+     * Sort the given documents by priority. By default, documents with an open text document are prioritized.
+     * This is useful to ensure that visible documents show their diagnostics before all other documents.
+     *
+     * This improves the responsiveness in large workspaces as users usually don't care about diagnostics
+     * in files that are currently not opened in the editor.
+     */
+    protected sortDocuments(documents: LangiumDocument[]): LangiumDocument[] {
+        const hasTextDocument = new Map<LangiumDocument, boolean>();
+        for (const doc of documents) {
+            hasTextDocument.set(doc, !!this.textDocuments?.get(doc.uri.toString()));
+        }
+        return documents.sort((a, b) => {
+            const aHasDoc = hasTextDocument.get(a);
+            const bHasDoc = hasTextDocument.get(b);
+            if (aHasDoc && !bHasDoc) {
+                return -1;
+            } else if (!aHasDoc && bHasDoc) {
+                return 1;
+            } else {
+                return 0;
+            }
+        });
     }
 
     /**
