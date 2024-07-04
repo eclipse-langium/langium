@@ -253,7 +253,7 @@ export class DefaultDocumentBuilder implements DocumentBuilder {
     protected sortDocuments(documents: LangiumDocument[]): LangiumDocument[] {
         const hasTextDocument = new Map<LangiumDocument, boolean>();
         for (const doc of documents) {
-            hasTextDocument.set(doc, !!this.textDocuments?.get(doc.uri.toString()));
+            hasTextDocument.set(doc, Boolean(this.textDocuments?.get(doc.uri.toString())));
         }
         return documents.sort((a, b) => {
             const aHasDoc = hasTextDocument.get(a);
