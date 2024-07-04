@@ -332,17 +332,12 @@ export function addDiagnosticsHandler(connection: Connection, services: LangiumS
             });
         }
     });
-    documentBuilder.onBuildPhase(DocumentState.Validated, async (documents, cancelToken) => {
-        for (const document of documents) {
-            if (document.diagnostics) {
-                connection.sendDiagnostics({
-                    uri: document.uri.toString(),
-                    diagnostics: document.diagnostics
-                });
-            }
-            if (cancelToken.isCancellationRequested) {
-                return;
-            }
+    documentBuilder.onDocumentPhase(DocumentState.Validated, async (document) => {
+        if (document.diagnostics) {
+            connection.sendDiagnostics({
+                uri: document.uri.toString(),
+                diagnostics: document.diagnostics
+            });
         }
     });
 }

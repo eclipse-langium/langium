@@ -1,5 +1,15 @@
 # Change Log of `langium`
 
+## v3.1.2 (Jul. 2024)
+
+* Fixes a minor issue in how we determine whether a grammar internal type is a primitive or an object type ([#1563](https://github.com/eclipse-langium/langium/pull/1563)).
+* Introduced a new `onDocumentPhase` method for the `DocumentBuilder` interface and fixed stale references in ASTs ([#1566](https://github.com/eclipse-langium/langium/pull/1566)).
+* Better handle empty names in the `DocumentSymbolProvider` ([#1565](https://github.com/eclipse-langium/langium/pull/1565)).
+
+## v3.1.1 (Jun. 2024)
+
+* Fixed an issue in a trigger-happy validation ([#1559](https://github.com/eclipse-langium/langium/pull/1559)).
+
 ## v3.1.0 (Jun. 2024)
 
 ### General Improvements

@@ -5,11 +5,11 @@
  ******************************************************************************/
 
 import type { AstNode, Reference, ValidationChecks } from 'langium';
-import { DocumentState, TextDocument, URI, isOperationCancelled } from 'langium';
+import { AstUtils, DocumentState, TextDocument, URI, isOperationCancelled } from 'langium';
 import { createServicesForGrammar } from 'langium/grammar';
 import { setTextDocument } from 'langium/test';
 import { describe, expect, test } from 'vitest';
-import { CancellationTokenSource } from 'vscode-languageserver';
+import { CancellationToken, CancellationTokenSource } from 'vscode-languageserver';
 import { fail } from 'assert';
 
 describe('DefaultDocumentBuilder', () => {
@@ -317,6 +317,175 @@ describe('DefaultDocumentBuilder', () => {
         await builder.build([document], { validation: true });
     });
 
+    test('`onDocumentPhase` always triggers before the respective `onBuildPhase`', async () => {
+        const services = await createServices();
+        const documentFactory = services.shared.workspace.LangiumDocumentFactory;
+        const documents = services.shared.workspace.LangiumDocuments;
+        const document = documentFactory.fromString(`
+            foo 1 A
+            foo 11 B
+            bar A
+            bar B
+        `, URI.parse('file:///test1.txt'));
+        documents.addDocument(document);
+
+        const builder = services.shared.workspace.DocumentBuilder;
+
+        const documentPhases = new Set<DocumentState>();
+
+        for (let i = DocumentState.IndexedContent; i <= DocumentState.Validated; i++) {
+            const phase = i;
+            builder.onDocumentPhase(phase, () => {
+                documentPhases.add(phase);
+            });
+            builder.onBuildPhase(phase, () => {
+                expect(documentPhases.has(phase)).toBe(true);
+            });
+        }
+
+        await builder.build([document], { validation: true });
+        expect(document.state).toBe(DocumentState.Validated);
+    });
+
+    test('`onDocumentPhase` triggers during cancellation', async () => {
+        const services = await createServices();
+        const documentFactory = services.shared.workspace.LangiumDocumentFactory;
+        const documents = services.shared.workspace.LangiumDocuments;
+        const document1 = documentFactory.fromString(`
+            foo 1 A
+            foo 11 B
+            bar A
+            bar B
+        `, URI.parse('file:///test1.txt'));
+        documents.addDocument(document1);
+        const document2 = documentFactory.fromString(`
+            foo 1 A
+            foo 11 B
+            bar A
+            bar B
+        `, URI.parse('file:///test2.txt'));
+        documents.addDocument(document2);
+
+        const builder = services.shared.workspace.DocumentBuilder;
+        const tokenSource = new CancellationTokenSource();
+
+        const buildPhases = new Set<DocumentState>();
+
+        for (let i = DocumentState.IndexedContent; i <= DocumentState.Validated; i++) {
+            const phase = i;
+            builder.onDocumentPhase(phase, () => {
+                if (phase === DocumentState.IndexedReferences) {
+                    tokenSource.cancel();
+                    // Wait a bit to ensure that the cancellation is processed
+                    return new Promise(resolve => setTimeout(resolve, 20));
+                }
+                return Promise.resolve();
+            });
+            builder.onBuildPhase(phase, () => {
+                buildPhases.add(phase);
+            });
+        }
+
+        try {
+            await builder.build([document1, document2], { validation: true }, tokenSource.token);
+            fail('The build is supposed to be cancelled');
+        } catch (err) {
+            expect(isOperationCancelled(err)).toBe(true);
+        }
+        expect(document1.state).toBe(DocumentState.IndexedReferences);
+        expect(document2.state).toBe(DocumentState.Linked);
+        expect(buildPhases.has(DocumentState.IndexedReferences)).toBe(false);
+    });
+
+    test("References are unlinked on update even though the document didn't change", async () => {
+        const services = await createServices();
+        const documentFactory = services.shared.workspace.LangiumDocumentFactory;
+        const documents = services.shared.workspace.LangiumDocuments;
+        const document = documentFactory.fromString(`
+            foo 1 A
+            foo 11 B
+            bar A
+            bar B
+        `, URI.parse('file:///test1.txt'));
+        documents.addDocument(document);
+
+        const builder = services.shared.workspace.DocumentBuilder;
+        await builder.build([document], { validation: true });
+        expect(document.state).toBe(DocumentState.Validated);
+        expect(document.references).toHaveLength(2);
+
+        setTextDocument(services, document.textDocument);
+        try {
+            // Immediately cancel the update to prevent the document from being rebuilt
+            await builder.update([document.uri], [], CancellationToken.Cancelled);
+            fail('The update is supposed to be cancelled');
+        } catch (err) {
+            expect(isOperationCancelled(err)).toBe(true);
+        }
+        expect(document.state).toBe(DocumentState.Changed);
+        expect(document.references).toHaveLength(0);
+        const astNodeReferences = AstUtils.streamAst(document.parseResult.value).flatMap(AstUtils.streamReferences).toArray();
+        expect(astNodeReferences).toHaveLength(2);
+        for (const ref of astNodeReferences) {
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
+            const defaultRef = ref.reference as any;
+            expect(defaultRef._ref).toBeUndefined();
+        }
+    });
+
+    test("References are unlinked on update even if the document didn't reach linked phase yet", async () => {
+        const services = await createServices();
+        const documentFactory = services.shared.workspace.LangiumDocumentFactory;
+        const documents = services.shared.workspace.LangiumDocuments;
+        const document = documentFactory.fromString(`
+            foo 1 A
+            foo 11 B
+            bar A
+            bar B
+        `, URI.parse('file:///test1.txt'));
+        documents.addDocument(document);
+
+        const tokenSource = new CancellationTokenSource();
+        const builder = services.shared.workspace.DocumentBuilder;
+        builder.onBuildPhase(DocumentState.ComputedScopes, () => {
+            tokenSource.cancel();
+        });
+        try {
+            await builder.build([document], undefined, tokenSource.token);
+            fail('The update is supposed to be cancelled');
+        } catch (err) {
+            expect(isOperationCancelled(err)).toBe(true);
+        }
+        expect(document.state).toBe(DocumentState.ComputedScopes);
+        expect(document.references).toHaveLength(0);
+
+        // Resolve the reference "on-the-fly"
+        // We would expect that doing so will add the reference to the document references
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        const first = (document.parseResult.value as any).foos[0].bar.ref;
+        expect(first).toBeDefined();
+        expect(first.$type).toBe('Bar');
+
+        expect(document.references).toHaveLength(1);
+
+        setTextDocument(services, document.textDocument);
+        try {
+            // Immediately cancel the update to prevent the document from being rebuilt
+            await builder.update([document.uri], [], CancellationToken.Cancelled);
+            fail('The update is supposed to be cancelled');
+        } catch (err) {
+            expect(isOperationCancelled(err)).toBe(true);
+        }
+        expect(document.state).toBe(DocumentState.Changed);
+        expect(document.references).toHaveLength(0);
+        const astNodeReferences = AstUtils.streamAst(document.parseResult.value).flatMap(AstUtils.streamReferences).toArray();
+        expect(astNodeReferences).toHaveLength(2);
+        for (const ref of astNodeReferences) {
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
+            const defaultRef = ref.reference as any;
+            expect(defaultRef._ref).toBeUndefined();
+        }
+    });
 });
 
 type TestAstType = {

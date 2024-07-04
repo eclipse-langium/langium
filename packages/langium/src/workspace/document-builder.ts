@@ -13,9 +13,9 @@ import type { MaybePromise } from '../utils/promise-utils.js';
 import type { Deferred } from '../utils/promise-utils.js';
 import type { ValidationOptions } from '../validation/document-validator.js';
 import type { IndexManager } from '../workspace/index-manager.js';
-import type { LangiumDocument, LangiumDocuments, LangiumDocumentFactory } from './documents.js';
+import type { LangiumDocument, LangiumDocuments, LangiumDocumentFactory, TextDocumentProvider } from './documents.js';
 import { MultiMap } from '../utils/collections.js';
-import { OperationCancelled, interruptAndCheck } from '../utils/promise-utils.js';
+import { OperationCancelled, interruptAndCheck, isOperationCancelled } from '../utils/promise-utils.js';
 import { stream } from '../utils/stream.js';
 import type { URI } from '../utils/uri-utils.js';
 import { ValidationCategory } from '../validation/validation-registry.js';
@@ -78,9 +78,21 @@ export interface DocumentBuilder {
     onUpdate(callback: DocumentUpdateListener): Disposable;
 
     /**
-     * Notify the given callback when a set of documents has been built reaching a desired target state.
+     * Notify the given callback when a set of documents has been built reaching the specified target state.
      */
     onBuildPhase(targetState: DocumentState, callback: DocumentBuildListener): Disposable;
+
+    /**
+     * Notify the specified callback when a document has been built reaching the specified target state.
+     * Unlike {@link onBuildPhase} the listener is called for every single document.
+     *
+     * There are two main advantages compared to {@link onBuildPhase}:
+     * 1. If the build is cancelled, {@link onDocumentPhase} will still fire for documents that have reached a specific state.
+     *    Meanwhile, {@link onBuildPhase} won't fire for that state.
+     * 2. The {@link DocumentBuilder} ensures that all {@link DocumentPhaseListener} instances are called for a built document.
+     *    Even if the build is cancelled before those listeners were called.
+     */
+    onDocumentPhase(targetState: DocumentState, callback: DocumentPhaseListener): Disposable;
 
     /**
      * Wait until the workspace has reached the specified state for all documents.
@@ -105,6 +117,7 @@ export interface DocumentBuilder {
 
 export type DocumentUpdateListener = (changed: URI[], deleted: URI[]) => void | Promise<void>
 export type DocumentBuildListener = (built: LangiumDocument[], cancelToken: CancellationToken) => void | Promise<void>
+export type DocumentPhaseListener = (built: LangiumDocument, cancelToken: CancellationToken) => void | Promise<void>
 export class DefaultDocumentBuilder implements DocumentBuilder {
 
     updateBuildOptions: BuildOptions = {
@@ -116,10 +129,12 @@ export class DefaultDocumentBuilder implements DocumentBuilder {
 
     protected readonly langiumDocuments: LangiumDocuments;
     protected readonly langiumDocumentFactory: LangiumDocumentFactory;
+    protected readonly textDocuments: TextDocumentProvider | undefined;
     protected readonly indexManager: IndexManager;
     protected readonly serviceRegistry: ServiceRegistry;
     protected readonly updateListeners: DocumentUpdateListener[] = [];
     protected readonly buildPhaseListeners = new MultiMap<DocumentState, DocumentBuildListener>();
+    protected readonly documentPhaseListeners = new MultiMap<DocumentState, DocumentPhaseListener>();
     protected readonly buildState = new Map<string, DocumentBuildState>();
     protected readonly documentBuildWaiters = new Map<string, Deferred<void>>();
     protected currentState = DocumentState.Changed;
@@ -127,6 +142,7 @@ export class DefaultDocumentBuilder implements DocumentBuilder {
     constructor(services: LangiumSharedCoreServices) {
         this.langiumDocuments = services.workspace.LangiumDocuments;
         this.langiumDocumentFactory = services.workspace.LangiumDocumentFactory;
+        this.textDocuments = services.workspace.TextDocuments;
         this.indexManager = services.workspace.IndexManager;
         this.serviceRegistry = services.ServiceRegistry;
     }
@@ -209,20 +225,47 @@ export class DefaultDocumentBuilder implements DocumentBuilder {
         // Only allow interrupting the execution after all state changes are done
         await interruptAndCheck(cancelToken);
 
-        // Collect all documents that we should rebuild
-        const rebuildDocuments = this.langiumDocuments.all
-            .filter(doc =>
-                // This includes those that were reported as changed and those that we selected for relinking
-                doc.state < DocumentState.Linked
-                // This includes those for which a previous build has been cancelled
-                || !this.buildState.get(doc.uri.toString())?.completed
-            )
-            .toArray();
+        // Collect and sort all documents that we should rebuild
+        const rebuildDocuments = this.sortDocuments(
+            this.langiumDocuments.all
+                .filter(doc =>
+                    // This includes those that were reported as changed and those that we selected for relinking
+                    doc.state < DocumentState.Linked
+                    // This includes those for which a previous build has been cancelled
+                    || !this.buildState.get(doc.uri.toString())?.completed
+                )
+                .toArray()
+        );
         await this.buildDocuments(rebuildDocuments, this.updateBuildOptions, cancelToken);
     }
 
     protected async emitUpdate(changed: URI[], deleted: URI[]): Promise<void> {
         await Promise.all(this.updateListeners.map(listener => listener(changed, deleted)));
+    }
+
+    /**
+     * Sort the given documents by priority. By default, documents with an open text document are prioritized.
+     * This is useful to ensure that visible documents show their diagnostics before all other documents.
+     *
+     * This improves the responsiveness in large workspaces as users usually don't care about diagnostics
+     * in files that are currently not opened in the editor.
+     */
+    protected sortDocuments(documents: LangiumDocument[]): LangiumDocument[] {
+        const hasTextDocument = new Map<LangiumDocument, boolean>();
+        for (const doc of documents) {
+            hasTextDocument.set(doc, Boolean(this.textDocuments?.get(doc.uri.toString())));
+        }
+        return documents.sort((a, b) => {
+            const aHasDoc = hasTextDocument.get(a);
+            const bHasDoc = hasTextDocument.get(b);
+            if (aHasDoc && !bHasDoc) {
+                return -1;
+            } else if (!aHasDoc && bHasDoc) {
+                return 1;
+            } else {
+                return 0;
+            }
+        });
     }
 
     /**
@@ -314,6 +357,7 @@ export class DefaultDocumentBuilder implements DocumentBuilder {
             await interruptAndCheck(cancelToken);
             await callback(document);
             document.state = targetState;
+            await this.notifyDocumentPhase(document, targetState, cancelToken);
         }
         await this.notifyBuildPhase(filtered, targetState, cancelToken);
         this.currentState = targetState;
@@ -323,6 +367,13 @@ export class DefaultDocumentBuilder implements DocumentBuilder {
         this.buildPhaseListeners.add(targetState, callback);
         return Disposable.create(() => {
             this.buildPhaseListeners.delete(targetState, callback);
+        });
+    }
+
+    onDocumentPhase(targetState: DocumentState, callback: DocumentPhaseListener): Disposable {
+        this.documentPhaseListeners.add(targetState, callback);
+        return Disposable.create(() => {
+            this.documentPhaseListeners.delete(targetState, callback);
         });
     }
 
@@ -364,6 +415,21 @@ export class DefaultDocumentBuilder implements DocumentBuilder {
                 reject(OperationCancelled);
             });
         });
+    }
+
+    protected async notifyDocumentPhase(document: LangiumDocument, state: DocumentState, cancelToken: CancellationToken): Promise<void> {
+        const listeners = this.documentPhaseListeners.get(state);
+        for (const listener of listeners) {
+            try {
+                await listener(document, cancelToken);
+            } catch (err) {
+                // Ignore cancellation errors
+                // We want to finish the listeners before throwing
+                if (!isOperationCancelled(err)) {
+                    throw err;
+                }
+            }
+        }
     }
 
     protected async notifyBuildPhase(documents: LangiumDocument[], state: DocumentState, cancelToken: CancellationToken): Promise<void> {
