@@ -11,3 +11,7 @@ Check [this part](https://langium.org/docs/learn/minilogo/customizing_cli/) of t
 - [src/cli/main.ts](src/cli/main.ts) - The entry point of the command line interface (CLI) of your language.
 - [src/cli/generator.ts](src/cli/generator.ts) - The code generator used by the CLI to write output files from DSL documents.
 - [src/cli/util.ts](src/cli/util.ts) - Utility code for the CLI.
+
+## Instructions
+
+Run `node ./bin/cli` to see options for the CLI; `node ./bin/cli generate <file>` generates code for a given DSL file.

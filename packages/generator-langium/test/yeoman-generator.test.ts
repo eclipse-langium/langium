@@ -308,11 +308,12 @@ const PACKAGE_JSON_EXPECTATION_WEB: Record<string, any> = {
     files: ['out', 'src'],
     scripts: {
         'clean': 'shx rm -fr *.tsbuildinfo out dist syntaxes',
-        'build': 'vite build',
+        'build:prepare': 'shx mkdir -p ./syntaxes/ && shx cp -f ../language/syntaxes/hello-world.tmLanguage.json ./syntaxes/hello-world.tmLanguage.json',
+        'build': 'npm run build:prepare && vite build',
         'build:clean': 'npm run clean && npm run build',
-        'dev': 'vite',
-        'dev:debug': 'vite --debug --force',
-        'serve': 'vite preview'
+        'dev': 'npm run build:prepare && vite',
+        'dev:debug': 'npm run build:prepare && vite --debug --force',
+        'serve': 'npm run build:prepare && vite preview'
     },
     dependencies: {
         '@codingame/monaco-vscode-editor-service-override': '~6.0.3',
@@ -364,9 +365,10 @@ const PACKAGE_JSON_EXPECTATION_EXTENSION: Record<string, any> = {
     scripts: {
         'clean': 'shx rm -fr *.tsbuildinfo out syntaxes',
         'vscode:prepublish': 'npm run build && npm run lint',
-        'build': 'tsc -b tsconfig.json && node esbuild.mjs',
+        'build:prepare': 'shx mkdir -p ./syntaxes/ && shx cp -f ../language/syntaxes/hello-world.tmLanguage.json ./syntaxes/hello-world.tmLanguage.json',
+        'build': 'npm run build:prepare && tsc -b tsconfig.json && node esbuild.mjs',
         'build:clean': 'npm run clean && npm run build',
-        'watch': 'concurrently -n tsc,esbuild -c blue,yellow "tsc -b tsconfig.json --watch" "node esbuild.mjs --watch"'
+        'watch': 'npm run build:prepare && concurrently -n tsc,esbuild -c blue,yellow "tsc -b tsconfig.json --watch" "node esbuild.mjs --watch"'
     },
     dependencies: {
         'hello-world-language': '0.0.1',
