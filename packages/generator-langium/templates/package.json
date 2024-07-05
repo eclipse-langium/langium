@@ -1,5 +1,5 @@
 {
-    "name": "<%= extension-name %>-workspace",
+    "name": "<%= language-id %>-workspace",
     "description": "Base workspace package",
     "version": "0.0.1",
     "type": "module",

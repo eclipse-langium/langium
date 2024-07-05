@@ -73,6 +73,7 @@ describe('Check yeoman generator works', () => {
         targetRoot + '/packages/web/static/monacoClassic.html',
         targetRoot + '/packages/web/static/monacoExtended.html',
         targetRoot + '/packages/web/static/styles.css',
+        targetRoot + '/packages/web/syntaxes/hello-world.tmLanguage.json',
         targetRoot + '/packages/web/index.html',
         targetRoot + '/packages/web/language-configuration.json',
         targetRoot + '/packages/web/package.json',
@@ -84,6 +85,7 @@ describe('Check yeoman generator works', () => {
     const filesExtension = (targetRoot: string) => [
         targetRoot + '/packages/extension/src/extension/main.ts',
         targetRoot + '/packages/extension/src/language/main.ts',
+        targetRoot + '/packages/extension/syntaxes/hello-world.tmLanguage.json',
         targetRoot + '/packages/extension/.vscodeignore',
         targetRoot + '/packages/extension/esbuild.mjs',
         targetRoot + '/packages/extension/langium-quickstart.md',
@@ -208,10 +210,6 @@ describe('Check yeoman generator works', () => {
                 includeWeb: true,
                 includeVSCode: true
             })
-            // speed up tests by skipping install
-            .withArguments('skip-install')
-            // speed up tests by skipping build
-            .withArguments('skip-build')
             .then((result) => {
                 const projectRoot = targetRoot + '/' + extensionName;
 
@@ -309,7 +307,7 @@ const PACKAGE_JSON_EXPECTATION_WEB: Record<string, any> = {
     },
     files: ['out', 'src'],
     scripts: {
-        'clean': 'shx rm -fr *.tsbuildinfo out dist',
+        'clean': 'shx rm -fr *.tsbuildinfo out dist syntaxes',
         'build': 'vite build',
         'build:clean': 'npm run clean && npm run build',
         'dev': 'vite',
@@ -364,7 +362,7 @@ const PACKAGE_JSON_EXPECTATION_EXTENSION: Record<string, any> = {
     ],
     main: './out/extension/main.cjs',
     scripts: {
-        'clean': 'shx rm -fr *.tsbuildinfo out',
+        'clean': 'shx rm -fr *.tsbuildinfo out syntaxes',
         'vscode:prepublish': 'npm run build && npm run lint',
         'build': 'tsc -b tsconfig.json && node esbuild.mjs',
         'build:clean': 'npm run clean && npm run build',
