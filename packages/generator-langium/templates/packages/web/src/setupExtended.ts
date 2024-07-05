@@ -4,7 +4,7 @@ import { configureWorker, defineUserServices } from './setupCommon.js';
 export const setupConfigExtended = (): UserConfig => {
     const extensionFilesOrContents = new Map();
     extensionFilesOrContents.set('/language-configuration.json', new URL('../language-configuration.json', import.meta.url));
-    extensionFilesOrContents.set('/<%= language-id %>-grammar.json', new URL('../../language/syntaxes/<%= language-id %>.tmLanguage.json', import.meta.url));
+    extensionFilesOrContents.set('/<%= language-id %>-grammar.json', new URL('../syntaxes/<%= language-id %>.tmLanguage.json', import.meta.url));
 
     return {
         wrapperConfig: {

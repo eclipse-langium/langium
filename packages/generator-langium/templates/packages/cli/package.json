@@ -1,5 +1,5 @@
 {
-    "name": "<%= extension-name %>-cli",
+    "name": "<%= language-id %>-cli",
     "description": "The cli specific package",
     "version": "0.0.1",
     "type": "module",
@@ -20,7 +20,7 @@
         "build:clean": "npm run clean && npm run build"
     },
     "dependencies": {
-        "<%= extension-name %>-language": "0.0.1",
+        "<%= language-id %>-language": "0.0.1",
         "chalk": "~5.3.0",
         "commander": "~11.1.0"
     },

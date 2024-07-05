@@ -1,5 +1,5 @@
 {
-    "name": "<%= extension-name %>-web",
+    "name": "<%= language-id %>-web",
     "description": "The web specific package",
     "version": "0.0.1",
     "type": "module",
@@ -11,12 +11,13 @@
         "src"
     ],
     "scripts": {
-        "clean": "shx rm -fr *.tsbuildinfo out dist",
-        "build": "vite build",
+        "clean": "shx rm -fr *.tsbuildinfo out dist syntaxes",
+        "build:prepare": "shx mkdir -p ./syntaxes/ && shx cp -f ../language/syntaxes/<%= language-id %>.tmLanguage.json ./syntaxes/<%= language-id %>.tmLanguage.json",
+        "build": "npm run build:prepare && vite build",
         "build:clean": "npm run clean && npm run build",
-        "dev": "vite",
-        "dev:debug": "vite --debug --force",
-        "serve": "vite preview"
+        "dev": "npm run build:prepare && vite",
+        "dev:debug": "npm run build:prepare && vite --debug --force",
+        "serve": "npm run build:prepare && vite preview"
     },
     "dependencies": {
         "@codingame/monaco-vscode-editor-service-override": "~6.0.3",

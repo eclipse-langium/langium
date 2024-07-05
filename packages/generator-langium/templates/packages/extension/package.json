@@ -27,14 +27,15 @@
     ],
     "main": "./out/extension/main.cjs",
     "scripts": {
-        "clean": "shx rm -fr *.tsbuildinfo out",
+        "clean": "shx rm -fr *.tsbuildinfo out syntaxes",
         "vscode:prepublish": "npm run build && npm run lint",
-        "build": "tsc -b tsconfig.json && node esbuild.mjs",
+        "build:prepare": "shx mkdir -p ./syntaxes/ && shx cp -f ../language/syntaxes/<%= language-id %>.tmLanguage.json ./syntaxes/<%= language-id %>.tmLanguage.json",
+        "build": "npm run build:prepare && tsc -b tsconfig.json && node esbuild.mjs",
         "build:clean": "npm run clean && npm run build",
-        "watch": "concurrently -n tsc,esbuild -c blue,yellow \"tsc -b tsconfig.json --watch\" \"node esbuild.mjs --watch\""
+        "watch": "npm run build:prepare && concurrently -n tsc,esbuild -c blue,yellow \"tsc -b tsconfig.json --watch\" \"node esbuild.mjs --watch\""
     },
     "dependencies": {
-        "<%= extension-name %>-language": "0.0.1",
+        "<%= language-id %>-language": "0.0.1",
         "vscode-languageclient": "~9.0.1",
         "vscode-languageserver": "~9.0.1"
     },
