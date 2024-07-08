@@ -41,11 +41,11 @@ describe('Check yeoman generator works', () => {
         targetRoot + '/packages/language/src/hello-world-module.ts',
         targetRoot + '/packages/language/src/hello-world-validator.ts',
         targetRoot + '/packages/language/src/hello-world.langium',
-        targetRoot + '/packages/language/src/syntaxes/hello-world.monarch.ts',
         targetRoot + '/packages/language/src/generated/ast.ts',
         targetRoot + '/packages/language/src/generated/grammar.ts',
         targetRoot + '/packages/language/src/generated/module.ts',
-        targetRoot + '/packages/language/syntaxes/hello-world.tmLanguage.json'
+        targetRoot + '/packages/language/syntaxes/hello-world.tmLanguage.json',
+        targetRoot + '/packages/language/langium-config.json'
     ];
 
     const filesTest = (targetRoot: string) => [
@@ -80,6 +80,8 @@ describe('Check yeoman generator works', () => {
         targetRoot + '/packages/web/tsconfig.json',
         targetRoot + '/packages/web/vite.config.ts',
         targetRoot + '/packages/web/README.md',
+        // only present when web project was selected
+        targetRoot + '/packages/language/src/syntaxes/hello-world.monarch.ts'
     ];
 
     const filesExtension = (targetRoot: string) => [
