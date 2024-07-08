@@ -47,6 +47,22 @@ export interface PostAnwers {
     openWith: 'code' | false
 }
 
+/**
+ * This is a sub-set of LangiumConfig from langium-cli.
+ * We copy this to not introduce a dependency to langium-cli itself.
+ */
+export interface LangiumLanguageConfigSubset {
+    id: string
+    grammar: string
+    fileExtensions?: string[]
+    textMate?: {
+        out: string
+    }
+    monarch?: {
+        out: string
+    }
+}
+
 function printLogo(log: (message: string) => void): void {
     log('\u001b[36m┌─────┐ ─┐');
     log('\u001b[36;1m┌───┐    │  ╶─╮ ┌─╮ ╭─╮ \u001b[36m╷ ╷ ╷ ┌─┬─╮');
@@ -200,7 +216,6 @@ export class LangiumGenerator extends Generator {
         this.sourceRoot(path.join(__dirname, `${BASE_DIR}/${PACKAGE_LANGUAGE}`));
         const languageFiles = [
             'package.json',
-            'langium-config.json',
             'README.md',
             'tsconfig.json',
             'tsconfig.src.json',
@@ -218,6 +233,26 @@ export class LangiumGenerator extends Generator {
                 templateCopyOptions
             );
         }
+
+        const langiumConfigJson = {
+            projectName: languageName,
+            languages: [{
+                id: languageId,
+                grammar: `src/${languageId}.langium`,
+                fileExtensions: [ fileExtensionGlob ],
+                textMate: {
+                    out: `syntaxes/${languageId}.tmLanguage.json`
+                }
+            } as LangiumLanguageConfigSubset],
+            out: 'src/generated'
+        };
+
+        let languageIndex = `export * from './${languageId}-module.js';
+export * from './${languageId}-validator.js';
+export * from './generated/ast.js';
+export * from './generated/grammar.js';
+export * from './generated/module.js';
+`;
 
         if (this.answers.includeTest) {
             mainPackageJson.scripts.test = 'npm run --workspace packages/language test';
@@ -278,7 +313,18 @@ export class LangiumGenerator extends Generator {
             }
             mainPackageJson.workspaces.push('packages/web');
             tsConfigBuildJson.references.push({ path: './packages/web/tsconfig.json' });
+
+            this.sourceRoot(path.join(__dirname, `${BASE_DIR}/${PACKAGE_LANGUAGE}`));
+            langiumConfigJson.languages[0].monarch = {
+                out: `src/syntaxes/${languageId}.monarch.ts`
+            };
+
+            languageIndex = languageIndex?.concat(`\nexport { default as monarchSyntax } from './syntaxes/${languageId}.monarch.js';`);
         }
+
+        // Write language index.ts and langium-config.json after possible alteration from web inclusion
+        this.fs.write(this._extensionPath('packages/language/src/index.ts'), languageIndex);
+        this.fs.writeJSON(this._extensionPath('packages/language/langium-config.json'), langiumConfigJson, undefined, 4);
 
         if (this.answers.includeVSCode) {
             this.sourceRoot(path.join(__dirname, `${BASE_DIR}/${PACKAGE_EXTENSION}`));
