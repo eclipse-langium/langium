@@ -4,7 +4,7 @@
  * terms of the MIT License, which is available in the project root.
  ******************************************************************************/
 
-import type { AstNode, Reference, ValidationChecks } from 'langium';
+import type { AstNode, LangiumDocument, Reference, ValidationChecks } from 'langium';
 import { AstUtils, DocumentState, TextDocument, URI, isOperationCancelled } from 'langium';
 import { createServicesForGrammar } from 'langium/grammar';
 import { setTextDocument } from 'langium/test';
@@ -103,7 +103,11 @@ describe('DefaultDocumentBuilder', () => {
 
         const builder = services.shared.workspace.DocumentBuilder;
         const tokenSource1 = new CancellationTokenSource();
-        builder.onBuildPhase(DocumentState.IndexedContent, () => {
+        builder.onBuildPhase(DocumentState.Parsed, (docs: LangiumDocument[]) => {
+            console.log(`Parsed: ${docs[0].uri}`);
+        });
+        builder.onBuildPhase(DocumentState.IndexedContent, (docs: LangiumDocument[]) => {
+            console.log(`Indexed: ${docs[0].uri}`);
             tokenSource1.cancel();
         });
         try {
@@ -393,7 +397,7 @@ describe('DefaultDocumentBuilder', () => {
             expect(isOperationCancelled(err)).toBe(true);
         }
         expect(document1.state).toBe(DocumentState.IndexedReferences);
-        expect(document2.state).toBe(DocumentState.Linked);
+        expect(document2.state).toBe(DocumentState.IndexedReferences);
         expect(buildPhases.has(DocumentState.IndexedReferences)).toBe(false);
     });
 

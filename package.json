@@ -13,6 +13,7 @@
     "build:clean": "npm run clean && npm run build",
     "lint": "npm run lint --workspaces",
     "test": "vitest",
+    "test:run": "vitest --run",
     "test-ui": "vitest --ui",
     "coverage": "vitest run --coverage",
     "validate-exports": "npm run validate-exports --workspace=langium",

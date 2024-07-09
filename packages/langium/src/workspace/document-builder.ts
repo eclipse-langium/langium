@@ -352,14 +352,23 @@ export class DefaultDocumentBuilder implements DocumentBuilder {
 
     protected async runCancelable(documents: LangiumDocument[], targetState: DocumentState, cancelToken: CancellationToken,
         callback: (document: LangiumDocument) => MaybePromise<unknown>): Promise<void> {
-        const filtered = documents.filter(e => e.state < targetState);
+        const filtered = documents.filter(doc => doc.state < targetState);
         for (const document of filtered) {
             await interruptAndCheck(cancelToken);
             await callback(document);
             document.state = targetState;
-            await this.notifyDocumentPhase(document, targetState, cancelToken);
         }
-        await this.notifyBuildPhase(filtered, targetState, cancelToken);
+
+        // notify when document state equals target state
+        // because initial state for parsed documents is Parsed.
+        for (const doc of documents) {
+            const docs = [];
+            if (doc.state === targetState) {
+                await this.notifyDocumentPhase(doc, targetState, cancelToken);
+                docs.push(doc);
+            }
+            await this.notifyBuildPhase(docs, targetState, cancelToken);
+        }
         this.currentState = targetState;
     }
 
