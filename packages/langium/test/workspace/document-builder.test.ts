@@ -397,7 +397,7 @@ describe('DefaultDocumentBuilder', () => {
             expect(isOperationCancelled(err)).toBe(true);
         }
         expect(document1.state).toBe(DocumentState.IndexedReferences);
-        expect(document2.state).toBe(DocumentState.IndexedReferences);
+        expect(document2.state).toBe(DocumentState.Linked);
         expect(buildPhases.has(DocumentState.IndexedReferences)).toBe(false);
     });
 

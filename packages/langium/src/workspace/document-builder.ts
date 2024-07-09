@@ -357,18 +357,18 @@ export class DefaultDocumentBuilder implements DocumentBuilder {
             await interruptAndCheck(cancelToken);
             await callback(document);
             document.state = targetState;
+            await this.notifyDocumentPhase(document, targetState, cancelToken);
         }
 
         // notify when document state equals target state
         // because initial state for parsed documents is Parsed.
+        const docs = [];
         for (const doc of documents) {
-            const docs = [];
             if (doc.state === targetState) {
-                await this.notifyDocumentPhase(doc, targetState, cancelToken);
                 docs.push(doc);
             }
-            await this.notifyBuildPhase(docs, targetState, cancelToken);
         }
+        await this.notifyBuildPhase(docs, targetState, cancelToken);
         this.currentState = targetState;
     }
 
