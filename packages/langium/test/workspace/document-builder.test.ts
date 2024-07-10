@@ -114,11 +114,11 @@ describe('DefaultDocumentBuilder', () => {
         builder.onBuildPhase(DocumentState.Validated, () => {
             awaiting.push(Promise.resolve());
         });
-        const result = await Promise.all(awaiting);
 
         await builder.build([document], { validation: true });
+        expect(async () => await Promise.all(awaiting)).not.toThrowError();
         expect(document.state).toBe(DocumentState.Validated);
-        expect(result.length).toBe(0);
+        expect(awaiting.length).toBe(6);
     });
 
     test('resumes document build after cancellation', async () => {
