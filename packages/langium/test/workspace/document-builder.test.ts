@@ -4,7 +4,7 @@
  * terms of the MIT License, which is available in the project root.
  ******************************************************************************/
 
-import type { AstNode, LangiumDocument, Reference, ValidationChecks } from 'langium';
+import type { AstNode, Reference, ValidationChecks } from 'langium';
 import { AstUtils, DocumentState, TextDocument, URI, isOperationCancelled } from 'langium';
 import { createServicesForGrammar } from 'langium/grammar';
 import { setTextDocument } from 'langium/test';
@@ -82,6 +82,45 @@ describe('DefaultDocumentBuilder', () => {
         expect(called).toBe(true);
     });
 
+    test('Check all onBuidPhase callbacks', async () => {
+        const services = await createServices();
+        const documentFactory = services.shared.workspace.LangiumDocumentFactory;
+        const documents = services.shared.workspace.LangiumDocuments;
+        const document = documentFactory.fromString(`
+            foo 1 A
+            foo 11 B
+            bar A
+            bar B
+        `, URI.parse('file:///test1.txt'));
+        documents.addDocument(document);
+
+        const builder = services.shared.workspace.DocumentBuilder;
+        const awaiting: Array<Promise<void>> = [];
+        builder.onBuildPhase(DocumentState.Parsed, () => {
+            awaiting.push(Promise.resolve());
+        });
+        builder.onBuildPhase(DocumentState.IndexedContent, () => {
+            awaiting.push(Promise.resolve());
+        });
+        builder.onBuildPhase(DocumentState.ComputedScopes, () => {
+            awaiting.push(Promise.resolve());
+        });
+        builder.onBuildPhase(DocumentState.Linked, () => {
+            awaiting.push(Promise.resolve());
+        });
+        builder.onBuildPhase(DocumentState.IndexedReferences, () => {
+            awaiting.push(Promise.resolve());
+        });
+        builder.onBuildPhase(DocumentState.Validated, () => {
+            awaiting.push(Promise.resolve());
+        });
+        const result = await Promise.all(awaiting);
+
+        await builder.build([document], { validation: true });
+        expect(document.state).toBe(DocumentState.Validated);
+        expect(result.length).toBe(0);
+    });
+
     test('resumes document build after cancellation', async () => {
         const services = await createServices();
         const documentFactory = services.shared.workspace.LangiumDocumentFactory;
@@ -103,11 +142,7 @@ describe('DefaultDocumentBuilder', () => {
 
         const builder = services.shared.workspace.DocumentBuilder;
         const tokenSource1 = new CancellationTokenSource();
-        builder.onBuildPhase(DocumentState.Parsed, (docs: LangiumDocument[]) => {
-            console.log(`Parsed: ${docs[0].uri}`);
-        });
-        builder.onBuildPhase(DocumentState.IndexedContent, (docs: LangiumDocument[]) => {
-            console.log(`Indexed: ${docs[0].uri}`);
+        builder.onBuildPhase(DocumentState.IndexedContent, () => {
             tokenSource1.cancel();
         });
         try {
