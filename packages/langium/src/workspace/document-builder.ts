@@ -360,15 +360,11 @@ export class DefaultDocumentBuilder implements DocumentBuilder {
             await this.notifyDocumentPhase(document, targetState, cancelToken);
         }
 
-        // notify when document state equals target state
-        // because initial state for parsed documents is Parsed.
-        const docs = [];
-        for (const doc of documents) {
-            if (doc.state === targetState) {
-                docs.push(doc);
-            }
-        }
-        await this.notifyBuildPhase(docs, targetState, cancelToken);
+        // Do not use `filtered` here, as that will miss documents that have previously reached the current target state
+        // For example, this happens in case the cancellation triggers between the processing of two documents
+        // Or files that were picked up during the workspace initialization
+        const targetStateDocs = documents.filter(doc => doc.state === targetState);
+        await this.notifyBuildPhase(targetStateDocs, targetState, cancelToken);
         this.currentState = targetState;
     }
 
