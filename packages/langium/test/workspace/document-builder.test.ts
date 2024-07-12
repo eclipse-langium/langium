@@ -82,6 +82,45 @@ describe('DefaultDocumentBuilder', () => {
         expect(called).toBe(true);
     });
 
+    test('Check all onBuidPhase callbacks', async () => {
+        const services = await createServices();
+        const documentFactory = services.shared.workspace.LangiumDocumentFactory;
+        const documents = services.shared.workspace.LangiumDocuments;
+        const document = documentFactory.fromString(`
+            foo 1 A
+            foo 11 B
+            bar A
+            bar B
+        `, URI.parse('file:///test1.txt'));
+        documents.addDocument(document);
+
+        const builder = services.shared.workspace.DocumentBuilder;
+        const awaiting: Array<Promise<void>> = [];
+        builder.onBuildPhase(DocumentState.Parsed, () => {
+            awaiting.push(Promise.resolve());
+        });
+        builder.onBuildPhase(DocumentState.IndexedContent, () => {
+            awaiting.push(Promise.resolve());
+        });
+        builder.onBuildPhase(DocumentState.ComputedScopes, () => {
+            awaiting.push(Promise.resolve());
+        });
+        builder.onBuildPhase(DocumentState.Linked, () => {
+            awaiting.push(Promise.resolve());
+        });
+        builder.onBuildPhase(DocumentState.IndexedReferences, () => {
+            awaiting.push(Promise.resolve());
+        });
+        builder.onBuildPhase(DocumentState.Validated, () => {
+            awaiting.push(Promise.resolve());
+        });
+
+        await builder.build([document], { validation: true });
+        expect(async () => await Promise.all(awaiting)).not.toThrowError();
+        expect(document.state).toBe(DocumentState.Validated);
+        expect(awaiting.length).toBe(6);
+    });
+
     test('resumes document build after cancellation', async () => {
         const services = await createServices();
         const documentFactory = services.shared.workspace.LangiumDocumentFactory;

@@ -352,14 +352,19 @@ export class DefaultDocumentBuilder implements DocumentBuilder {
 
     protected async runCancelable(documents: LangiumDocument[], targetState: DocumentState, cancelToken: CancellationToken,
         callback: (document: LangiumDocument) => MaybePromise<unknown>): Promise<void> {
-        const filtered = documents.filter(e => e.state < targetState);
+        const filtered = documents.filter(doc => doc.state < targetState);
         for (const document of filtered) {
             await interruptAndCheck(cancelToken);
             await callback(document);
             document.state = targetState;
             await this.notifyDocumentPhase(document, targetState, cancelToken);
         }
-        await this.notifyBuildPhase(filtered, targetState, cancelToken);
+
+        // Do not use `filtered` here, as that will miss documents that have previously reached the current target state
+        // For example, this happens in case the cancellation triggers between the processing of two documents
+        // Or files that were picked up during the workspace initialization
+        const targetStateDocs = documents.filter(doc => doc.state === targetState);
+        await this.notifyBuildPhase(targetStateDocs, targetState, cancelToken);
         this.currentState = targetState;
     }
 
