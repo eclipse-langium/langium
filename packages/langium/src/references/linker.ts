@@ -11,7 +11,7 @@ import type { LangiumDocument, LangiumDocuments } from '../workspace/documents.j
 import type { ScopeProvider } from './scope-provider.js';
 import { CancellationToken } from '../utils/cancellation.js';
 import { isAstNode, isAstNodeDescription, isLinkingError } from '../syntax-tree.js';
-import { getDocument, streamAst, streamReferences } from '../utils/ast-utils.js';
+import { findRootNode, streamAst, streamReferences } from '../utils/ast-utils.js';
 import { interruptAndCheck } from '../utils/promise-utils.js';
 import { DocumentState } from '../workspace/documents.js';
 
@@ -67,8 +67,10 @@ export interface Linker {
 
 }
 
+const ref_resolving = Symbol('ref_resolving');
+
 interface DefaultReference extends Reference {
-    _ref?: AstNode | LinkingError;
+    _ref?: AstNode | LinkingError | typeof ref_resolving;
     _nodeDescription?: AstNodeDescription;
 }
 
@@ -96,6 +98,7 @@ export class DefaultLinker implements Linker {
         const ref = refInfo.reference as DefaultReference;
         // The reference may already have been resolved lazily by accessing its `ref` property.
         if (ref._ref === undefined) {
+            ref._ref = ref_resolving;
             try {
                 const description = this.getCandidate(refInfo);
                 if (isLinkingError(description)) {
@@ -106,12 +109,17 @@ export class DefaultLinker implements Linker {
                         // The target document is already loaded
                         const linkedNode = this.loadAstNode(description);
                         ref._ref = linkedNode ?? this.createLinkingError(refInfo, description);
+                    } else {
+                        // Try to load the target AST node later using the already provided description
+                        ref._ref = undefined;
                     }
                 }
             } catch (err) {
+                console.error(`An error occurred while resolving reference to '${ref.$refText}':`, err);
+                const errorMessage = (err as Error).message ?? String(err);
                 ref._ref = {
                     ...refInfo,
-                    message: `An error occurred while resolving reference to '${ref.$refText}': ${err}`
+                    message: `An error occurred while resolving reference to '${ref.$refText}': ${errorMessage}`
                 };
             }
             // Add the reference to the document's array of references
@@ -155,15 +163,18 @@ export class DefaultLinker implements Linker {
                         linker.createLinkingError({ reference, container: node, property }, this._nodeDescription);
                 } else if (this._ref === undefined) {
                     // The reference has not been linked yet, so do that now.
+                    this._ref = ref_resolving;
+                    const document = findRootNode(node).$document;
                     const refData = linker.getLinkedNode({ reference, container: node, property });
-                    if (refData.error && getDocument(node).state < DocumentState.ComputedScopes) {
+                    if (refData.error && document && document.state < DocumentState.ComputedScopes) {
                         // Document scope is not ready, don't set `this._ref` so linker can retry later.
-                        return undefined;
+                        return this._ref = undefined;
                     }
                     this._ref = refData.node ?? refData.error;
                     this._nodeDescription = refData.descr;
-                    const document = getDocument(node);
-                    document.references.push(this);
+                    document?.references.push(this);
+                } else if (this._ref === ref_resolving) {
+                    throw new Error(`Cyclic reference resolution detected: ${linker.astNodeLocator.getAstNodePath(node)}/${property} (symbol '${refText}')`);
                 }
                 return isAstNode(this._ref) ? this._ref : undefined;
             },
@@ -195,10 +206,12 @@ export class DefaultLinker implements Linker {
                 };
             }
         } catch (err) {
+            console.error(`An error occurred while resolving reference to '${refInfo.reference.$refText}':`, err);
+            const errorMessage = (err as Error).message ?? String(err);
             return {
                 error: {
                     ...refInfo,
-                    message: `An error occurred while resolving reference to '${refInfo.reference.$refText}': ${err}`
+                    message: `An error occurred while resolving reference to '${refInfo.reference.$refText}': ${errorMessage}`
                 }
             };
         }
@@ -218,8 +231,8 @@ export class DefaultLinker implements Linker {
     protected createLinkingError(refInfo: ReferenceInfo, targetDescription?: AstNodeDescription): LinkingError {
         // Check whether the document is sufficiently processed by the DocumentBuilder. If not, this is a hint for a bug
         // in the language implementation.
-        const document = getDocument(refInfo.container);
-        if (document.state < DocumentState.ComputedScopes) {
+        const document = findRootNode(refInfo.container).$document;
+        if (document && document.state < DocumentState.ComputedScopes) {
             console.warn(`Attempted reference resolution before document reached ComputedScopes state (${document.uri}).`);
         }
         const referenceType = this.reflection.getReferenceType(refInfo);
