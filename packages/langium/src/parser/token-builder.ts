@@ -4,15 +4,16 @@
  * terms of the MIT License, which is available in the project root.
  ******************************************************************************/
 
-import type { CustomPatternMatcherFunc, TokenPattern, TokenType, TokenVocabulary } from 'chevrotain';
+import type { CustomPatternMatcherFunc, TokenPattern, TokenType, TokenVocabulary, IToken } from 'chevrotain';
 import type { AbstractRule, Grammar, Keyword, TerminalRule } from '../languages/generated/ast.js';
 import type { Stream } from '../utils/stream.js';
-import { Lexer } from 'chevrotain';
+import { createToken, createTokenInstance, Lexer } from 'chevrotain';
 import { isKeyword, isParserRule, isTerminalRule } from '../languages/generated/ast.js';
 import { streamAllContents } from '../utils/ast-utils.js';
 import { getAllReachableRules, terminalRegex } from '../utils/grammar-utils.js';
 import { getCaseInsensitivePattern, isWhitespace, partialMatches } from '../utils/regexp-utils.js';
 import { stream } from '../utils/stream.js';
+import { isTokenTypeArray } from './lexer.js';
 
 export interface TokenBuilderOptions {
     caseInsensitive?: boolean
@@ -119,7 +120,6 @@ export class DefaultTokenBuilder implements TokenBuilder {
     }
 }
 
-
 export interface IndentationTokenBuilderOptions {
     /**
      * The name of the token used to denote indentation in the grammar.
@@ -205,7 +205,7 @@ export class IndentationAwareTokenBuilder extends DefaultTokenBuilder {
         });
     }
 
-    override buildTokens(grammar: GrammarAST.Grammar, options?: TokenBuilderOptions | undefined) {
+    override buildTokens(grammar: Grammar, options?: TokenBuilderOptions | undefined) {
         const tokenTypes = super.buildTokens(grammar, options);
         if (!isTokenTypeArray(tokenTypes)) {
             throw new Error('Invalid tokens built by default builder');
@@ -260,7 +260,7 @@ export class IndentationAwareTokenBuilder extends DefaultTokenBuilder {
      * @param tokens Previously scanned Tokens
      * @param groups Token Groups
      */
-    protected indentMatcher: CustomPatternMatcherFunc = (text, offset, tokens, groups) => {
+    protected indentMatcher: CustomPatternMatcherFunc = (text, offset, tokens, _groups) => {
         const {indentTokenName} = this.options;
 
         if (!this.isStartOfLine(text, offset)) {
@@ -297,7 +297,7 @@ export class IndentationAwareTokenBuilder extends DefaultTokenBuilder {
      * @param tokens Previously scanned Tokens
      * @param groups Token Groups
      */
-    protected dedentMatcher: CustomPatternMatcherFunc = (text, offset, tokens, groups) => {
+    protected dedentMatcher: CustomPatternMatcherFunc = (text, offset, tokens, _groups) => {
         const {dedentTokenName} = this.options;
 
         if (!this.isStartOfLine(text, offset)) {
@@ -339,7 +339,7 @@ export class IndentationAwareTokenBuilder extends DefaultTokenBuilder {
         return null;
     };
 
-    protected override buildTerminalToken(terminal: GrammarAST.TerminalRule): TokenType {
+    protected override buildTerminalToken(terminal: TerminalRule): TokenType {
         const tokenType = super.buildTerminalToken(terminal);
         const {indentTokenName, dedentTokenName, whitespaceTokenName} = this.options;
 
