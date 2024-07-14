@@ -153,7 +153,7 @@ export interface IndentationTokenBuilderOptions {
     whitespaceTokenName: string;
 }
 
-const indetationBuilderDefaultOptions: IndentationTokenBuilderOptions = {
+export const indentationBuilderDefaultOptions: IndentationTokenBuilderOptions = {
     indentTokenName: 'INDENT',
     dedentTokenName: 'DEDENT',
     whitespaceTokenName: 'WS',
@@ -189,10 +189,10 @@ export class IndentationAwareTokenBuilder extends DefaultTokenBuilder {
      */
     protected whitespaceRegExp = /[ \t]+/y;
 
-    constructor(options: Partial<IndentationTokenBuilderOptions> = indetationBuilderDefaultOptions) {
+    constructor(options: Partial<IndentationTokenBuilderOptions> = indentationBuilderDefaultOptions) {
         super();
         this.options = {
-            ...indetationBuilderDefaultOptions,
+            ...indentationBuilderDefaultOptions,
             ...options,
         };
 
