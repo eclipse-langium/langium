@@ -81,22 +81,19 @@ export class DefaultLexer implements Lexer {
  * ```
  */
 export class IndentationAwareLexer extends DefaultLexer {
-    protected readonly indentationTokenBuilder?: IndentationAwareTokenBuilder;
+    protected readonly indentationTokenBuilder: IndentationAwareTokenBuilder;
 
     constructor(services: LangiumCoreServices) {
         super(services);
         if (services.parser.TokenBuilder instanceof IndentationAwareTokenBuilder) {
             this.indentationTokenBuilder = services.parser.TokenBuilder;
+        } else {
+            throw new Error('IndentationAwareLexer requires an accompanying IndentationAwareTokenBuilder');
         }
     }
 
     override tokenize(text: string): LexerResult {
         const result = super.tokenize(text);
-
-        if (!this.indentationTokenBuilder) {
-            // A token builder other than the expected IndentationAwareTokenBuilder is used
-            return result;
-        }
 
         // reset the indent stack between processing of different text inputs
         const remainingDedents = this.indentationTokenBuilder.popRemainingDedents(text);
