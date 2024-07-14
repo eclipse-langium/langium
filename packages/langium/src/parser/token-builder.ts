@@ -166,8 +166,12 @@ const indetationBuilderDefaultOptions: IndentationTokenBuilderOptions = {
  * Inspired by https://github.com/chevrotain/chevrotain/blob/master/examples/lexer/python_indentation/python_indentation.js
  */
 export class IndentationAwareTokenBuilder extends DefaultTokenBuilder {
-    private indentationStack: number[] = [0];
-    private options: IndentationTokenBuilderOptions;
+    /**
+     * The stack in which all the previous matched indentation levels are stored
+     * to understand how deep a the next tokens are nested.
+     */
+    protected indentationStack: number[] = [0];
+    protected options: IndentationTokenBuilderOptions;
 
     /**
      * The token type to be used for indentation tokens
@@ -227,11 +231,25 @@ export class IndentationAwareTokenBuilder extends DefaultTokenBuilder {
         return [...spaceTokens, ...otherTokens];
     }
 
-    private isStartOfLine(text: string, offset: number): boolean {
+    /**
+     * Helper function to check if the current position is the start of a new line.
+     *
+     * @param text The full input string.
+     * @param offset The current position at which to check
+     * @returns Whether the current position is the start of a new line
+     */
+    protected isStartOfLine(text: string, offset: number): boolean {
         return offset === 0 || '\r\n'.includes(text[offset - 1]);
     }
 
-    private matchWhitespace(text: string, offset: number) {
+    /**
+     * A helper function used in matching both indents and dedents.
+     *
+     * @param text The full input string.
+     * @param offset The current position at which to attempt a match
+     * @returns The current and previous indentation levels and the matched whitespace
+     */
+    protected matchWhitespace(text: string, offset: number) {
         this.whitespaceRegExp.lastIndex = offset;
         const match = this.whitespaceRegExp.exec(text);
         return {
@@ -241,7 +259,16 @@ export class IndentationAwareTokenBuilder extends DefaultTokenBuilder {
         };
     }
 
-    private createIndentationTokenInstance(tokenType: TokenType, text: string, image: string, offset: number) {
+    /**
+     * Helper function to create an instance of an indentation token.
+     *
+     * @param tokenType Indent or dedent token type
+     * @param text Full input string, used to calculate the line number
+     * @param image The original image of the token (tabs or spaces)
+     * @param offset Current position in the input string
+     * @returns The indentation token instance
+     */
+    protected createIndentationTokenInstance(tokenType: TokenType, text: string, image: string, offset: number) {
         const lineNumber = text.substring(0, offset).split(/\r\n|\r|\n/).length;
         return createTokenInstance(
             tokenType,

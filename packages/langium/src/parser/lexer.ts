@@ -81,7 +81,7 @@ export class DefaultLexer implements Lexer {
  * ```
  */
 export class IndentationAwareLexer extends DefaultLexer {
-    private indentationTokenBuilder?: IndentationAwareTokenBuilder;
+    protected readonly indentationTokenBuilder?: IndentationAwareTokenBuilder;
 
     constructor(services: LangiumCoreServices) {
         super(services);
