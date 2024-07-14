@@ -391,7 +391,7 @@ export class IndentationAwareTokenBuilder extends DefaultTokenBuilder {
      * @param text Full text that was tokenized
      * @returns Remaining dedent tokens to match all previous indents at the end of the file
      */
-    public popRemainingDedents(text: string) {
+    popRemainingDedents(text: string): IToken[] {
         const remainingDedents: IToken[] = [];
         while (this.indentationStack.length > 1) {
             remainingDedents.push(
