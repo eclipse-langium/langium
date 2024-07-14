@@ -128,7 +128,7 @@ export interface IndentationTokenBuilderOptions {
      * terminal INDENT: ':synthetic-indent:';
      * ```
      *
-     * @default "INDENT"
+     * @default 'INDENT'
      */
     indentTokenName: string;
     /**
@@ -138,7 +138,7 @@ export interface IndentationTokenBuilderOptions {
      * terminal DEDENT: ':synthetic-dedent:';
      * ```
      *
-     * @default "DEDENT"
+     * @default 'DEDENT'
      */
     dedentTokenName: string;
     /**
@@ -148,7 +148,7 @@ export interface IndentationTokenBuilderOptions {
      * hidden terminal WS: /[ \t]+/;
      * ```
      *
-     * @default "WS"
+     * @default 'WS'
      */
     whitespaceTokenName: string;
 }

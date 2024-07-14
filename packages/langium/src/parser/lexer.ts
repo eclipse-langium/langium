@@ -6,7 +6,7 @@
 
 import type { ILexingError, IMultiModeLexerDefinition, IToken, TokenType, TokenTypeDictionary, TokenVocabulary } from 'chevrotain';
 import type { LangiumCoreServices } from '../services.js';
-import { IndentationAwareTokenBuilder } from "./token-builder.js";
+import { IndentationAwareTokenBuilder } from './token-builder.js';
 import { Lexer as ChevrotainLexer } from 'chevrotain';
 
 export interface LexerResult {
