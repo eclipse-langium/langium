@@ -219,16 +219,25 @@ export class IndentationAwareTokenBuilder extends DefaultTokenBuilder {
 
         // Rearrange tokens because whitespace (which is ignored) goes to the beginning by default, consuming indentation as well
         // Order should be: dedent, indent, spaces
-        const dedent = tokenTypes.find(tok => tok.name === dedentTokenName);
-        const indent = tokenTypes.find(tok => tok.name === indentTokenName);
-        const ws = tokenTypes.find(tok => tok.name === whitespaceTokenName);
+        let dedent: TokenType | undefined;
+        let indent: TokenType | undefined;
+        let ws: TokenType | undefined;
+        const otherTokens: TokenType[] = [];
+        for (const tokenType of tokenTypes) {
+            if (tokenType.name === dedentTokenName) {
+                dedent = tokenType;
+            } else if (tokenType.name === indentTokenName) {
+                indent = tokenType;
+            } else if (tokenType.name === whitespaceTokenName) {
+                ws = tokenType;
+            } else {
+                otherTokens.push(tokenType);
+            }
+        }
         if (!dedent || !indent || !ws) {
             throw new Error('Some indentation/whitespace tokens not found!');
         }
-
-        const spaceTokens = [dedent, indent, ws];
-        const otherTokens = tokenTypes.filter(tok => !spaceTokens.includes(tok));
-        return [...spaceTokens, ...otherTokens];
+        return [dedent, indent, ws, ...otherTokens];
     }
 
     /**
