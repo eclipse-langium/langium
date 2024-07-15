@@ -22,10 +22,12 @@ export interface NodeKindProvider {
 }
 
 export class DefaultNodeKindProvider implements NodeKindProvider {
-    getSymbolKind(): SymbolKind {
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
+    getSymbolKind(node: AstNode | AstNodeDescription): SymbolKind {
         return SymbolKind.Field;
     }
-    getCompletionItemKind(): CompletionItemKind {
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
+    getCompletionItemKind(node: AstNode | AstNodeDescription): CompletionItemKind {
         return CompletionItemKind.Reference;
     }
 }
