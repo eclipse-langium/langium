@@ -13,3 +13,4 @@ export * from './lexer.js';
 export * from './parser-config.js';
 export * from './token-builder.js';
 export * from './value-converter.js';
+export * from './indentation-aware.js';

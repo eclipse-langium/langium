@@ -6,7 +6,6 @@
 
 import type { ILexingError, IMultiModeLexerDefinition, IToken, TokenType, TokenTypeDictionary, TokenVocabulary } from 'chevrotain';
 import type { LangiumCoreServices } from '../services.js';
-import { IndentationAwareTokenBuilder } from './token-builder.js';
 import { Lexer as ChevrotainLexer } from 'chevrotain';
 
 export interface LexerResult {
@@ -64,42 +63,6 @@ export class DefaultLexer implements Lexer {
         const res: TokenTypeDictionary = {};
         tokens.forEach(token => res[token.name] = token);
         return res;
-    }
-}
-
-/**
- * A lexer that is aware of indentation in the input text.
- * The only purpose of this lexer is to reset the internal state of the {@link IndentationAwareTokenBuilder}
- * between the tokenization of different text inputs.
- *
- * In your module, you can override the default lexer with this one as such:
- * ```ts
- * parser: {
- *    TokenBuilder: () => new IndentationAwareTokenBuilder(),
- *    Lexer: (services) => new IndentationAwareLexer(services),
- * }
- * ```
- */
-export class IndentationAwareLexer extends DefaultLexer {
-    protected readonly indentationTokenBuilder: IndentationAwareTokenBuilder;
-
-    constructor(services: LangiumCoreServices) {
-        super(services);
-        if (services.parser.TokenBuilder instanceof IndentationAwareTokenBuilder) {
-            this.indentationTokenBuilder = services.parser.TokenBuilder;
-        } else {
-            throw new Error('IndentationAwareLexer requires an accompanying IndentationAwareTokenBuilder');
-        }
-    }
-
-    override tokenize(text: string): LexerResult {
-        const result = super.tokenize(text);
-
-        // reset the indent stack between processing of different text inputs
-        const remainingDedents = this.indentationTokenBuilder.popRemainingDedents(text);
-        result.tokens.push(...remainingDedents);
-
-        return result;
     }
 }
 
