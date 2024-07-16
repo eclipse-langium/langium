@@ -13,21 +13,35 @@ import { CompletionItemKind, SymbolKind } from 'vscode-languageserver';
 export interface NodeKindProvider {
     /**
      * Returns a `SymbolKind` as used by `WorkspaceSymbolProvider` or `DocumentSymbolProvider`.
+     * @param node AST node or node description.
+     * @returns {SymbolKind} - The corresponding symbol kind.
      */
     getSymbolKind(node: AstNode | AstNodeDescription): SymbolKind;
     /**
      * Returns a `CompletionItemKind` as used by the `CompletionProvider`.
+     * @param node AST node or node description.
+     * @returns {CompletionItemKind} - The corresponding completion item kind.
      */
     getCompletionItemKind(node: AstNode | AstNodeDescription): CompletionItemKind;
 }
 
+/**
+ * Default implementation of the `NodeKindProvider` interface.
+ * @remarks This implementation returns `SymbolKind.Field` for all nodes and `CompletionItemKind.Reference` for all nodes. Extend this class to customize symbol and completion types your langauge.
+ */
 export class DefaultNodeKindProvider implements NodeKindProvider {
-    // eslint-disable-next-line @typescript-eslint/no-unused-vars
-    getSymbolKind(node: AstNode | AstNodeDescription): SymbolKind {
+    /**
+     * @inheritdoc
+     * @remarks The default implementation returns `SymbolKind.Field` for all nodes.
+     */
+    getSymbolKind(_node: AstNode | AstNodeDescription): SymbolKind {
         return SymbolKind.Field;
     }
-    // eslint-disable-next-line @typescript-eslint/no-unused-vars
-    getCompletionItemKind(node: AstNode | AstNodeDescription): CompletionItemKind {
+    /**
+     * @inheritdoc
+     * @remarks The default implementation returns `CompletionItemKind.Reference` for all nodes.
+     */
+    getCompletionItemKind(_node: AstNode | AstNodeDescription): CompletionItemKind {
         return CompletionItemKind.Reference;
     }
 }
