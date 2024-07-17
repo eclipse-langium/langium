@@ -14,13 +14,13 @@ export interface NodeKindProvider {
     /**
      * Returns a `SymbolKind` as used by `WorkspaceSymbolProvider` or `DocumentSymbolProvider`.
      * @param node AST node or node description.
-     * @returns {SymbolKind} - The corresponding symbol kind.
+     * @returns The corresponding symbol kind.
      */
     getSymbolKind(node: AstNode | AstNodeDescription): SymbolKind;
     /**
      * Returns a `CompletionItemKind` as used by the `CompletionProvider`.
      * @param node AST node or node description.
-     * @returns {CompletionItemKind} - The corresponding completion item kind.
+     * @returns The corresponding completion item kind.
      */
     getCompletionItemKind(node: AstNode | AstNodeDescription): CompletionItemKind;
 }
@@ -31,14 +31,12 @@ export interface NodeKindProvider {
  */
 export class DefaultNodeKindProvider implements NodeKindProvider {
     /**
-     * @inheritdoc
      * @remarks The default implementation returns `SymbolKind.Field` for all nodes.
      */
     getSymbolKind(_node: AstNode | AstNodeDescription): SymbolKind {
         return SymbolKind.Field;
     }
     /**
-     * @inheritdoc
      * @remarks The default implementation returns `CompletionItemKind.Reference` for all nodes.
      */
     getCompletionItemKind(_node: AstNode | AstNodeDescription): CompletionItemKind {
