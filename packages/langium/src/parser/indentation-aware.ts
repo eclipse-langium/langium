@@ -69,12 +69,12 @@ export class IndentationAwareTokenBuilder extends DefaultTokenBuilder {
     /**
      * The token type to be used for indentation tokens
      */
-    protected indentTokenType: TokenType;
+    readonly indentTokenType: TokenType;
 
     /**
      * The token type to be used for dedentation tokens
      */
-    protected dedentTokenType: TokenType;
+    readonly dedentTokenType: TokenType;
 
     /**
      * A regular expression to match a series of tabs and/or spaces.
@@ -108,7 +108,7 @@ export class IndentationAwareTokenBuilder extends DefaultTokenBuilder {
             throw new Error('Invalid tokens built by default builder');
         }
 
-        const {indentTokenName, dedentTokenName, whitespaceTokenName} = this.options;
+        const { indentTokenName, dedentTokenName, whitespaceTokenName } = this.options;
 
         // Rearrange tokens because whitespace (which is ignored) goes to the beginning by default, consuming indentation as well
         // Order should be: dedent, indent, spaces
@@ -190,13 +190,13 @@ export class IndentationAwareTokenBuilder extends DefaultTokenBuilder {
      * @param groups Token Groups
      */
     protected indentMatcher: CustomPatternMatcherFunc = (text, offset, tokens, _groups) => {
-        const {indentTokenName} = this.options;
+        const { indentTokenName } = this.options;
 
         if (!this.isStartOfLine(text, offset)) {
             return null;
         }
 
-        const {currIndentLevel, prevIndentLevel, match} = this.matchWhitespace(text, offset);
+        const { currIndentLevel, prevIndentLevel, match } = this.matchWhitespace(text, offset);
 
         if (currIndentLevel <= prevIndentLevel) {
             // shallower indentation (should be matched by dedent)
@@ -227,13 +227,13 @@ export class IndentationAwareTokenBuilder extends DefaultTokenBuilder {
      * @param groups Token Groups
      */
     protected dedentMatcher: CustomPatternMatcherFunc = (text, offset, tokens, _groups) => {
-        const {dedentTokenName} = this.options;
+        const { dedentTokenName } = this.options;
 
         if (!this.isStartOfLine(text, offset)) {
             return null;
         }
 
-        const {currIndentLevel, prevIndentLevel, match} = this.matchWhitespace(text, offset);
+        const { currIndentLevel, prevIndentLevel, match } = this.matchWhitespace(text, offset);
 
         if (currIndentLevel >= prevIndentLevel) {
             // bigger indentation (should be matched by indent)
@@ -270,7 +270,7 @@ export class IndentationAwareTokenBuilder extends DefaultTokenBuilder {
 
     protected override buildTerminalToken(terminal: TerminalRule): TokenType {
         const tokenType = super.buildTerminalToken(terminal);
-        const {indentTokenName, dedentTokenName, whitespaceTokenName} = this.options;
+        const { indentTokenName, dedentTokenName, whitespaceTokenName } = this.options;
 
         if (tokenType.name === indentTokenName) {
             return this.indentTokenType;
@@ -321,23 +321,20 @@ export class IndentationAwareTokenBuilder extends DefaultTokenBuilder {
  * ```
  */
 export class IndentationAwareLexer extends DefaultLexer {
-    protected readonly indentationTokenBuilder?: IndentationAwareTokenBuilder;
+
+    protected readonly indentationTokenBuilder: IndentationAwareTokenBuilder;
 
     constructor(services: LangiumCoreServices) {
         super(services);
         if (services.parser.TokenBuilder instanceof IndentationAwareTokenBuilder) {
             this.indentationTokenBuilder = services.parser.TokenBuilder;
         } else {
-            console.warn('IndentationAwareLexer requires an accompanying IndentationAwareTokenBuilder');
+            throw new Error('IndentationAwareLexer requires an accompanying IndentationAwareTokenBuilder');
         }
     }
 
     override tokenize(text: string): LexerResult {
         const result = super.tokenize(text);
-
-        if (this.indentationTokenBuilder === undefined) {
-            return result;
-        }
 
         // reset the indent stack between processing of different text inputs
         const remainingDedents = this.indentationTokenBuilder.popRemainingDedents(text);
@@ -345,18 +342,24 @@ export class IndentationAwareLexer extends DefaultLexer {
 
         // remove any "indent-dedent" pair with an empty body as these are typically
         // added by comments or lines with just whitespace but have no real value
-        const { indentTokenName, dedentTokenName } = this.indentationTokenBuilder.options;
+        const { indentTokenType, dedentTokenType } = this.indentationTokenBuilder;
+        // Use tokenTypeIdx for fast comparison
+        const indentTokenIdx = indentTokenType.tokenTypeIdx;
+        const dedentTokenIdx = dedentTokenType.tokenTypeIdx;
         const cleanTokens: IToken[] = [];
-        for (let i = 0; i < result.tokens.length; i++) {
+        const length = result.tokens.length - 1;
+        for (let i = 0; i < length; i++) {
             const token = result.tokens[i];
             const nextToken = result.tokens[i + 1];
-            if (token.tokenType.name === indentTokenName && nextToken?.tokenType.name === dedentTokenName) {
+            if (token.tokenTypeIdx === indentTokenIdx && nextToken.tokenTypeIdx === dedentTokenIdx) {
                 i++;
                 continue;
             }
 
             cleanTokens.push(token);
         }
+        // Push last token separately
+        cleanTokens.push(result.tokens[length]);
         result.tokens = cleanTokens;
 
         return result;

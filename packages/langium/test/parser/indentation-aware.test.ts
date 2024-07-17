@@ -5,10 +5,12 @@
  ******************************************************************************/
 
 import type { TokenType } from '@chevrotain/types';
-import type { Grammar, LangiumParser, Lexer } from 'langium';
-import { beforeAll, describe, expect, test } from 'vitest';
+import type { AstNode, Grammar, LangiumParser, Lexer, Module } from 'langium';
+import { beforeEach, describe, expect, test } from 'vitest';
 import { EmptyFileSystem, IndentationAwareLexer, IndentationAwareTokenBuilder } from 'langium';
 import { createLangiumGrammarServices, createServicesForGrammar } from 'langium/grammar';
+import type { LangiumServices, PartialLangiumServices } from 'langium/lsp';
+import { expandToString } from 'langium/generate';
 import { parseHelper } from 'langium/test';
 
 const grammarServices = createLangiumGrammarServices(EmptyFileSystem).grammar;
@@ -22,36 +24,43 @@ async function getTokens(grammarString: string): Promise<TokenType[]> {
 }
 
 async function getLexer(grammar: string): Promise<Lexer> {
-    const services = await createServicesForGrammar({ grammar });
-    services.parser.TokenBuilder = tokenBuilder;
-    services.parser.Lexer = new IndentationAwareLexer(services);
+    const services = await createIndentationAwareServices(grammar);
     return services.parser.Lexer;
 }
 
 async function getParser(grammar: string): Promise<LangiumParser> {
-    const services = await createServicesForGrammar({
-        grammar
-    });
-    services.parser.TokenBuilder = tokenBuilder;
-    services.parser.Lexer = new IndentationAwareLexer(services);
+    const services = await createIndentationAwareServices(grammar);
     return services.parser.LangiumParser;
 }
 
-beforeAll(() => {
+async function createIndentationAwareServices(grammar: string): Promise<LangiumServices> {
+    const services = await createServicesForGrammar({
+        grammar,
+        module: {
+            parser: {
+                TokenBuilder: () => new IndentationAwareTokenBuilder(),
+                Lexer: services => new IndentationAwareLexer(services)
+            }
+        } satisfies Module<LangiumServices, PartialLangiumServices>
+    });
+    return services;
+}
+
+beforeEach(() => {
     tokenBuilder.popRemainingDedents('');
 });
 
-describe('indentationAwareTokenBuilder', () => {
+describe('IndentationAwareTokenBuilder', () => {
 
     const sampleGrammar = `
-    entry Main:
-        INDENT name=ID DEDENT;
+        entry Main:
+            INDENT name=ID DEDENT;
 
-    terminal ID: /[a-zA-Z_]\\w*/;
-    hidden terminal NL: /[\\r\\n]+/;
-    hidden terminal WS: /[\\t ]+/;
-    terminal INDENT: 'synthetic:indent';
-    terminal DEDENT: 'synthetic:dedent';
+        terminal ID: /[a-zA-Z_]\\w*/;
+        hidden terminal NL: /[\\r\\n]+/;
+        hidden terminal WS: /[\\t ]+/;
+        terminal INDENT: 'synthetic:indent';
+        terminal DEDENT: 'synthetic:dedent';
     `;
 
     test('Moves indent/dedent token types to the beginning', async () => {
@@ -113,28 +122,29 @@ describe('indentationAwareTokenBuilder', () => {
 
 });
 
-describe('indentationAwareLexer', () => {
+describe('IndentationAwareLexer', () => {
 
     const sampleGrammar = `
-    grammar Test
+        grammar Test
 
-    entry Block: '{' INDENT names+=ID* DEDENT nested+=Block* '}';
+        entry Block: '{' INDENT names+=ID* DEDENT nested+=Block* '}';
 
-    terminal ID: /[a-zA-Z_]\\w*/;
-    hidden terminal NL: /[\\r\\n]+/;
-    hidden terminal WS: /[\\t ]+/;
-    terminal INDENT: 'synthetic:indent';
-    terminal DEDENT: 'synthetic:dedent';
-    hidden terminal ML_COMMENT: /\\/\\*[\\s\\S]*?\\*\\//;
-    hidden terminal SL_COMMENT: /\\/\\/[^\\n\\r]*/;
+        terminal ID: /[a-zA-Z_]\\w*/;
+        hidden terminal NL: /[\\r\\n]+/;
+        hidden terminal WS: /[\\t ]+/;
+        terminal INDENT: 'synthetic:indent';
+        terminal DEDENT: 'synthetic:dedent';
+        hidden terminal ML_COMMENT: /\\/\\*[\\s\\S]*?\\*\\//;
+        hidden terminal SL_COMMENT: /\\/\\/[^\\n\\r]*/;
     `;
 
     test('should emit indent/dedent tokens around a block', async () => {
         const lexer = await getLexer(sampleGrammar);
-        const {tokens, errors} = lexer.tokenize(`{
-    name
-    anotherName
-}`);
+        const { tokens, errors } = lexer.tokenize(expandToString`
+        {
+            name
+            anotherName
+        }`);
 
         expect(errors).toHaveLength(0);
         expect(tokens).toHaveLength(6);
@@ -146,13 +156,14 @@ describe('indentationAwareLexer', () => {
 
     test('should ignore indent tokens before comments', async () => {
         const lexer = await getLexer(sampleGrammar);
-        const {tokens, errors} = lexer.tokenize(`// single-line comment
+        const { tokens, errors } = lexer.tokenize(expandToString`
+        // single-line comment
             // indented comment when not expecting indentation
-{
-    name
-        // comment with different indentation inside block
-    anotherName
-}`);
+        {
+            name
+                // comment with different indentation inside block
+            anotherName
+        }`);
 
         expect(errors).toHaveLength(0);
         expect(tokens).toHaveLength(6);
@@ -160,18 +171,20 @@ describe('indentationAwareLexer', () => {
 
     test('should not dedect indentation without a newline', async () => {
         const lexer = await getLexer(sampleGrammar);
-        const {tokens} = lexer.tokenize(`{    name
-        // indented comment - to be ignored
-}`);
+        const { tokens } = lexer.tokenize(expandToString`
+        { name
+            // indented comment - to be ignored
+        }`);
         expect(tokens).toHaveLength(3);
         expect(tokens[1]).not.toBe('INDENT');
     });
 
     test('should add remaining dedents to the end', async () => {
         const lexer = await getLexer(sampleGrammar);
-        const {tokens} = lexer.tokenize(`// single-line comment
-{
-    name`);
+        const { tokens } = lexer.tokenize(expandToString`
+        // single-line comment
+        {
+            name`);
         expect(tokens).toHaveLength(4);
 
         const [/* L_BRAC */, indent, /* id */, dedent] = tokens;
@@ -181,69 +194,100 @@ describe('indentationAwareLexer', () => {
 
 });
 
-describe('indentationAware parsing', () => {
+describe('IndentationAware parsing', () => {
 
     const sampleGrammar = `
-    grammar PythonIf
+        grammar PythonIf
 
-    entry Statement: If | Return;
+        entry Statement: If | Return;
 
-    If:
-        'if' condition=BOOLEAN ':'
-        INDENT thenBody=Statement DEDENT
-        ('else' ':' INDENT elseBody=Statement DEDENT)?;
+        If:
+            'if' condition=BOOLEAN ':'
+            INDENT thenBlock+=Statement+ DEDENT
+            ('else' ':' INDENT elseBlock+=Statement+ DEDENT)?;
 
-    Return: 'return' value=BOOLEAN;
+        Return: 'return' value=BOOLEAN;
 
-    terminal BOOLEAN: /true|false/;
-    terminal INDENT: 'synthetic:indent';
-    terminal DEDENT: 'synthetic:dedent';
-    hidden terminal NL: /[\\r\\n]+/;
-    hidden terminal WS: /[\\t ]+/;
+        terminal BOOLEAN returns boolean: /true|false/;
+        terminal INDENT: 'synthetic:indent';
+        terminal DEDENT: 'synthetic:dedent';
+        hidden terminal NL: /[\\r\\n]+/;
+        hidden terminal WS: /[\\t ]+/;
     `;
 
     test('should parse correctly indented code', async () => {
         const parser = await getParser(sampleGrammar);
-        const { parserErrors } = parser.parse(`
-if true:
-    return false
-else:
-    return true`);
+        const { parserErrors } = parser.parse(expandToString`
+        if true:
+            return false
+        else:
+            return true
+        `);
 
         expect(parserErrors).toHaveLength(0);
     });
 
     test('should error on non-matching dedent', async () => {
         const parser = await getParser(sampleGrammar);
-        const {parserErrors} = parser.parse(`
-if true:
-    return false
-  else:
-    return true`);
+        const { parserErrors } = parser.parse(expandToString`
+        if true:
+            return false
+          else:
+            return true
+        `);
 
         expect(parserErrors.length).toBeGreaterThan(0);
     });
 
     test('should throw an error on unexpected indent', async () => {
         const parser = await getParser(sampleGrammar);
-        const { parserErrors } = parser.parse(`
-        if true:
-            return false`);
+        const { parserErrors } = parser.parse(expandToString`
+        // Parsing starts here
+                if true:
+                    return false
+        `);
 
         expect(parserErrors.length).toBeGreaterThan(0);
     });
 
     test('should correctly parse nested blocks', async () => {
         const parser = await getParser(sampleGrammar);
-        const {parserErrors} = parser.parse(`
-if true:
-    return true
-else:
-    if false:
-        return false
+        const { parserErrors, value } = parser.parse(expandToString`
+        if true:
+            return true
+        else:
+            if false:
+                return true
+                return false
+            return true
         `);
 
         expect(parserErrors).toHaveLength(0);
+        const ifValue = value as If;
+        expect(ifValue.thenBlock).toHaveLength(1);
+        expect(ifValue.elseBlock).toHaveLength(2);
+        const elseBlock = ifValue.elseBlock![0] as If;
+        expect(elseBlock.thenBlock).toHaveLength(2);
+        const nestedReturn1 = elseBlock.thenBlock[0] as Return;
+        expect(nestedReturn1.value).toBe(true);
+        const nestedReturn2 = elseBlock.thenBlock[1] as Return;
+        expect(nestedReturn2.value).toBe(false);
+        const return2 = ifValue.elseBlock![1] as Return;
+        expect(return2.value).toBe(true);
     });
 
 });
+
+type Statement = If | Return;
+
+interface If extends AstNode {
+    $type: 'If';
+    condition: boolean;
+    thenBlock: Statement[];
+    elseBlock?: Statement[];
+}
+
+interface Return extends AstNode {
+    $type: 'Return';
+    value: boolean;
+}
