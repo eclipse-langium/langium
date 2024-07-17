@@ -64,7 +64,7 @@ export class IndentationAwareTokenBuilder extends DefaultTokenBuilder {
      * to understand how deep a the next tokens are nested.
      */
     protected indentationStack: number[] = [0];
-    protected options: IndentationTokenBuilderOptions;
+    readonly options: IndentationTokenBuilderOptions;
 
     /**
      * The token type to be used for indentation tokens
@@ -342,6 +342,22 @@ export class IndentationAwareLexer extends DefaultLexer {
         // reset the indent stack between processing of different text inputs
         const remainingDedents = this.indentationTokenBuilder.popRemainingDedents(text);
         result.tokens.push(...remainingDedents);
+
+        // remove any "indent-dedent" pair with an empty body as these are typically
+        // added by comments or lines with just whitespace but have no real value
+        const { indentTokenName, dedentTokenName } = this.indentationTokenBuilder.options;
+        const cleanTokens: IToken[] = [];
+        for (let i = 0; i < result.tokens.length; i++) {
+            const token = result.tokens[i];
+            const nextToken = result.tokens[i + 1];
+            if (token.tokenType.name === indentTokenName && nextToken?.tokenType.name === dedentTokenName) {
+                i++;
+                continue;
+            }
+
+            cleanTokens.push(token);
+        }
+        result.tokens = cleanTokens;
 
         return result;
     }
