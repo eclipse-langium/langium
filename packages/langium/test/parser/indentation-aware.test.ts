@@ -266,13 +266,13 @@ describe('IndentationAware parsing', () => {
         const ifValue = value as If;
         expect(ifValue.thenBlock).toHaveLength(1);
         expect(ifValue.elseBlock).toHaveLength(2);
-        const elseBlock = ifValue.elseBlock![0] as If;
+        const elseBlock = ifValue.elseBlock[0] as If;
         expect(elseBlock.thenBlock).toHaveLength(2);
         const nestedReturn1 = elseBlock.thenBlock[0] as Return;
         expect(nestedReturn1.value).toBe(true);
         const nestedReturn2 = elseBlock.thenBlock[1] as Return;
         expect(nestedReturn2.value).toBe(false);
-        const return2 = ifValue.elseBlock![1] as Return;
+        const return2 = ifValue.elseBlock[1] as Return;
         expect(return2.value).toBe(true);
     });
 
@@ -284,7 +284,7 @@ interface If extends AstNode {
     $type: 'If';
     condition: boolean;
     thenBlock: Statement[];
-    elseBlock?: Statement[];
+    elseBlock: Statement[];
 }
 
 interface Return extends AstNode {
