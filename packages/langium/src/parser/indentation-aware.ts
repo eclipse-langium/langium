@@ -321,19 +321,23 @@ export class IndentationAwareTokenBuilder extends DefaultTokenBuilder {
  * ```
  */
 export class IndentationAwareLexer extends DefaultLexer {
-    protected readonly indentationTokenBuilder: IndentationAwareTokenBuilder;
+    protected readonly indentationTokenBuilder?: IndentationAwareTokenBuilder;
 
     constructor(services: LangiumCoreServices) {
         super(services);
         if (services.parser.TokenBuilder instanceof IndentationAwareTokenBuilder) {
             this.indentationTokenBuilder = services.parser.TokenBuilder;
         } else {
-            throw new Error('IndentationAwareLexer requires an accompanying IndentationAwareTokenBuilder');
+            console.warn('IndentationAwareLexer requires an accompanying IndentationAwareTokenBuilder');
         }
     }
 
     override tokenize(text: string): LexerResult {
         const result = super.tokenize(text);
+
+        if (this.indentationTokenBuilder === undefined) {
+            return result;
+        }
 
         // reset the indent stack between processing of different text inputs
         const remainingDedents = this.indentationTokenBuilder.popRemainingDedents(text);
