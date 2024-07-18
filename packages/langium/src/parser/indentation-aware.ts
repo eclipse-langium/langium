@@ -359,7 +359,9 @@ export class IndentationAwareLexer extends DefaultLexer {
             cleanTokens.push(token);
         }
         // Push last token separately
-        cleanTokens.push(result.tokens[length]);
+        if (length >= 0) {
+            cleanTokens.push(result.tokens[length]);
+        }
         result.tokens = cleanTokens;
 
         return result;

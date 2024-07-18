@@ -192,6 +192,12 @@ describe('IndentationAwareLexer', () => {
         expect(dedent.tokenType.name).toBe('DEDENT');
     });
 
+    test('should not return any tokens for empty input', async () => {
+        const lexer = await getLexer(sampleGrammar);
+        const { tokens } = lexer.tokenize('');
+        expect(tokens).toHaveLength(0);
+    });
+
 });
 
 describe('IndentationAware parsing', () => {
