@@ -7,6 +7,7 @@
 export * from './async-parser.js';
 export * from './completion-parser-builder.js';
 export * from './cst-node-builder.js';
+export * from './indentation-aware.js';
 export * from './langium-parser-builder.js';
 export * from './langium-parser.js';
 export * from './lexer.js';
