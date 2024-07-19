@@ -32,7 +32,7 @@ export class LangiumGrammarWorkspaceManager extends DefaultWorkspaceManager {
 
     override async initializeWorkspace(folders: WorkspaceFolder[], cancelToken = Cancellation.CancellationToken.None): Promise<void> {
         const buildConf: WorkspaceManagerConf = await this.configurationProvider.getConfiguration('langium', CONFIG_KEY);
-        const ignorePatterns = buildConf.ignorePatterns?.split(',')?.map(pattern => pattern.trim())?.filter(pattern => pattern.length > 0);
+        const ignorePatterns = buildConf?.ignorePatterns?.split(',')?.map(pattern => pattern.trim())?.filter(pattern => pattern.length > 0);
         this.matcher = ignorePatterns ? ignore.default().add(ignorePatterns) : undefined;
         return super.initializeWorkspace(folders, cancelToken);
     }
