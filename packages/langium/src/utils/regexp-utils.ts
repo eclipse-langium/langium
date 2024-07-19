@@ -140,7 +140,7 @@ export function isMultilineComment(regexp: RegExp | string): boolean {
 
 export function isWhitespace(value: RegExp | string): boolean {
     const regexp = typeof value === 'string' ? new RegExp(value) : value;
-    return regexp.test(' ');
+    return [' ', '\n', '\t'].some((ws) => regexp.test(ws));
 }
 
 export function escapeRegExp(value: string): string {
