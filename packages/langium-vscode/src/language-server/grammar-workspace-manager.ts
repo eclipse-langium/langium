@@ -20,6 +20,14 @@ interface WorkspaceManagerConf {
     ignorePatterns: string
 }
 
+function isWorkspaceManagerConf(item: unknown): item is WorkspaceManagerConf {
+    if (typeof item !== 'object' || !item) {
+        return false;
+    }
+    const conf = item as WorkspaceManagerConf;
+    return typeof conf.ignorePatterns === 'string';
+}
+
 export class LangiumGrammarWorkspaceManager extends DefaultWorkspaceManager {
 
     protected readonly configurationProvider: ConfigurationProvider;
@@ -31,9 +39,16 @@ export class LangiumGrammarWorkspaceManager extends DefaultWorkspaceManager {
     }
 
     override async initializeWorkspace(folders: WorkspaceFolder[], cancelToken = Cancellation.CancellationToken.None): Promise<void> {
-        const buildConf: WorkspaceManagerConf = await this.configurationProvider.getConfiguration('langium', CONFIG_KEY);
-        const ignorePatterns = buildConf?.ignorePatterns?.split(',')?.map(pattern => pattern.trim())?.filter(pattern => pattern.length > 0);
-        this.matcher = ignorePatterns ? ignore.default().add(ignorePatterns) : undefined;
+        const buildConf: unknown = await this.configurationProvider.getConfiguration('langium', CONFIG_KEY);
+        if (isWorkspaceManagerConf(buildConf)) {
+            const ignorePatterns = buildConf.ignorePatterns
+                .split(',')
+                .map(pattern => pattern.trim())
+                .filter(pattern => pattern.length > 0);
+            if (ignorePatterns.length > 0) {
+                this.matcher = ignore.default().add(ignorePatterns);
+            }
+        }
         return super.initializeWorkspace(folders, cancelToken);
     }
 
