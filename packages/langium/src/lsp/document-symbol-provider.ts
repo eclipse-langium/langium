@@ -21,8 +21,12 @@ export interface DocumentSymbolProvider {
     /**
      * Handle a document symbols request.
      *
+     * @param document The document in the workspace.
+     * @param params The parameters of the request.
+     * @param cancelToken A cancellation token that migh be used to cancel the request.
+     * @returns The symbols for the given document.
+     *
      * @throws `OperationCancelled` if cancellation is detected during execution
-     * @throws `ResponseError` if an error is detected that should be sent as response to the client
      */
     getSymbols(document: LangiumDocument, params: DocumentSymbolParams, cancelToken?: CancellationToken): MaybePromise<DocumentSymbol[]>;
 }
@@ -37,7 +41,7 @@ export class DefaultDocumentSymbolProvider implements DocumentSymbolProvider {
         this.nodeKindProvider = services.shared.lsp.NodeKindProvider;
     }
 
-    getSymbols(document: LangiumDocument): MaybePromise<DocumentSymbol[]> {
+    getSymbols(document: LangiumDocument, _params: DocumentSymbolParams, _cancelToken?: CancellationToken): MaybePromise<DocumentSymbol[]> {
         return this.getSymbol(document, document.parseResult.value);
     }
 

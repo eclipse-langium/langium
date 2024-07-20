@@ -14,7 +14,7 @@ import { CancellationToken } from '../utils/cancellation.js';
 import { isLinkingError } from '../syntax-tree.js';
 import { getDocument, streamAst, streamReferences } from '../utils/ast-utils.js';
 import { toDocumentSegment } from '../utils/cst-utils.js';
-import { interruptAndCheck } from '../utils/promise-utils.js';
+import { interruptAndCheck, isOperationCancelled } from '../utils/promise-utils.js';
 import { UriUtils } from '../utils/uri-utils.js';
 
 /**
@@ -46,7 +46,8 @@ export class DefaultAstNodeDescriptionProvider implements AstNodeDescriptionProv
         this.nameProvider = services.references.NameProvider;
     }
 
-    createDescription(node: AstNode, name: string | undefined, document: LangiumDocument = getDocument(node)): AstNodeDescription {
+    createDescription(node: AstNode, name: string | undefined, document?: LangiumDocument): AstNodeDescription {
+        const doc = document ?? getDocument(node);
         name ??= this.nameProvider.getName(node);
         const path = this.astNodeLocator.getAstNodePath(node);
         if (!name) {
@@ -62,7 +63,7 @@ export class DefaultAstNodeDescriptionProvider implements AstNodeDescriptionProv
             },
             selectionSegment: toDocumentSegment(node.$cstNode),
             type: node.$type,
-            documentUri: document.uri,
+            documentUri: doc.uri,
             path
         };
     }
@@ -112,11 +113,18 @@ export class DefaultReferenceDescriptionProvider implements ReferenceDescription
         this.nodeLocator = services.workspace.AstNodeLocator;
     }
 
-    async createDescriptions(document: LangiumDocument, cancelToken = CancellationToken.None): Promise<ReferenceDescription[]> {
+    async createDescriptions(document: LangiumDocument, cancelToken?: CancellationToken): Promise<ReferenceDescription[]> {
+        const token = cancelToken ?? CancellationToken.None;
         const descr: ReferenceDescription[] = [];
         const rootNode = document.parseResult.value;
         for (const astNode of streamAst(rootNode)) {
-            await interruptAndCheck(cancelToken);
+            try {
+                await interruptAndCheck(token);
+            } catch (err) {
+                if (isOperationCancelled(err)) {
+                    throw err; // re-throw OperationCancelled
+                }
+            }
             streamReferences(astNode).filter(refInfo => !isLinkingError(refInfo)).forEach(refInfo => {
                 // TODO: Consider logging a warning or throw an exception when DocumentState is < than Linked
                 const description = this.createDescription(refInfo);

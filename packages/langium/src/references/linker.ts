@@ -12,7 +12,7 @@ import type { ScopeProvider } from './scope-provider.js';
 import { CancellationToken } from '../utils/cancellation.js';
 import { isAstNode, isAstNodeDescription, isLinkingError } from '../syntax-tree.js';
 import { findRootNode, streamAst, streamReferences } from '../utils/ast-utils.js';
-import { interruptAndCheck } from '../utils/promise-utils.js';
+import { interruptAndCheck, isOperationCancelled } from '../utils/promise-utils.js';
 import { DocumentState } from '../workspace/documents.js';
 
 /**
@@ -27,6 +27,8 @@ export interface Linker {
      *
      * @param document A LangiumDocument that shall be linked.
      * @param cancelToken A token for cancelling the operation.
+     *
+     * @throws `OperationCancelled` if a cancellation event is detected
      */
     link(document: LangiumDocument, cancelToken?: CancellationToken): Promise<void>;
 
@@ -87,9 +89,16 @@ export class DefaultLinker implements Linker {
         this.astNodeLocator = services.workspace.AstNodeLocator;
     }
 
-    async link(document: LangiumDocument, cancelToken = CancellationToken.None): Promise<void> {
+    async link(document: LangiumDocument, cancelToken?: CancellationToken): Promise<void> {
+        const token = cancelToken ?? CancellationToken.None;
         for (const node of streamAst(document.parseResult.value)) {
-            await interruptAndCheck(cancelToken);
+            try {
+                await interruptAndCheck(token);
+            } catch (error) {
+                if (isOperationCancelled(error)) {
+                    throw error; // re-throw OperationCancelled
+                }
+            }
             streamReferences(node).forEach(ref => this.doLink(ref, document));
         }
     }

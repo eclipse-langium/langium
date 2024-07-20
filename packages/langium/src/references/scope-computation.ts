@@ -12,7 +12,7 @@ import type { NameProvider } from './name-provider.js';
 import { CancellationToken } from '../utils/cancellation.js';
 import { streamAllContents, streamContents } from '../utils/ast-utils.js';
 import { MultiMap } from '../utils/collections.js';
-import { interruptAndCheck } from '../utils/promise-utils.js';
+import { interruptAndCheck, isOperationCancelled } from '../utils/promise-utils.js';
 
 /**
  * Language-specific service for precomputing global and local scopes. The service methods are executed
@@ -111,12 +111,19 @@ export class DefaultScopeComputation implements ScopeComputation {
         }
     }
 
-    async computeLocalScopes(document: LangiumDocument, cancelToken = CancellationToken.None): Promise<PrecomputedScopes> {
+    async computeLocalScopes(document: LangiumDocument, cancelToken?: CancellationToken): Promise<PrecomputedScopes> {
+        const token = cancelToken ?? CancellationToken.None;
         const rootNode = document.parseResult.value;
         const scopes = new MultiMap<AstNode, AstNodeDescription>();
         // Here we navigate the full AST - local scopes shall be available in the whole document
         for (const node of streamAllContents(rootNode)) {
-            await interruptAndCheck(cancelToken);
+            try {
+                await interruptAndCheck(token);
+            } catch (error) {
+                if ( isOperationCancelled(error)) {
+                    throw error; // re-throw the OperationCancelled
+                }
+            }
             this.processNode(node, document, scopes);
         }
         return scopes;

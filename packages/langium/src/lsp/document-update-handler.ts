@@ -21,23 +21,46 @@ import type { MaybePromise } from '../utils/promise-utils.js';
  */
 export interface DocumentUpdateHandler {
 
+    /**
+     * A document open event was triggered by the `TextDocuments` service.
+     * @param event The document change event.
+     */
     didOpenDocument?(event: TextDocumentChangeEvent<TextDocument>): void;
 
     /**
      * A content change event was triggered by the `TextDocuments` service.
+     * @param event The document change event.
      */
     didChangeContent?(event: TextDocumentChangeEvent<TextDocument>): void;
 
+    /**
+     * A document save event (initiated) was triggered by the `TextDocuments` service.
+     * @param event The document change event.
+     */
     willSaveDocument?(event: TextDocumentWillSaveEvent<TextDocument>): void;
 
+    /**
+     * A docuemnt save event (initiated) was triggered by the `TextDocuments` service.
+     * @param event The document change event.
+     * @returns An array of text edits which will be applied to the document before it is saved.
+     */
     willSaveDocumentWaitUntil?(event: TextDocumentWillSaveEvent<TextDocument>): MaybePromise<TextEdit[]>;
 
+    /**
+     * A docuemnt save event (completed) was triggered by the `TextDocuments` service.
+     * @param event The document change event.
+     */
     didSaveDocument?(event: TextDocumentChangeEvent<TextDocument>): void;
 
+    /**
+     * A docuemnt close event was triggered by the `TextDocuments` service.
+     * @param event The document change event.
+     */
     didCloseDocument?(event: TextDocumentChangeEvent<TextDocument>): void;
 
     /**
      * The client detected changes to files and folders watched by the language client.
+     * @param params The files/folders change event.
      */
     didChangeWatchedFiles?(params: DidChangeWatchedFilesParams): void;
 
@@ -117,6 +140,27 @@ export class DefaultDocumentUpdateHandler implements DocumentUpdateHandler {
             .map(c => URI.parse(c.uri))
             .toArray();
         this.fireDocumentUpdate(changedUris, deletedUris);
+    }
+
+    didOpenDocument(_event: TextDocumentChangeEvent<TextDocument>): void {
+        // To be implemented by subclasses if needed
+    }
+
+    willSaveDocument(_event: TextDocumentWillSaveEvent<TextDocument>): void {
+        // To be implemented by subclasses if needed
+    }
+
+    willSaveWaitUntilDocument(_event: TextDocumentWillSaveEvent<TextDocument>): MaybePromise<TextEdit[]> {
+        // To be implemented by subclasses if needed
+        return [];
+    }
+
+    didSaveDocument(_event: TextDocumentChangeEvent<TextDocument>): void {
+        // To be implemented by subclasses if needed
+    }
+
+    didCloseDocument(_event: TextDocumentChangeEvent<TextDocument>): void {
+        // To be implemented by subclasses if needed
     }
 
 }

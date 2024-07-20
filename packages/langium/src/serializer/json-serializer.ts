@@ -126,9 +126,10 @@ export class DefaultJsonSerializer implements JsonSerializer {
         this.commentProvider = services.documentation.CommentProvider;
     }
 
-    serialize(node: AstNode, options: JsonSerializeOptions = {}): string {
+    serialize(node: AstNode, options?: JsonSerializeOptions): string {
+        const serializeOptions = options ?? {};
         const specificReplacer = options?.replacer;
-        const defaultReplacer = (key: string, value: unknown) => this.replacer(key, value, options);
+        const defaultReplacer = (key: string, value: unknown) => this.replacer(key, value, serializeOptions);
         const replacer = specificReplacer ? (key: string, value: unknown) => specificReplacer(key, value, defaultReplacer) : defaultReplacer;
 
         try {
@@ -139,9 +140,10 @@ export class DefaultJsonSerializer implements JsonSerializer {
         }
     }
 
-    deserialize<T extends AstNode = AstNode>(content: string, options: JsonDeserializeOptions = {}): T {
+    deserialize<T extends AstNode = AstNode>(content: string, options?: JsonDeserializeOptions): T {
+        const deserializeOptions = options ?? {};
         const root = JSON.parse(content);
-        this.linkNode(root, root, options);
+        this.linkNode(root, root, deserializeOptions);
         return root;
     }
 

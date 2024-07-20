@@ -173,9 +173,10 @@ export class DefaultLangiumDocumentFactory implements LangiumDocumentFactory {
         this.fileSystemProvider = services.workspace.FileSystemProvider;
     }
 
-    async fromUri<T extends AstNode = AstNode>(uri: URI, cancellationToken = CancellationToken.None): Promise<LangiumDocument<T>> {
+    async fromUri<T extends AstNode = AstNode>(uri: URI, cancellationToken?: CancellationToken): Promise<LangiumDocument<T>> {
+        const cancelToken = cancellationToken ?? CancellationToken.None;
         const content = await this.fileSystemProvider.readFile(uri);
-        return this.createAsync<T>(uri, content, cancellationToken);
+        return this.createAsync<T>(uri, content, cancelToken);
     }
 
     fromTextDocument<T extends AstNode = AstNode>(textDocument: TextDocument, uri?: URI, options?: ParserOptions): LangiumDocument<T>;

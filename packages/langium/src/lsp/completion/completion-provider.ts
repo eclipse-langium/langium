@@ -107,8 +107,11 @@ export interface CompletionProvider {
     /**
      * Handle a completion request.
      *
+     * @param document - the document for which the completion request was triggered
+     * @param params - the completion parameters
+     * @param cancelToken - a token that can be used to cancel the request
+     *
      * @throws `OperationCancelled` if cancellation is detected during execution
-     * @throws `ResponseError` if an error is detected that should be sent as response to the client
      */
     getCompletion(document: LangiumDocument, params: CompletionParams, cancelToken?: CancellationToken): MaybePromise<CompletionList | undefined>
     /**
@@ -131,6 +134,7 @@ export class DefaultCompletionProvider implements CompletionProvider {
     protected readonly fuzzyMatcher: FuzzyMatcher;
     protected readonly grammarConfig: GrammarConfig;
     protected readonly astReflection: AstReflection;
+    readonly completionOptions?: CompletionProviderOptions;
 
     constructor(services: LangiumServices) {
         this.scopeProvider = services.references.ScopeProvider;
@@ -145,7 +149,7 @@ export class DefaultCompletionProvider implements CompletionProvider {
         this.documentationProvider = services.documentation.DocumentationProvider;
     }
 
-    async getCompletion(document: LangiumDocument, params: CompletionParams): Promise<CompletionList | undefined> {
+    async getCompletion(document: LangiumDocument, params: CompletionParams, _cancelToken?: CancellationToken): Promise<CompletionList | undefined> {
         const items: CompletionItem[] = [];
         const contexts = this.buildContexts(document, params.position);
 

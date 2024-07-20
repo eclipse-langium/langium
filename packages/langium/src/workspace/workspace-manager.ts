@@ -9,7 +9,7 @@ import type { WorkspaceFolder } from 'vscode-languageserver-types';
 import type { ServiceRegistry } from '../service-registry.js';
 import type { LangiumSharedCoreServices } from '../services.js';
 import { CancellationToken } from '../utils/cancellation.js';
-import { Deferred, interruptAndCheck } from '../utils/promise-utils.js';
+import { Deferred, interruptAndCheck, isOperationCancelled } from '../utils/promise-utils.js';
 import { URI, UriUtils } from '../utils/uri-utils.js';
 import type { BuildOptions, DocumentBuilder } from './document-builder.js';
 import type { LangiumDocument, LangiumDocuments } from './documents.js';
@@ -53,6 +53,9 @@ export interface WorkspaceManager {
      * each language file and stores it locally.
      *
      * @param folders The set of workspace folders to be indexed.
+     * @param cancelToken A cancellation token that can be used to cancel the operation.
+     *
+     * @throws OperationCancelled if a cancellation event has been detected
      */
     initializeWorkspace(folders: WorkspaceFolder[], cancelToken?: CancellationToken): Promise<void>;
 
@@ -92,11 +95,18 @@ export class DefaultWorkspaceManager implements WorkspaceManager {
         return this.mutex.write(token => this.initializeWorkspace(this.folders ?? [], token));
     }
 
-    async initializeWorkspace(folders: WorkspaceFolder[], cancelToken = CancellationToken.None): Promise<void> {
+    async initializeWorkspace(folders: WorkspaceFolder[], cancelToken?: CancellationToken): Promise<void> {
+        const token = cancelToken ?? CancellationToken.None;
         const documents = await this.performStartup(folders);
         // Only after creating all documents do we check whether we need to cancel the initialization
         // The document builder will later pick up on all unprocessed documents
-        await interruptAndCheck(cancelToken);
+        try {
+            await interruptAndCheck(token);
+        } catch (error) {
+            if (isOperationCancelled(error)) {
+                throw error; // re-throw OperationCancelled
+            }
+        }
         await this.documentBuilder.build(documents, this.initialBuildOptions, cancelToken);
     }
 
