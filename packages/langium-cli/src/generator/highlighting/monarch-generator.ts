@@ -328,7 +328,7 @@ function getWhitespaceRules(grammar: Grammar): Rule[] {
             const part = RegExpUtils.getTerminalParts(regex)[0];
 
             // check if this is a comment terminal w/ a start & end sequence (multi-line)
-            if (part.start !== '' && part.end !== '' && GrammarUtils.isCommentTerminal(rule)) {
+            if (part && part.start !== '' && part.end !== '' && GrammarUtils.isCommentTerminal(rule)) {
                 // state-based comment rule, only add push to jump into it
                 rules.push({
                     regex: part.start,
@@ -359,7 +359,7 @@ function getCommentRules(grammar: Grammar): Rule[] {
         if (GrammarAST.isTerminalRule(rule) && GrammarUtils.isCommentTerminal(rule)) {
             const tokenName = 'comment';
             const part = RegExpUtils.getTerminalParts(GrammarUtils.terminalRegex(rule))[0];
-            if (part.start !== '' && part.end !== '') {
+            if (part && part.start !== '' && part.end !== '') {
                 // rules to manage comment start/end
                 // rule order matters
 
