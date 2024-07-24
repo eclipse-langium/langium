@@ -10,7 +10,7 @@ import type { AstNode, CstNode } from '../syntax-tree.js';
 import { isCompositeCstNode } from '../syntax-tree.js';
 import { getContainerOfType, streamAllContents } from './ast-utils.js';
 import { streamCst } from './cst-utils.js';
-import { escapeRegExp } from './regexp-utils.js';
+import { escapeRegExp, isWhitespace } from './regexp-utils.js';
 
 /**
  * Returns the entry rule of the given grammar, if any. If the grammar file does not contain an entry rule,
@@ -92,7 +92,7 @@ export function getCrossReferenceTerminal(crossRef: ast.CrossReference): ast.Abs
  * that contains visible characters is considered a comment.
  */
 export function isCommentTerminal(terminalRule: ast.TerminalRule): boolean {
-    return terminalRule.hidden && !terminalRegex(terminalRule).test(' ');
+    return terminalRule.hidden && !isWhitespace(terminalRegex(terminalRule));
 }
 
 /**
