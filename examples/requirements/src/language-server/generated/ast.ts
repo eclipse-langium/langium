@@ -15,6 +15,8 @@ export const RequirementsAndTestsTerminals = {
     SL_COMMENT: /\/\/[^\n\r]*/,
 };
 
+export type RequirementsAndTestsTerminalNames = keyof typeof RequirementsAndTestsTerminals;
+
 export interface Contact extends AstNode {
     readonly $container: RequirementModel | TestModel;
     readonly $type: 'Contact';

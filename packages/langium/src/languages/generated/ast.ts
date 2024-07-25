@@ -17,6 +17,8 @@ export const LangiumGrammarTerminals = {
     SL_COMMENT: /\/\/[^\n\r]*/,
 };
 
+export type LangiumGrammarTerminalNames = keyof typeof LangiumGrammarTerminals;
+
 export type AbstractRule = ParserRule | TerminalRule;
 
 export const AbstractRule = 'AbstractRule';

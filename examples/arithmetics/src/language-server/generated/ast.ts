@@ -15,6 +15,8 @@ export const ArithmeticsTerminals = {
     SL_COMMENT: /\/\/[^\n\r]*/,
 };
 
+export type ArithmeticsTerminalNames = keyof typeof ArithmeticsTerminals;
+
 export type AbstractDefinition = DeclaredParameter | Definition;
 
 export const AbstractDefinition = 'AbstractDefinition';

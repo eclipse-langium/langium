@@ -14,6 +14,8 @@ export const DomainModelTerminals = {
     SL_COMMENT: /\/\/[^\n\r]*/,
 };
 
+export type DomainModelTerminalNames = keyof typeof DomainModelTerminals;
+
 export type AbstractElement = PackageDeclaration | Type;
 
 export const AbstractElement = 'AbstractElement';
