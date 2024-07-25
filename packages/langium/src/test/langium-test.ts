@@ -736,7 +736,7 @@ export function highlightHelper<T extends AstNode = AstNode>(services: LangiumSe
         const document = await parse(input, options);
         const params: SemanticTokensParams = { textDocument: { uri: document.textDocument.uri } };
         const tokens = await tokenProvider.semanticHighlight(document, params);
-        return { tokens: SemanticTokensDecoder.decode(tokens, document), ranges };
+        return { tokens: SemanticTokensDecoder.decode(tokens, tokenProvider.tokenTypes, document), ranges };
     };
 }
 
