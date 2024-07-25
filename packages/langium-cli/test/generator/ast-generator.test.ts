@@ -461,7 +461,7 @@ function testGeneratedInterface(name: string, grammar: string, expected: string)
 }
 
 function testGeneratedAst(name: string, grammar: string, expected: string): void {
-    testGenerated(name, grammar, expected, 'export type', 'export type testAstType');
+    testGenerated(name, grammar, expected, 'export type A', 'export type testAstType');
 }
 
 function testTypeMetaData(name: string, grammar: string, expected: string): void {
