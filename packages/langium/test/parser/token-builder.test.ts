@@ -175,10 +175,22 @@ describe('tokenBuilder#flagsForRegex', () => {
         const tokens = await getTokens(`
         grammar test
         entry Main: a=A;
-        terminal A: /A/is;
+        terminal A: /A/i;
         `);
         const tokenA = tokens[0];
-        expect(tokenA.PATTERN).toEqual(/A/is);
+        expect(tokenA.PATTERN).toEqual(/A/i);
+    });
+
+    test('Uses custom matcher for flags not supported by Chevrotain', async () => {
+        const tokens = await getTokens(`
+        grammar test
+        entry Main: a=A | b=B;
+        terminal A: /A/s;
+        terminal B: /B/u;
+        `);
+        const [tokenA, tokenB] = tokens;
+        expect(tokenA.PATTERN).toBeTypeOf('function');
+        expect(tokenB.PATTERN).toBeTypeOf('function');
     });
 
     test('Ignores invalid flags', async () => {
