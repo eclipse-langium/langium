@@ -461,14 +461,14 @@ function testGeneratedInterface(name: string, grammar: string, expected: string)
 }
 
 function testGeneratedAst(name: string, grammar: string, expected: string): void {
-    testGenerated(name, grammar, expected, 'export type A', 'export type testAstType');
+    testGenerated(name, grammar, expected, 'export type', 'export type testAstType', 1);
 }
 
 function testTypeMetaData(name: string, grammar: string, expected: string): void {
     testGenerated(name, grammar, expected, 'getTypeMetaData', 'export const reflection');
 }
 
-function testGenerated(name: string, grammar: string, expected: string, start: string, end: string): void {
+function testGenerated(name: string, grammar: string, expected: string, start: string, end: string, startCount = 0): void {
     test(name, async () => {
         const result = (await parse(grammar)).parseResult;
         const config: LangiumConfig = {
@@ -478,7 +478,11 @@ function testGenerated(name: string, grammar: string, expected: string, start: s
         };
         const expectedPart = normalizeEOL(expected).trim();
         const typesFileContent = generateAst(services.grammar, [result.value], config);
-        const relevantPart = typesFileContent.substring(typesFileContent.indexOf(start), typesFileContent.indexOf(end)).trim();
+        let startIndex = typesFileContent.indexOf(start);
+        for (let i = 0; i < startCount; i++) {
+            startIndex = typesFileContent.indexOf(start, startIndex + start.length);
+        }
+        const relevantPart = typesFileContent.substring(startIndex, typesFileContent.indexOf(end)).trim();
         expect(relevantPart).toEqual(expectedPart);
     });
 }
