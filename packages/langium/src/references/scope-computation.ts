@@ -73,8 +73,9 @@ export class DefaultScopeComputation implements ScopeComputation {
         this.descriptions = services.workspace.AstNodeDescriptionProvider;
     }
 
-    async computeExports(document: LangiumDocument, cancelToken = CancellationToken.None): Promise<AstNodeDescription[]> {
-        return this.computeExportsForNode(document.parseResult.value, document, undefined, cancelToken);
+    async computeExports(document: LangiumDocument, cancelToken?: CancellationToken): Promise<AstNodeDescription[]> {
+        const token = cancelToken ?? CancellationToken.None;
+        return this.computeExportsForNode(document.parseResult.value, document, undefined, token);
     }
 
     /**
@@ -86,7 +87,7 @@ export class DefaultScopeComputation implements ScopeComputation {
      * @param document The document containing the AST node to be exported.
      * @param children A function called with {@link parentNode} as single argument and returning an {@link Iterable} supplying the children to be visited, which must be directly or transitively contained in {@link parentNode}.
      * @param cancelToken Indicates when to cancel the current operation.
-     * @throws `OperationCanceled` if a user action occurs during execution.
+     * @throws `OperationCancelled` if a user action occurs during execution.
      * @returns A list of {@link AstNodeDescription AstNodeDescriptions} to be published to index.
      */
     async computeExportsForNode(parentNode: AstNode, document: LangiumDocument<AstNode>, children: (root: AstNode) => Iterable<AstNode> = streamContents, cancelToken: CancellationToken = CancellationToken.None): Promise<AstNodeDescription[]> {

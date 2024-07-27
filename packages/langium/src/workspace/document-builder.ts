@@ -251,21 +251,28 @@ export class DefaultDocumentBuilder implements DocumentBuilder {
      * in files that are currently not opened in the editor.
      */
     protected sortDocuments(documents: LangiumDocument[]): LangiumDocument[] {
-        const hasTextDocument = new Map<LangiumDocument, boolean>();
-        for (const doc of documents) {
-            hasTextDocument.set(doc, Boolean(this.textDocuments?.get(doc.uri.toString())));
-        }
-        return documents.sort((a, b) => {
-            const aHasDoc = hasTextDocument.get(a);
-            const bHasDoc = hasTextDocument.get(b);
-            if (aHasDoc && !bHasDoc) {
-                return -1;
-            } else if (!aHasDoc && bHasDoc) {
-                return 1;
-            } else {
-                return 0;
+        let left = 0;
+        let right = documents.length - 1;
+
+        while (left < right) {
+            while (left < documents.length && this.hasTextDocument(documents[left])) {
+                left++;
             }
-        });
+
+            while (right >= 0 && !this.hasTextDocument(documents[right])) {
+                right--;
+            }
+
+            if (left < right) {
+                [documents[left], documents[right]] = [documents[right], documents[left]];
+            }
+        }
+
+        return documents;
+    }
+
+    private hasTextDocument(doc: LangiumDocument): boolean {
+        return Boolean(this.textDocuments?.get(doc.uri.toString()));
     }
 
     /**
@@ -293,6 +300,11 @@ export class DefaultDocumentBuilder implements DocumentBuilder {
     /**
      * Build the given documents by stepping through all build phases. If a document's state indicates
      * that a certain build phase is already done, the phase is skipped for that document.
+     *
+     * @param documents The documents to build.
+     * @param options the {@link BuildOptions} to use.
+     * @param cancelToken A cancellation token that can be used to cancel the build.
+     * @returns A promise that resolves when the build is done.
      */
     protected async buildDocuments(documents: LangiumDocument[], options: BuildOptions, cancelToken: CancellationToken): Promise<void> {
         this.prepareBuild(documents, options);
@@ -333,6 +345,12 @@ export class DefaultDocumentBuilder implements DocumentBuilder {
         }
     }
 
+    /**
+     * Runs prior to beginning the build process to update the {@link DocumentBuildState} for each document
+     *
+     * @param documents collection of documents to be built
+     * @param options the {@link BuildOptions} to use
+     */
     protected prepareBuild(documents: LangiumDocument[], options: BuildOptions): void {
         for (const doc of documents) {
             const key = doc.uri.toString();
@@ -350,6 +368,16 @@ export class DefaultDocumentBuilder implements DocumentBuilder {
         }
     }
 
+    /**
+     * Runs a cancelable operation on a set of documents to bring them to a specified {@link DocumentState}.
+     *
+     * @param documents The array of documents to process.
+     * @param targetState The target {@link DocumentState} to bring the documents to.
+     * @param cancelToken A token that can be used to cancel the operation.
+     * @param callback A function to be called for each document.
+     * @returns A promise that resolves when all documents have been processed or the operation is canceled.
+     * @throws Will throw `OperationCancelled` if the operation is canceled via a `CancellationToken`.
+     */
     protected async runCancelable(documents: LangiumDocument[], targetState: DocumentState, cancelToken: CancellationToken,
         callback: (document: LangiumDocument) => MaybePromise<unknown>): Promise<void> {
         const filtered = documents.filter(doc => doc.state < targetState);
