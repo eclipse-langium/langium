@@ -29,6 +29,7 @@ export interface ReferencesProvider {
      * @returns The locations of the references.
      *
      * @throws `OperationCancelled` if cancellation is detected during execution
+     * @throws `ResponseError` if an error is detected that should be sent as response to the client
      */
     findReferences(document: LangiumDocument, params: ReferenceParams, cancelToken?: CancellationToken): MaybePromise<Location[]>;
 }

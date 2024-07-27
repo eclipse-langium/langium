@@ -31,7 +31,6 @@ export interface DocumentHighlightProvider {
      * @returns The document highlights or `undefined` if no highlights are available.
      * @throws `OperationCancelled` if cancellation is detected during execution
      * @throws `ResponseError` if an error is detected that should be sent as response to the client
-     * @throws `ResponseError` if an error is detected that should be sent as response to the client
      */
     getDocumentHighlight(document: LangiumDocument, params: DocumentHighlightParams, cancelToken?: CancellationToken): MaybePromise<DocumentHighlight[] | undefined>;
 }
