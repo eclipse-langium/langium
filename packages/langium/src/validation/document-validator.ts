@@ -64,13 +64,7 @@ export class DefaultDocumentValidator implements DocumentValidator {
         const parseResult = document.parseResult;
         const diagnostics: Diagnostic[] = [];
 
-        try {
-            await interruptAndCheck(token);
-        } catch (err) {
-            if (isOperationCancelled(err)) {
-                throw err; // re-throw OperatonCancelled
-            }
-        }
+        await interruptAndCheck(token);
 
         if (!validateOptions.categories || validateOptions.categories.includes('built-in')) {
             this.processLexingErrors(parseResult, diagnostics, validateOptions);
@@ -99,13 +93,7 @@ export class DefaultDocumentValidator implements DocumentValidator {
             console.error('An error occurred during validation:', err);
         }
 
-        try {
-            await interruptAndCheck(token);
-        } catch (err) {
-            if (isOperationCancelled(err)) {
-                throw err; // re-throw OperatonCancelled
-            }
-        }
+        await interruptAndCheck(token);
 
         return diagnostics;
     }

@@ -112,6 +112,7 @@ export interface CompletionProvider {
      * @param cancelToken - a token that can be used to cancel the request
      *
      * @throws `OperationCancelled` if cancellation is detected during execution
+     * @throws `ResponseError` if an error is detected that should be sent as response to the client
      */
     getCompletion(document: LangiumDocument, params: CompletionParams, cancelToken?: CancellationToken): MaybePromise<CompletionList | undefined>
     /**

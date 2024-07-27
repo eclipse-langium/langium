@@ -27,6 +27,7 @@ export interface FoldingRangeProvider {
      * @returns The computed folding ranges
      *
      * @throws `OperationCancelled` if cancellation is detected during execution
+     * @throws `ResponseError` if an error is detected that should be sent as response to the client
      */
     getFoldingRanges(document: LangiumDocument, params: FoldingRangeParams, cancelToken?: CancellationToken): MaybePromise<FoldingRange[]>;
 }

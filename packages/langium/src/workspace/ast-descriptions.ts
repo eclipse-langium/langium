@@ -14,7 +14,7 @@ import { CancellationToken } from '../utils/cancellation.js';
 import { isLinkingError } from '../syntax-tree.js';
 import { getDocument, streamAst, streamReferences } from '../utils/ast-utils.js';
 import { toDocumentSegment } from '../utils/cst-utils.js';
-import { interruptAndCheck, isOperationCancelled } from '../utils/promise-utils.js';
+import { interruptAndCheck } from '../utils/promise-utils.js';
 import { UriUtils } from '../utils/uri-utils.js';
 
 /**
@@ -118,13 +118,7 @@ export class DefaultReferenceDescriptionProvider implements ReferenceDescription
         const descr: ReferenceDescription[] = [];
         const rootNode = document.parseResult.value;
         for (const astNode of streamAst(rootNode)) {
-            try {
-                await interruptAndCheck(token);
-            } catch (err) {
-                if (isOperationCancelled(err)) {
-                    throw err; // re-throw OperationCancelled
-                }
-            }
+            await interruptAndCheck(token);
             streamReferences(astNode).filter(refInfo => !isLinkingError(refInfo)).forEach(refInfo => {
                 // TODO: Consider logging a warning or throw an exception when DocumentState is < than Linked
                 const description = this.createDescription(refInfo);

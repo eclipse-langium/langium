@@ -30,6 +30,7 @@ export interface RenameProvider {
      * @returns A workspace edit that describes the changes to be applied to the workspace.
      *
      * @throws `OperationCancelled` if cancellation is detected during execution
+     * @throws `ResponseError` if an error is detected that should be sent as response to the client
      */
     rename(document: LangiumDocument, params: RenameParams, cancelToken?: CancellationToken): MaybePromise<WorkspaceEdit | undefined>;
 
@@ -42,6 +43,7 @@ export interface RenameProvider {
      * @returns A range that describes the range of the symbol to be renamed.
      *
      * @throws `OperationCancelled` if cancellation is detected during execution
+     * @throws `ResponseError` if an error is detected that should be sent as response to the client
      */
     prepareRename(document: LangiumDocument, params: TextDocumentPositionParams, cancelToken?: CancellationToken): MaybePromise<Range | undefined>;
 }

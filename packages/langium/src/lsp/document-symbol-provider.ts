@@ -27,6 +27,7 @@ export interface DocumentSymbolProvider {
      * @returns The symbols for the given document.
      *
      * @throws `OperationCancelled` if cancellation is detected during execution
+     * @throws `ResponseError` if an error is detected that should be sent as response to the client
      */
     getSymbols(document: LangiumDocument, params: DocumentSymbolParams, cancelToken?: CancellationToken): MaybePromise<DocumentSymbol[]>;
 }

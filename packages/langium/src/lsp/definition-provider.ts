@@ -30,6 +30,7 @@ export interface DefinitionProvider {
      * @returns A list of location links to the definition(s) of the symbol at the given position.
      *
      * @throws `OperationCancelled` if cancellation is detected during execution
+     * @throws `ResponseError` if an error is detected that should be sent as response to the client
      */
     getDefinition(document: LangiumDocument, params: DefinitionParams, cancelToken?: CancellationToken): MaybePromise<LocationLink[] | undefined>;
 }

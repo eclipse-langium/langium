@@ -12,7 +12,7 @@ import type { AstNodeDescription } from '../syntax-tree.js';
 import type { NodeKindProvider } from './node-kind-provider.js';
 import type { FuzzyMatcher } from './fuzzy-matcher.js';
 import { CancellationToken } from '../utils/cancellation.js';
-import { interruptAndCheck, isOperationCancelled } from '../utils/promise-utils.js';
+import { interruptAndCheck } from '../utils/promise-utils.js';
 
 /**
  * Shared service for handling workspace symbols requests.
@@ -26,6 +26,7 @@ export interface WorkspaceSymbolProvider {
      * @returns a list of workspace symbols
      *
      * @throws `OperationCancelled` if cancellation is detected during execution
+     * @throws `ResponseError` if an error is detected that should be sent as response to the client
      */
     getSymbols(params: WorkspaceSymbolParams, cancelToken?: CancellationToken): MaybePromise<WorkspaceSymbol[]>;
     /**
@@ -36,6 +37,7 @@ export interface WorkspaceSymbolProvider {
      * @returns the resolved workspace symbol
      *
      * @throws `OperationCancelled` if cancellation is detected during execution
+     * @throws `ResponseError` if an error is detected that should be sent as response to the client
      */
     resolveSymbol?(symbol: WorkspaceSymbol, cancelToken?: CancellationToken): MaybePromise<WorkspaceSymbol>;
 }
@@ -57,13 +59,7 @@ export class DefaultWorkspaceSymbolProvider implements WorkspaceSymbolProvider {
         const workspaceSymbols: WorkspaceSymbol[] = [];
         const query = params.query.toLowerCase();
         for (const description of this.indexManager.allElements()) {
-            try {
-                await interruptAndCheck(token);
-            } catch (error) {
-                if (isOperationCancelled(error)) {
-                    throw error;  // re-throw OperationCancelled error
-                }
-            }
+            await interruptAndCheck(token);
             if (this.fuzzyMatcher.match(query, description.name)) {
                 const symbol = this.getWorkspaceSymbol(description);
                 if (symbol) {
