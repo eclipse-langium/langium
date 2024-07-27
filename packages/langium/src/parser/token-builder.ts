@@ -63,8 +63,8 @@ export class DefaultTokenBuilder implements TokenBuilder {
     }
 
     protected requiresCustomPattern(regex: RegExp): boolean {
-        if (regex.flags.includes('u')) {
-            // Unicode regexes are not supported by Chevrotain.
+        if (regex.flags.includes('u') || regex.flags.includes('s')) {
+            // Unicode and dotall regexes are not supported by Chevrotain.
             return true;
         } else if (regex.source.includes('?<=') || regex.source.includes('?<!')) {
             // Negative and positive lookbehind are not supported by Chevrotain yet.
