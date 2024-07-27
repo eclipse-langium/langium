@@ -240,6 +240,7 @@ function generateTerminalConstants(grammars: Grammar[], config: LangiumConfig): 
         export const ${config.projectName}Terminals = {
             ${joinToNode(Object.entries(collection), ([name, regexp]) => `${name}: ${regexp.toString()},`, { appendNewLineIfNotEmpty: true })}
         };
+
+        export type ${config.projectName}TerminalNames = keyof typeof ${config.projectName}Terminals;
     `.appendNewLine();
 }
-

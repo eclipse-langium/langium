@@ -31,16 +31,16 @@
     "@vitest/coverage-v8": "~1.0.0",
     "@vitest/ui": "~1.5.0",
     "concurrently": "~8.2.1",
+    "editorconfig": "~2.0.0",
     "esbuild": "~0.19.2",
     "eslint": "~8.56.0",
     "eslint-plugin-header": "~3.1.1",
-    "editorconfig": "~2.0.0",
     "shx": "~0.3.4",
-    "typescript": "~5.1.6",
+    "typescript": "~5.4.5",
     "vitest": "~1.5.0"
   },
   "overrides": {
-   "@types/node": "~16.18.41"
+    "@types/node": "~16.18.41"
   },
   "volta": {
     "node": "18.19.1",

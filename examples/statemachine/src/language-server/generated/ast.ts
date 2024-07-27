@@ -14,6 +14,8 @@ export const StatemachineTerminals = {
     SL_COMMENT: /\/\/[^\n\r]*/,
 };
 
+export type StatemachineTerminalNames = keyof typeof StatemachineTerminals;
+
 export interface Command extends AstNode {
     readonly $container: Statemachine;
     readonly $type: 'Command';

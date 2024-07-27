@@ -13,7 +13,7 @@ import { createToken, createTokenInstance, Lexer } from 'chevrotain';
 import { DefaultTokenBuilder } from './token-builder.js';
 import { DefaultLexer, isTokenTypeArray } from './lexer.js';
 
-export interface IndentationTokenBuilderOptions {
+export interface IndentationTokenBuilderOptions<TokenName extends string = string> {
     /**
      * The name of the token used to denote indentation in the grammar.
      * A possible definition in the grammar could look like this:
@@ -23,7 +23,7 @@ export interface IndentationTokenBuilderOptions {
      *
      * @default 'INDENT'
      */
-    indentTokenName: string;
+    indentTokenName: TokenName;
     /**
      * The name of the token used to denote deindentation in the grammar.
      * A possible definition in the grammar could look like this:
@@ -33,7 +33,7 @@ export interface IndentationTokenBuilderOptions {
      *
      * @default 'DEDENT'
      */
-    dedentTokenName: string;
+    dedentTokenName: TokenName;
     /**
      * The name of the token used to denote whitespace other than indentation and newlines in the grammar.
      * A possible definition in the grammar could look like this:
@@ -43,7 +43,7 @@ export interface IndentationTokenBuilderOptions {
      *
      * @default 'WS'
      */
-    whitespaceTokenName: string;
+    whitespaceTokenName: TokenName;
 }
 
 export const indentationBuilderDefaultOptions: IndentationTokenBuilderOptions = {
@@ -58,13 +58,13 @@ export const indentationBuilderDefaultOptions: IndentationTokenBuilderOptions = 
  *
  * Inspired by https://github.com/chevrotain/chevrotain/blob/master/examples/lexer/python_indentation/python_indentation.js
  */
-export class IndentationAwareTokenBuilder extends DefaultTokenBuilder {
+export class IndentationAwareTokenBuilder<Terminals extends string = string> extends DefaultTokenBuilder {
     /**
      * The stack in which all the previous matched indentation levels are stored
      * to understand how deep a the next tokens are nested.
      */
     protected indentationStack: number[] = [0];
-    readonly options: IndentationTokenBuilderOptions;
+    readonly options: IndentationTokenBuilderOptions<Terminals>;
 
     /**
      * The token type to be used for indentation tokens
@@ -82,10 +82,10 @@ export class IndentationAwareTokenBuilder extends DefaultTokenBuilder {
      */
     protected whitespaceRegExp = /[ \t]+/y;
 
-    constructor(options: Partial<IndentationTokenBuilderOptions> = indentationBuilderDefaultOptions) {
+    constructor(options: Partial<IndentationTokenBuilderOptions<NoInfer<Terminals>>> = indentationBuilderDefaultOptions as IndentationTokenBuilderOptions<Terminals>) {
         super();
         this.options = {
-            ...indentationBuilderDefaultOptions,
+            ...indentationBuilderDefaultOptions as IndentationTokenBuilderOptions<Terminals>,
             ...options,
         };
 
