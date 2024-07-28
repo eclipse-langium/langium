@@ -5,18 +5,18 @@
  ******************************************************************************/
 
 import type { MismatchedTokenException } from 'chevrotain';
-import type { DiagnosticSeverity, Position, Range, Diagnostic } from 'vscode-languageserver-types';
+import type { Diagnostic, DiagnosticSeverity, Position, Range } from 'vscode-languageserver-types';
 import type { LanguageMetaData } from '../languages/language-meta-data.js';
 import type { ParseResult } from '../parser/langium-parser.js';
 import type { LangiumCoreServices } from '../services.js';
 import type { AstNode, CstNode } from '../syntax-tree.js';
+import { streamAst } from '../utils/ast-utils.js';
+import { CancellationToken } from '../utils/cancellation.js';
+import { tokenToRange } from '../utils/cst-utils.js';
+import { findNodeForKeyword, findNodeForProperty } from '../utils/grammar-utils.js';
+import { interruptAndCheck, isOperationCancelled } from '../utils/promise-utils.js';
 import type { LangiumDocument } from '../workspace/documents.js';
 import type { DiagnosticData, DiagnosticInfo, ValidationAcceptor, ValidationCategory, ValidationRegistry } from './validation-registry.js';
-import { CancellationToken } from '../utils/cancellation.js';
-import { findNodeForKeyword, findNodeForProperty } from '../utils/grammar-utils.js';
-import { streamAst } from '../utils/ast-utils.js';
-import { tokenToRange } from '../utils/cst-utils.js';
-import { interruptAndCheck, isOperationCancelled } from '../utils/promise-utils.js';
 import { diagnosticData } from './validation-registry.js';
 
 export interface ValidationOptions {
@@ -181,6 +181,22 @@ export class DefaultDocumentValidator implements DocumentValidator {
             validationItems.push(this.toDiagnostic(severity, message, info));
         };
 
+        await this.validateAstBefore(rootNode, options, acceptor, cancelToken);
+        await this.validateAstNodes(rootNode, options, acceptor, cancelToken);
+        await this.validateAstAfter(rootNode, options, acceptor, cancelToken);
+
+        return validationItems;
+    }
+
+    protected async validateAstBefore(rootNode: AstNode, options: ValidationOptions, acceptor: ValidationAcceptor, cancelToken = CancellationToken.None): Promise<void> {
+        const checksBefore = this.validationRegistry.getChecksBefore();
+        for (const checkBefore of checksBefore) {
+            await interruptAndCheck(cancelToken);
+            await checkBefore(rootNode, acceptor, options.categories ?? [], cancelToken);
+        }
+    }
+
+    protected async validateAstNodes(rootNode: AstNode, options: ValidationOptions, acceptor: ValidationAcceptor, cancelToken = CancellationToken.None): Promise<void> {
         await Promise.all(streamAst(rootNode).map(async node => {
             await interruptAndCheck(cancelToken);
             const checks = this.validationRegistry.getChecks(node.$type, options.categories);
@@ -188,7 +204,14 @@ export class DefaultDocumentValidator implements DocumentValidator {
                 await check(node, acceptor, cancelToken);
             }
         }));
-        return validationItems;
+    }
+
+    protected async validateAstAfter(rootNode: AstNode, options: ValidationOptions, acceptor: ValidationAcceptor, cancelToken = CancellationToken.None): Promise<void> {
+        const checksAfter = this.validationRegistry.getChecksAfter();
+        for (const checkAfter of checksAfter) {
+            await interruptAndCheck(cancelToken);
+            await checkAfter(rootNode, acceptor, options.categories ?? [], cancelToken);
+        }
     }
 
     protected toDiagnostic<N extends AstNode>(severity: 'error' | 'warning' | 'info' | 'hint', message: string, info: DiagnosticInfo<N, string>): Diagnostic {
