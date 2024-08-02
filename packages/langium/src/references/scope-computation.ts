@@ -73,9 +73,8 @@ export class DefaultScopeComputation implements ScopeComputation {
         this.descriptions = services.workspace.AstNodeDescriptionProvider;
     }
 
-    async computeExports(document: LangiumDocument, cancelToken?: CancellationToken): Promise<AstNodeDescription[]> {
-        const token = cancelToken ?? CancellationToken.None;
-        return this.computeExportsForNode(document.parseResult.value, document, undefined, token);
+    async computeExports(document: LangiumDocument, cancelToken = CancellationToken.None): Promise<AstNodeDescription[]> {
+        return this.computeExportsForNode(document.parseResult.value, document, undefined, cancelToken);
     }
 
     /**

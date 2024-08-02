@@ -4,16 +4,17 @@
  * terms of the MIT License, which is available in the project root.
  ******************************************************************************/
 
-import type { AstNode, Reference, ValidationChecks } from 'langium';
+import type { AstNode, DocumentBuilder, FileSystemProvider, LangiumDocument, LangiumDocumentFactory, LangiumDocuments, Module, Reference, TextDocumentProvider, ValidationChecks } from 'langium';
 import { AstUtils, DocumentState, TextDocument, URI, isOperationCancelled } from 'langium';
 import { createServicesForGrammar } from 'langium/grammar';
 import { setTextDocument } from 'langium/test';
-import { describe, expect, test } from 'vitest';
+import { describe, expect, test, vi, beforeEach, afterEach } from 'vitest';
 import { CancellationToken, CancellationTokenSource } from 'vscode-languageserver';
 import { fail } from 'assert';
+import type { LangiumServices, LangiumSharedServices } from '../../lib/lsp/lsp-services.js';
 
 describe('DefaultDocumentBuilder', () => {
-    async function createServices() {
+    async function createServices(shared?: Module<LangiumSharedServices, object>) {
         const grammar = `
             grammar Test
             entry Model:
@@ -26,7 +27,10 @@ describe('DefaultDocumentBuilder', () => {
             terminal ID: /[_a-zA-Z][\\w_]*/;
             hidden terminal WS: /\\s+/;
         `;
-        const services = await createServicesForGrammar({ grammar });
+        const services = await createServicesForGrammar({
+            grammar,
+            sharedModule: shared,
+        });
         const fastChecks: ValidationChecks<TestAstType> = {
             Foo: (node, accept) => {
                 if (node.value > 10) {
@@ -525,7 +529,153 @@ describe('DefaultDocumentBuilder', () => {
             expect(defaultRef._ref).toBeUndefined();
         }
     });
+
+    describe('DefaultDocumentBuilder document sorting', () => {
+        let services: LangiumServices;
+        let documentFactory: LangiumDocumentFactory;
+        let documents: LangiumDocuments;
+        let builder: DocumentBuilder;
+        let textDocuments: TextDocumentProvider;
+        let sortSpy: ReturnType<typeof vi.spyOn>;
+
+        beforeEach(async () => {
+            services = await createServices(mockSharedModule);
+            documentFactory = services.shared.workspace.LangiumDocumentFactory;
+            documents = services.shared.workspace.LangiumDocuments;
+            builder = services.shared.workspace.DocumentBuilder;
+            textDocuments = services.shared.workspace.TextDocuments;
+
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
+            sortSpy = vi.spyOn(builder as any, 'sortDocuments');
+        });
+
+        afterEach(() => {
+            vi.restoreAllMocks();
+        });
+
+        async function createAndBuildDocuments(count: number): Promise<LangiumDocument[]> {
+            const docs = Array.from({ length: count }, (_, i) => {
+                const doc = documentFactory.fromString('', URI.parse(`file:///test${i}.txt`));
+                documents.addDocument(doc);
+                return doc;
+            });
+            await builder.build(docs, {});
+            return docs;
+        }
+
+        async function openDocuments(docs: LangiumDocument[]): Promise<void> {
+            docs.forEach(doc => {
+                (textDocuments as unknown as MockTextDocumentProvider).addDocument(doc.uri.toString(), doc.textDocument);
+            });
+        }
+
+        async function updateAndGetSortedDocuments(docs: LangiumDocument[]): Promise<LangiumDocument[]> {
+            await builder.update(docs.map(d => d.uri), []);
+            expect(sortSpy).toHaveBeenCalledTimes(1);
+            return sortSpy.mock.results[0].value as LangiumDocument[];
+        }
+
+        function isDocumentOpen(doc: LangiumDocument): boolean {
+            return Boolean((textDocuments as unknown as MockTextDocumentProvider).get(doc.uri.toString()));
+        }
+
+        test('Open documents are sorted before closed documents', async () => {
+            const docs = await createAndBuildDocuments(4);
+            await openDocuments([docs[1], docs[3]]);
+            const sortedDocs = await updateAndGetSortedDocuments(docs);
+
+            expect(sortedDocs.slice(0, 2).every(isDocumentOpen)).toBe(true);
+            expect(sortedDocs.slice(2).every(doc => !isDocumentOpen(doc))).toBe(true);
+        });
+
+        test('All documents open - any order is acceptable', async () => {
+            const docs = await createAndBuildDocuments(4);
+            await openDocuments(docs);
+            const sortedDocs = await updateAndGetSortedDocuments(docs);
+
+            expect(sortedDocs).toHaveLength(docs.length);
+            expect(sortedDocs.every(isDocumentOpen)).toBe(true);
+        });
+
+        test('All documents closed - any order is acceptable', async () => {
+            const docs = await createAndBuildDocuments(4);
+            const sortedDocs = await updateAndGetSortedDocuments(docs);
+
+            expect(sortedDocs).toHaveLength(docs.length);
+            expect(sortedDocs.every(doc => !isDocumentOpen(doc))).toBe(true);
+        });
+
+        test('Sorting maintains consistent open/closed document counts across multiple sorts', async () => {
+            const docs = await createAndBuildDocuments(5);
+            await openDocuments([docs[1], docs[3], docs[4]]);
+
+            const firstSort = await updateAndGetSortedDocuments(docs);
+            vi.clearAllMocks();
+            const secondSort = await updateAndGetSortedDocuments(docs);
+
+            const countOpenDocs = (sortedDocs: LangiumDocument[]) => sortedDocs.filter(isDocumentOpen).length;
+            expect(countOpenDocs(firstSort)).toBe(3);
+            expect(countOpenDocs(secondSort)).toBe(3);
+            expect(firstSort.slice(0, 3).every(isDocumentOpen)).toBe(true);
+            expect(secondSort.slice(0, 3).every(isDocumentOpen)).toBe(true);
+        });
+
+        test('Sorting a large number of documents', async () => {
+            const documentCount = 10000;
+            const openDocumentCount = Math.floor(documentCount / 3);
+
+            const docs = await createAndBuildDocuments(documentCount);
+            await openDocuments(docs.slice(0, openDocumentCount));
+
+            const startTime = performance.now();
+            const sortedDocs = await updateAndGetSortedDocuments(docs);
+            const endTime = performance.now();
+
+            expect(sortedDocs.slice(0, openDocumentCount).every(isDocumentOpen)).toBe(true);
+            expect(sortedDocs.slice(openDocumentCount).every(doc => !isDocumentOpen(doc))).toBe(true);
+            expect(endTime - startTime).toBeLessThan(1000); // Adjust this threshold as needed
+        });
+
+        test('Sorting an empty list of documents', async () => {
+            const sortedDocs = await updateAndGetSortedDocuments([]);
+            expect(sortedDocs).toEqual([]);
+        });
+    });
 });
+
+class MockTextDocumentProvider implements TextDocumentProvider {
+    isMockTextDocumentProvider = true;
+    private docs: Map<string, TextDocument> = new Map();
+
+    // simulate opening a file in the mock text document provider
+    addDocument(uri: string, document: TextDocument): void {
+        this.docs.set(uri, document);
+    }
+
+    get(uri: string): TextDocument | undefined {
+        return this.docs.get(uri);
+    }
+}
+class MockFileSystemProvider implements FileSystemProvider {
+    isMockFileSystemProvider = true;
+
+    // Return an empty string for any file
+    readFile(_uri: URI): Promise<string>{
+        return Promise.resolve('');
+    }
+
+    // Return an empty array for any directory
+    readDirectory(_uri: URI): Promise<[]> {
+        return Promise.resolve([]);
+    }
+}
+
+export const mockSharedModule: Module<LangiumSharedServices, object> = {
+    workspace: {
+        TextDocuments: () => new MockTextDocumentProvider(),
+        FileSystemProvider: () => new MockFileSystemProvider()
+    }
+};
 
 type TestAstType = {
     Model: Model
