@@ -54,12 +54,11 @@ export class DefaultWorkspaceSymbolProvider implements WorkspaceSymbolProvider {
         this.fuzzyMatcher = services.lsp.FuzzyMatcher;
     }
 
-    async getSymbols(params: WorkspaceSymbolParams, cancelToken?: CancellationToken): Promise<WorkspaceSymbol[]> {
-        const token = cancelToken ?? CancellationToken.None;
+    async getSymbols(params: WorkspaceSymbolParams, cancelToken = CancellationToken.None): Promise<WorkspaceSymbol[]> {
         const workspaceSymbols: WorkspaceSymbol[] = [];
         const query = params.query.toLowerCase();
         for (const description of this.indexManager.allElements()) {
-            await interruptAndCheck(token);
+            await interruptAndCheck(cancelToken);
             if (this.fuzzyMatcher.match(query, description.name)) {
                 const symbol = this.getWorkspaceSymbol(description);
                 if (symbol) {
@@ -84,10 +83,5 @@ export class DefaultWorkspaceSymbolProvider implements WorkspaceSymbolProvider {
         } else {
             return undefined;
         }
-    }
-
-    async resolveSymbol(symbol: WorkspaceSymbol, _cancelToken?: CancellationToken): Promise<WorkspaceSymbol> {
-        // no-op by default, override to implement custom symbol resolution
-        return symbol;
     }
 }

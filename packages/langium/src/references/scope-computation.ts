@@ -111,13 +111,12 @@ export class DefaultScopeComputation implements ScopeComputation {
         }
     }
 
-    async computeLocalScopes(document: LangiumDocument, cancelToken?: CancellationToken): Promise<PrecomputedScopes> {
-        const token = cancelToken ?? CancellationToken.None;
+    async computeLocalScopes(document: LangiumDocument, cancelToken = CancellationToken.None): Promise<PrecomputedScopes> {
         const rootNode = document.parseResult.value;
         const scopes = new MultiMap<AstNode, AstNodeDescription>();
         // Here we navigate the full AST - local scopes shall be available in the whole document
         for (const node of streamAllContents(rootNode)) {
-            await interruptAndCheck(token);
+            await interruptAndCheck(cancelToken);
             this.processNode(node, document, scopes);
         }
         return scopes;

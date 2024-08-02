@@ -89,10 +89,9 @@ export class DefaultLinker implements Linker {
         this.astNodeLocator = services.workspace.AstNodeLocator;
     }
 
-    async link(document: LangiumDocument, cancelToken?: CancellationToken): Promise<void> {
-        const token = cancelToken ?? CancellationToken.None;
+    async link(document: LangiumDocument, cancelToken = CancellationToken.None): Promise<void> {
         for (const node of streamAst(document.parseResult.value)) {
-            await interruptAndCheck(token);
+            await interruptAndCheck(cancelToken);
             streamReferences(node).forEach(ref => this.doLink(ref, document));
         }
     }

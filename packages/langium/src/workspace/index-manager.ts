@@ -151,19 +151,17 @@ export class DefaultIndexManager implements IndexManager {
         this.referenceIndex.delete(uriString);
     }
 
-    async updateContent(document: LangiumDocument, cancelToken?: CancellationToken): Promise<void> {
-        const token = cancelToken ?? CancellationToken.None;
+    async updateContent(document: LangiumDocument, cancelToken = CancellationToken.None): Promise<void> {
         const services = this.serviceRegistry.getServices(document.uri);
-        const exports = await services.references.ScopeComputation.computeExports(document, token);
+        const exports = await services.references.ScopeComputation.computeExports(document, cancelToken);
         const uri = document.uri.toString();
         this.symbolIndex.set(uri, exports);
         this.symbolByTypeIndex.clear(uri);
     }
 
-    async updateReferences(document: LangiumDocument, cancelToken?: CancellationToken): Promise<void> {
-        const token = cancelToken ?? CancellationToken.None;
+    async updateReferences(document: LangiumDocument, cancelToken = CancellationToken.None): Promise<void> {
         const services = this.serviceRegistry.getServices(document.uri);
-        const indexData = await services.workspace.ReferenceDescriptionProvider.createDescriptions(document, token);
+        const indexData = await services.workspace.ReferenceDescriptionProvider.createDescriptions(document, cancelToken);
         this.referenceIndex.set(document.uri.toString(), indexData);
     }
 

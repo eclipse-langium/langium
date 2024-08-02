@@ -174,11 +174,7 @@ export class DefaultConfigurationProvider implements ConfigurationProvider {
         return `${languageId}`;
     }
 
-    onConfigurationSectionUpdate(callback: ConfigurationSectionUpdateListener): Disposable {
-        return this.onConfigurationSectionUpdateEmitter.event(callback);
-    }
-
-    protected get onConfigurationSectionUpdateEvent(): Event<ConfigurationSectionUpdate> {
+    get onConfigurationSectionUpdate():  Event<ConfigurationSectionUpdate> {
         return this.onConfigurationSectionUpdateEmitter.event;
     }
 }

@@ -58,34 +58,32 @@ export class DefaultDocumentValidator implements DocumentValidator {
         this.metadata = services.LanguageMetaData;
     }
 
-    async validateDocument(document: LangiumDocument, options?: ValidationOptions, cancelToken?: CancellationToken): Promise<Diagnostic[]> {
-        const validateOptions = options ?? {};
-        const token = cancelToken ?? CancellationToken.None;
+    async validateDocument(document: LangiumDocument, options: ValidationOptions = {}, cancelToken = CancellationToken.None): Promise<Diagnostic[]> {
         const parseResult = document.parseResult;
         const diagnostics: Diagnostic[] = [];
 
-        await interruptAndCheck(token);
+        await interruptAndCheck(cancelToken);
 
-        if (!validateOptions.categories || validateOptions.categories.includes('built-in')) {
-            this.processLexingErrors(parseResult, diagnostics, validateOptions);
-            if (validateOptions.stopAfterLexingErrors && diagnostics.some(d => d.data?.code === DocumentValidator.LexingError)) {
+        if (!options.categories || options.categories.includes('built-in')) {
+            this.processLexingErrors(parseResult, diagnostics, options);
+            if (options.stopAfterLexingErrors && diagnostics.some(d => d.data?.code === DocumentValidator.LexingError)) {
                 return diagnostics;
             }
 
-            this.processParsingErrors(parseResult, diagnostics, validateOptions);
-            if (validateOptions.stopAfterParsingErrors && diagnostics.some(d => d.data?.code === DocumentValidator.ParsingError)) {
+            this.processParsingErrors(parseResult, diagnostics, options);
+            if (options.stopAfterParsingErrors && diagnostics.some(d => d.data?.code === DocumentValidator.ParsingError)) {
                 return diagnostics;
             }
 
-            this.processLinkingErrors(document, diagnostics, validateOptions);
-            if (validateOptions.stopAfterLinkingErrors && diagnostics.some(d => d.data?.code === DocumentValidator.LinkingError)) {
+            this.processLinkingErrors(document, diagnostics, options);
+            if (options.stopAfterLinkingErrors && diagnostics.some(d => d.data?.code === DocumentValidator.LinkingError)) {
                 return diagnostics;
             }
         }
 
         // Process custom validations
         try {
-            diagnostics.push(...await this.validateAst(parseResult.value, validateOptions, cancelToken));
+            diagnostics.push(...await this.validateAst(parseResult.value, options, cancelToken));
         } catch (err) {
             if (isOperationCancelled(err)) {
                 throw err;
@@ -93,7 +91,7 @@ export class DefaultDocumentValidator implements DocumentValidator {
             console.error('An error occurred during validation:', err);
         }
 
-        await interruptAndCheck(token);
+        await interruptAndCheck(cancelToken);
 
         return diagnostics;
     }

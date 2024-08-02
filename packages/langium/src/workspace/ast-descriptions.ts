@@ -113,12 +113,11 @@ export class DefaultReferenceDescriptionProvider implements ReferenceDescription
         this.nodeLocator = services.workspace.AstNodeLocator;
     }
 
-    async createDescriptions(document: LangiumDocument, cancelToken?: CancellationToken): Promise<ReferenceDescription[]> {
-        const token = cancelToken ?? CancellationToken.None;
+    async createDescriptions(document: LangiumDocument, cancelToken = CancellationToken.None): Promise<ReferenceDescription[]> {
         const descr: ReferenceDescription[] = [];
         const rootNode = document.parseResult.value;
         for (const astNode of streamAst(rootNode)) {
-            await interruptAndCheck(token);
+            await interruptAndCheck(cancelToken);
             streamReferences(astNode).filter(refInfo => !isLinkingError(refInfo)).forEach(refInfo => {
                 // TODO: Consider logging a warning or throw an exception when DocumentState is < than Linked
                 const description = this.createDescription(refInfo);

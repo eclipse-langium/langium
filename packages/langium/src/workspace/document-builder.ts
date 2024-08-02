@@ -147,8 +147,7 @@ export class DefaultDocumentBuilder implements DocumentBuilder {
         this.serviceRegistry = services.ServiceRegistry;
     }
 
-    async build<T extends AstNode>(documents: Array<LangiumDocument<T>>, options: BuildOptions = {}, cancelToken?: CancellationToken): Promise<void> {
-        const token = cancelToken ?? CancellationToken.None;
+    async build<T extends AstNode>(documents: Array<LangiumDocument<T>>, options: BuildOptions = {}, cancelToken = CancellationToken.None): Promise<void> {
         for (const document of documents) {
             const key = document.uri.toString();
             if (document.state === DocumentState.Validated) {
@@ -187,11 +186,10 @@ export class DefaultDocumentBuilder implements DocumentBuilder {
         }
         this.currentState = DocumentState.Changed;
         await this.emitUpdate(documents.map(e => e.uri), []);
-        await this.buildDocuments(documents, options, token);
+        await this.buildDocuments(documents, options, cancelToken);
     }
 
-    async update(changed: URI[], deleted: URI[], cancelToken?: CancellationToken): Promise<void> {
-        const token = cancelToken ?? CancellationToken.None;
+    async update(changed: URI[], deleted: URI[], cancelToken = CancellationToken.None): Promise<void> {
         this.currentState = DocumentState.Changed;
         // Remove all metadata of documents that are reported as deleted
         for (const deletedUri of deleted) {
@@ -225,7 +223,7 @@ export class DefaultDocumentBuilder implements DocumentBuilder {
         // Notify listeners of the update
         await this.emitUpdate(changed, deleted);
         // Only allow interrupting the execution after all state changes are done
-        await interruptAndCheck(token);
+        await interruptAndCheck(cancelToken);
 
         // Collect and sort all documents that we should rebuild
         const rebuildDocuments = this.sortDocuments(
@@ -238,7 +236,7 @@ export class DefaultDocumentBuilder implements DocumentBuilder {
                 )
                 .toArray()
         );
-        await this.buildDocuments(rebuildDocuments, this.updateBuildOptions, token);
+        await this.buildDocuments(rebuildDocuments, this.updateBuildOptions, cancelToken);
     }
 
     protected async emitUpdate(changed: URI[], deleted: URI[]): Promise<void> {

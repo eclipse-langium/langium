@@ -95,12 +95,11 @@ export class DefaultWorkspaceManager implements WorkspaceManager {
         return this.mutex.write(token => this.initializeWorkspace(this.folders ?? [], token));
     }
 
-    async initializeWorkspace(folders: WorkspaceFolder[], cancelToken?: CancellationToken): Promise<void> {
-        const token = cancelToken ?? CancellationToken.None;
+    async initializeWorkspace(folders: WorkspaceFolder[], cancelToken = CancellationToken.None): Promise<void> {
         const documents = await this.performStartup(folders);
         // Only after creating all documents do we check whether we need to cancel the initialization
         // The document builder will later pick up on all unprocessed documents
-        await interruptAndCheck(token);
+        await interruptAndCheck(cancelToken);
         await this.documentBuilder.build(documents, this.initialBuildOptions, cancelToken);
     }
 

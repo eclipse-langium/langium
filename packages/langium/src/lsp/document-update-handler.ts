@@ -141,26 +141,4 @@ export class DefaultDocumentUpdateHandler implements DocumentUpdateHandler {
             .toArray();
         this.fireDocumentUpdate(changedUris, deletedUris);
     }
-
-    didOpenDocument(_event: TextDocumentChangeEvent<TextDocument>): void {
-        // To be implemented by subclasses if needed
-    }
-
-    willSaveDocument(_event: TextDocumentWillSaveEvent<TextDocument>): void {
-        // To be implemented by subclasses if needed
-    }
-
-    willSaveWaitUntilDocument(_event: TextDocumentWillSaveEvent<TextDocument>): MaybePromise<TextEdit[]> {
-        // To be implemented by subclasses if needed
-        return [];
-    }
-
-    didSaveDocument(_event: TextDocumentChangeEvent<TextDocument>): void {
-        // To be implemented by subclasses if needed
-    }
-
-    didCloseDocument(_event: TextDocumentChangeEvent<TextDocument>): void {
-        // To be implemented by subclasses if needed
-    }
-
 }
