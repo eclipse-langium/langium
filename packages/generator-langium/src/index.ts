@@ -38,6 +38,7 @@ export interface Answers {
     rawLanguageName: string;
     fileExtensions: string;
     includeVSCode: boolean;
+    includeIntelliJ: boolean;
     includeCLI: boolean;
     includeWeb: boolean;
     includeTest: boolean;
@@ -134,6 +135,17 @@ export class LangiumGenerator extends Generator {
                 ),
                 message: 'Include VSCode extension?',
                 default: 'yes'
+            },
+            {
+                type: 'confirm',
+                name: 'includeIntelliJ',
+                // Currently, the IntelliJ plugin depends on files generated for the VS Code extension.
+                when: (answers: Answers): boolean => answers.includeVSCode,
+                prefix: description(
+                    'Your language can be run inside of a JetBrains IntelliJ-based IDE plugin.'
+                ),
+                message: 'Include IntelliJ integration?',
+                default: 'yes',
             },
             {
                 type: 'confirm',
