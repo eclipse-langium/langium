@@ -20,6 +20,7 @@ const PACKAGE_LANGUAGE = 'packages/language';
 const PACKAGE_CLI = 'packages/cli';
 const PACKAGE_WEB = 'packages/web';
 const PACKAGE_EXTENSION = 'packages/extension';
+const PACKAGE_INTELLIJ = 'packages/intellij-plugin';
 const USER_DIR = '.';
 
 const EXTENSION_NAME = /<%= extension-name %>/g;
@@ -363,6 +364,29 @@ export * from './generated/module.js';
             }
             mainPackageJson.workspaces.push('packages/extension');
             tsConfigBuildJson.references.push({ path: './packages/extension/tsconfig.json' });
+        }
+
+        if (this.answers.includeIntelliJ) {
+            this.sourceRoot(path.join(__dirname, `${BASE_DIR}/${PACKAGE_INTELLIJ}`));
+            const pluginFiles = [
+                'gradle',
+                'src',
+                '.gitignore',
+                'build.gradle.kts',
+                'CHANGELOG.md',
+                'gradle.properties',
+                'gradlew',
+                'gradlew.bat',
+                'README.md',
+                'settings.gradle.kts',
+            ];
+            for (const path of pluginFiles) {
+                this.fs.copy(
+                    this.templatePath(path),
+                    this._extensionPath(`${PACKAGE_INTELLIJ}/${path}`),
+                    templateCopyOptions
+                );
+            }
         }
 
         this.fs.writeJSON(this._extensionPath('.package.json'), mainPackageJson, undefined, 4);

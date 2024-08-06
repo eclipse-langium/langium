@@ -1,0 +1,45 @@
+<!-- Plugin Configuration File. Read more: https://plugins.jetbrains.com/docs/intellij/plugin-configuration-file.html -->
+<idea-plugin>
+    <id><%= LanguageName %>.lang</id>
+    <name><%= LanguageName %></name>
+    <vendor><%= LanguageName %></vendor>
+
+    <depends>com.intellij.modules.platform</depends>
+    <depends>com.redhat.devtools.lsp4ij</depends>
+    <depends>org.jetbrains.plugins.textmate</depends>
+
+    <extensions defaultExtensionNs="com.intellij">
+        <fileType
+            name="<%= LanguageName %>"
+            implementationClass="<%= LanguageName %>.lang.<%= LanguageName %>FileType"
+            fieldName="INSTANCE"
+            language="<%= LanguageName %>"
+            extensions="<%= file-extensions-semi %>" />
+
+        <!-- The following two ("editorHighlighterProvider" and "lang.syntaxHighlighterFactory") are required
+            because defining a custom file type breaks the association of a TextMate grammar with a file extension.
+            https://intellij-support.jetbrains.com/hc/en-us/community/posts/360008202719/comments/8966725380242 -->
+        <editorHighlighterProvider
+            filetype="<%= LanguageName %>"
+            implementationClass="org.jetbrains.plugins.textmate.language.syntax.highlighting.TextMateEditorHighlighterProvider" />
+
+        <lang.syntaxHighlighterFactory
+            language="<%= LanguageName %>"
+            implementationClass="org.jetbrains.plugins.textmate.language.syntax.highlighting.TextMateSyntaxHighlighterFactory" />
+
+        <textmate.bundleProvider implementation="<%= LanguageName %>.lang.<%= LanguageName %>TextMateBundleProvider" />
+    </extensions>
+
+    <extensions defaultExtensionNs="com.redhat.devtools.lsp4ij">
+        <server id="<%= LanguageName %>.lang"
+                name="<%= LanguageName %> Language Server"
+                factoryClass="<%= LanguageName %>.lang.<%= LanguageName %>LanguageServerFactory">
+            <description><![CDATA[
+            Plugin for <%= LanguageName %> using Language Server Protocol.
+            ]]>
+            </description>
+        </server>
+
+        <languageMapping language="<%= LanguageName %>" serverId="<%= LanguageName %>.lang" />
+    </extensions>
+</idea-plugin>
