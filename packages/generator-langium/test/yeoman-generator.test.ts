@@ -17,6 +17,7 @@ const answersForCore: Answers & PostAnwers = {
     rawLanguageName: 'Hello World',
     fileExtensions: '.hello',
     includeVSCode: false,
+    includeIntelliJ: false,
     includeCLI: false,
     includeWeb: false,
     includeTest: false,
