@@ -26,10 +26,13 @@ const EXTENSION_NAME = /<%= extension-name %>/g;
 const RAW_LANGUAGE_NAME = /<%= RawLanguageName %>/g;
 const FILE_EXTENSION = /"?<%= file-extension %>"?/g;
 const FILE_EXTENSION_GLOB = /<%= file-glob-extension %>/g;
+const FILE_EXTENSION_DEFAULT = /<%= file-extension-default %>/g;
+const FILE_EXTENSIONS_SEMI = /<%= file-extensions-semi %>/g;
 
 const LANGUAGE_NAME = /<%= LanguageName %>/g;
 const LANGUAGE_ID = /<%= language-id %>/g;
 const LANGUAGE_PATH_ID = /language-id/g;
+const LANGUAGE_PATH_UPPER = /LanguageId/g;
 
 const NEWLINES = /\r?\n/g;
 
@@ -188,6 +191,8 @@ export class LangiumGenerator extends Generator {
         this.answers.fileExtensions = `[${fileExtensions.map(ext => `".${ext}"`).join(', ')}]`;
 
         const fileExtensionGlob = fileExtensions.length > 1 ? `{${fileExtensions.join(',')}}` : fileExtensions[0];
+        const fileExtensionDefault = fileExtensions[0];
+        const fileExtensionSemi = fileExtensions.join(';');
 
         this.answers.rawLanguageName = this.answers.rawLanguageName.replace(
             /(?![\w| |\-|_])./g,
@@ -199,8 +204,8 @@ export class LangiumGenerator extends Generator {
         const languageId = _.kebabCase(this.answers.rawLanguageName);
 
         const templateCopyOptions: CopyOptions = {
-            process: content => this._replaceTemplateWords(fileExtensionGlob, languageName, languageId, content),
-            processDestinationPath: path => this._replaceTemplateNames(languageId, path)
+            process: content => this._replaceTemplateWords(fileExtensionGlob, fileExtensionDefault, fileExtensionSemi, languageName, languageId, content),
+            processDestinationPath: path => this._replaceTemplateNames(languageId, languageName, path)
         };
 
         const pathBase = path.join(__dirname, BASE_DIR);
@@ -409,19 +414,23 @@ export * from './generated/module.js';
         return this.destinationPath(USER_DIR, this.answers.extensionName, ...path);
     }
 
-    _replaceTemplateWords(fileExtensionGlob: string, languageName: string, languageId: string, content: string | Buffer): string {
+    _replaceTemplateWords(fileExtensionGlob: string, fileExtensionDefault: string, fileExtensionsSemi: string, languageName: string, languageId: string, content: string | Buffer): string {
         return content.toString()
             .replace(EXTENSION_NAME, this.answers.extensionName)
             .replace(RAW_LANGUAGE_NAME, this.answers.rawLanguageName)
             .replace(FILE_EXTENSION, this.answers.fileExtensions)
             .replace(FILE_EXTENSION_GLOB, fileExtensionGlob)
+            .replace(FILE_EXTENSION_DEFAULT, fileExtensionDefault)
+            .replace(FILE_EXTENSIONS_SEMI, fileExtensionsSemi)
             .replace(LANGUAGE_NAME, languageName)
             .replace(LANGUAGE_ID, languageId)
             .replace(NEWLINES, EOL);
     }
 
-    _replaceTemplateNames(languageId: string, path: string): string {
-        return path.replace(LANGUAGE_PATH_ID, languageId);
+    _replaceTemplateNames(languageId: string, languageName: string, path: string): string {
+        return path
+            .replace(LANGUAGE_PATH_ID, languageId)
+            .replace(LANGUAGE_PATH_UPPER, languageName);
     }
 }
 
