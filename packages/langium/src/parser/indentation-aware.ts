@@ -4,7 +4,7 @@
  * terms of the MIT License, which is available in the project root.
  ******************************************************************************/
 
-import type { CustomPatternMatcherFunc, TokenType, IToken } from 'chevrotain';
+import type { CustomPatternMatcherFunc, TokenType, IToken, IMultiModeLexerDefinition } from 'chevrotain';
 import type { Grammar, TerminalRule } from '../languages/generated/ast.js';
 import type { TokenBuilderOptions } from './token-builder.js';
 import type { LexerResult } from './lexer.js';
@@ -44,13 +44,29 @@ export interface IndentationTokenBuilderOptions<TokenName extends string = strin
      * @default 'WS'
      */
     whitespaceTokenName: TokenName;
+    /**
+     * The delimeter tokens inside of which indentation should be ignored and treated as normal whitespace.
+     * For example, Python doesn't treat any whitespace between `'('` and `')'` as significant.
+     *
+     * Note that this works only with terminal tokens, not keyword tokens,
+     * so for `'('` you will have to define `terminal L_PAREN: /\(/;` and pass `'L_PAREN'` here.
+     *
+     * @default []
+     */
+    ignoreIndentationDelimeters: Array<[begin: TokenName, end: TokenName]>
 }
 
 export const indentationBuilderDefaultOptions: IndentationTokenBuilderOptions = {
     indentTokenName: 'INDENT',
     dedentTokenName: 'DEDENT',
     whitespaceTokenName: 'WS',
+    ignoreIndentationDelimeters: [],
 };
+
+export enum LexingMode {
+    REGULAR = 'indentation-sensitive',
+    IGNORE_INDENTATION = 'ignore-indentation',
+}
 
 /**
  * A token builder that is sensitive to indentation in the input text.
@@ -130,7 +146,16 @@ export class IndentationAwareTokenBuilder<Terminals extends string = string> ext
         if (!dedent || !indent || !ws) {
             throw new Error('Some indentation/whitespace tokens not found!');
         }
-        return [dedent, indent, ws, ...otherTokens];
+
+        const multiModeLexerDef: IMultiModeLexerDefinition = {
+            modes: {
+                [LexingMode.REGULAR]: [dedent, indent, ...otherTokens, ws],
+                [LexingMode.IGNORE_INDENTATION]: [...otherTokens, ws],
+            },
+            defaultMode: LexingMode.REGULAR,
+        };
+
+        return multiModeLexerDef;
     }
 
     /**
@@ -270,7 +295,7 @@ export class IndentationAwareTokenBuilder<Terminals extends string = string> ext
 
     protected override buildTerminalToken(terminal: TerminalRule): TokenType {
         const tokenType = super.buildTerminalToken(terminal);
-        const { indentTokenName, dedentTokenName, whitespaceTokenName } = this.options;
+        const { indentTokenName, dedentTokenName, whitespaceTokenName, ignoreIndentationDelimeters } = this.options;
 
         if (tokenType.name === indentTokenName) {
             return this.indentTokenType;
@@ -282,6 +307,14 @@ export class IndentationAwareTokenBuilder<Terminals extends string = string> ext
                 pattern: this.whitespaceRegExp,
                 group: Lexer.SKIPPED,
             });
+        }
+
+        for (const [begin, end] of ignoreIndentationDelimeters) {
+            if (tokenType.name === begin) {
+                tokenType.PUSH_MODE = LexingMode.IGNORE_INDENTATION;
+            } else if (tokenType.name === end) {
+                tokenType.POP_MODE = true;
+            }
         }
 
         return tokenType;
