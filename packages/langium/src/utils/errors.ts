@@ -15,3 +15,5 @@ export class ErrorWithLocation extends Error {
 export function assertUnreachable(_: never): never {
     throw new Error('Error! The input value was not handled.');
 }
+
+export function assertType<T>(value: unknown): asserts value is T {}
