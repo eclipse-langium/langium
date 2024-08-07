@@ -5,7 +5,6 @@
  ******************************************************************************/
 import { GrammarAST, type Grammar, GrammarUtils, RegExpUtils } from 'langium';
 import { expandToNode, joinToNode, toString, type Generated } from 'langium/generate';
-import _ from 'lodash';
 import type { LangiumLanguageConfig } from '../../package-types.js';
 import { collectKeywords } from '../langium-util.js';
 
@@ -47,17 +46,17 @@ export function generatePrismHighlighting(grammar: Grammar, config: LangiumLangu
         pattern: `/\\b(${filteredKeywords.join('|')})\\b/${modifier}`
     };
 
-    return generate(highlighter, grammar.name ?? 'unknown');
+    return generate(highlighter, config.id);
 }
 
-function generate(highlighter: PrismHighlighter, grammarName: string): string {
+function generate(highlighter: PrismHighlighter, languageId: string): string {
     /* eslint-disable @typescript-eslint/indent */
     return toString(
         expandToNode`
             // This file is generated using a best effort guess for your language.
             // It is not guaranteed contain all expected prism syntax highlighting rules.
             // For more documentation, take a look at https://prismjs.com/extending.html'
-            Prism.languages.${_.camelCase(grammarName)} = {
+            Prism.languages["${languageId}"] = {
                 ${joinToNode(
                     Object.entries(highlighter),
                     ([name, value]) => {
