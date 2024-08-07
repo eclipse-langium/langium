@@ -72,6 +72,31 @@ export interface SemanticTokenProvider {
     semanticHighlight(document: LangiumDocument, params: SemanticTokensParams, cancelToken?: CancellationToken): MaybePromise<SemanticTokens>
     semanticHighlightRange(document: LangiumDocument, params: SemanticTokensRangeParams, cancelToken?: CancellationToken): MaybePromise<SemanticTokens>
     semanticHighlightDelta(document: LangiumDocument, params: SemanticTokensDeltaParams, cancelToken?: CancellationToken): MaybePromise<SemanticTokens | SemanticTokensDelta>
+    readonly tokenTypes: Record<string, number>
+    readonly tokenModifiers: Record<string, number>
+    readonly semanticTokensOptions: SemanticTokensOptions
+}
+
+export function mergeSemanticProviderOptions(options: Array<SemanticTokensOptions | undefined>): SemanticTokensOptions {
+    const tokenTypes = Array.from(new Set(options.flatMap(option => option?.legend.tokenTypes ?? [])));
+    const tokenModifiers = Array.from(new Set(options.flatMap(option => option?.legend.tokenModifiers ?? [])));
+    const full = options.reduce((acc, option) => {
+        if (!option) return acc;
+        if (typeof option.full === 'object' && option.full.delta) {
+            return option.full;
+        }
+        return option.full ?? acc;
+    }, false as SemanticTokensOptions['full']);
+    const range = options.some(option => option?.range);
+
+    return {
+        legend: {
+            tokenTypes,
+            tokenModifiers,
+        },
+        full,
+        range,
+    };
 }
 
 export interface SemanticToken {
@@ -209,6 +234,27 @@ export abstract class AbstractSemanticTokenProvider implements SemanticTokenProv
         this.clientCapabilities = clientCapabilities;
     }
 
+    get tokenTypes(): Record<string, number> {
+        return AllSemanticTokenTypes;
+    }
+
+    get tokenModifiers(): Record<string, number> {
+        return AllSemanticTokenModifiers;
+    }
+
+    get semanticTokensOptions(): SemanticTokensOptions {
+        return {
+            legend: {
+                tokenTypes: Object.keys(this.tokenTypes),
+                tokenModifiers: Object.keys(this.tokenModifiers),
+            },
+            full: {
+                delta: true
+            },
+            range: true,
+        };
+    }
+
     async semanticHighlight(document: LangiumDocument, _params: SemanticTokensParams, cancelToken = CancellationToken.None): Promise<SemanticTokens> {
         this.currentRange = undefined;
         this.currentDocument = document;
@@ -307,14 +353,14 @@ export abstract class AbstractSemanticTokenProvider implements SemanticTokenProv
         if ((this.currentRange && !inRange(range, this.currentRange)) || !this.currentDocument || !this.currentTokensBuilder) {
             return;
         }
-        const intType = AllSemanticTokenTypes[type];
+        const intType = this.tokenTypes[type];
         let totalModifier = 0;
         if (modifiers !== undefined) {
             if (typeof modifiers === 'string') {
                 modifiers = [modifiers];
             }
             for (const modifier of modifiers) {
-                const intModifier = AllSemanticTokenModifiers[modifier];
+                const intModifier = this.tokenModifiers[modifier];
                 totalModifier |= intModifier;
             }
         }
@@ -432,9 +478,9 @@ export namespace SemanticTokensDecoder {
         text: string;
     }
 
-    export function decode<T extends AstNode = AstNode>(tokens: SemanticTokens, document: LangiumDocument<T>): DecodedSemanticToken[] {
+    export function decode<T extends AstNode = AstNode>(tokens: SemanticTokens, tokenTypes: Record<string, number>, document: LangiumDocument<T>): DecodedSemanticToken[] {
         const typeMap = new Map<number, SemanticTokenTypes>();
-        Object.entries(AllSemanticTokenTypes).forEach(([type, index]) => typeMap.set(index, type as SemanticTokenTypes));
+        Object.entries(tokenTypes).forEach(([type, index]) => typeMap.set(index, type as SemanticTokenTypes));
         let line = 0;
         let character = 0;
         return sliceIntoChunks(tokens.data, 5).map(t => {
