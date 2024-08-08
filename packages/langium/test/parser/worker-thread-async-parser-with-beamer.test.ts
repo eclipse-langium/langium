@@ -63,7 +63,7 @@ class BeamingParserWorker extends ParserWorker {
                 const context = reassembler.initializeContext();
                 worker.on('message', (instr) => {
                     if(reassembler.reassemble(context, instr)) {
-                        cb(reassembler.buildPerseResult<AstNode>(context));
+                        cb(reassembler.buildParseResult<AstNode>(context));
                     }
                 });
             },

@@ -158,7 +158,7 @@ export interface AstReassemblerContext {
 export interface AstReassembler {
     initializeContext(): AstReassemblerContext;
     reassemble(context: AstReassemblerContext, instr: AstAssemblerInstruction): boolean;
-    buildPerseResult<T extends AstNode>(context: AstReassemblerContext): ParseResult<T>;
+    buildParseResult<T extends AstNode>(context: AstReassemblerContext): ParseResult<T>;
 }
 
 export class DefaultAstDisassembler implements AstDisassembler {
@@ -506,7 +506,7 @@ export class DefaultAstReassembler implements AstReassembler {
         this.grammarTokenTypeIdMap = new BiMap(tokens.map(tk => [tk, tk.name] as const));
     }
 
-    buildPerseResult<T extends AstNode>(context: AstReassemblerContext): ParseResult<T> {
+    buildParseResult<T extends AstNode>(context: AstReassemblerContext): ParseResult<T> {
         return {
             lexerErrors: context.lexerErrors,
             parserErrors: context.parserErrors,
