@@ -8,3 +8,4 @@ out/
 **/src/generated
 syntaxes/
 *.tsbuildinfo
+*.vsix

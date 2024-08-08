@@ -248,7 +248,7 @@ const PACKAGE_JSON_EXPECTATION: Record<string, any> = {
         'watch': 'tsc -b tsconfig.build.json --watch',
         'build': 'tsc -b tsconfig.build.json && npm run build --workspaces',
         'build:clean': 'npm run clean && npm run build',
-        'lint': 'eslint src --ext ts',
+        'lint': 'eslint {**/src/**/*.ts,**/src/**/*.tsx,**/test/**/*.ts,**/test/**/*.tsx}',
         'langium:generate': 'npm run --workspace packages/language langium:generate',
         'langium:watch': 'npm run --workspace packages/language langium:watch'
     },
@@ -366,7 +366,7 @@ const PACKAGE_JSON_EXPECTATION_EXTENSION: Record<string, any> = {
     main: './out/extension/main.cjs',
     scripts: {
         'clean': 'shx rm -fr *.tsbuildinfo out syntaxes',
-        'vscode:prepublish': 'npm run build && npm run lint',
+        'vscode:prepublish': 'npm run build && npm run --prefix ../.. lint',
         'build:prepare': 'shx mkdir -p ./syntaxes/ && shx cp -f ../language/syntaxes/hello-world.tmLanguage.json ./syntaxes/hello-world.tmLanguage.json',
         'build': 'npm run build:prepare && tsc -b tsconfig.json && node esbuild.mjs',
         'build:clean': 'npm run clean && npm run build',
