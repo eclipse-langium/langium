@@ -4,17 +4,18 @@
  * terms of the MIT License, which is available in the project root.
  ******************************************************************************/
 
-import type { Reference } from '../syntax-tree.js';
+import type { Reference, RootCstNode } from '../syntax-tree.js';
 import { isRootCstNode, type AstNode, type CstNode, type Mutable, isCompositeCstNode, isLeafCstNode, isAstNode, isReference } from '../syntax-tree.js';
 import { streamAst } from '../utils/ast-utils.js';
 import { streamCst } from '../utils/cst-utils.js';
 import { BiMap, type LangiumCoreServices, assertType, type ParseResult, assertUnreachable } from '../index.js';
 import { type AbstractElement, type Grammar, isAbstractElement } from '../languages/generated/ast.js';
-import type { ILexingError, IRecognitionException } from 'chevrotain';
+import type { ILexingError, IRecognitionException, TokenType } from 'chevrotain';
 
 enum InstructionType {
     Allocate,
     Element,
+    TokenType,
     Property,
     Properties,
     LinkNode,
@@ -51,7 +52,13 @@ namespace Instructions {
         cstNodeCount: number;
         astNodeCount: number;
     }
-
+    export interface TokenType extends AstAssemblerInstructionBase {
+        $type: InstructionType.TokenType;
+        sourceKind: NodeType;
+        sourceId: number;
+        property: string;
+        tokenName: string;
+    }
     export interface Element extends AstAssemblerInstructionBase {
         $type: InstructionType.Element;
         sourceKind: NodeType;
@@ -123,6 +130,7 @@ namespace Instructions {
 
 export type AstAssemblerInstruction =
     | Instructions.Allocate
+    | Instructions.TokenType
     | Instructions.Property
     | Instructions.Element
     | Instructions.Properties
@@ -180,6 +188,21 @@ export class DefaultAstDisassembler implements AstDisassembler {
             assertType<Mutable<CstNode>>(node);
             const sourceKind = NodeType.Cst;
             const sourceId = this.cstNodeToId.get(node)!;
+
+            const setTokenType = (property: string, tokenName: string) => {
+                const instr = <Instructions.TokenType>{
+                    $type: InstructionType.TokenType,
+                    sourceKind,
+                    sourceId,
+                    property,
+                    tokenName
+                };
+                if (this.deleteOriginal) {
+                    assertType<Record<string, undefined>>(node);
+                    node[property] = undefined!;
+                }
+                return instr;
+            };
 
             const setProperty = (property: string, value: number | boolean | string | bigint) => {
                 const instr = <Instructions.Property>{
@@ -254,14 +277,19 @@ export class DefaultAstDisassembler implements AstDisassembler {
             if (isCompositeCstNode(node)) {
                 yield setLinks('content', NodeType.Cst, node.content.map(c => this.cstNodeToId.get(c)!));
             } else if (isLeafCstNode(node)) {
-                yield setProperty('tokenType', node.tokenType.name);
-                yield setProperty('offset', node.offset);
-                yield setProperty('length', node.length);
-                yield setProperty('startLine', node.range.start.line);
-                yield setProperty('startColumn', node.range.start.character);
-                yield setProperty('endLine', node.range.end.line);
-                yield setProperty('endColumn', node.range.end.character);
+                yield setTokenType('tokenType', node.tokenType.name);
             }
+            yield setProperty('offset', node.offset);
+            yield setProperty('length', node.length);
+            yield setProperty('end', node.end);
+            yield setLink('root', NodeType.Cst, this.cstNodeToId.get(node.root)!);
+            if(node.container) {
+                yield setLink('container', NodeType.Cst, this.cstNodeToId.get(node.container)!);
+            }
+            yield setProperty('startLine', node.range.start.line);
+            yield setProperty('startColumn', node.range.start.character);
+            yield setProperty('endLine', node.range.end.line);
+            yield setProperty('endColumn', node.range.end.character);
         }
 
         //send ast nodes
@@ -419,14 +447,14 @@ export class DefaultAstDisassembler implements AstDisassembler {
             yield <Instructions.Error>{
                 $type: InstructionType.Error,
                 source: ErrorSource.Lexer,
-                items: { ...error }
+                items: { ...error, message: error.message }
             };
         }
         for (const error of parseResult.parserErrors) {
             yield <Instructions.Error>{
                 $type: InstructionType.Error,
                 source: ErrorSource.Parser,
-                items: { ...error }
+                items: { ...error, message: error.message }
             };
         }
 
@@ -460,10 +488,22 @@ function createGrammarElementIdMap(grammar: Grammar) {
     return result;
 }
 
+class CstClone {
+    root: RootCstNode;
+    offset: number;
+    end: number;
+    get text() {
+        return this.root.fullText.substring(this.offset, this.end);
+    }
+}
+
 export class DefaultAstReassembler implements AstReassembler {
     private readonly grammarElementIdMap: BiMap<AbstractElement, number>;
+    private readonly grammarTokenTypeIdMap: BiMap<TokenType, string>;
     constructor(services: LangiumCoreServices) {
         this.grammarElementIdMap = createGrammarElementIdMap(services.Grammar);
+        const tokens = services.parser.TokenBuilder.buildTokens(services.Grammar) as TokenType[];
+        this.grammarTokenTypeIdMap = new BiMap(tokens.map(tk => [tk, tk.name] as const));
     }
 
     buildPerseResult<T extends AstNode>(context: AstReassemblerContext): ParseResult<T> {
@@ -487,7 +527,7 @@ export class DefaultAstReassembler implements AstReassembler {
     reassemble(ctx: AstReassemblerContext, instr: AstAssemblerInstruction): boolean {
         switch (instr.$type) {
             case InstructionType.Allocate:
-                ctx.idToCstNode = Array.from({ length: instr.cstNodeCount }).map(() => ({} as Mutable<CstNode>));
+                ctx.idToCstNode = Array.from({ length: instr.cstNodeCount }).map(() => (new CstClone() as Mutable<CstNode>));
                 ctx.idToAstNode = Array.from({ length: instr.astNodeCount }).map(() => ({} as Mutable<AstNode>));
                 break;
             case InstructionType.Empty:
@@ -573,6 +613,15 @@ export class DefaultAstReassembler implements AstReassembler {
                     ctx.parserErrors.push({ ...instr.items } as unknown as IRecognitionException);
                 }
                 break;
+            case InstructionType.TokenType: {
+                const tokenType = this.grammarTokenTypeIdMap.getKey(instr.tokenName)!;
+                if (instr.sourceKind === NodeType.Ast) {
+                    ctx.idToAstNode[instr.sourceId][instr.property] = tokenType;
+                } else {
+                    ctx.idToCstNode[instr.sourceId][instr.property] = tokenType;
+                }
+                break;
+            }
             default:
                 assertUnreachable(instr);
         }
