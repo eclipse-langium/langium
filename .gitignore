@@ -8,3 +8,4 @@ node_modules/
 *.vsix
 *.tsbuildinfo
 hello-world
+generator-tests

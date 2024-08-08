@@ -15,18 +15,17 @@ import * as url from 'node:url';
 
 const __dirname = url.fileURLToPath(new URL('.', import.meta.url));
 
-const TEMPLATE_CORE_DIR = '../templates/core';
-const TEMPLATE_VSCODE_DIR = '../templates/vscode';
-const TEMPLATE_CLI_DIR = '../templates/cli';
-const TEMPLATE_WEB_DIR = '../templates/web';
-const TEMPLATE_TEST_DIR = '../templates/test';
+const BASE_DIR = '../templates';
+const PACKAGE_LANGUAGE = 'packages/language';
+const PACKAGE_CLI = 'packages/cli';
+const PACKAGE_WEB = 'packages/web';
+const PACKAGE_EXTENSION = 'packages/extension';
 const USER_DIR = '.';
 
 const EXTENSION_NAME = /<%= extension-name %>/g;
 const RAW_LANGUAGE_NAME = /<%= RawLanguageName %>/g;
 const FILE_EXTENSION = /"?<%= file-extension %>"?/g;
 const FILE_EXTENSION_GLOB = /<%= file-glob-extension %>/g;
-const TSCONFIG_BASE_NAME = /<%= tsconfig %>/g;
 
 const LANGUAGE_NAME = /<%= LanguageName %>/g;
 const LANGUAGE_ID = /<%= language-id %>/g;
@@ -46,6 +45,22 @@ export interface Answers {
 
 export interface PostAnwers {
     openWith: 'code' | false
+}
+
+/**
+ * This is a sub-set of LangiumConfig from langium-cli.
+ * We copy this to not introduce a dependency to langium-cli itself.
+ */
+export interface LangiumLanguageConfigSubset {
+    id: string
+    grammar: string
+    fileExtensions?: string[]
+    textMate?: {
+        out: string
+    }
+    monarch?: {
+        out: string
+    }
 }
 
 function printLogo(log: (message: string) => void): void {
@@ -171,96 +186,173 @@ export class LangiumGenerator extends Generator {
         );
         const languageId = _.kebabCase(this.answers.rawLanguageName);
 
-        const referencedTsconfigBaseName = this.answers.includeTest ? 'tsconfig.src.json' : 'tsconfig.json';
         const templateCopyOptions: CopyOptions = {
-            process: content => this._replaceTemplateWords(fileExtensionGlob, languageName, languageId, referencedTsconfigBaseName, content),
+            process: content => this._replaceTemplateWords(fileExtensionGlob, languageName, languageId, content),
             processDestinationPath: path => this._replaceTemplateNames(languageId, path)
         };
 
-        this.sourceRoot(path.join(__dirname, TEMPLATE_CORE_DIR));
-        const pkgJson = this.fs.readJSON(path.join(this.sourceRoot(), '.package.json'));
-        this.fs.extendJSON(this._extensionPath('package-template.json'), pkgJson, undefined, 4);
+        const pathBase = path.join(__dirname, BASE_DIR);
+        this.sourceRoot(pathBase);
+        const mainPackageJson = this.fs.readJSON(path.join(this.sourceRoot(), 'package.json'));
+        const tsConfigBuildJson = this.fs.readJSON(path.join(this.sourceRoot(), 'tsconfig.build.json'));
 
-        for (const path of ['.', '.vscode', '.eslintrc.json']) {
+        const baseFiles = [
+            '.eslintrc.json',
+            'tsconfig.json',
+            'tsconfig.build.json',
+            'README.md',
+            '.vscode'
+        ];
+        for (const path of baseFiles) {
             this.fs.copy(
                 this.templatePath(path),
                 this._extensionPath(path),
                 templateCopyOptions
             );
         }
-
         // .gitignore files don't get published to npm, so we need to copy it under a different name
-        this.fs.copy(this.templatePath('../gitignore.txt'), this._extensionPath('.gitignore'));
+        this.fs.copy(this.templatePath('gitignore.txt'), this._extensionPath('.gitignore'));
 
-        if (this.answers.includeVSCode) {
-            this.sourceRoot(path.join(__dirname, TEMPLATE_VSCODE_DIR));
-            const pkgJson = this.fs.readJSON(path.join(this.sourceRoot(), '.package.json'));
-            this.fs.extendJSON(this._extensionPath('package-template.json'), pkgJson, undefined, 4);
-            this.sourceRoot(path.join(__dirname, TEMPLATE_VSCODE_DIR));
-            for (const path of ['.', '.vscode', '.vscodeignore']) {
-                this.fs.copy(
-                    this.templatePath(path),
-                    this._extensionPath(path),
-                    templateCopyOptions
-                );
-            }
+        this.sourceRoot(path.join(__dirname, `${BASE_DIR}/${PACKAGE_LANGUAGE}`));
+        const languageFiles = [
+            'package.json',
+            'README.md',
+            'tsconfig.json',
+            'tsconfig.src.json',
+            'vitest.config.ts',
+            'src',
+        ];
+        if (this.answers.includeTest) {
+            languageFiles.push('tsconfig.test.json');
+            languageFiles.push('test');
+        }
+        for (const path of languageFiles) {
+            this.fs.copy(
+                this.templatePath(path),
+                this._extensionPath(`${PACKAGE_LANGUAGE}/${path}`),
+                templateCopyOptions
+            );
+        }
+
+        const langiumConfigJson = {
+            projectName: languageName,
+            languages: [{
+                id: languageId,
+                grammar: `src/${languageId}.langium`,
+                fileExtensions: [ fileExtensionGlob ],
+                textMate: {
+                    out: `syntaxes/${languageId}.tmLanguage.json`
+                }
+            } as LangiumLanguageConfigSubset],
+            out: 'src/generated'
+        };
+
+        let languageIndex = `export * from './${languageId}-module.js';
+export * from './${languageId}-validator.js';
+export * from './generated/ast.js';
+export * from './generated/grammar.js';
+export * from './generated/module.js';
+`;
+
+        if (this.answers.includeTest) {
+            mainPackageJson.scripts.test = 'npm run --workspace packages/language test';
+
+            // ensure reference is directly behind ./packages/language/tsconfig.src.json
+            tsConfigBuildJson.references.push({ path: './packages/language/tsconfig.test.json' });
+
+            const languagePackageJson = this.fs.readJSON(this._extensionPath('packages/language/package.json'));
+            languagePackageJson.devDependencies.vitest = '~1.6.0';
+            languagePackageJson.scripts.test = 'vitest run';
+            this.fs.delete(this._extensionPath('packages/language/package.json'));
+            this.fs.writeJSON(this._extensionPath('packages/language/package.json'), languagePackageJson, undefined, 4);
+
+            const extensionsJson = this.fs.readJSON(this._extensionPath('.vscode/extensions.json'));
+            extensionsJson.recommendations.push('vitest.explorer');
+            this.fs.delete(this._extensionPath('.vscode/extensions.json'));
+            this.fs.writeJSON(this._extensionPath('.vscode/extensions.json'), extensionsJson, undefined, 4);
         }
 
         if (this.answers.includeCLI) {
-            this.sourceRoot(path.join(__dirname, TEMPLATE_CLI_DIR));
-            const pkgJson = this.fs.readJSON(path.join(this.sourceRoot(), '.package.json'));
-            this.fs.extendJSON(this._extensionPath('package-template.json'),pkgJson, undefined, 4);
-            for (const path of ['.']) {
+            this.sourceRoot(path.join(__dirname, `${BASE_DIR}/${PACKAGE_CLI}`));
+            const cliFiles = [
+                'package.json',
+                'tsconfig.json',
+                'README.md',
+                'bin',
+                'src'
+            ];
+            for (const path of cliFiles) {
                 this.fs.copy(
                     this.templatePath(path),
-                    this._extensionPath(path),
+                    this._extensionPath(`${PACKAGE_CLI}/${path}`),
                     templateCopyOptions
                 );
             }
+            mainPackageJson.workspaces.push('packages/cli');
+            tsConfigBuildJson.references.push({ path: './packages/cli/tsconfig.json' });
         }
 
         if (this.answers.includeWeb) {
-            this.sourceRoot(path.join(__dirname, TEMPLATE_WEB_DIR));
-            const pkgJson = this.fs.readJSON(path.join(this.sourceRoot(), '.package.json'));
-            this.fs.extendJSON(this._extensionPath('package-template.json'), pkgJson, undefined, 4);
-            this.sourceRoot(path.join(__dirname, TEMPLATE_WEB_DIR));
-            for (const path of ['.']) {
+            this.sourceRoot(path.join(__dirname, `${BASE_DIR}/${PACKAGE_WEB}`));
+            const webFiles = [
+                'package.json',
+                'language-configuration.json',
+                'README.md',
+                'tsconfig.json',
+                'index.html',
+                'vite.config.ts',
+                'src',
+                'static'
+            ];
+            for (const path of webFiles) {
                 this.fs.copy(
                     this.templatePath(path),
-                    this._extensionPath(path),
+                    this._extensionPath(`${PACKAGE_WEB}/${path}`),
                     templateCopyOptions
                 );
             }
+            mainPackageJson.workspaces.push('packages/web');
+            tsConfigBuildJson.references.push({ path: './packages/web/tsconfig.json' });
+
+            this.sourceRoot(path.join(__dirname, `${BASE_DIR}/${PACKAGE_LANGUAGE}`));
+            langiumConfigJson.languages[0].monarch = {
+                out: `src/syntaxes/${languageId}.monarch.ts`
+            };
+
+            languageIndex = languageIndex?.concat(`\nexport { default as monarchSyntax } from './syntaxes/${languageId}.monarch.js';`);
         }
 
-        if (this.answers.includeTest) {
-            this.sourceRoot(path.join(__dirname, TEMPLATE_TEST_DIR));
+        // Write language index.ts and langium-config.json after possible alteration from web inclusion
+        this.fs.write(this._extensionPath('packages/language/src/index.ts'), languageIndex);
+        this.fs.writeJSON(this._extensionPath('packages/language/langium-config.json'), langiumConfigJson, undefined, 4);
 
-            this.fs.copy(
-                this.templatePath('.'),
-                this._extensionPath(),
-                templateCopyOptions
-            );
-
-            // update the scripts section in the package.json to use 'tsconfig.src.json' for building
-            const pkgJson = this.fs.readJSON(this.templatePath('.package.json'));
-            this.fs.extendJSON(this._extensionPath('package-template.json'), pkgJson, undefined, 4);
-
-            // update the 'includes' property in the existing 'tsconfig.json' and adds '"noEmit": true'
-            const tsconfigJson = this.fs.readJSON(this.templatePath('.tsconfig.json'));
-            this.fs.extendJSON(this._extensionPath('tsconfig.json'), tsconfigJson, undefined, 4);
-
-            // the initial '.vscode/extensions.json' can't be extended as above, as it contains comments, which is tolerated by vscode,
-            //  but not by `this.fs.extendJSON(...)`, so
-            this.fs.copy(this.templatePath('.vscode-extensions.json'), this._extensionPath('.vscode/extensions.json'), templateCopyOptions);
+        if (this.answers.includeVSCode) {
+            this.sourceRoot(path.join(__dirname, `${BASE_DIR}/${PACKAGE_EXTENSION}`));
+            const extensionFiles = [
+                '.vscodeignore',
+                'esbuild.mjs',
+                'langium-quickstart.md',
+                'language-configuration.json',
+                'package.json',
+                'tsconfig.json',
+                'src'
+            ];
+            for (const path of extensionFiles) {
+                this.fs.copy(
+                    this.templatePath(path),
+                    this._extensionPath(`${PACKAGE_EXTENSION}/${path}`),
+                    templateCopyOptions
+                );
+            }
+            mainPackageJson.workspaces.push('packages/extension');
+            tsConfigBuildJson.references.push({ path: './packages/extension/tsconfig.json' });
         }
 
-        this.fs.copy(
-            this._extensionPath('package-template.json'),
-            this._extensionPath('package.json'),
-            templateCopyOptions
-        );
-        this.fs.delete(this._extensionPath('package-template.json'));
+        this.fs.writeJSON(this._extensionPath('.package.json'), mainPackageJson, undefined, 4);
+        this.fs.move(this._extensionPath('.package.json'), this._extensionPath('package.json'), templateCopyOptions);
+
+        this.fs.writeJSON(this._extensionPath('.tsconfig.build.json'), tsConfigBuildJson, undefined, 4);
+        this.fs.move(this._extensionPath('.tsconfig.build.json'), this._extensionPath('tsconfig.build.json'), templateCopyOptions);
     }
 
     async install(): Promise<void> {
@@ -271,13 +363,8 @@ export class LangiumGenerator extends Generator {
             this.spawnSync('npm', ['install'], opts);
         }
         this.spawnSync('npm', ['run', 'langium:generate'], opts);
-
-        if (this.answers.includeVSCode || this.answers.includeCLI) {
+        if(!this.args.includes('skip-build')) {
             this.spawnSync('npm', ['run', 'build'], opts);
-        }
-
-        if (this.answers.includeWeb) {
-            this.spawnSync('npm', ['run', 'build:web'], opts);
         }
     }
 
@@ -310,7 +397,7 @@ export class LangiumGenerator extends Generator {
         return this.destinationPath(USER_DIR, this.answers.extensionName, ...path);
     }
 
-    _replaceTemplateWords(fileExtensionGlob: string, languageName: string, languageId: string, tsconfigBaseName: string, content: string | Buffer): string {
+    _replaceTemplateWords(fileExtensionGlob: string, languageName: string, languageId: string, content: string | Buffer): string {
         return content.toString()
             .replace(EXTENSION_NAME, this.answers.extensionName)
             .replace(RAW_LANGUAGE_NAME, this.answers.rawLanguageName)
@@ -318,7 +405,6 @@ export class LangiumGenerator extends Generator {
             .replace(FILE_EXTENSION_GLOB, fileExtensionGlob)
             .replace(LANGUAGE_NAME, languageName)
             .replace(LANGUAGE_ID, languageId)
-            .replace(TSCONFIG_BASE_NAME, tsconfigBaseName)
             .replace(NEWLINES, EOL);
     }
 

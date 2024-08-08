@@ -59,7 +59,7 @@
     },
     "dependencies": {
         "chalk": "~5.3.0",
-        "commander": "~11.0.0",
+        "commander": "~11.1.0",
         "langium": "~3.1.0",
         "lodash": "~4.17.21",
         "vscode-languageclient": "~9.0.1",

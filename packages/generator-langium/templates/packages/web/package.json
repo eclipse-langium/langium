@@ -1,0 +1,38 @@
+{
+    "name": "<%= language-id %>-web",
+    "description": "The web specific package",
+    "version": "0.0.1",
+    "type": "module",
+    "engines": {
+        "node": ">=18.0.0"
+    },
+    "files": [
+        "out",
+        "src"
+    ],
+    "scripts": {
+        "clean": "shx rm -fr *.tsbuildinfo out dist syntaxes",
+        "build:prepare": "shx mkdir -p ./syntaxes/ && shx cp -f ../language/syntaxes/<%= language-id %>.tmLanguage.json ./syntaxes/<%= language-id %>.tmLanguage.json",
+        "build": "npm run build:prepare && vite build",
+        "build:clean": "npm run clean && npm run build",
+        "dev": "npm run build:prepare && vite",
+        "dev:debug": "npm run build:prepare && vite --debug --force",
+        "serve": "npm run build:prepare && vite preview"
+    },
+    "dependencies": {
+        "@codingame/monaco-vscode-editor-service-override": "~6.0.3",
+        "@codingame/monaco-vscode-keybindings-service-override": "~6.0.3",
+        "monaco-editor": "npm:@codingame/monaco-vscode-editor-api@~6.0.3",
+        "monaco-editor-wrapper": "~5.3.1",
+        "monaco-languageclient": "~8.6.0",
+        "vscode": "npm:@codingame/monaco-vscode-api@~6.0.3"
+    },
+    "devDependencies": {
+        "@codingame/esbuild-import-meta-url-plugin": "~1.0.2",
+        "vite": "~5.3.2"
+    },
+    "volta": {
+        "node": "18.20.3",
+        "npm": "10.7.0"
+    }
+}
