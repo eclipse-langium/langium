@@ -212,6 +212,12 @@ export class ValidationRegistry {
      * As an example, for validating unique fully-qualified names of nodes in the AST,
      * here the map for mapping names to nodes could be established.
      * During the usual checks on the nodes, they are put into this map with their name.
+     *
+     * Note that this approach makes validations stateful, which is relevant e.g. when cancelling the validation.
+     * Therefore it is recommended to clear stored information
+     * _before_ validating an AST to validate each AST unaffected from other ASTs
+     * AND _after_ validating the AST to free memory by information which are no longer used.
+     *
      * @param checkBefore a set-up function which will be called once before actually validating an AST
      * @param thisObj Optional object to be used as `this` when calling the validation check functions.
      */
@@ -226,6 +232,12 @@ export class ValidationRegistry {
      * As an example, for validating unique fully-qualified names of nodes in the AST,
      * here the map with all the collected nodes and their names is checked
      * and validation hints are created for all nodes with the same name.
+     *
+     * Note that this approach makes validations stateful, which is relevant e.g. when cancelling the validation.
+     * Therefore it is recommended to clear stored information
+     * _before_ validating an AST to validate each AST unaffected from other ASTs
+     * AND _after_ validating the AST to free memory by information which are no longer used.
+     *
      * @param checkBefore a set-up function which will be called once before actually validating an AST
      * @param thisObj Optional object to be used as `this` when calling the validation check functions.
      */
@@ -246,4 +258,5 @@ export class ValidationRegistry {
     getChecksAfter(): ValidationPreparation[] {
         return this.entriesAfter;
     }
+
 }
