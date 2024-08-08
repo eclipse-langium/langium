@@ -14,20 +14,28 @@ import { Deferred, OperationCancelled } from '../utils/promise-utils.js';
 import { Emitter } from '../utils/event.js';
 
 /**
- * Async parser that allows to cancel the current parsing process.
- * The sync parser implementation is blocking the event loop, which can become quite problematic for large files.
+ * Async parser that allows cancellation of the current parsing process.
  *
- * Note that the default implementation is not actually async. It just wraps the sync parser in a promise.
- * A real implementation would create worker threads or web workers to offload the parsing work.
+ * @remark The sync parser implementation is blocking the event loop, which can become quite problematic for large files.
+ * @remark The default implementation is not actually async. It just wraps the sync parser in a promise. A real implementation would create worker threads or web workers to offload the parsing work.
  */
 export interface AsyncParser {
+    /**
+     * Parses the given text and returns the parse result.
+     *
+     * @param text The text to parse.
+     * @param cancelToken A cancellation token that can be used to cancel the parsing process.
+     * @returns A promise that resolves to the parse result.
+     *
+     * @throw `OperationCancelled` if the parsing process is cancelled.
+     */
     parse<T extends AstNode>(text: string, cancelToken: CancellationToken): Promise<ParseResult<T>>;
 }
 
 /**
- * Default implementation of the async parser. This implementation only wraps the sync parser in a promise.
+ * Default implementation of the async parser which simply wraps the sync parser in a promise.
  *
- * A real implementation would create worker threads or web workers to offload the parsing work.
+ * @remark A real implementation would create worker threads or web workers to offload the parsing work.
  */
 export class DefaultAsyncParser implements AsyncParser {
 
@@ -37,7 +45,7 @@ export class DefaultAsyncParser implements AsyncParser {
         this.syncParser = services.parser.LangiumParser;
     }
 
-    parse<T extends AstNode>(text: string): Promise<ParseResult<T>> {
+    parse<T extends AstNode>(text: string, _cancelToken: CancellationToken): Promise<ParseResult<T>> {
         return Promise.resolve(this.syncParser.parse<T>(text));
     }
 }

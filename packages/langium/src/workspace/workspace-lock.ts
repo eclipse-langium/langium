@@ -63,12 +63,12 @@ export class DefaultWorkspaceLock implements WorkspaceLock {
         return this.enqueue(this.readQueue, action);
     }
 
-    private enqueue<T = void>(queue: LockEntry[], action: LockAction<T>, cancellationToken?: CancellationToken): Promise<T> {
+    private enqueue<T = void>(queue: LockEntry[], action: LockAction<T>, cancellationToken = CancellationToken.None): Promise<T> {
         const deferred = new Deferred<unknown>();
         const entry: LockEntry = {
             action,
             deferred,
-            cancellationToken: cancellationToken ?? CancellationToken.None
+            cancellationToken
         };
         queue.push(entry);
         this.performNextOperation();

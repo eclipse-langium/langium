@@ -53,6 +53,9 @@ export interface WorkspaceManager {
      * each language file and stores it locally.
      *
      * @param folders The set of workspace folders to be indexed.
+     * @param cancelToken A cancellation token that can be used to cancel the operation.
+     *
+     * @throws OperationCancelled if a cancellation event has been detected
      */
     initializeWorkspace(folders: WorkspaceFolder[], cancelToken?: CancellationToken): Promise<void>;
 

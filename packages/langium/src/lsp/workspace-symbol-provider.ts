@@ -21,12 +21,20 @@ export interface WorkspaceSymbolProvider {
     /**
      * Handle a workspace symbols request.
      *
+     * @param params workspaces symbols request parameters
+     * @param cancelToken a cancellation token tha can be used to cancel the request
+     * @returns a list of workspace symbols
+     *
      * @throws `OperationCancelled` if cancellation is detected during execution
      * @throws `ResponseError` if an error is detected that should be sent as response to the client
      */
     getSymbols(params: WorkspaceSymbolParams, cancelToken?: CancellationToken): MaybePromise<WorkspaceSymbol[]>;
     /**
      * Handle a resolve request for a workspace symbol.
+     *
+     * @param symbol the workspace symbol to resolve
+     * @param cancelToken a cancellation token tha can be used to cancel the request
+     * @returns the resolved workspace symbol
      *
      * @throws `OperationCancelled` if cancellation is detected during execution
      * @throws `ResponseError` if an error is detected that should be sent as response to the client

@@ -21,6 +21,11 @@ export interface FoldingRangeProvider {
     /**
      * Handle a folding range request.
      *
+     * @param document The document to compute folding ranges for
+     * @param params The folding range parameters
+     * @param cancelToken A cancellation token that can be used to cancel the request
+     * @returns The computed folding ranges
+     *
      * @throws `OperationCancelled` if cancellation is detected during execution
      * @throws `ResponseError` if an error is detected that should be sent as response to the client
      */
@@ -37,7 +42,7 @@ export class DefaultFoldingRangeProvider implements FoldingRangeProvider {
         this.commentNames = services.parser.GrammarConfig.multilineCommentRules;
     }
 
-    getFoldingRanges(document: LangiumDocument): MaybePromise<FoldingRange[]> {
+    getFoldingRanges(document: LangiumDocument, _params: FoldingRangeParams, _cancelToken?: CancellationToken): MaybePromise<FoldingRange[]> {
         const foldings: FoldingRange[] = [];
         const acceptor: FoldingRangeAcceptor = (foldingRange) => foldings.push(foldingRange);
         this.collectFolding(document, acceptor);
@@ -73,8 +78,7 @@ export class DefaultFoldingRangeProvider implements FoldingRangeProvider {
      * Returns true by default for all nodes. Returning false only ignores the specified node and not its content.
      * To ignore the content of a node use `shouldProcessContent`.
      */
-    // eslint-disable-next-line @typescript-eslint/no-unused-vars
-    protected shouldProcess(node: AstNode): boolean {
+    protected shouldProcess(_node: AstNode): boolean {
         return true;
     }
 
@@ -83,8 +87,7 @@ export class DefaultFoldingRangeProvider implements FoldingRangeProvider {
      * Returns true by default for all nodes. Returning false ignores _all_ content of this node, even transitive ones.
      * For more precise control over foldings use the `shouldProcess` method.
      */
-    // eslint-disable-next-line @typescript-eslint/no-unused-vars
-    protected shouldProcessContent(node: AstNode): boolean {
+    protected shouldProcessContent(_node: AstNode): boolean {
         return true;
     }
 
