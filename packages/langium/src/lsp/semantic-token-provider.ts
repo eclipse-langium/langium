@@ -18,49 +18,14 @@ import { interruptAndCheck } from '../utils/promise-utils.js';
 import type { LangiumDocument } from '../workspace/documents.js';
 import type { LangiumServices } from './lsp-services.js';
 
-export const AllSemanticTokenTypes: Record<string, number> = {
-    [SemanticTokenTypes.class]: 0,
-    [SemanticTokenTypes.comment]: 1,
-    [SemanticTokenTypes.enum]: 2,
-    [SemanticTokenTypes.enumMember]: 3,
-    [SemanticTokenTypes.event]: 4,
-    [SemanticTokenTypes.function]: 5,
-    [SemanticTokenTypes.interface]: 6,
-    [SemanticTokenTypes.keyword]: 7,
-    [SemanticTokenTypes.macro]: 8,
-    [SemanticTokenTypes.method]: 9,
-    [SemanticTokenTypes.modifier]: 10,
-    [SemanticTokenTypes.namespace]: 11,
-    [SemanticTokenTypes.number]: 12,
-    [SemanticTokenTypes.operator]: 13,
-    [SemanticTokenTypes.parameter]: 14,
-    [SemanticTokenTypes.property]: 15,
-    [SemanticTokenTypes.regexp]: 16,
-    [SemanticTokenTypes.string]: 17,
-    [SemanticTokenTypes.struct]: 18,
-    [SemanticTokenTypes.type]: 19,
-    [SemanticTokenTypes.typeParameter]: 20,
-    [SemanticTokenTypes.variable]: 21,
-    [SemanticTokenTypes.decorator]: 22
-};
+export const AllSemanticTokenTypes: string[] = Object.keys(SemanticTokenTypes);
 
-export const AllSemanticTokenModifiers: Record<string, number> = {
-    [SemanticTokenModifiers.abstract]: 1 << 0,
-    [SemanticTokenModifiers.async]: 1 << 1,
-    [SemanticTokenModifiers.declaration]: 1 << 2,
-    [SemanticTokenModifiers.defaultLibrary]: 1 << 3,
-    [SemanticTokenModifiers.definition]: 1 << 4,
-    [SemanticTokenModifiers.deprecated]: 1 << 5,
-    [SemanticTokenModifiers.documentation]: 1 << 6,
-    [SemanticTokenModifiers.modification]: 1 << 7,
-    [SemanticTokenModifiers.readonly]: 1 << 8,
-    [SemanticTokenModifiers.static]: 1 << 9
-};
+export const AllSemanticTokenModifiers: string[] = Object.keys(SemanticTokenModifiers);
 
 export const DefaultSemanticTokenOptions: SemanticTokensOptions = {
     legend: {
-        tokenTypes: Object.keys(AllSemanticTokenTypes),
-        tokenModifiers: Object.keys(AllSemanticTokenModifiers)
+        tokenTypes: AllSemanticTokenTypes,
+        tokenModifiers: AllSemanticTokenModifiers,
     },
     full: {
         delta: true
@@ -72,8 +37,8 @@ export interface SemanticTokenProvider {
     semanticHighlight(document: LangiumDocument, params: SemanticTokensParams, cancelToken?: CancellationToken): MaybePromise<SemanticTokens>
     semanticHighlightRange(document: LangiumDocument, params: SemanticTokensRangeParams, cancelToken?: CancellationToken): MaybePromise<SemanticTokens>
     semanticHighlightDelta(document: LangiumDocument, params: SemanticTokensDeltaParams, cancelToken?: CancellationToken): MaybePromise<SemanticTokens | SemanticTokensDelta>
-    readonly tokenTypes: Record<string, number>
-    readonly tokenModifiers: Record<string, number>
+    readonly tokenTypes: string[]
+    readonly tokenModifiers: string[]
     readonly semanticTokensOptions: SemanticTokensOptions
 }
 
@@ -234,11 +199,11 @@ export abstract class AbstractSemanticTokenProvider implements SemanticTokenProv
         this.clientCapabilities = clientCapabilities;
     }
 
-    get tokenTypes(): Record<string, number> {
+    get tokenTypes(): string[] {
         return AllSemanticTokenTypes;
     }
 
-    get tokenModifiers(): Record<string, number> {
+    get tokenModifiers(): string[] {
         return AllSemanticTokenModifiers;
     }
 
@@ -353,14 +318,14 @@ export abstract class AbstractSemanticTokenProvider implements SemanticTokenProv
         if ((this.currentRange && !inRange(range, this.currentRange)) || !this.currentDocument || !this.currentTokensBuilder) {
             return;
         }
-        const intType = this.tokenTypes[type];
+        const intType = this.tokenTypes.indexOf(type);
         let totalModifier = 0;
         if (modifiers !== undefined) {
             if (typeof modifiers === 'string') {
                 modifiers = [modifiers];
             }
             for (const modifier of modifiers) {
-                const intModifier = this.tokenModifiers[modifier];
+                const intModifier = 1 << this.tokenModifiers.indexOf(modifier);
                 totalModifier |= intModifier;
             }
         }
@@ -478,9 +443,9 @@ export namespace SemanticTokensDecoder {
         text: string;
     }
 
-    export function decode<T extends AstNode = AstNode>(tokens: SemanticTokens, tokenTypes: Record<string, number>, document: LangiumDocument<T>): DecodedSemanticToken[] {
+    export function decode<T extends AstNode = AstNode>(tokens: SemanticTokens, tokenTypes: string[], document: LangiumDocument<T>): DecodedSemanticToken[] {
         const typeMap = new Map<number, SemanticTokenTypes>();
-        Object.entries(tokenTypes).forEach(([type, index]) => typeMap.set(index, type as SemanticTokenTypes));
+        tokenTypes.forEach((type, index) => typeMap.set(index, type as SemanticTokenTypes));
         let line = 0;
         let character = 0;
         return sliceIntoChunks(tokens.data, 5).map(t => {
