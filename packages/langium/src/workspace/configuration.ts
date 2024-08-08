@@ -174,7 +174,7 @@ export class DefaultConfigurationProvider implements ConfigurationProvider {
         return `${languageId}`;
     }
 
-    get onConfigurationSectionUpdate():  Event<ConfigurationSectionUpdate> {
+    get onConfigurationSectionUpdate(): Event<ConfigurationSectionUpdate> {
         return this.onConfigurationSectionUpdateEmitter.event;
     }
 }

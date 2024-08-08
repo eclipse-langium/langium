@@ -40,20 +40,20 @@ export interface DocumentUpdateHandler {
     willSaveDocument?(event: TextDocumentWillSaveEvent<TextDocument>): void;
 
     /**
-     * A docuemnt save event (initiated) was triggered by the `TextDocuments` service.
+     * A document save event (initiated) was triggered by the `TextDocuments` service.
      * @param event The document change event.
      * @returns An array of text edits which will be applied to the document before it is saved.
      */
     willSaveDocumentWaitUntil?(event: TextDocumentWillSaveEvent<TextDocument>): MaybePromise<TextEdit[]>;
 
     /**
-     * A docuemnt save event (completed) was triggered by the `TextDocuments` service.
+     * A document save event (completed) was triggered by the `TextDocuments` service.
      * @param event The document change event.
      */
     didSaveDocument?(event: TextDocumentChangeEvent<TextDocument>): void;
 
     /**
-     * A docuemnt close event was triggered by the `TextDocuments` service.
+     * A document close event was triggered by the `TextDocuments` service.
      * @param event The document change event.
      */
     didCloseDocument?(event: TextDocumentChangeEvent<TextDocument>): void;
