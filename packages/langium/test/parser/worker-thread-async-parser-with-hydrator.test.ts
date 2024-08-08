@@ -16,7 +16,7 @@ import { fileURLToPath } from 'node:url';
 
 class TestAsyncParser extends WorkerThreadAsyncParser {
     constructor(services: LangiumCoreServices) {
-        super(services, () => fileURLToPath(new URL('.', import.meta.url)) + '/worker-thread.js');
+        super(services, () => fileURLToPath(new URL('.', import.meta.url)) + '/worker-thread-hydrator.js');
     }
     setThreadCount(threadCount: number): void {
         this.threadCount = threadCount;

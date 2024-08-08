@@ -8,13 +8,13 @@ import type { Reference } from '../syntax-tree.js';
 import { isRootCstNode, type AstNode, type CstNode, type Mutable, isCompositeCstNode, isLeafCstNode, isAstNode, isReference } from '../syntax-tree.js';
 import { streamAst } from '../utils/ast-utils.js';
 import { streamCst } from '../utils/cst-utils.js';
-import type { Stream } from '../index.js';
 import { BiMap, type LangiumCoreServices, assertType, type ParseResult, assertUnreachable } from '../index.js';
 import { type AbstractElement, type Grammar, isAbstractElement } from '../languages/generated/ast.js';
 import type { ILexingError, IRecognitionException } from 'chevrotain';
 
 enum InstructionType {
     Allocate,
+    Element,
     Property,
     Properties,
     LinkNode,
@@ -51,12 +51,20 @@ namespace Instructions {
         cstNodeCount: number;
         astNodeCount: number;
     }
+
+    export interface Element extends AstAssemblerInstructionBase {
+        $type: InstructionType.Element;
+        sourceKind: NodeType;
+        sourceId: number;
+        property: string;
+        value: number;
+    }
     export interface Property extends AstAssemblerInstructionBase {
         $type: InstructionType.Property;
         sourceKind: NodeType;
         sourceId: number;
         property: string;
-        value: number | boolean | string | bigint;
+        value: number;
     }
     export interface Properties extends AstAssemblerInstructionBase {
         $type: InstructionType.Properties;
@@ -116,6 +124,7 @@ namespace Instructions {
 export type AstAssemblerInstruction =
     | Instructions.Allocate
     | Instructions.Property
+    | Instructions.Element
     | Instructions.Properties
     | Instructions.Reference
     | Instructions.References
@@ -129,20 +138,30 @@ export interface AstDisassembler {
     disassemble(parseResult: ParseResult<AstNode>): Generator<AstAssemblerInstruction, void, void>;
 }
 
+export interface AstReassemblerContext {
+    lexerErrors: ILexingError[];
+    parserErrors: IRecognitionException[];
+    idToAstNode: Array<Record<string, unknown>>;
+    idToCstNode: Array<Record<string, unknown>>;
+    rootAstNodeId: number;
+    elementToId: BiMap<AbstractElement, number>;
+}
+
 export interface AstReassembler {
-    reassemble(stream: Stream<AstAssemblerInstruction>): ParseResult<AstNode>;
+    initializeContext(): AstReassemblerContext;
+    reassemble(context: AstReassemblerContext, instr: AstAssemblerInstruction): boolean;
+    buildPerseResult<T extends AstNode>(context: AstReassemblerContext): ParseResult<T>;
 }
 
 export class DefaultAstDisassembler implements AstDisassembler {
     private readonly cstNodeToId = new Map<CstNode, number>();
     private readonly astNodeToId = new Map<AstNode, number>();
     private readonly grammarElementIdMap = new BiMap<AbstractElement, number>();
-    private readonly grammar: Grammar;
     private readonly deleteOriginal: boolean;
 
     constructor(services: LangiumCoreServices, deleteOriginal: boolean) {
-        this.grammar = services.Grammar;
         this.deleteOriginal = deleteOriginal;
+        this.grammarElementIdMap = createGrammarElementIdMap(services.Grammar);
     }
 
     *disassemble(parseResult: ParseResult<AstNode>): Generator<AstAssemblerInstruction, void, void> {
@@ -150,7 +169,6 @@ export class DefaultAstDisassembler implements AstDisassembler {
         const astNode = parseResult.value;
         const cstRoot = astNode.$cstNode!;
         this.enumerateNodes(astNode, astNode.$cstNode!);
-        this.createGrammarElementIdMap();
         yield <Instructions.Allocate>{
             $type: InstructionType.Allocate,
             cstNodeCount: this.cstNodeToId.size,
@@ -210,11 +228,26 @@ export class DefaultAstDisassembler implements AstDisassembler {
                 return instr;
             };
 
+            const setElement = (property: string, value: number) => {
+                const instr = <Instructions.Element>{
+                    $type: InstructionType.Element,
+                    sourceKind,
+                    sourceId,
+                    property,
+                    value
+                };
+                if (this.deleteOriginal) {
+                    assertType<Record<string, undefined>>(node);
+                    node[property] = undefined!;
+                }
+                return instr;
+            };
+
             if (isRootCstNode(node)) {
                 yield setProperty('fullText', node.fullText);
             } else {
                 // Note: This returns undefined for hidden nodes (i.e. comments)
-                yield setProperty('grammarSource', this.grammarElementIdMap.get(node.grammarSource)!);
+                yield setElement('grammarSource', this.grammarElementIdMap.get(node.grammarSource)!);
             }
             yield setProperty('hidden', node.hidden);
             yield setLink('astNode', NodeType.Ast, this.astNodeToId.get(node.astNode)!);
@@ -336,10 +369,10 @@ export class DefaultAstDisassembler implements AstDisassembler {
             };
 
             yield setProperty('$type', node.$type);
-            if(node.$containerIndex) {
+            if (node.$containerIndex) {
                 yield setProperty('$containerIndex', node.$containerIndex);
             }
-            if(node.$containerProperty) {
+            if (node.$containerProperty) {
                 yield setProperty('$containerProperty', node.$containerProperty);
             }
             if (node.$cstNode !== undefined) {
@@ -350,7 +383,7 @@ export class DefaultAstDisassembler implements AstDisassembler {
                     continue;
                 }
                 if (Array.isArray(value)) {
-                    if(value.length > 0) {
+                    if (value.length > 0) {
                         const item = value[0];
                         if (isAstNode(item)) {
                             assertType<AstNode[]>(value);
@@ -386,14 +419,14 @@ export class DefaultAstDisassembler implements AstDisassembler {
             yield <Instructions.Error>{
                 $type: InstructionType.Error,
                 source: ErrorSource.Lexer,
-                items: {...error}
+                items: { ...error }
             };
         }
         for (const error of parseResult.parserErrors) {
             yield <Instructions.Error>{
                 $type: InstructionType.Error,
                 source: ErrorSource.Parser,
-                items: {...error}
+                items: { ...error }
             };
         }
 
@@ -414,112 +447,135 @@ export class DefaultAstDisassembler implements AstDisassembler {
             this.astNodeToId.set(astNode, index);
         });
     }
+}
 
-    private createGrammarElementIdMap(): void {
-        let id = 0;
-        for (const element of streamAst(this.grammar)) {
-            if (isAbstractElement(element)) {
-                this.grammarElementIdMap.set(element, id++);
-            }
+function createGrammarElementIdMap(grammar: Grammar) {
+    const result = new BiMap<AbstractElement, number>();
+    let id = 0;
+    for (const element of streamAst(grammar)) {
+        if (isAbstractElement(element)) {
+            result.set(element, id++);
         }
     }
+    return result;
 }
 
 export class DefaultAstReassembler implements AstReassembler {
-    reassemble(stream: Stream<AstAssemblerInstruction>): ParseResult<AstNode> {
-        const parseResult: ParseResult<AstNode> = {
+    private readonly grammarElementIdMap: BiMap<AbstractElement, number>;
+    constructor(services: LangiumCoreServices) {
+        this.grammarElementIdMap = createGrammarElementIdMap(services.Grammar);
+    }
+
+    buildPerseResult<T extends AstNode>(context: AstReassemblerContext): ParseResult<T> {
+        return {
+            lexerErrors: context.lexerErrors,
+            parserErrors: context.parserErrors,
+            value: context.idToAstNode[context.rootAstNodeId] as T
+        };
+    }
+    initializeContext(): AstReassemblerContext {
+        return {
+            rootAstNodeId: -1,
+            idToAstNode: [],
+            idToCstNode: [],
             lexerErrors: [],
             parserErrors: [],
-            value: undefined!
+            elementToId: this.grammarElementIdMap
         };
-        let idToAstNode: Array<Record<string, unknown>> = [];
-        let idToCstNode: Array<Record<string, unknown>> = [];
-        stream.forEach(instr => {
-            switch(instr.$type) {
-                case InstructionType.Allocate:
-                    idToCstNode = Array.from({ length: instr.cstNodeCount }).map(() => ({} as Mutable<CstNode>));
-                    idToAstNode = Array.from({ length: instr.astNodeCount }).map(() => ({} as Mutable<AstNode>));
-                    break;
-                case InstructionType.Empty:
-                    if(instr.sourceKind === NodeType.Ast) {
-                        idToAstNode[instr.sourceId][instr.property] = [];
-                    } else {
-                        idToCstNode[instr.sourceId][instr.property] = [];
-                    }
-                    break;
-                case InstructionType.Property:
-                    if(instr.sourceKind === NodeType.Ast) {
-                        idToAstNode[instr.sourceId][instr.property] = instr.value;
-                    } else {
-                        idToCstNode[instr.sourceId][instr.property] = instr.value;
-                    }
-                    break;
-                case InstructionType.Properties:
-                    if(instr.sourceKind === NodeType.Ast) {
-                        idToAstNode[instr.sourceId][instr.property] = instr.values;
-                    } else {
-                        idToCstNode[instr.sourceId][instr.property] = instr.values;
-                    }
-                    break;
-                case InstructionType.Reference: {
-                    const reference = <Reference>{
-                        $refText: instr.refText,
-                        $refNode: instr.refNode ? idToCstNode[instr.refNode] : undefined
-                    };
-                    if(instr.sourceKind === NodeType.Ast) {
-                        idToAstNode[instr.sourceId][instr.property] = reference;
-                    } else {
-                        idToCstNode[instr.sourceId][instr.property] = reference;
-                    }
-                    break;
+    }
+
+    reassemble(ctx: AstReassemblerContext, instr: AstAssemblerInstruction): boolean {
+        switch (instr.$type) {
+            case InstructionType.Allocate:
+                ctx.idToCstNode = Array.from({ length: instr.cstNodeCount }).map(() => ({} as Mutable<CstNode>));
+                ctx.idToAstNode = Array.from({ length: instr.astNodeCount }).map(() => ({} as Mutable<AstNode>));
+                break;
+            case InstructionType.Empty:
+                if (instr.sourceKind === NodeType.Ast) {
+                    ctx.idToAstNode[instr.sourceId][instr.property] = [];
+                } else {
+                    ctx.idToCstNode[instr.sourceId][instr.property] = [];
                 }
-                case InstructionType.References: {
-                    const references = instr.references.map(r => (<Reference>{
-                        $refText: r.refText,
-                        $refNode: r.refNode ? idToCstNode[r.refNode] : undefined
-                    }));
-                    if(instr.sourceKind === NodeType.Ast) {
-                        idToAstNode[instr.sourceId][instr.property] = references;
-                    } else {
-                        idToCstNode[instr.sourceId][instr.property] = references;
-                    }
-                    break;
+                break;
+            case InstructionType.Element:
+                if (instr.sourceKind === NodeType.Ast) {
+                    ctx.idToAstNode[instr.sourceId][instr.property] = ctx.elementToId.getKey(instr.value);
+                } else {
+                    ctx.idToCstNode[instr.sourceId][instr.property] = ctx.elementToId.getKey(instr.value);
                 }
-                case InstructionType.LinkNode: {
-                    const node = instr.targetKind === NodeType.Ast ? idToAstNode[instr.targetId] : idToCstNode[instr.targetId];
-                    if(instr.sourceKind === NodeType.Ast) {
-                        idToAstNode[instr.sourceId][instr.property] = node;
-                    } else {
-                        idToCstNode[instr.sourceId][instr.property] = node;
-                    }
-                    break;
+                break;
+            case InstructionType.Property:
+                if (instr.sourceKind === NodeType.Ast) {
+                    ctx.idToAstNode[instr.sourceId][instr.property] = instr.value;
+                } else {
+                    ctx.idToCstNode[instr.sourceId][instr.property] = instr.value;
                 }
-                case InstructionType.LinkNodes: {
-                    const nodes = instr.targetKind === NodeType.Ast
-                        ? instr.targetIds.map(id => idToAstNode[id])
-                        : instr.targetIds.map(id => idToCstNode[id])
-                        ;
-                    if(instr.sourceKind === NodeType.Ast) {
-                        idToAstNode[instr.sourceId][instr.property] = nodes;
-                    } else {
-                        idToCstNode[instr.sourceId][instr.property] = nodes;
-                    }
-                    break;
+                break;
+            case InstructionType.Properties:
+                if (instr.sourceKind === NodeType.Ast) {
+                    ctx.idToAstNode[instr.sourceId][instr.property] = instr.values;
+                } else {
+                    ctx.idToCstNode[instr.sourceId][instr.property] = instr.values;
                 }
-                case InstructionType.Return:
-                    parseResult.value = idToAstNode[instr.rootAstNodeId] as unknown as AstNode;
-                    break;
-                case InstructionType.Error:
-                    if(instr.source === ErrorSource.Lexer) {
-                        parseResult.lexerErrors.push({...instr.items} as unknown as ILexingError);
-                    } else {
-                        parseResult.parserErrors.push({...instr.items} as unknown as IRecognitionException);
-                    }
-                    break;
-                default:
-                    assertUnreachable(instr);
+                break;
+            case InstructionType.Reference: {
+                const reference = <Reference>{
+                    $refText: instr.refText,
+                    $refNode: instr.refNode ? ctx.idToCstNode[instr.refNode] : undefined
+                };
+                if (instr.sourceKind === NodeType.Ast) {
+                    ctx.idToAstNode[instr.sourceId][instr.property] = reference;
+                } else {
+                    ctx.idToCstNode[instr.sourceId][instr.property] = reference;
+                }
+                break;
             }
-        });
-        return parseResult;
+            case InstructionType.References: {
+                const references = instr.references.map(r => (<Reference>{
+                    $refText: r.refText,
+                    $refNode: r.refNode ? ctx.idToCstNode[r.refNode] : undefined
+                }));
+                if (instr.sourceKind === NodeType.Ast) {
+                    ctx.idToAstNode[instr.sourceId][instr.property] = references;
+                } else {
+                    ctx.idToCstNode[instr.sourceId][instr.property] = references;
+                }
+                break;
+            }
+            case InstructionType.LinkNode: {
+                const node = instr.targetKind === NodeType.Ast ? ctx.idToAstNode[instr.targetId] : ctx.idToCstNode[instr.targetId];
+                if (instr.sourceKind === NodeType.Ast) {
+                    ctx.idToAstNode[instr.sourceId][instr.property] = node;
+                } else {
+                    ctx.idToCstNode[instr.sourceId][instr.property] = node;
+                }
+                break;
+            }
+            case InstructionType.LinkNodes: {
+                const nodes = instr.targetKind === NodeType.Ast
+                    ? instr.targetIds.map(id => ctx.idToAstNode[id])
+                    : instr.targetIds.map(id => ctx.idToCstNode[id])
+                    ;
+                if (instr.sourceKind === NodeType.Ast) {
+                    ctx.idToAstNode[instr.sourceId][instr.property] = nodes;
+                } else {
+                    ctx.idToCstNode[instr.sourceId][instr.property] = nodes;
+                }
+                break;
+            }
+            case InstructionType.Return:
+                ctx.rootAstNodeId = instr.rootAstNodeId;
+                return true;
+            case InstructionType.Error:
+                if (instr.source === ErrorSource.Lexer) {
+                    ctx.lexerErrors.push({ ...instr.items } as unknown as ILexingError);
+                } else {
+                    ctx.parserErrors.push({ ...instr.items } as unknown as IRecognitionException);
+                }
+                break;
+            default:
+                assertUnreachable(instr);
+        }
+        return false;
     }
 }
