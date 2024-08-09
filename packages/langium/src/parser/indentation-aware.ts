@@ -45,8 +45,8 @@ export interface IndentationTokenBuilderOptions<TokenName extends string = strin
      */
     whitespaceTokenName: TokenName;
     /**
-     * The delimeter tokens inside of which indentation should be ignored and treated as normal whitespace.
-     * For example, Python doesn't treat any whitespace between `'('` and `')'` as significant.
+     * The delimiter tokens inside of which indentation should be ignored and treated as normal whitespace.
+     * For example, Python doesn't treat any whitespace between `(` and `)` as significant.
      *
      * Note that this works only with terminal tokens, not keyword tokens,
      * so for `'('` you will have to define `terminal L_PAREN: /\(/;` and pass `'L_PAREN'` here.
