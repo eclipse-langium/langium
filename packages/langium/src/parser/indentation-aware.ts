@@ -13,6 +13,8 @@ import { createToken, createTokenInstance, Lexer } from 'chevrotain';
 import { DefaultTokenBuilder } from './token-builder.js';
 import { DefaultLexer, isTokenTypeArray } from './lexer.js';
 
+type IndentationAwareDelimiter<TokenName extends string> = [begin: TokenName, end: TokenName];
+
 export interface IndentationTokenBuilderOptions<TokenName extends string = string> {
     /**
      * The name of the token used to denote indentation in the grammar.
@@ -53,7 +55,7 @@ export interface IndentationTokenBuilderOptions<TokenName extends string = strin
      *
      * @default []
      */
-    ignoreIndentationDelimeters: Array<[begin: TokenName, end: TokenName]>
+    ignoreIndentationDelimeters: Array<IndentationAwareDelimiter<TokenName>>
 }
 
 export const indentationBuilderDefaultOptions: IndentationTokenBuilderOptions = {
