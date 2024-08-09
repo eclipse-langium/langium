@@ -5,7 +5,7 @@
  ******************************************************************************/
 
 import type { CustomPatternMatcherFunc, TokenType, IToken, IMultiModeLexerDefinition } from 'chevrotain';
-import type { Grammar, TerminalRule } from '../languages/generated/ast.js';
+import type { Grammar, Keyword, TerminalRule } from '../languages/generated/ast.js';
 import type { TokenBuilderOptions } from './token-builder.js';
 import type { LexerResult } from './lexer.js';
 import type { LangiumCoreServices } from '../services.js';
@@ -50,8 +50,7 @@ export interface IndentationTokenBuilderOptions<TokenName extends string = strin
      * The delimiter tokens inside of which indentation should be ignored and treated as normal whitespace.
      * For example, Python doesn't treat any whitespace between `(` and `)` as significant.
      *
-     * Note that this works only with terminal tokens, not keyword tokens,
-     * so for `'('` you will have to define `terminal L_PAREN: /\(/;` and pass `'L_PAREN'` here.
+     * Can be either terminal tokens or keyword tokens.
      *
      * @default []
      */
@@ -310,6 +309,21 @@ export class IndentationAwareTokenBuilder<Terminals extends string = string> ext
                 group: Lexer.SKIPPED,
             });
         }
+
+        for (const [begin, end] of ignoreIndentationDelimeters) {
+            if (tokenType.name === begin) {
+                tokenType.PUSH_MODE = LexingMode.IGNORE_INDENTATION;
+            } else if (tokenType.name === end) {
+                tokenType.POP_MODE = true;
+            }
+        }
+
+        return tokenType;
+    }
+
+    protected override buildKeywordToken(keyword: Keyword, terminalTokens: TokenType[], caseInsensitive: boolean): TokenType {
+        const tokenType = super.buildKeywordToken(keyword, terminalTokens, caseInsensitive);
+        const { ignoreIndentationDelimeters } = this.options;
 
         for (const [begin, end] of ignoreIndentationDelimeters) {
             if (tokenType.name === begin) {

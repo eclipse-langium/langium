@@ -216,16 +216,12 @@ describe('IndentationAwareTokenBuilder#ignoreIndentationDelimeters', async () =>
 
         Expression: List | Tuple | BOOLEAN;
 
-        Tuple: L_PAREN  (elements+=Expression (',' elements+=Expression)*)? R_PAREN;
-        List: L_BRACKET (elements+=Expression (',' elements+=Expression)*)? R_BRACKET;
+        Tuple: '('  (elements+=Expression (',' elements+=Expression)*)? ')';
+        List: '[' (elements+=Expression (',' elements+=Expression)*)? ']';
 
         terminal BOOLEAN returns boolean: /true|false/;
         terminal INDENT: 'synthetic:indent';
         terminal DEDENT: 'synthetic:dedent';
-        terminal L_PAREN: '(';
-        terminal R_PAREN: ')';
-        terminal L_BRACKET: '[';
-        terminal R_BRACKET: ']';
         hidden terminal NL: /[\\r\\n]+/;
         hidden terminal WS: /[\\t ]+/;
         hidden terminal SL_COMMENT: /\\/\\/[^\\n\\r]*/;
@@ -233,8 +229,8 @@ describe('IndentationAwareTokenBuilder#ignoreIndentationDelimeters', async () =>
 
     const lexer = await getLexer(grammar, {
         ignoreIndentationDelimeters: [
-            ['L_PAREN', 'R_PAREN'],
-            ['L_BRACKET', 'R_BRACKET'],
+            ['(', ')'],
+            ['[', ']'],
         ],
     });
 
