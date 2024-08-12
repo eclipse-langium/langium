@@ -10,7 +10,7 @@ import * as url from 'node:url';
 import { describe, test } from 'vitest';
 import type * as Generator from 'yeoman-generator';
 import { createHelpers } from 'yeoman-test';
-import type { Answers, LangiumGenerator, PostAnwers } from '../src/index.js';
+import type { Answers, LangiumGenerator, PostAnwers } from 'generator-langium';
 
 const answersForCore: Answers & PostAnwers = {
     extensionName: 'hello-world',
@@ -254,8 +254,8 @@ const PACKAGE_JSON_EXPECTATION: Record<string, any> = {
     },
     'devDependencies': {
         '@types/node': '^18.0.0',
-        '@typescript-eslint/eslint-plugin': '~7.15.0',
-        '@typescript-eslint/parser': '~7.15.0',
+        '@typescript-eslint/eslint-plugin': '~7.18.0',
+        '@typescript-eslint/parser': '~7.18.0',
         'eslint': '~8.57.0',
         'shx':  '~0.3.4',
         'typescript': '~5.5.3'
@@ -366,7 +366,7 @@ const PACKAGE_JSON_EXPECTATION_EXTENSION: Record<string, any> = {
     main: './out/extension/main.cjs',
     scripts: {
         'clean': 'shx rm -fr *.tsbuildinfo out syntaxes',
-        'vscode:prepublish': 'npm run build && npm run --prefix ../.. lint',
+        'vscode:prepublish': 'npm run build && npm run --include-workspace-root --workspace=../.. lint',
         'build:prepare': 'shx mkdir -p ./syntaxes/ && shx cp -f ../language/syntaxes/hello-world.tmLanguage.json ./syntaxes/hello-world.tmLanguage.json',
         'build': 'npm run build:prepare && tsc -b tsconfig.json && node esbuild.mjs',
         'build:clean': 'npm run clean && npm run build',
