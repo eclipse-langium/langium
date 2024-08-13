@@ -164,7 +164,7 @@ export abstract class AbstractFormatter implements Formatter {
             }
             edits.push(edit);
         }
-        return edits.filter(edit=>this.isNecessary(edit, textDocument));
+        return edits.filter(edit => this.isNecessary(edit, textDocument));
     }
 
     protected iterateAstFormatting(document: LangiumDocument, range?: Range): void {
@@ -204,7 +204,7 @@ export abstract class AbstractFormatter implements Formatter {
         return false;
     }
 
-   
+
     protected isNecessary(edit: TextEdit, document: TextDocument): boolean {
         return edit.newText !== document.getText(edit.range);
     }
@@ -379,7 +379,10 @@ export abstract class AbstractFormatter implements Formatter {
         context.indentation += (tabs ?? 0);
         const edits: TextEdit[] = [];
         if (chars !== undefined) {
-            edits.push(this.createSpaceTextEdit(betweenRange, chars, formatting.options));
+            // Do not apply formatting on the same line if preceding node is hidden
+            if (!a?.hidden) {
+                edits.push(this.createSpaceTextEdit(betweenRange, chars, formatting.options));
+            }
         } else if (lines !== undefined) {
             edits.push(this.createLineTextEdit(betweenRange, lines, context, formatting.options));
         } else if (tabs !== undefined) {

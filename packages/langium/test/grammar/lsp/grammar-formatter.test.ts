@@ -41,10 +41,12 @@ describe('Grammar Formatter', () => {
     test('Formats interface extends references', async () => {
         await formatting({
             before: expandToString`
-                interface A extends   B,C,    D,E{}
+                interface A // This is a comment
+                extends   B,C,    D,E{}
             `,
             after: expandToString`
-                interface A extends B, C, D, E {
+                interface A // This is a comment
+                extends B, C, D, E {
                 }
             `
         });
