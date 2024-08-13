@@ -160,7 +160,7 @@ export abstract class AbstractFormatter implements Formatter {
             }
             edits.push(edit);
         }
-        return edits;
+        return edits.filter(edit=>this.isNecessary(edit, textDocument));
     }
 
     protected iterateAstFormatting(document: LangiumDocument, range?: Range): void {
@@ -200,11 +200,9 @@ export abstract class AbstractFormatter implements Formatter {
         return false;
     }
 
-    /**
-     * @deprecated This method has been deprecated with 3.1. It now always returns `true` and is no longer used by the default formatter implementation.
-     */
-    protected isNecessary(_edit: TextEdit, _document: TextDocument): boolean {
-        return true;
+   
+    protected isNecessary(edit: TextEdit, document: TextDocument): boolean {
+        return edit.newText !== document.getText(edit.range);
     }
 
     protected iterateCstFormatting(document: LangiumDocument, formattings: Map<string, FormattingAction>, options: FormattingOptions, range?: Range): TextEdit[] {
