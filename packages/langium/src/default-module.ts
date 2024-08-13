@@ -35,7 +35,7 @@ import { LangiumParserErrorMessageProvider } from './parser/langium-parser.js';
 import { DefaultAsyncParser } from './parser/async-parser.js';
 import { DefaultWorkspaceLock } from './workspace/workspace-lock.js';
 import { DefaultHydrator } from './serializer/hydrator.js';
-import { DefaultAstDisassembler, DefaultAstReassembler } from './serializer/beamer.js';
+import { DefaultAstDisassembler, DefaultAstReassembler } from './serializer/reassembler/index.js';
 
 /**
  * Context required for creating the default language-specific dependency injection module.
