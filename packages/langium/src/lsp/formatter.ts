@@ -150,12 +150,16 @@ export abstract class AbstractFormatter implements Formatter {
     protected avoidOverlappingEdits(textDocument: TextDocument, textEdits: TextEdit[]): TextEdit[] {
         const edits: TextEdit[] = [];
         for (const edit of textEdits) {
-            const last = edits[edits.length - 1];
-            if (last) {
+            let last = edits[edits.length - 1];
+            while (last) {
                 const currentStart = textDocument.offsetAt(edit.range.start);
                 const lastEnd = textDocument.offsetAt(last.range.end);
                 if (currentStart < lastEnd) {
                     edits.pop();
+                    last = edits[edits.length - 1];
+                }
+                else {
+                    break;
                 }
             }
             edits.push(edit);
