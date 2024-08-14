@@ -4,6 +4,7 @@
  * terms of the MIT License, which is available in the project root.
  ******************************************************************************/
 
+import type { Range } from 'vscode-languageserver-protocol';
 import type { Grammar, AbstractElement} from '../../languages/generated/ast.js';
 import { isAbstractElement } from '../../languages/generated/ast.js';
 import { streamAst } from '../../utils/ast-utils.js';
@@ -14,14 +15,19 @@ export enum InstructionType {
     Element,
     TokenType,
     Property,
-    Properties,
+    PropertyArray,
     LinkNode,
-    LinkNodes,
+    LinkNodeArray,
     Reference,
-    References,
+    ReferenceArray,
     Empty,
     Error,
-    Return
+    Return,
+
+    RootCstNode,
+    CompositeCstNode,
+    LeafCstNode,
+    PopCstNode
 }
 export enum NodeType {
     Cst,
@@ -46,58 +52,50 @@ export namespace Instructions {
     }
     export interface TokenType extends AstAssemblerInstructionBase {
         $type: InstructionType.TokenType;
-        sourceKind: NodeType;
         sourceId: number;
         property: string;
         tokenName: string;
     }
     export interface Element extends AstAssemblerInstructionBase {
         $type: InstructionType.Element;
-        sourceKind: NodeType;
         sourceId: number;
         property: string;
         value: number;
     }
     export interface Property extends AstAssemblerInstructionBase {
         $type: InstructionType.Property;
-        sourceKind: NodeType;
         sourceId: number;
         property: string;
-        value: number;
+        value: number | boolean | string | bigint;
     }
-    export interface Properties extends AstAssemblerInstructionBase {
-        $type: InstructionType.Properties;
-        sourceKind: NodeType;
+    export interface PropertyArray extends AstAssemblerInstructionBase {
+        $type: InstructionType.PropertyArray;
         sourceId: number;
         property: string;
         values: Array<number | boolean | string | bigint>;
     }
     export interface Reference extends AstAssemblerInstructionBase {
         $type: InstructionType.Reference;
-        sourceKind: NodeType;
         sourceId: number;
         property: string;
         refText: string;
         refNode?: number;
     }
-    export interface References extends AstAssemblerInstructionBase {
-        $type: InstructionType.References;
-        sourceKind: NodeType;
+    export interface ReferenceArray extends AstAssemblerInstructionBase {
+        $type: InstructionType.ReferenceArray;
         sourceId: number;
         property: string;
         references: ReferenceData[];
     }
     export interface LinkNode extends AstAssemblerInstructionBase {
         $type: InstructionType.LinkNode;
-        sourceKind: NodeType;
         sourceId: number;
         targetKind: NodeType;
         property: string;
         targetId: number;
     }
-    export interface LinkNodes extends AstAssemblerInstructionBase {
-        $type: InstructionType.LinkNodes;
-        sourceKind: NodeType;
+    export interface LinkNodeArray extends AstAssemblerInstructionBase {
+        $type: InstructionType.LinkNodeArray;
         sourceId: number;
         targetKind: NodeType;
         property: string;
@@ -105,7 +103,6 @@ export namespace Instructions {
     }
     export interface Empty extends AstAssemblerInstructionBase {
         $type: InstructionType.Empty;
-        sourceKind: NodeType;
         sourceId: number;
         property: string;
     }
@@ -118,20 +115,50 @@ export namespace Instructions {
         $type: InstructionType.Return;
         rootAstNodeId: number;
     }
+
+    export interface RootCstNode extends AstAssemblerInstructionBase {
+        $type: InstructionType.RootCstNode;
+        input: string;
+        astNodeId: number|undefined;
+    }
+    export interface CompositeCstNode extends AstAssemblerInstructionBase {
+        $type: InstructionType.CompositeCstNode;
+        elementId: number;
+        astNodeId: number|undefined;
+    }
+    export interface LeafCstNode extends AstAssemblerInstructionBase {
+        $type: InstructionType.LeafCstNode;
+        tokenOffset: number;
+        tokenLength: number;
+        tokenTypeName: string;
+        elementId: number;
+        hidden: boolean;
+        range: Range;
+        astNodeId: number|undefined;
+    }
+    export interface PopCstNode extends AstAssemblerInstructionBase {
+        $type: InstructionType.PopCstNode;
+    }
 }
 
 export type AstAssemblerInstruction = Instructions.Allocate
 | Instructions.TokenType
 | Instructions.Property
 | Instructions.Element
-| Instructions.Properties
+| Instructions.PropertyArray
 | Instructions.Reference
-| Instructions.References
+| Instructions.ReferenceArray
 | Instructions.LinkNode
-| Instructions.LinkNodes
+| Instructions.LinkNodeArray
 | Instructions.Empty
 | Instructions.Error
-| Instructions.Return;
+| Instructions.Return
+
+| Instructions.RootCstNode
+| Instructions.CompositeCstNode
+| Instructions.LeafCstNode
+| Instructions.PopCstNode
+;
 
 export function createGrammarElementIdMap(grammar: Grammar) {
     const result = new BiMap<AbstractElement, number>();

@@ -41,117 +41,52 @@ export class DefaultAstDisassembler implements AstDisassembler {
         };
 
         //send cst nodes
+        let cstNodeStack: Array<Mutable<CstNode>> = [];
         for (const node of streamCst(cstRoot)) {
             assertType<Mutable<CstNode>>(node);
-            const sourceKind = NodeType.Cst;
-            const sourceId = this.cstNodeToId.get(node)!;
-
-            const setTokenType = (property: string, tokenName: string) => {
-                const instr = <Instructions.TokenType>{
-                    $type: InstructionType.TokenType,
-                    sourceKind,
-                    sourceId,
-                    property,
-                    tokenName
-                };
-                if (this.deleteOriginal) {
-                    assertType<Record<string, undefined>>(node);
-                    node[property] = undefined!;
-                }
-                return instr;
-            };
-
-            const setProperty = (property: string, value: number | boolean | string | bigint) => {
-                const instr = <Instructions.Property>{
-                    $type: InstructionType.Property,
-                    sourceKind,
-                    sourceId,
-                    property,
-                    value
-                };
-                if (this.deleteOriginal) {
-                    assertType<Record<string, undefined>>(node);
-                    node[property] = undefined!;
-                }
-                return instr;
-            };
-
-            const setLink = (property: string, type: NodeType, index: number) => {
-                const instr = <Instructions.LinkNode>{
-                    $type: InstructionType.LinkNode,
-                    sourceKind,
-                    sourceId,
-                    targetKind: type,
-                    targetId: index,
-                    property,
-                };
-                if (this.deleteOriginal) {
-                    assertType<Record<string, undefined>>(node);
-                    node[property] = undefined!;
-                }
-                return instr;
-            };
-
-            const setLinks = (property: string, type: NodeType, indices: number[]) => {
-                const instr = <Instructions.LinkNodes>{
-                    $type: InstructionType.LinkNodes,
-                    sourceKind,
-                    sourceId,
-                    targetKind: type,
-                    targetIds: indices,
-                    property,
-                };
-                if (this.deleteOriginal) {
-                    assertType<Record<string, undefined>>(node);
-                    node[property] = undefined!;
-                }
-                return instr;
-            };
-
-            const setElement = (property: string, value: number) => {
-                const instr = <Instructions.Element>{
-                    $type: InstructionType.Element,
-                    sourceKind,
-                    sourceId,
-                    property,
-                    value
-                };
-                if (this.deleteOriginal) {
-                    assertType<Record<string, undefined>>(node);
-                    node[property] = undefined!;
-                }
-                return instr;
-            };
-
             if (isRootCstNode(node)) {
-                yield setProperty('fullText', node.fullText);
-            } else {
-                // Note: This returns undefined for hidden nodes (i.e. comments)
-                yield setElement('grammarSource', this.grammarElementIdMap.get(node.grammarSource)!);
+                yield <Instructions.RootCstNode>{
+                    $type: InstructionType.RootCstNode,
+                    input: node.fullText,
+                    astNodeId: this.astNodeToId.get(node.astNode)
+                };
+                cstNodeStack = [node];
+            } else if(isCompositeCstNode(node)) {
+                while(cstNodeStack[cstNodeStack.length-1] !== node.container) {
+                    cstNodeStack.pop();
+                    yield <Instructions.PopCstNode>{
+                        $type: InstructionType.PopCstNode
+                    };
+                }
+                yield <Instructions.CompositeCstNode>{
+                    $type: InstructionType.CompositeCstNode,
+                    elementId: this.grammarElementIdMap.get(node.grammarSource)!,
+                    astNodeId: this.astNodeToId.get(node.astNode)
+                };
+                cstNodeStack.push(node);
+            } else if(isLeafCstNode(node)) {
+                while(cstNodeStack[cstNodeStack.length-1] !== node.container) {
+                    cstNodeStack.pop();
+                    yield <Instructions.PopCstNode>{
+                        $type: InstructionType.PopCstNode
+                    };
+                }
+                yield <Instructions.LeafCstNode>{
+                    $type: InstructionType.LeafCstNode,
+                    elementId: this.grammarElementIdMap.get(node.grammarSource)!,
+                    hidden: node.hidden,
+                    range: node.range,
+                    tokenTypeName: node.tokenType.name,
+                    tokenOffset: node.offset,
+                    tokenLength: node.length,
+                    astNodeId: this.astNodeToId.get(node.astNode)
+                };
             }
-            yield setProperty('hidden', node.hidden);
-            yield setLink('astNode', NodeType.Ast, this.astNodeToId.get(node.astNode)!);
-            if (isCompositeCstNode(node)) {
-                yield setLinks('content', NodeType.Cst, node.content.map(c => this.cstNodeToId.get(c)!));
-            } else if (isLeafCstNode(node)) {
-                yield setTokenType('tokenType', node.tokenType.name);
-            }
-            yield setProperty('offset', node.offset);
-            yield setProperty('length', node.length);
-            yield setLink('root', NodeType.Cst, this.cstNodeToId.get(node.root)!);
-            if (node.container) {
-                yield setLink('container', NodeType.Cst, this.cstNodeToId.get(node.container)!);
-            }
-            yield setProperty('startLine', node.range.start.line);
-            yield setProperty('startColumn', node.range.start.character);
-            yield setProperty('endLine', node.range.end.line);
-            yield setProperty('endColumn', node.range.end.character);
         }
 
         //send ast nodes
         for (const node of streamAst(astNode)) {
             assertType<Mutable<AstNode>>(node);
-            const sourceKind = NodeType.Ast;
             const sourceId = this.astNodeToId.get(node)!;
 
             const cleanUp = (property: string) => {
@@ -164,7 +99,6 @@ export class DefaultAstDisassembler implements AstDisassembler {
             const setProperty = (property: string, value: number | boolean | string | bigint) => {
                 const instr = <Instructions.Property>{
                     $type: InstructionType.Property,
-                    sourceKind,
                     sourceId,
                     property,
                     value
@@ -177,9 +111,8 @@ export class DefaultAstDisassembler implements AstDisassembler {
             };
 
             const setProperties = (property: string, values: Array<number | boolean | string | bigint>) => {
-                const instr = <Instructions.Properties>{
-                    $type: InstructionType.Properties,
-                    sourceKind,
+                const instr = <Instructions.PropertyArray>{
+                    $type: InstructionType.PropertyArray,
                     sourceId,
                     property,
                     values
@@ -191,7 +124,6 @@ export class DefaultAstDisassembler implements AstDisassembler {
             const setLink = (property: string, type: NodeType, index: number) => {
                 const instr = <Instructions.LinkNode>{
                     $type: InstructionType.LinkNode,
-                    sourceKind,
                     sourceId,
                     targetKind: type,
                     targetId: index,
@@ -205,9 +137,8 @@ export class DefaultAstDisassembler implements AstDisassembler {
             };
 
             const setLinks = (property: string, type: NodeType, indices: number[]) => {
-                const instr = <Instructions.LinkNodes>{
-                    $type: InstructionType.LinkNodes,
-                    sourceKind,
+                const instr = <Instructions.LinkNodeArray>{
+                    $type: InstructionType.LinkNodeArray,
                     sourceId,
                     targetKind: type,
                     targetIds: indices,
@@ -218,9 +149,8 @@ export class DefaultAstDisassembler implements AstDisassembler {
             };
 
             const setReferences = (property: string, references: ReferenceData[]) => {
-                const instr = <Instructions.References>{
-                    $type: InstructionType.References,
-                    sourceKind,
+                const instr = <Instructions.ReferenceArray>{
+                    $type: InstructionType.ReferenceArray,
                     sourceId,
                     property,
                     references
@@ -232,7 +162,6 @@ export class DefaultAstDisassembler implements AstDisassembler {
             const setReference = (property: string, reference: ReferenceData) => {
                 const instr = <Instructions.Reference>{
                     $type: InstructionType.Reference,
-                    sourceKind,
                     sourceId,
                     property,
                     ...reference
@@ -244,7 +173,6 @@ export class DefaultAstDisassembler implements AstDisassembler {
             const setEmpty = (property: string) => {
                 const instr = <Instructions.Empty>{
                     $type: InstructionType.Empty,
-                    sourceKind,
                     sourceId,
                     property,
                 };

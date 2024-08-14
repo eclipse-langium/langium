@@ -7,9 +7,9 @@
 import { describe, expect, test } from 'vitest';
 import { WorkerThreadAsyncParser } from 'langium/node';
 import { createLangiumGrammarServices } from 'langium/grammar';
-import type { AstNode, Grammar, LangiumCoreServices, ParseResult, AstReassembler } from 'langium';
+import type { AstNode, Grammar, LangiumCoreServices, ParseResult, AstReassembler, AstReassemblerContext } from 'langium';
 import type { LangiumServices } from 'langium/lsp';
-import { EmptyFileSystem, GrammarUtils, CstUtils, GrammarAST, isOperationCancelled, Deferred, ParserWorker } from 'langium';
+import { EmptyFileSystem, GrammarUtils, CstUtils, GrammarAST, isOperationCancelled, Deferred, ParserWorker, BiMap } from 'langium';
 import { CancellationToken, CancellationTokenSource } from 'vscode-languageserver';
 import { fail } from 'node:assert';
 import { fileURLToPath } from 'node:url';
@@ -60,7 +60,18 @@ class BeamingParserWorker extends ParserWorker {
         super(
             (message) => worker.postMessage(message),
             cb => {
-                const context = reassembler.initializeContext();
+                const context: AstReassemblerContext = {
+                    cstStack: [],
+                    elementToId: new BiMap(),
+                    idToAstNode: [],
+                    idToCstNode: [],
+                    lexerErrors: [],
+                    nextFreeCstNode: 0,
+                    parserErrors: [],
+                    rootAstNodeId: -1,
+                    rootCstNodeId: -1,
+
+                };
                 worker.on('message', (instr) => {
                     if(reassembler.reassemble(context, instr)) {
                         cb(reassembler.buildParseResult<AstNode>(context));
@@ -87,6 +98,7 @@ describe('WorkerThreadAsyncParser with Beamer', () => {
         }
         const result = await Promise.all(promises);
         for (const parseResult of result) {
+            console.log(GrammarUtils.findNodeForProperty(parseResult.value.$cstNode, 'name')!.offset);
             expect(parseResult.value.name).toBe('Test');
             expect(GrammarUtils.findNodeForProperty(parseResult.value.$cstNode, 'name')!.offset).toBe(8);
         }
