@@ -361,6 +361,11 @@ export abstract class AbstractFormatter implements Formatter {
         if (b.hidden) {
             return this.createHiddenTextEdits(a, b, formatting, context);
         }
+        // Ignore the edit if the previous node ends after the current node starts
+        if (a && (a.range.end.line > b.range.start.line ||
+            (a.range.end.line === b.range.start.line && a.range.end.character > b.range.start.character))) {
+            return [];
+        }
         const betweenRange: Range = {
             start: a?.range.end ?? {
                 character: 0,

@@ -88,4 +88,16 @@ describe('Grammar Formatter', () => {
         expect(edits.length).toBe(0);
     });
 
+    test('Formats parser rule definitions with alternatives', async () => {
+        await formatting({
+            before: expandToString`
+                Type:
+                DataType | Entity;
+            `,
+            after: expandToString`
+                Type:
+                    DataType | Entity;
+            `
+        });
+    });
 });
