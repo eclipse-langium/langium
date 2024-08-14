@@ -150,17 +150,21 @@ export abstract class AbstractFormatter implements Formatter {
     protected avoidOverlappingEdits(textDocument: TextDocument, textEdits: TextEdit[]): TextEdit[] {
         const edits: TextEdit[] = [];
         for (const edit of textEdits) {
-            const last = edits[edits.length - 1];
-            if (last) {
+            let last = edits[edits.length - 1];
+            while (last) {
                 const currentStart = textDocument.offsetAt(edit.range.start);
                 const lastEnd = textDocument.offsetAt(last.range.end);
                 if (currentStart < lastEnd) {
                     edits.pop();
+                    last = edits[edits.length - 1];
+                }
+                else {
+                    break;
                 }
             }
             edits.push(edit);
         }
-        return edits;
+        return edits.filter(edit => this.isNecessary(edit, textDocument));
     }
 
     protected iterateAstFormatting(document: LangiumDocument, range?: Range): void {
@@ -200,11 +204,8 @@ export abstract class AbstractFormatter implements Formatter {
         return false;
     }
 
-    /**
-     * @deprecated This method has been deprecated with 3.1. It now always returns `true` and is no longer used by the default formatter implementation.
-     */
-    protected isNecessary(_edit: TextEdit, _document: TextDocument): boolean {
-        return true;
+    protected isNecessary(edit: TextEdit, document: TextDocument): boolean {
+        return edit.newText !== document.getText(edit.range).replace(/\r/g, '');
     }
 
     protected iterateCstFormatting(document: LangiumDocument, formattings: Map<string, FormattingAction>, options: FormattingOptions, range?: Range): TextEdit[] {
@@ -382,7 +383,10 @@ export abstract class AbstractFormatter implements Formatter {
         context.indentation += (tabs ?? 0);
         const edits: TextEdit[] = [];
         if (chars !== undefined) {
-            edits.push(this.createSpaceTextEdit(betweenRange, chars, formatting.options));
+            // Do not apply formatting on the same line if preceding node is hidden
+            if (!a?.hidden) {
+                edits.push(this.createSpaceTextEdit(betweenRange, chars, formatting.options));
+            }
         } else if (lines !== undefined) {
             edits.push(this.createLineTextEdit(betweenRange, lines, context, formatting.options));
         } else if (tabs !== undefined) {
