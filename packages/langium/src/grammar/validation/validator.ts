@@ -491,10 +491,13 @@ export class LangiumGrammarValidator {
     }
 
     checkDirectlyUsedRegexFlags(token: ast.RegexToken, accept: ValidationAcceptor): void {
-        if (!ast.isTerminalRule(token.$container)) {
+        const regex = token.regex;
+        if (!ast.isTerminalRule(token.$container) && regex) {
+            const slashIndex = regex.lastIndexOf('/');
+            const flags = regex.substring(slashIndex + 1);
             const range = this.getFlagRange(token);
-            if (range) {
-                accept('warning', 'Regular expression flags are only applied if the terminal is not a composition', {
+            if (range && flags) {
+                accept('warning', 'Regular expression flags are only applied if the terminal is not a composition.', {
                     node: token,
                     range
                 });

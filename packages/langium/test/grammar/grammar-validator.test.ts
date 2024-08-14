@@ -200,6 +200,24 @@ describe('Langium grammar validation', () => {
         const validationResult = await validate(grammar);
         expectNoIssues(validationResult);
     });
+
+    test('Composite terminal regex flags', async () => {
+        const grammar = `
+        terminal Test: 'Test' /test/i;
+        `;
+        const validationResult = await validate(grammar);
+        expectWarning(validationResult, 'Regular expression flags are only applied if the terminal is not a composition.', {
+            node: undefined
+        });
+    });
+
+    test('Composite terminal regex flags - negative', async () => {
+        const grammar = `
+        terminal Test: /test/i;
+        `;
+        const validationResult = await validate(grammar);
+        expectNoIssues(validationResult);
+    });
 });
 
 describe('Data type rule return type', () => {
