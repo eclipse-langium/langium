@@ -206,7 +206,7 @@ export abstract class AbstractFormatter implements Formatter {
 
 
     protected isNecessary(edit: TextEdit, document: TextDocument): boolean {
-        return edit.newText !== document.getText(edit.range);
+        return edit.newText !== document.getText(edit.range).replace(/\r/g, '');
     }
 
     protected iterateCstFormatting(document: LangiumDocument, formattings: Map<string, FormattingAction>, options: FormattingOptions, range?: Range): TextEdit[] {
