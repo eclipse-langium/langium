@@ -204,7 +204,6 @@ export abstract class AbstractFormatter implements Formatter {
         return false;
     }
 
-
     protected isNecessary(edit: TextEdit, document: TextDocument): boolean {
         return edit.newText !== document.getText(edit.range).replace(/\r/g, '');
     }
