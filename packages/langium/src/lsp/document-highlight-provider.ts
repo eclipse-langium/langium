@@ -25,6 +25,10 @@ export interface DocumentHighlightProvider {
     /**
      * Handle a document highlight request.
      *
+     * @param document The document in which the request was received.
+     * @param params The parameters of the document highlight request.
+     * @param cancelToken A cancellation token that can be used to cancel the request.
+     * @returns The document highlights or `undefined` if no highlights are available.
      * @throws `OperationCancelled` if cancellation is detected during execution
      * @throws `ResponseError` if an error is detected that should be sent as response to the client
      */
@@ -42,7 +46,7 @@ export class DefaultDocumentHighlightProvider implements DocumentHighlightProvid
         this.grammarConfig = services.parser.GrammarConfig;
     }
 
-    getDocumentHighlight(document: LangiumDocument, params: DocumentHighlightParams): MaybePromise<DocumentHighlight[] | undefined> {
+    getDocumentHighlight(document: LangiumDocument, params: DocumentHighlightParams, _cancelToken?: CancellationToken): MaybePromise<DocumentHighlight[] | undefined> {
         const rootNode = document.parseResult.value.$cstNode;
         if (!rootNode) {
             return undefined;

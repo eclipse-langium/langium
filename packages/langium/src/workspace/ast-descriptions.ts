@@ -46,7 +46,8 @@ export class DefaultAstNodeDescriptionProvider implements AstNodeDescriptionProv
         this.nameProvider = services.references.NameProvider;
     }
 
-    createDescription(node: AstNode, name: string | undefined, document: LangiumDocument = getDocument(node)): AstNodeDescription {
+    createDescription(node: AstNode, name: string | undefined, document?: LangiumDocument): AstNodeDescription {
+        const doc = document ?? getDocument(node);
         name ??= this.nameProvider.getName(node);
         const path = this.astNodeLocator.getAstNodePath(node);
         if (!name) {
@@ -62,7 +63,7 @@ export class DefaultAstNodeDescriptionProvider implements AstNodeDescriptionProv
             },
             selectionSegment: toDocumentSegment(node.$cstNode),
             type: node.$type,
-            documentUri: document.uri,
+            documentUri: doc.uri,
             path
         };
     }

@@ -24,6 +24,11 @@ export interface RenameProvider {
     /**
      * Handle a rename request.
      *
+     * @param document The document in which the rename request was triggered.
+     * @param params The rename parameters.
+     * @param cancelToken A cancellation token that can be used to cancel the request.
+     * @returns A workspace edit that describes the changes to be applied to the workspace.
+     *
      * @throws `OperationCancelled` if cancellation is detected during execution
      * @throws `ResponseError` if an error is detected that should be sent as response to the client
      */
@@ -31,6 +36,11 @@ export interface RenameProvider {
 
     /**
      * Handle a prepare rename request.
+     *
+     * @param document The document in which the prepare rename request was triggered.
+     * @param params The prepare rename parameters.
+     * @param cancelToken A cancellation token that can be used to cancel the request.
+     * @returns A range that describes the range of the symbol to be renamed.
      *
      * @throws `OperationCancelled` if cancellation is detected during execution
      * @throws `ResponseError` if an error is detected that should be sent as response to the client
@@ -50,7 +60,7 @@ export class DefaultRenameProvider implements RenameProvider {
         this.grammarConfig = services.parser.GrammarConfig;
     }
 
-    async rename(document: LangiumDocument, params: RenameParams): Promise<WorkspaceEdit | undefined> {
+    async rename(document: LangiumDocument, params: RenameParams, _cancelToken?: CancellationToken): Promise<WorkspaceEdit | undefined> {
         const changes: Record<string, TextEdit[]> = {};
         const rootNode = document.parseResult.value.$cstNode;
         if (!rootNode) return undefined;
@@ -73,7 +83,7 @@ export class DefaultRenameProvider implements RenameProvider {
         return { changes };
     }
 
-    prepareRename(document: LangiumDocument, params: TextDocumentPositionParams): MaybePromise<Range | undefined> {
+    prepareRename(document: LangiumDocument, params: TextDocumentPositionParams, _cancelToken?: CancellationToken): MaybePromise<Range | undefined> {
         return this.renameNodeRange(document, params.position);
     }
 

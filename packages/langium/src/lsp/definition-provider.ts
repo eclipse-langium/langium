@@ -24,6 +24,11 @@ export interface DefinitionProvider {
     /**
      * Handle a go to definition request.
      *
+     * @param document The document in which the request was triggered.
+     * @param params The parameters of the request.
+     * @param cancelToken A cancellation token that can be used to cancel the request.
+     * @returns A list of location links to the definition(s) of the symbol at the given position.
+     *
      * @throws `OperationCancelled` if cancellation is detected during execution
      * @throws `ResponseError` if an error is detected that should be sent as response to the client
      */
@@ -48,7 +53,7 @@ export class DefaultDefinitionProvider implements DefinitionProvider {
         this.grammarConfig = services.parser.GrammarConfig;
     }
 
-    getDefinition(document: LangiumDocument, params: DefinitionParams): MaybePromise<LocationLink[] | undefined> {
+    getDefinition(document: LangiumDocument, params: DefinitionParams, _cancelToken?: CancellationToken): MaybePromise<LocationLink[] | undefined> {
         const rootNode = document.parseResult.value;
         if (rootNode.$cstNode) {
             const cst = rootNode.$cstNode;

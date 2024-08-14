@@ -27,6 +27,8 @@ export interface Linker {
      *
      * @param document A LangiumDocument that shall be linked.
      * @param cancelToken A token for cancelling the operation.
+     *
+     * @throws `OperationCancelled` if a cancellation event is detected
      */
     link(document: LangiumDocument, cancelToken?: CancellationToken): Promise<void>;
 

@@ -23,6 +23,11 @@ export interface ReferencesProvider {
     /**
      * Handle a find references request.
      *
+     * @param document The document in which to search for references.
+     * @param params The parameters of the find references request.
+     * @param cancelToken A cancellation token that can be used to cancel the request.
+     * @returns The locations of the references.
+     *
      * @throws `OperationCancelled` if cancellation is detected during execution
      * @throws `ResponseError` if an error is detected that should be sent as response to the client
      */
@@ -40,7 +45,7 @@ export class DefaultReferencesProvider implements ReferencesProvider {
         this.grammarConfig = services.parser.GrammarConfig;
     }
 
-    findReferences(document: LangiumDocument, params: ReferenceParams): MaybePromise<Location[]> {
+    findReferences(document: LangiumDocument, params: ReferenceParams, _cancelToken?: CancellationToken): MaybePromise<Location[]> {
         const rootNode = document.parseResult.value.$cstNode;
         if (!rootNode) {
             return [];
