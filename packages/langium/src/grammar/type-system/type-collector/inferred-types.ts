@@ -320,9 +320,16 @@ function buildDataRuleType(element: AbstractElement, cancel: () => PlainProperty
         const ref = element.rule?.ref;
         if (ref) {
             if (isTerminalRule(ref)) {
+                let regex: string | undefined;
+                try {
+                    regex = terminalRegex(ref).toString();
+                } catch {
+                    // If the regex cannot be built, we assume it's just a string
+                    regex = undefined;
+                }
                 return {
                     primitive: ref.type?.name ?? 'string',
-                    regex: terminalRegex(ref).toString()
+                    regex
                 };
             } else {
                 return {
