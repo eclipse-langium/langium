@@ -11,23 +11,25 @@ import { streamAst } from '../../utils/ast-utils.js';
 import { BiMap } from '../../utils/collections.js';
 
 export enum InstructionType {
+    //setup
     Allocate,
-    Element,
-    TokenType,
+    Error,
+    Return,
+
+    //CST
+    RootCstNode,
+    CompositeCstNode,
+    LeafCstNode,
+    PopCstNode,
+
+    //AST
     Property,
     PropertyArray,
     LinkNode,
     LinkNodeArray,
     Reference,
     ReferenceArray,
-    Empty,
-    Error,
-    Return,
-
-    RootCstNode,
-    CompositeCstNode,
-    LeafCstNode,
-    PopCstNode
+    Empty
 }
 export enum NodeType {
     Cst,
@@ -49,18 +51,6 @@ export namespace Instructions {
         $type: InstructionType.Allocate;
         cstNodeCount: number;
         astNodeCount: number;
-    }
-    export interface TokenType extends AstAssemblerInstructionBase {
-        $type: InstructionType.TokenType;
-        sourceId: number;
-        property: string;
-        tokenName: string;
-    }
-    export interface Element extends AstAssemblerInstructionBase {
-        $type: InstructionType.Element;
-        sourceId: number;
-        property: string;
-        value: number;
     }
     export interface Property extends AstAssemblerInstructionBase {
         $type: InstructionType.Property;
@@ -141,10 +131,9 @@ export namespace Instructions {
     }
 }
 
-export type AstAssemblerInstruction = Instructions.Allocate
-| Instructions.TokenType
+export type AstAssemblerInstruction =
+| Instructions.Allocate
 | Instructions.Property
-| Instructions.Element
 | Instructions.PropertyArray
 | Instructions.Reference
 | Instructions.ReferenceArray
@@ -153,7 +142,6 @@ export type AstAssemblerInstruction = Instructions.Allocate
 | Instructions.Empty
 | Instructions.Error
 | Instructions.Return
-
 | Instructions.RootCstNode
 | Instructions.CompositeCstNode
 | Instructions.LeafCstNode

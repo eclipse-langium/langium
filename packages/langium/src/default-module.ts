@@ -77,7 +77,7 @@ export function createDefaultCoreModule(context: DefaultCoreModuleContext): Modu
             References: (services) => new DefaultReferences(services)
         },
         serializer: {
-            AstDisassembler: (services) => new DefaultAstDisassembler(services, false),
+            AstDisassembler: (services) => new DefaultAstDisassembler(services),
             AstReassembler: (services) => new DefaultAstReassembler(services),
             Hydrator: (services) => new DefaultHydrator(services),
             JsonSerializer: (services) => new DefaultJsonSerializer(services)

@@ -64,9 +64,6 @@ export class DefaultAstReassembler implements AstReassembler {
             case InstructionType.Empty:
                 ctx.idToAstNode[instr.sourceId][instr.property] = [];
                 break;
-            case InstructionType.Element:
-                ctx.idToAstNode[instr.sourceId][instr.property] = ctx.elementToId.getKey(instr.value);
-                break;
             case InstructionType.Property:
                 ctx.idToAstNode[instr.sourceId][instr.property] = instr.value;
                 break;
@@ -112,11 +109,6 @@ export class DefaultAstReassembler implements AstReassembler {
                     ctx.parserErrors.push({ ...instr.items } as unknown as IRecognitionException);
                 }
                 break;
-            case InstructionType.TokenType: {
-                const tokenType = this.grammarTokenTypeIdMap.getKey(instr.tokenName)!;
-                ctx.idToAstNode[instr.sourceId][instr.property] = tokenType;
-                break;
-            }
             case InstructionType.RootCstNode: {
                 const index = ctx.nextFreeCstNode++;
                 const rootNode = ctx.idToCstNode[index] = new RootCstNodeImpl(instr.input);

@@ -22,10 +22,8 @@ export class DefaultAstDisassembler implements AstDisassembler {
     private readonly cstNodeToId = new Map<CstNode, number>();
     private readonly astNodeToId = new Map<AstNode, number>();
     private readonly grammarElementIdMap = new BiMap<AbstractElement, number>();
-    private readonly deleteOriginal: boolean;
 
-    constructor(services: LangiumCoreServices, deleteOriginal: boolean) {
-        this.deleteOriginal = deleteOriginal;
+    constructor(services: LangiumCoreServices) {
         this.grammarElementIdMap = createGrammarElementIdMap(services.Grammar);
     }
 
@@ -89,96 +87,55 @@ export class DefaultAstDisassembler implements AstDisassembler {
             assertType<Mutable<AstNode>>(node);
             const sourceId = this.astNodeToId.get(node)!;
 
-            const cleanUp = (property: string) => {
-                if (this.deleteOriginal) {
-                    assertType<Record<string, undefined>>(node);
-                    node[property] = undefined!;
-                }
-            };
+            const setProperty = (property: string, value: number | boolean | string | bigint) => (<Instructions.Property>{
+                $type: InstructionType.Property,
+                sourceId,
+                property,
+                value
+            });
 
-            const setProperty = (property: string, value: number | boolean | string | bigint) => {
-                const instr = <Instructions.Property>{
-                    $type: InstructionType.Property,
-                    sourceId,
-                    property,
-                    value
-                };
-                if (this.deleteOriginal) {
-                    assertType<Record<string, undefined>>(node);
-                    node[property] = undefined!;
-                }
-                return instr;
-            };
+            const setPropertyArray = (property: string, values: Array<number | boolean | string | bigint>) => (<Instructions.PropertyArray>{
+                $type: InstructionType.PropertyArray,
+                sourceId,
+                property,
+                values
+            });
 
-            const setProperties = (property: string, values: Array<number | boolean | string | bigint>) => {
-                const instr = <Instructions.PropertyArray>{
-                    $type: InstructionType.PropertyArray,
-                    sourceId,
-                    property,
-                    values
-                };
-                cleanUp(property);
-                return instr;
-            };
+            const setLink = (property: string, type: NodeType, index: number) => (<Instructions.LinkNode>{
+                $type: InstructionType.LinkNode,
+                sourceId,
+                targetKind: type,
+                targetId: index,
+                property,
+            });
 
-            const setLink = (property: string, type: NodeType, index: number) => {
-                const instr = <Instructions.LinkNode>{
-                    $type: InstructionType.LinkNode,
-                    sourceId,
-                    targetKind: type,
-                    targetId: index,
-                    property,
-                };
-                if (this.deleteOriginal) {
-                    assertType<Record<string, undefined>>(node);
-                    node[property] = undefined!;
-                }
-                return instr;
-            };
+            const setLinkArray = (property: string, type: NodeType, indices: number[]) => (<Instructions.LinkNodeArray>{
+                $type: InstructionType.LinkNodeArray,
+                sourceId,
+                targetKind: type,
+                targetIds: indices,
+                property,
+            });
 
-            const setLinks = (property: string, type: NodeType, indices: number[]) => {
-                const instr = <Instructions.LinkNodeArray>{
-                    $type: InstructionType.LinkNodeArray,
-                    sourceId,
-                    targetKind: type,
-                    targetIds: indices,
-                    property,
-                };
-                cleanUp(property);
-                return instr;
-            };
+            const setReferenceArray = (property: string, references: ReferenceData[]) => (<Instructions.ReferenceArray>{
+                $type: InstructionType.ReferenceArray,
+                sourceId,
+                property,
+                references
+            });
 
-            const setReferences = (property: string, references: ReferenceData[]) => {
-                const instr = <Instructions.ReferenceArray>{
-                    $type: InstructionType.ReferenceArray,
-                    sourceId,
-                    property,
-                    references
-                };
-                cleanUp(property);
-                return instr;
-            };
+            const setReference = (property: string, reference: ReferenceData) => (<Instructions.Reference>{
+                $type: InstructionType.Reference,
+                sourceId,
+                property,
+                ...reference
+            });
 
-            const setReference = (property: string, reference: ReferenceData) => {
-                const instr = <Instructions.Reference>{
-                    $type: InstructionType.Reference,
-                    sourceId,
-                    property,
-                    ...reference
-                };
-                cleanUp(property);
-                return instr;
-            };
-
-            const setEmpty = (property: string) => {
-                const instr = <Instructions.Empty>{
-                    $type: InstructionType.Empty,
-                    sourceId,
-                    property,
-                };
-                cleanUp(property);
-                return instr;
-            };
+            const setEmpty = (property: string) => (<Instructions.Empty>{
+                $type: InstructionType.Empty,
+                sourceId,
+                property,
+            });
 
             yield setProperty('$type', node.$type);
             if (node.$containerIndex) {
@@ -186,6 +143,9 @@ export class DefaultAstDisassembler implements AstDisassembler {
             }
             if (node.$containerProperty) {
                 yield setProperty('$containerProperty', node.$containerProperty);
+            }
+            if (node.$container) {
+                yield setLink('$container', NodeType.Ast, this.astNodeToId.get(node.$container)!);
             }
             if (node.$cstNode !== undefined) {
                 yield setLink('$cstNode', NodeType.Cst, this.cstNodeToId.get(node.$cstNode)!);
@@ -199,16 +159,16 @@ export class DefaultAstDisassembler implements AstDisassembler {
                         const item = value[0];
                         if (isAstNode(item)) {
                             assertType<AstNode[]>(value);
-                            yield setLinks(name, NodeType.Ast, value.map(v => this.astNodeToId.get(v)!));
+                            yield setLinkArray(name, NodeType.Ast, value.map(v => this.astNodeToId.get(v)!));
                         } else if (isReference(item)) {
                             assertType<Reference[]>(value);
-                            yield setReferences(name, value.map(v => (<ReferenceData>{
+                            yield setReferenceArray(name, value.map(v => (<ReferenceData>{
                                 refText: v.$refText,
                                 refNode: v.$refNode ? this.cstNodeToId.get(v.$refNode) : undefined
                             })));
                         } else {
                             //type string[]: just to keep Typescript calm
-                            yield setProperties(name, value as string[]);
+                            yield setPropertyArray(name, value as string[]);
                         }
                     } else {
                         yield setEmpty(name);
