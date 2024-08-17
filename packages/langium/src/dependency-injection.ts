@@ -74,6 +74,9 @@ export function eagerLoad<T>(item: T): T {
 function _inject<I, T>(module: Module<I, T>, injector?: any): T {
     const proxy: any = new Proxy({} as any, {
         deleteProperty: () => false,
+        set: () => {
+            throw new Error('Cannot set values on service container');
+        },
         get: (obj, prop) => _resolve(obj, prop, module, injector || proxy),
         getOwnPropertyDescriptor: (obj, prop) => (_resolve(obj, prop, module, injector || proxy), Object.getOwnPropertyDescriptor(obj, prop)), // used by for..in
         has: (_, prop) => prop in module, // used by ..in..
