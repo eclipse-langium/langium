@@ -16,5 +16,5 @@ parentPort.on('message', text => {
     const result = parser.parse(text);
     for (const instr of disassembler.disassemble(result)) {
         parentPort.postMessage(instr);
-    } ;
+    }
 });

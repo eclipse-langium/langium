@@ -174,6 +174,18 @@ describe('WorkerThreadAsyncParser with Beamer', () => {
         expect(result.parserErrors[0]).toHaveProperty('message', "Expecting token of type ';' but found ``.");
     });
 
+    test.skip('BEAMER Check metrics of async parser', async () => {
+        const services = getServices();
+        // This file should take a few seconds to parse
+        const file = createLargeFile(100_000);
+        const asyncParser = services.parser.AsyncParser;
+        const start = Date.now();
+        const promise = asyncParser.parse<Grammar>(file, CancellationToken.None);
+        await promise;
+        const end = Date.now();
+        console.log(end-start);
+    }, 100_000);
+
     function createLargeFile(size: number): string {
         let result = 'grammar Test\n';
         for (let i = 0; i < size; i++) {

@@ -13,7 +13,6 @@ import { EmptyFileSystem, GrammarUtils, CstUtils, GrammarAST, isOperationCancell
 import { CancellationToken, CancellationTokenSource } from 'vscode-languageserver';
 import { fail } from 'node:assert';
 import { fileURLToPath } from 'node:url';
-
 class TestAsyncParser extends WorkerThreadAsyncParser {
     constructor(services: LangiumCoreServices) {
         super(services, () => fileURLToPath(new URL('.', import.meta.url)) + '/worker-thread-hydrator.js');
@@ -25,7 +24,7 @@ class TestAsyncParser extends WorkerThreadAsyncParser {
 
 describe('WorkerThreadAsyncParser', () => {
 
-    test('performs async parsing in parallel', async () => {
+    test('HYDRATOR performs async parsing in parallel', async () => {
         const services = getServices();
         const file = createLargeFile(10);
         const asyncParser = services.parser.AsyncParser as TestAsyncParser;
@@ -41,7 +40,7 @@ describe('WorkerThreadAsyncParser', () => {
         }
     }, 20000);
 
-    test('async parsing can be cancelled', async () => {
+    test('HYDRATOR async parsing can be cancelled', async () => {
         const services = getServices();
         // This file should take a few seconds to parse
         const file = createLargeFile(100000);
@@ -60,7 +59,7 @@ describe('WorkerThreadAsyncParser', () => {
         expect(end - start).toBeLessThan(1000);
     });
 
-    test('async parsing can be cancelled and then restarted', async () => {
+    test('HYDRATOR async parsing can be cancelled and then restarted', async () => {
         const services = getServices();
         // This file should take a few seconds to parse
         const file = createLargeFile(100000);
@@ -78,7 +77,7 @@ describe('WorkerThreadAsyncParser', () => {
         expect(result.value.name).toBe('Test');
     });
 
-    test('async parsing yields correct CST', async () => {
+    test('HYDRATOR async parsing yields correct CST', async () => {
         const services = getServices();
         const file = createLargeFile(10);
         const result = await services.parser.AsyncParser.parse<Grammar>(file, CancellationToken.None);
@@ -101,7 +100,7 @@ describe('WorkerThreadAsyncParser', () => {
         expect(astNode.name).toBe('TestRule0');
     });
 
-    test('parser errors are correctly transmitted', async () => {
+    test('HYDRATOR parser errors are correctly transmitted', async () => {
         const services = getServices();
         const file = 'grammar Test Rule: name="Hello" // missing semicolon';
         const result = await services.parser.AsyncParser.parse<Grammar>(file, CancellationToken.None);
@@ -110,6 +109,18 @@ describe('WorkerThreadAsyncParser', () => {
         expect(result.parserErrors[0]).toHaveProperty('previousToken');
         expect(result.parserErrors[0]).toHaveProperty('message', "Expecting token of type ';' but found ``.");
     });
+
+    test.skip('HYDRATOR Check metrics of async parser', async () => {
+        const services = getServices();
+        // This file should take a few seconds to parse
+        const file = createLargeFile(100_000);
+        const asyncParser = services.parser.AsyncParser;
+        const start = Date.now();
+        const promise = asyncParser.parse<Grammar>(file, CancellationToken.None);
+        await promise;
+        const end = Date.now();
+        console.log(end-start);
+    }, 100_000);
 
     function createLargeFile(size: number): string {
         let result = 'grammar Test\n';
