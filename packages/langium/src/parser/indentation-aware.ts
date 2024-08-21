@@ -177,7 +177,7 @@ export class IndentationAwareTokenBuilder<Terminals extends string = string> ext
             image,
             offset, offset + image.length,
             lineNumber, lineNumber,
-            0, image.length,
+            1, image.length,
         );
     }
 
