@@ -20,8 +20,12 @@ const tokenBuilder = new IndentationAwareTokenBuilder();
 
 async function getTokens(grammarString: string): Promise<TokenType[]> {
     const grammar = (await helper(grammarString)).parseResult.value;
-    const { modes, defaultMode } = tokenBuilder.buildTokens(grammar);
-    return modes[defaultMode] as TokenType[];
+    const tokens = tokenBuilder.buildTokens(grammar);
+    if (Array.isArray(tokens)) {
+        return tokens;
+    } else {
+        return tokens.modes[tokens.defaultMode];
+    }
 }
 
 async function getLexer(grammar: string, options?: Partial<IndentationTokenBuilderOptions>): Promise<Lexer> {
