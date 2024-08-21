@@ -5,7 +5,7 @@
  ******************************************************************************/
 
 import type { CustomPatternMatcherFunc, TokenType, IToken, IMultiModeLexerDefinition } from 'chevrotain';
-import type { Grammar, Keyword, TerminalRule } from '../languages/generated/ast.js';
+import type { Grammar, TerminalRule } from '../languages/generated/ast.js';
 import type { TokenBuilderOptions } from './token-builder.js';
 import type { LexerResult } from './lexer.js';
 import type { LangiumCoreServices } from '../services.js';
@@ -125,7 +125,7 @@ export class IndentationAwareTokenBuilder<Terminals extends string = string> ext
             throw new Error('Invalid tokens built by default builder');
         }
 
-        const { indentTokenName, dedentTokenName, whitespaceTokenName } = this.options;
+        const { indentTokenName, dedentTokenName, whitespaceTokenName, ignoreIndentationDelimeters } = this.options;
 
         // Rearrange tokens because whitespace (which is ignored) goes to the beginning by default, consuming indentation as well
         // Order should be: dedent, indent, spaces
@@ -134,6 +134,13 @@ export class IndentationAwareTokenBuilder<Terminals extends string = string> ext
         let ws: TokenType | undefined;
         const otherTokens: TokenType[] = [];
         for (const tokenType of tokenTypes) {
+            for (const [begin, end] of ignoreIndentationDelimeters) {
+                if (tokenType.name === begin) {
+                    tokenType.PUSH_MODE = LexingMode.IGNORE_INDENTATION;
+                } else if (tokenType.name === end) {
+                    tokenType.POP_MODE = true;
+                }
+            }
             if (tokenType.name === dedentTokenName) {
                 dedent = tokenType;
             } else if (tokenType.name === indentTokenName) {
@@ -148,15 +155,18 @@ export class IndentationAwareTokenBuilder<Terminals extends string = string> ext
             throw new Error('Some indentation/whitespace tokens not found!');
         }
 
-        const multiModeLexerDef: IMultiModeLexerDefinition = {
-            modes: {
-                [LexingMode.REGULAR]: [dedent, indent, ...otherTokens, ws],
-                [LexingMode.IGNORE_INDENTATION]: [...otherTokens, ws],
-            },
-            defaultMode: LexingMode.REGULAR,
-        };
-
-        return multiModeLexerDef;
+        if (ignoreIndentationDelimeters.length > 0) {
+            const multiModeLexerDef: IMultiModeLexerDefinition = {
+                modes: {
+                    [LexingMode.REGULAR]: [dedent, indent, ...otherTokens, ws],
+                    [LexingMode.IGNORE_INDENTATION]: [...otherTokens, ws],
+                },
+                defaultMode: LexingMode.REGULAR,
+            };
+            return multiModeLexerDef;
+        } else {
+            return [dedent, indent, ws, ...otherTokens];
+        }
     }
 
     /**
@@ -296,7 +306,7 @@ export class IndentationAwareTokenBuilder<Terminals extends string = string> ext
 
     protected override buildTerminalToken(terminal: TerminalRule): TokenType {
         const tokenType = super.buildTerminalToken(terminal);
-        const { indentTokenName, dedentTokenName, whitespaceTokenName, ignoreIndentationDelimeters } = this.options;
+        const { indentTokenName, dedentTokenName, whitespaceTokenName } = this.options;
 
         if (tokenType.name === indentTokenName) {
             return this.indentTokenType;
@@ -309,30 +319,6 @@ export class IndentationAwareTokenBuilder<Terminals extends string = string> ext
                 group: Lexer.SKIPPED,
             });
         }
-
-        for (const [begin, end] of ignoreIndentationDelimeters) {
-            if (tokenType.name === begin) {
-                tokenType.PUSH_MODE = LexingMode.IGNORE_INDENTATION;
-            } else if (tokenType.name === end) {
-                tokenType.POP_MODE = true;
-            }
-        }
-
-        return tokenType;
-    }
-
-    protected override buildKeywordToken(keyword: Keyword, terminalTokens: TokenType[], caseInsensitive: boolean): TokenType {
-        const tokenType = super.buildKeywordToken(keyword, terminalTokens, caseInsensitive);
-        const { ignoreIndentationDelimeters } = this.options;
-
-        for (const [begin, end] of ignoreIndentationDelimeters) {
-            if (tokenType.name === begin) {
-                tokenType.PUSH_MODE = LexingMode.IGNORE_INDENTATION;
-            } else if (tokenType.name === end) {
-                tokenType.POP_MODE = true;
-            }
-        }
-
         return tokenType;
     }
 
