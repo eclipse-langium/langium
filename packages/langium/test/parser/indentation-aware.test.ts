@@ -5,7 +5,7 @@
  ******************************************************************************/
 
 import type { TokenType } from '@chevrotain/types';
-import type { AstNode, Grammar, LangiumParser, Lexer, Module } from 'langium';
+import type { AstNode, Grammar, IndentationTokenBuilderOptions, LangiumParser, Lexer, Module } from 'langium';
 import { beforeEach, describe, expect, test } from 'vitest';
 import { EmptyFileSystem, IndentationAwareLexer, IndentationAwareTokenBuilder } from 'langium';
 import { createLangiumGrammarServices, createServicesForGrammar } from 'langium/grammar';
@@ -20,25 +20,30 @@ const tokenBuilder = new IndentationAwareTokenBuilder();
 
 async function getTokens(grammarString: string): Promise<TokenType[]> {
     const grammar = (await helper(grammarString)).parseResult.value;
-    return tokenBuilder.buildTokens(grammar) as TokenType[];
+    const tokens = tokenBuilder.buildTokens(grammar);
+    if (Array.isArray(tokens)) {
+        return tokens;
+    } else {
+        return tokens.modes[tokens.defaultMode];
+    }
 }
 
-async function getLexer(grammar: string): Promise<Lexer> {
-    const services = await createIndentationAwareServices(grammar);
+async function getLexer(grammar: string, options?: Partial<IndentationTokenBuilderOptions>): Promise<Lexer> {
+    const services = await createIndentationAwareServices(grammar, options);
     return services.parser.Lexer;
 }
 
-async function getParser(grammar: string): Promise<LangiumParser> {
-    const services = await createIndentationAwareServices(grammar);
+async function getParser(grammar: string, options?: Partial<IndentationTokenBuilderOptions>): Promise<LangiumParser> {
+    const services = await createIndentationAwareServices(grammar, options);
     return services.parser.LangiumParser;
 }
 
-async function createIndentationAwareServices(grammar: string): Promise<LangiumServices> {
+async function createIndentationAwareServices(grammar: string, options?: Partial<IndentationTokenBuilderOptions>): Promise<LangiumServices> {
     const services = await createServicesForGrammar({
         grammar,
         module: {
             parser: {
-                TokenBuilder: () => new IndentationAwareTokenBuilder(),
+                TokenBuilder: () => new IndentationAwareTokenBuilder(options),
                 Lexer: services => new IndentationAwareLexer(services)
             }
         } satisfies Module<LangiumServices, PartialLangiumServices>
@@ -68,10 +73,9 @@ describe('IndentationAwareTokenBuilder', () => {
 
         expect(tokenTypes).toHaveLength(5);
 
-        const [dedent, indent, ws] = tokenTypes;
+        const [dedent, indent] = tokenTypes;
         expect(dedent.name).toBe('DEDENT');
         expect(indent.name).toBe('INDENT');
-        expect(ws.name).toBe('WS');
     });
 
     test('Modifies indent/dedent patterns to be functions', async () => {
@@ -196,6 +200,94 @@ describe('IndentationAwareLexer', () => {
         const lexer = await getLexer(sampleGrammar);
         const { tokens } = lexer.tokenize('');
         expect(tokens).toHaveLength(0);
+    });
+
+});
+
+describe('IndentationAwareTokenBuilder#ignoreIndentationDelimeters', async () => {
+
+    const grammar = `
+        grammar PythonIfWithLists
+
+        entry Statement: (If | Return)*;
+
+        If:
+            'if' condition=BOOLEAN ':'
+            INDENT thenBlock+=Statement+ DEDENT
+            ('else' ':' INDENT elseBlock+=Statement+ DEDENT)?;
+
+        Return: 'return' value=Expression;
+
+        Expression: List | Tuple | BOOLEAN;
+
+        Tuple: '('  (elements+=Expression (',' elements+=Expression)*)? ')';
+        List: '[' (elements+=Expression (',' elements+=Expression)*)? ']';
+
+        terminal BOOLEAN returns boolean: /true|false/;
+        terminal INDENT: 'synthetic:indent';
+        terminal DEDENT: 'synthetic:dedent';
+        hidden terminal NL: /[\\r\\n]+/;
+        hidden terminal WS: /[\\t ]+/;
+        hidden terminal SL_COMMENT: /\\/\\/[^\\n\\r]*/;
+    `;
+
+    const lexer = await getLexer(grammar, {
+        ignoreIndentationDelimeters: [
+            ['(', ')'],
+            ['[', ']'],
+        ],
+    });
+
+    test('should behave as usual without the given tokens in the input', async () => {
+        const { errors } = lexer.tokenize(expandToString`
+        if true:
+            return false
+        else:
+            return true
+        `);
+        expect(errors).toHaveLength(0);
+    });
+
+    test('should ignore indentation inside the given delimeters', async () => {
+        const { errors, tokens } = lexer.tokenize(expandToString`
+            return [
+                false,
+            true, // including inconsitent indentation
+                    true
+            ]
+            return (true,
+                    false
+                   )
+        `);
+
+        expect(errors).toHaveLength(0);
+
+        const tokenNames = tokens.map(token => token.tokenType.name);
+        expect(tokenNames).not.toContain('INDENT');
+        expect(tokenNames).not.toContain('DEDENT');
+    });
+
+    test('should handle nested delimeters', async () => {
+        const { errors, tokens } = lexer.tokenize(expandToString`
+            return [
+                [
+                    false,
+                    true
+                ],
+                    ([true,
+                    true],
+                    false)
+                [
+                    true
+                ]
+            ]
+        `);
+
+        expect(errors).toHaveLength(0);
+
+        const tokenNames = tokens.map(token => token.tokenType.name);
+        expect(tokenNames).not.toContain('INDENT');
+        expect(tokenNames).not.toContain('DEDENT');
     });
 
 });

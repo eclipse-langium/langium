@@ -4,7 +4,7 @@
  * terms of the MIT License, which is available in the project root.
  ******************************************************************************/
 
-import type { CustomPatternMatcherFunc, TokenType, IToken } from 'chevrotain';
+import type { CustomPatternMatcherFunc, TokenType, IToken, IMultiModeLexerDefinition } from 'chevrotain';
 import type { Grammar, TerminalRule } from '../languages/generated/ast.js';
 import type { TokenBuilderOptions } from './token-builder.js';
 import type { LexerResult } from './lexer.js';
@@ -12,6 +12,8 @@ import type { LangiumCoreServices } from '../services.js';
 import { createToken, createTokenInstance, Lexer } from 'chevrotain';
 import { DefaultTokenBuilder } from './token-builder.js';
 import { DefaultLexer, isTokenTypeArray } from './lexer.js';
+
+type IndentationAwareDelimiter<TokenName extends string> = [begin: TokenName, end: TokenName];
 
 export interface IndentationTokenBuilderOptions<TokenName extends string = string> {
     /**
@@ -44,13 +46,28 @@ export interface IndentationTokenBuilderOptions<TokenName extends string = strin
      * @default 'WS'
      */
     whitespaceTokenName: TokenName;
+    /**
+     * The delimiter tokens inside of which indentation should be ignored and treated as normal whitespace.
+     * For example, Python doesn't treat any whitespace between `(` and `)` as significant.
+     *
+     * Can be either terminal tokens or keyword tokens.
+     *
+     * @default []
+     */
+    ignoreIndentationDelimeters: Array<IndentationAwareDelimiter<TokenName>>
 }
 
 export const indentationBuilderDefaultOptions: IndentationTokenBuilderOptions = {
     indentTokenName: 'INDENT',
     dedentTokenName: 'DEDENT',
     whitespaceTokenName: 'WS',
+    ignoreIndentationDelimeters: [],
 };
+
+export enum LexingMode {
+    REGULAR = 'indentation-sensitive',
+    IGNORE_INDENTATION = 'ignore-indentation',
+}
 
 /**
  * A token builder that is sensitive to indentation in the input text.
@@ -108,7 +125,7 @@ export class IndentationAwareTokenBuilder<Terminals extends string = string> ext
             throw new Error('Invalid tokens built by default builder');
         }
 
-        const { indentTokenName, dedentTokenName, whitespaceTokenName } = this.options;
+        const { indentTokenName, dedentTokenName, whitespaceTokenName, ignoreIndentationDelimeters } = this.options;
 
         // Rearrange tokens because whitespace (which is ignored) goes to the beginning by default, consuming indentation as well
         // Order should be: dedent, indent, spaces
@@ -117,6 +134,13 @@ export class IndentationAwareTokenBuilder<Terminals extends string = string> ext
         let ws: TokenType | undefined;
         const otherTokens: TokenType[] = [];
         for (const tokenType of tokenTypes) {
+            for (const [begin, end] of ignoreIndentationDelimeters) {
+                if (tokenType.name === begin) {
+                    tokenType.PUSH_MODE = LexingMode.IGNORE_INDENTATION;
+                } else if (tokenType.name === end) {
+                    tokenType.POP_MODE = true;
+                }
+            }
             if (tokenType.name === dedentTokenName) {
                 dedent = tokenType;
             } else if (tokenType.name === indentTokenName) {
@@ -130,7 +154,19 @@ export class IndentationAwareTokenBuilder<Terminals extends string = string> ext
         if (!dedent || !indent || !ws) {
             throw new Error('Some indentation/whitespace tokens not found!');
         }
-        return [dedent, indent, ws, ...otherTokens];
+
+        if (ignoreIndentationDelimeters.length > 0) {
+            const multiModeLexerDef: IMultiModeLexerDefinition = {
+                modes: {
+                    [LexingMode.REGULAR]: [dedent, indent, ...otherTokens, ws],
+                    [LexingMode.IGNORE_INDENTATION]: [...otherTokens, ws],
+                },
+                defaultMode: LexingMode.REGULAR,
+            };
+            return multiModeLexerDef;
+        } else {
+            return [dedent, indent, ws, ...otherTokens];
+        }
     }
 
     /**
@@ -283,7 +319,6 @@ export class IndentationAwareTokenBuilder<Terminals extends string = string> ext
                 group: Lexer.SKIPPED,
             });
         }
-
         return tokenType;
     }
 
