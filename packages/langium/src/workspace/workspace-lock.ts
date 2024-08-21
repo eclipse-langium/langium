@@ -28,8 +28,13 @@ export interface WorkspaceLock {
      * If a new write action is queued up while a read action is waiting, the write action will receive priority and will be handled before the read action.
      *
      * Note that read actions are not allowed to modify anything in the workspace. Please use {@link write} instead.
+     *
+     * @param action the action to perform.
+     * @param priority
+     * If set to true, the action will receive immediate attention and will be instantly executed. All other queued read/write actions will be postponed.
+     * This should only be used for actions that require a specific document state and have already awaited the necessary write actions.
      */
-    read<T>(action: () => MaybePromise<T>): Promise<T>;
+    read<T>(action: () => MaybePromise<T>, priority?: boolean): Promise<T>;
 
     /**
      * Cancels the last queued write action. All previous write actions already have been cancelled.
@@ -50,7 +55,7 @@ export class DefaultWorkspaceLock implements WorkspaceLock {
     private previousTokenSource = new CancellationTokenSource();
     private writeQueue: LockEntry[] = [];
     private readQueue: LockEntry[] = [];
-    private done = true;
+    private counter = 0;
 
     write(action: (token: CancellationToken) => MaybePromise<void>): Promise<void> {
         this.cancelWrite();
@@ -59,8 +64,25 @@ export class DefaultWorkspaceLock implements WorkspaceLock {
         return this.enqueue(this.writeQueue, action, tokenSource.token);
     }
 
-    read<T>(action: () => MaybePromise<T>): Promise<T> {
-        return this.enqueue(this.readQueue, action);
+    read<T>(action: () => MaybePromise<T>, priority?: boolean): Promise<T> {
+        if (priority) {
+            this.counter++;
+            const deferred = new Deferred<T>();
+            const end = (run: () => void) => {
+                run();
+                // Ensure that in any case the counter is decremented and the next operation is performed
+                this.counter--;
+                this.performNextOperation();
+            };
+            // Instanly run the action and resolve/reject the promise afterwards
+            Promise.resolve(action()).then(
+                result => end(() => deferred.resolve(result)),
+                err => end(() => deferred.reject(err))
+            );
+            return deferred.promise;
+        } else {
+            return this.enqueue(this.readQueue, action);
+        }
     }
 
     private enqueue<T = void>(queue: LockEntry[], action: LockAction<T>, cancellationToken = CancellationToken.None): Promise<T> {
@@ -76,7 +98,7 @@ export class DefaultWorkspaceLock implements WorkspaceLock {
     }
 
     private async performNextOperation(): Promise<void> {
-        if (!this.done) {
+        if (this.counter > 0) {
             return;
         }
         const entries: LockEntry[] = [];
@@ -89,7 +111,7 @@ export class DefaultWorkspaceLock implements WorkspaceLock {
         } else {
             return;
         }
-        this.done = false;
+        this.counter += entries.length;
         await Promise.all(entries.map(async ({ action, deferred, cancellationToken }) => {
             try {
                 // Move the execution of the action to the next event loop tick via `Promise.resolve()`
@@ -104,7 +126,7 @@ export class DefaultWorkspaceLock implements WorkspaceLock {
                 }
             }
         }));
-        this.done = true;
+        this.counter -= entries.length;
         this.performNextOperation();
     }
 
