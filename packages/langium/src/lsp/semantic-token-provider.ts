@@ -77,24 +77,47 @@ export interface SemanticTokenProvider {
     readonly semanticTokensOptions: SemanticTokensOptions
 }
 
-export function mergeSemanticProviderOptions(options: Array<SemanticTokensOptions | undefined>): SemanticTokensOptions {
-    const tokenTypes = Array.from(new Set(options.flatMap(option => option?.legend.tokenTypes ?? [])));
-    const tokenModifiers = Array.from(new Set(options.flatMap(option => option?.legend.tokenModifiers ?? [])));
-    const full = options.reduce((acc, option) => {
-        if (!option) return acc;
-        if (typeof option.full === 'object' && option.full.delta) {
-            return option.full;
+export function mergeSemanticTokenProviderOptions(options: Array<SemanticTokensOptions | undefined>): SemanticTokensOptions {
+    const tokenTypes: string[] = [];
+    const tokenModifiers: string[] = [];
+    let full = true;
+    let delta = true;
+    let range = true;
+    for (const option of options) {
+        if (!option) {
+            continue;
         }
-        return option.full ?? acc;
-    }, false as SemanticTokensOptions['full']);
-    const range = options.some(option => option?.range);
-
+        option.legend.tokenTypes.forEach((tokenType, index) => {
+            const existing = tokenTypes[index];
+            if (existing && existing !== tokenType) {
+                throw new Error(`Cannot merge '${existing}' and '${tokenType}' token types. They use the same index ${index}.`);
+            } else {
+                tokenTypes[index] = tokenType;
+            }
+        });
+        option.legend.tokenModifiers.forEach((tokenModifier, index) => {
+            const existing = tokenModifiers[index];
+            if (existing && existing !== tokenModifier) {
+                throw new Error(`Cannot merge '${existing}' and '${tokenModifier}' token modifier. They use the same index ${index}.`);
+            } else {
+                tokenModifiers[index] = tokenModifier;
+            }
+        });
+        if (!option.full) {
+            full = false;
+        } else if (typeof option.full === 'object' && !option.full.delta) {
+            delta = false;
+        }
+        if (!option.range) {
+            range = false;
+        }
+    }
     return {
         legend: {
             tokenTypes,
             tokenModifiers,
         },
-        full,
+        full: full && { delta },
         range,
     };
 }
