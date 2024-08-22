@@ -37,7 +37,7 @@ import type { ConfigurationInitializedParams } from '../workspace/configuration.
 import { DocumentState, type LangiumDocument } from '../workspace/documents.js';
 import { mergeCompletionProviderOptions } from './completion/completion-provider.js';
 import type { LangiumSharedServices, PartialLangiumLSPServices } from './lsp-services.js';
-import { DefaultSemanticTokenOptions } from './semantic-token-provider.js';
+import { mergeSemanticTokenProviderOptions } from './semantic-token-provider.js';
 import { mergeSignatureHelpOptions } from './signature-help-provider.js';
 
 export interface LanguageServer {
@@ -105,6 +105,7 @@ export class DefaultLanguageServer implements LanguageServer {
         const formattingOnTypeOptions = allServices.map(e => e.lsp?.Formatter?.formatOnTypeOptions).find(e => Boolean(e));
         const hasCodeActionProvider = this.hasService(e => e.lsp?.CodeActionProvider);
         const hasSemanticTokensProvider = this.hasService(e => e.lsp?.SemanticTokenProvider);
+        const semanticTokensOptions = mergeSemanticTokenProviderOptions(allServices.map(e => e.lsp?.SemanticTokenProvider?.semanticTokensOptions));
         const commandNames = this.services.lsp?.ExecuteCommandHandler?.commands;
         const hasDocumentLinkProvider = this.hasService(e => e.lsp?.DocumentLinkProvider);
         const signatureHelpOptions = mergeSignatureHelpOptions(allServices.map(e => e.lsp?.SignatureHelp?.signatureHelpOptions));
@@ -160,7 +161,7 @@ export class DefaultLanguageServer implements LanguageServer {
                     prepareProvider: true
                 } : undefined,
                 semanticTokensProvider: hasSemanticTokensProvider
-                    ? DefaultSemanticTokenOptions
+                    ? semanticTokensOptions
                     : undefined,
                 signatureHelpProvider: signatureHelpOptions,
                 implementationProvider: hasGoToImplementationProvider,
