@@ -1039,3 +1039,19 @@ describe('Prohibit empty parser rules', async () => {
         detectEmptyRules(validationResult, 'EmptyItem');
     });
 });
+
+describe('Check validation is not crashing', async () => {
+
+    test('Calling missing terminal rule', async () => {
+        const specialGrammar = `
+        grammar Foo
+        entry Foo:
+            TERMINAL;
+
+        terminal TERMINAL returns string:
+            MISSING_TERMINAL;
+        `;
+        const validationResult = await validate(specialGrammar);
+        expect(validationResult).toBeDefined();
+    });
+});

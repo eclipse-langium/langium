@@ -16,17 +16,17 @@ import { isParserRule } from '../../../languages/generated/ast.js';
 import { resolveImport } from '../../internal-grammar-util.js';
 import { isDataTypeRule } from '../../../utils/grammar-utils.js';
 
-export type AstResources = {
-    parserRules: ParserRule[],
-    datatypeRules: ParserRule[],
-    interfaces: Interface[],
-    types: Type[],
+export interface AstResources {
+    parserRules: ParserRule[]
+    datatypeRules: ParserRule[]
+    interfaces: Interface[]
+    types: Type[]
 }
 
-export type TypeResources = {
-    inferred: PlainAstTypes,
-    declared: PlainAstTypes,
-    astResources: AstResources,
+export interface TypeResources {
+    inferred: PlainAstTypes
+    declared: PlainAstTypes
+    astResources: AstResources
 }
 
 export interface ValidationAstTypes {

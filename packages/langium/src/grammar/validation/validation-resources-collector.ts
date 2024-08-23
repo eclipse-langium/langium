@@ -25,11 +25,16 @@ export class LangiumGrammarValidationResourcesCollector {
     }
 
     collectValidationResources(grammar: Grammar): ValidationResources {
-        const typeResources = collectValidationAst(grammar, this.documents);
-        return {
-            typeToValidationInfo: this.collectValidationInfo(typeResources),
-            typeToSuperProperties: this.collectSuperProperties(typeResources),
-        };
+        try {
+            const typeResources = collectValidationAst(grammar, this.documents);
+            return {
+                typeToValidationInfo: this.collectValidationInfo(typeResources),
+                typeToSuperProperties: this.collectSuperProperties(typeResources),
+            };
+        } catch (err) {
+            console.error('Error collecting validation resources', err);
+            return { typeToValidationInfo: new Map(), typeToSuperProperties: new Map() };
+        }
     }
 
     private collectValidationInfo({ astResources, inferred, declared }: ValidationAstTypes) {
