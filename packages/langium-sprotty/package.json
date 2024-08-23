@@ -18,6 +18,7 @@
     "lib",
     "src"
   ],
+  "sideEffects": false,
   "type": "module",
   "exports": {
     ".": {
