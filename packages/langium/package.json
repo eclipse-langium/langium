@@ -24,6 +24,7 @@
     "test.js",
     "test.d.ts"
   ],
+  "sideEffects": false,
   "type": "module",
   "exports": {
     ".": {
