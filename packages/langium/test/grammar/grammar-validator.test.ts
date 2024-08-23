@@ -218,6 +218,14 @@ describe('Langium grammar validation', () => {
         const validationResult = await validate(grammar);
         expectNoIssues(validationResult);
     });
+
+    test('Composite terminal no regex flags', async () => {
+        const grammar = `
+        terminal Test: 'Test' /test/;
+        `;
+        const validationResult = await validate(grammar);
+        expectNoIssues(validationResult);
+    });
 });
 
 describe('Data type rule return type', () => {
