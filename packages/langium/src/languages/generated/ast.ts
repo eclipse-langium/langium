@@ -19,6 +19,10 @@ export const LangiumGrammarTerminals = {
 
 export type LangiumGrammarTerminalNames = keyof typeof LangiumGrammarTerminals;
 
+export type LangiumGrammarKeywordNames = "!" | "&" | "(" | ")" | "*" | "+" | "+=" | "," | "->" | "." | ".." | ":" | ";" | "<" | "=" | "=>" | ">" | "?" | "?!" | "?<!" | "?<=" | "?=" | "@" | "Date" | "EOF" | "[" | "]" | "bigint" | "boolean" | "current" | "entry" | "extends" | "false" | "fragment" | "grammar" | "hidden" | "import" | "infer" | "infers" | "interface" | "number" | "returns" | "string" | "terminal" | "true" | "type" | "with" | "{" | "|" | "}";
+
+export type LangiumGrammarTokenNames = LangiumGrammarTerminalNames | LangiumGrammarKeywordNames;
+
 export type AbstractRule = ParserRule | TerminalRule;
 
 export const AbstractRule = 'AbstractRule';
