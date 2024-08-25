@@ -10,7 +10,7 @@ import type { LangiumConfig } from '../package-types.js';
 import { AstUtils, MultiMap, GrammarAST } from 'langium';
 import { collectAst, collectTypeHierarchy, findReferenceTypes, isAstType, mergeTypesAndInterfaces, escapeQuotes } from 'langium/grammar';
 import { generatedHeader } from './node-util.js';
-import { collectTerminalRegexps } from './langium-util.js';
+import { collectKeywords, collectTerminalRegexps } from './langium-util.js';
 
 export function generateAst(services: LangiumCoreServices, grammars: Grammar[], config: LangiumConfig): string {
     const astTypes = collectAst(grammars, services.shared.workspace.LangiumDocuments);
@@ -231,10 +231,15 @@ function groupBySupertypes(astTypes: AstTypes): MultiMap<string, string> {
 
 function generateTerminalConstants(grammars: Grammar[], config: LangiumConfig): Generated {
     let collection: Record<string, RegExp> = {};
+    const keywordTokens: string[] = [];
     grammars.forEach(grammar => {
         const terminalConstants = collectTerminalRegexps(grammar);
         collection = {...collection, ...terminalConstants};
+        const keywords = collectKeywords(grammar);
+        keywordTokens.push(...keywords);
     });
+
+    const keywordStrings = keywordTokens.map((keyword) => JSON.stringify(keyword));
 
     return expandToNode`
         export const ${config.projectName}Terminals = {
@@ -242,5 +247,9 @@ function generateTerminalConstants(grammars: Grammar[], config: LangiumConfig): 
         };
 
         export type ${config.projectName}TerminalNames = keyof typeof ${config.projectName}Terminals;
+
+        export type ${config.projectName}KeywordNames = ${keywordStrings.length > 0 ? keywordStrings.join(' | ') : 'never'};
+
+        export type ${config.projectName}TokenNames = ${config.projectName}TerminalNames | ${config.projectName}KeywordNames;
     `.appendNewLine();
 }
