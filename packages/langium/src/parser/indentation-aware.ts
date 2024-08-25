@@ -15,7 +15,7 @@ import { DefaultLexer, isTokenTypeArray } from './lexer.js';
 
 type IndentationAwareDelimiter<TokenName extends string> = [begin: TokenName, end: TokenName];
 
-export interface IndentationTokenBuilderOptions<TokenName extends string = string> {
+export interface IndentationTokenBuilderOptions<TerminalName extends string = string, KeywordName extends string = string> {
     /**
      * The name of the token used to denote indentation in the grammar.
      * A possible definition in the grammar could look like this:
@@ -25,7 +25,7 @@ export interface IndentationTokenBuilderOptions<TokenName extends string = strin
      *
      * @default 'INDENT'
      */
-    indentTokenName: TokenName;
+    indentTokenName: TerminalName;
     /**
      * The name of the token used to denote deindentation in the grammar.
      * A possible definition in the grammar could look like this:
@@ -35,7 +35,7 @@ export interface IndentationTokenBuilderOptions<TokenName extends string = strin
      *
      * @default 'DEDENT'
      */
-    dedentTokenName: TokenName;
+    dedentTokenName: TerminalName;
     /**
      * The name of the token used to denote whitespace other than indentation and newlines in the grammar.
      * A possible definition in the grammar could look like this:
@@ -45,7 +45,7 @@ export interface IndentationTokenBuilderOptions<TokenName extends string = strin
      *
      * @default 'WS'
      */
-    whitespaceTokenName: TokenName;
+    whitespaceTokenName: TerminalName;
     /**
      * The delimiter tokens inside of which indentation should be ignored and treated as normal whitespace.
      * For example, Python doesn't treat any whitespace between `(` and `)` as significant.
@@ -54,7 +54,7 @@ export interface IndentationTokenBuilderOptions<TokenName extends string = strin
      *
      * @default []
      */
-    ignoreIndentationDelimeters: Array<IndentationAwareDelimiter<TokenName>>
+    ignoreIndentationDelimeters: Array<IndentationAwareDelimiter<TerminalName | KeywordName>>
 }
 
 export const indentationBuilderDefaultOptions: IndentationTokenBuilderOptions = {
@@ -73,15 +73,19 @@ export enum LexingMode {
  * A token builder that is sensitive to indentation in the input text.
  * It will generate tokens for indentation and dedentation based on the indentation level.
  *
+ * The first generic parameter corresponds to the names of terminal tokens,
+ * while the second one corresonds to the names of keyword tokens.
+ * Both parameters are optional and can be imported from `./generated/ast.js`.
+ *
  * Inspired by https://github.com/chevrotain/chevrotain/blob/master/examples/lexer/python_indentation/python_indentation.js
  */
-export class IndentationAwareTokenBuilder<Terminals extends string = string> extends DefaultTokenBuilder {
+export class IndentationAwareTokenBuilder<Terminals extends string = string, KeywordName extends string = string> extends DefaultTokenBuilder {
     /**
      * The stack in which all the previous matched indentation levels are stored
      * to understand how deep a the next tokens are nested.
      */
     protected indentationStack: number[] = [0];
-    readonly options: IndentationTokenBuilderOptions<Terminals>;
+    readonly options: IndentationTokenBuilderOptions<Terminals, KeywordName>;
 
     /**
      * The token type to be used for indentation tokens
@@ -99,10 +103,10 @@ export class IndentationAwareTokenBuilder<Terminals extends string = string> ext
      */
     protected whitespaceRegExp = /[ \t]+/y;
 
-    constructor(options: Partial<IndentationTokenBuilderOptions<NoInfer<Terminals>>> = indentationBuilderDefaultOptions as IndentationTokenBuilderOptions<Terminals>) {
+    constructor(options: Partial<IndentationTokenBuilderOptions<NoInfer<Terminals>, NoInfer<KeywordName>>> = indentationBuilderDefaultOptions as IndentationTokenBuilderOptions<Terminals, KeywordName>) {
         super();
         this.options = {
-            ...indentationBuilderDefaultOptions as IndentationTokenBuilderOptions<Terminals>,
+            ...indentationBuilderDefaultOptions as IndentationTokenBuilderOptions<Terminals, KeywordName>,
             ...options,
         };
 
