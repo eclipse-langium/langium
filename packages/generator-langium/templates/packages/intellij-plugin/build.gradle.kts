@@ -126,6 +126,10 @@ kover {
     }
 }
 
+changelog {
+    path.set(file("../extension/CHANGELOG.md").canonicalPath)
+}
+
 tasks {
     prepareSandbox {
         // Inspired by Prettier plugin (https://github.com/JetBrains/intellij-plugins/blob/master/prettierJS/build.gradle.kts)

@@ -373,7 +373,6 @@ export * from './generated/module.js';
                 'src',
                 '.gitignore',
                 'build.gradle.kts',
-                'CHANGELOG.md',
                 'gradle.properties',
                 'gradlew',
                 'gradlew.bat',
