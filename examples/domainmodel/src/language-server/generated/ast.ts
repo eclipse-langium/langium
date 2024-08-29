@@ -16,6 +16,19 @@ export const DomainModelTerminals = {
 
 export type DomainModelTerminalNames = keyof typeof DomainModelTerminals;
 
+export type DomainModelKeywordNames = 
+    | "."
+    | ":"
+    | "datatype"
+    | "entity"
+    | "extends"
+    | "many"
+    | "package"
+    | "{"
+    | "}";
+
+export type DomainModelTokenNames = DomainModelTerminalNames | DomainModelKeywordNames;
+
 export type AbstractElement = PackageDeclaration | Type;
 
 export const AbstractElement = 'AbstractElement';

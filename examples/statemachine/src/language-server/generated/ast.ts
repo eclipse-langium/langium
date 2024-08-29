@@ -16,6 +16,20 @@ export const StatemachineTerminals = {
 
 export type StatemachineTerminalNames = keyof typeof StatemachineTerminals;
 
+export type StatemachineKeywordNames = 
+    | "=>"
+    | "actions"
+    | "commands"
+    | "end"
+    | "events"
+    | "initialState"
+    | "state"
+    | "statemachine"
+    | "{"
+    | "}";
+
+export type StatemachineTokenNames = StatemachineTerminalNames | StatemachineKeywordNames;
+
 export interface Command extends AstNode {
     readonly $container: Statemachine;
     readonly $type: 'Command';

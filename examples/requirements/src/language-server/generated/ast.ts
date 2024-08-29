@@ -17,6 +17,21 @@ export const RequirementsAndTestsTerminals = {
 
 export type RequirementsAndTestsTerminalNames = keyof typeof RequirementsAndTestsTerminals;
 
+export type RequirementsAndTestsKeywordNames = 
+    | ","
+    | ":"
+    | "="
+    | "applicable"
+    | "contact"
+    | "environment"
+    | "for"
+    | "req"
+    | "testFile"
+    | "tests"
+    | "tst";
+
+export type RequirementsAndTestsTokenNames = RequirementsAndTestsTerminalNames | RequirementsAndTestsKeywordNames;
+
 export interface Contact extends AstNode {
     readonly $container: RequirementModel | TestModel;
     readonly $type: 'Contact';
