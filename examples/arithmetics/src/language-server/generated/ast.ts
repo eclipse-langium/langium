@@ -17,7 +17,20 @@ export const ArithmeticsTerminals = {
 
 export type ArithmeticsTerminalNames = keyof typeof ArithmeticsTerminals;
 
-export type ArithmeticsKeywordNames = "%" | "(" | ")" | "*" | "+" | "," | "-" | "/" | ":" | ";" | "^" | "def" | "module";
+export type ArithmeticsKeywordNames = 
+    | "%"
+    | "("
+    | ")"
+    | "*"
+    | "+"
+    | ","
+    | "-"
+    | "/"
+    | ":"
+    | ";"
+    | "^"
+    | "def"
+    | "module";
 
 export type ArithmeticsTokenNames = ArithmeticsTerminalNames | ArithmeticsKeywordNames;
 

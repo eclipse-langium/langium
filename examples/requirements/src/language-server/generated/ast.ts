@@ -17,7 +17,18 @@ export const RequirementsAndTestsTerminals = {
 
 export type RequirementsAndTestsTerminalNames = keyof typeof RequirementsAndTestsTerminals;
 
-export type RequirementsAndTestsKeywordNames = "," | ":" | "applicable" | "contact" | "environment" | "for" | "req" | "," | ":" | "=" | "applicable" | "contact" | "for" | "testFile" | "tests" | "tst";
+export type RequirementsAndTestsKeywordNames = 
+    | ","
+    | ":"
+    | "="
+    | "applicable"
+    | "contact"
+    | "environment"
+    | "for"
+    | "req"
+    | "testFile"
+    | "tests"
+    | "tst";
 
 export type RequirementsAndTestsTokenNames = RequirementsAndTestsTerminalNames | RequirementsAndTestsKeywordNames;
 
