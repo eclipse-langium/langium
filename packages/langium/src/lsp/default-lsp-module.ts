@@ -28,7 +28,7 @@ import { DefaultWorkspaceSymbolProvider } from './workspace-symbol-provider.js';
  * Context required for creating the default language-specific dependency injection module.
  */
 export interface DefaultModuleContext extends DefaultCoreModuleContext {
-    shared: LangiumSharedServices;
+    readonly shared: LangiumSharedServices;
 }
 
 /**
@@ -66,7 +66,7 @@ export interface DefaultSharedModuleContext extends DefaultSharedCoreModuleConte
     /**
      * Represents an abstract language server connection
      */
-    connection?: Connection;
+    readonly connection?: Connection;
 }
 
 /**

@@ -43,10 +43,10 @@ import type { WorkspaceManager } from './workspace/workspace-manager.js';
  * grammar definition and the language configuration.
  */
 export type LangiumGeneratedCoreServices = {
-    Grammar: Grammar
-    LanguageMetaData: LanguageMetaData
-    parser: {
-        ParserConfig?: IParserConfig
+    readonly Grammar: Grammar
+    readonly LanguageMetaData: LanguageMetaData
+    readonly parser: {
+        readonly ParserConfig?: IParserConfig
     }
 }
 
@@ -54,41 +54,41 @@ export type LangiumGeneratedCoreServices = {
  * Core services for a specific language of which Langium provides default implementations.
  */
 export type LangiumDefaultCoreServices = {
-    parser: {
-        AsyncParser: AsyncParser
-        GrammarConfig: GrammarConfig
-        ValueConverter: ValueConverter
-        LangiumParser: LangiumParser
-        ParserErrorMessageProvider: IParserErrorMessageProvider
-        CompletionParser: LangiumCompletionParser
-        TokenBuilder: TokenBuilder
-        Lexer: Lexer
+    readonly parser: {
+        readonly AsyncParser: AsyncParser
+        readonly GrammarConfig: GrammarConfig
+        readonly ValueConverter: ValueConverter
+        readonly LangiumParser: LangiumParser
+        readonly ParserErrorMessageProvider: IParserErrorMessageProvider
+        readonly CompletionParser: LangiumCompletionParser
+        readonly TokenBuilder: TokenBuilder
+        readonly Lexer: Lexer
     }
-    documentation: {
-        CommentProvider: CommentProvider
-        DocumentationProvider: DocumentationProvider
+    readonly documentation: {
+        readonly CommentProvider: CommentProvider
+        readonly DocumentationProvider: DocumentationProvider
     }
-    references: {
-        Linker: Linker
-        NameProvider: NameProvider
-        References: References
-        ScopeProvider: ScopeProvider
-        ScopeComputation: ScopeComputation
+    readonly references: {
+        readonly Linker: Linker
+        readonly NameProvider: NameProvider
+        readonly References: References
+        readonly ScopeProvider: ScopeProvider
+        readonly ScopeComputation: ScopeComputation
     }
-    serializer: {
-        Hydrator: Hydrator
-        JsonSerializer: JsonSerializer
+    readonly serializer: {
+        readonly Hydrator: Hydrator
+        readonly JsonSerializer: JsonSerializer
     }
-    validation: {
-        DocumentValidator: DocumentValidator
-        ValidationRegistry: ValidationRegistry
+    readonly validation: {
+        readonly DocumentValidator: DocumentValidator
+        readonly ValidationRegistry: ValidationRegistry
     }
-    workspace: {
-        AstNodeLocator: AstNodeLocator
-        AstNodeDescriptionProvider: AstNodeDescriptionProvider
-        ReferenceDescriptionProvider: ReferenceDescriptionProvider
+    readonly workspace: {
+        readonly AstNodeLocator: AstNodeLocator
+        readonly AstNodeDescriptionProvider: AstNodeDescriptionProvider
+        readonly ReferenceDescriptionProvider: ReferenceDescriptionProvider
     }
-    shared: LangiumSharedCoreServices
+    readonly shared: LangiumSharedCoreServices
 }
 
 /**
@@ -102,24 +102,24 @@ export type LangiumCoreServices = LangiumGeneratedCoreServices & LangiumDefaultC
  * derived from the grammar definition.
  */
 export type LangiumGeneratedSharedCoreServices = {
-    AstReflection: AstReflection
+    readonly AstReflection: AstReflection
 }
 
 /**
  * Core services shared between multiple languages where Langium provides default implementations.
  */
 export type LangiumDefaultSharedCoreServices = {
-    ServiceRegistry: ServiceRegistry
-    workspace: {
-        ConfigurationProvider: ConfigurationProvider
-        DocumentBuilder: DocumentBuilder
-        FileSystemProvider: FileSystemProvider
-        IndexManager: IndexManager
-        LangiumDocuments: LangiumDocuments
-        LangiumDocumentFactory: LangiumDocumentFactory
-        TextDocuments?: TextDocumentProvider
-        WorkspaceLock: WorkspaceLock
-        WorkspaceManager: WorkspaceManager
+    readonly ServiceRegistry: ServiceRegistry
+    readonly workspace: {
+        readonly ConfigurationProvider: ConfigurationProvider
+        readonly DocumentBuilder: DocumentBuilder
+        readonly FileSystemProvider: FileSystemProvider
+        readonly IndexManager: IndexManager
+        readonly LangiumDocuments: LangiumDocuments
+        readonly LangiumDocumentFactory: LangiumDocumentFactory
+        readonly TextDocuments?: TextDocumentProvider
+        readonly WorkspaceLock: WorkspaceLock
+        readonly WorkspaceManager: WorkspaceManager
     }
 }
 

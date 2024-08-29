@@ -352,18 +352,9 @@ describe('The inject result', () => {
         expect('b' in obj).toBe(false);
     });
 
-    test('should be extensible', () => {
+    test('should not be extensible', () => {
         const obj: any = inject({});
-        expect(Object.isExtensible(obj)).toBe(true);
-        expect(obj.a).toBeUndefined();
-        expect(() => obj.a = 1).not.toThrow();
-        expect(obj.a).toBe(1);
-    });
-
-    test('should be sealable', () => {
-        const obj: any = Object.seal(inject({}));
-        expect(Object.isExtensible(obj)).toBe(false);
-        expect(() => (obj.a = 1)).toThrowError('Cannot define property a, object is not extensible');
+        expect(() => (obj.a = 1)).toThrowError('Cannot set property on injected service container');
     });
 
 });

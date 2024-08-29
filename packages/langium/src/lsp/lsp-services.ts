@@ -49,47 +49,47 @@ export type LangiumSharedServices = LangiumSharedCoreServices & LangiumSharedLSP
  * LSP services for a specific language of which Langium provides default implementations.
  */
 export type LangiumLSPServices = {
-    lsp: {
-        CompletionProvider?: CompletionProvider
-        DocumentHighlightProvider?: DocumentHighlightProvider
-        DocumentSymbolProvider?: DocumentSymbolProvider
-        HoverProvider?: HoverProvider
-        FoldingRangeProvider?: FoldingRangeProvider
-        DefinitionProvider?: DefinitionProvider
-        TypeProvider?: TypeDefinitionProvider
-        ImplementationProvider?: ImplementationProvider
-        ReferencesProvider?: ReferencesProvider
-        CodeActionProvider?: CodeActionProvider
-        SemanticTokenProvider?: SemanticTokenProvider
-        RenameProvider?: RenameProvider
-        Formatter?: Formatter
-        SignatureHelp?: SignatureHelpProvider
-        CallHierarchyProvider?: CallHierarchyProvider
-        TypeHierarchyProvider?: TypeHierarchyProvider
-        DeclarationProvider?: DeclarationProvider
-        InlayHintProvider?: InlayHintProvider
-        CodeLensProvider?: CodeLensProvider
-        DocumentLinkProvider?: DocumentLinkProvider
+    readonly lsp: {
+        readonly CompletionProvider?: CompletionProvider
+        readonly DocumentHighlightProvider?: DocumentHighlightProvider
+        readonly DocumentSymbolProvider?: DocumentSymbolProvider
+        readonly HoverProvider?: HoverProvider
+        readonly FoldingRangeProvider?: FoldingRangeProvider
+        readonly DefinitionProvider?: DefinitionProvider
+        readonly TypeProvider?: TypeDefinitionProvider
+        readonly ImplementationProvider?: ImplementationProvider
+        readonly ReferencesProvider?: ReferencesProvider
+        readonly CodeActionProvider?: CodeActionProvider
+        readonly SemanticTokenProvider?: SemanticTokenProvider
+        readonly RenameProvider?: RenameProvider
+        readonly Formatter?: Formatter
+        readonly SignatureHelp?: SignatureHelpProvider
+        readonly CallHierarchyProvider?: CallHierarchyProvider
+        readonly TypeHierarchyProvider?: TypeHierarchyProvider
+        readonly DeclarationProvider?: DeclarationProvider
+        readonly InlayHintProvider?: InlayHintProvider
+        readonly CodeLensProvider?: CodeLensProvider
+        readonly DocumentLinkProvider?: DocumentLinkProvider
     },
-    shared: LangiumSharedServices
+    readonly shared: LangiumSharedServices
 };
 
 /**
  * LSP services shared between multiple languages of which Langium provides default implementations.
  */
 export type LangiumSharedLSPServices = {
-    lsp: {
-        Connection?: Connection
-        DocumentUpdateHandler: DocumentUpdateHandler
-        ExecuteCommandHandler?: ExecuteCommandHandler
-        FileOperationHandler?: FileOperationHandler
-        FuzzyMatcher: FuzzyMatcher
-        LanguageServer: LanguageServer
-        NodeKindProvider: NodeKindProvider
-        WorkspaceSymbolProvider?: WorkspaceSymbolProvider
+    readonly lsp: {
+        readonly Connection?: Connection
+        readonly DocumentUpdateHandler: DocumentUpdateHandler
+        readonly ExecuteCommandHandler?: ExecuteCommandHandler
+        readonly FileOperationHandler?: FileOperationHandler
+        readonly FuzzyMatcher: FuzzyMatcher
+        readonly LanguageServer: LanguageServer
+        readonly NodeKindProvider: NodeKindProvider
+        readonly WorkspaceSymbolProvider?: WorkspaceSymbolProvider
     },
-    workspace: {
-        TextDocuments: TextDocuments<TextDocument>
+    readonly workspace: {
+        readonly TextDocuments: TextDocuments<TextDocument>
     }
 };
 
