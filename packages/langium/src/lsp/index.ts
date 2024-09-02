@@ -27,6 +27,7 @@ export * from './inlay-hint-provider.js';
 export * from './language-server.js';
 export * from './lsp-services.js';
 export * from './node-kind-provider.js';
+export * from './normalized-text-documents.js';
 export * from './references-provider.js';
 export * from './rename-provider.js';
 export * from './semantic-token-provider.js';

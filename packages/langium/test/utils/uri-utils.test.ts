@@ -52,3 +52,23 @@ describe('URI Utils', () => {
         expect(UriUtils.equals(uri1, undefined)).toBeFalsy();
     });
 });
+
+describe('URIUtils#normalize', () => {
+
+    test('Should normalize document URIs', () => {
+        const vscodeWindowsUri = 'file:///c%3A/path/to/file.txt';
+        const upperCaseDriveUri = 'file:///C:/path/to/file.txt';
+        const lowerCaseDriveUri = 'file:///c:/path/to/file.txt';
+
+        const normalized = vscodeWindowsUri;
+        expect(UriUtils.normalize(vscodeWindowsUri)).toBe(normalized);
+        expect(UriUtils.normalize(upperCaseDriveUri)).toBe(normalized);
+        expect(UriUtils.normalize(lowerCaseDriveUri)).toBe(normalized);
+    });
+
+    test('Should work as usual with POSIX URIs', () => {
+        const uri = 'file:///path/to/file.txt';
+        expect(UriUtils.normalize(uri)).toBe(uri);
+    });
+
+});

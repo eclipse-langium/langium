@@ -4,7 +4,7 @@
  * terms of the MIT License, which is available in the project root.
  ******************************************************************************/
 
-import type { Connection, TextDocuments } from 'vscode-languageserver';
+import type { Connection } from 'vscode-languageserver';
 import type { DeepPartial, LangiumCoreServices, LangiumSharedCoreServices } from '../services.js';
 import type { TextDocument } from '../workspace/documents.js';
 import type { CallHierarchyProvider } from './call-hierarchy-provider.js';
@@ -34,6 +34,7 @@ import type { SignatureHelpProvider } from './signature-help-provider.js';
 import type { TypeHierarchyProvider } from './type-hierarchy-provider.js';
 import type { TypeDefinitionProvider } from './type-provider.js';
 import type { WorkspaceSymbolProvider } from './workspace-symbol-provider.js';
+import type { TextDocuments } from './normalized-text-documents.js';
 
 /**
  * Combined Core + LSP services of Langium (total services)

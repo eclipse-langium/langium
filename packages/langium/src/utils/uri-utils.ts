@@ -36,4 +36,8 @@ export namespace UriUtils {
         return backPart + toPart;
     }
 
+    export function normalize(uri: URI | string): string {
+        return URI.parse(uri.toString()).toString();
+    }
+
 }
