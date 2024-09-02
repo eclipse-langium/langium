@@ -7,6 +7,7 @@
 import type { Disposable } from './disposable.js';
 import type { URI } from './uri-utils.js';
 import type { LangiumSharedCoreServices } from '../services.js';
+import type { DocumentState } from '../workspace/documents.js';
 
 export abstract class DisposableCache implements Disposable {
 
@@ -141,14 +142,33 @@ export class ContextCache<Context, Key, Value, ContextKey = Context> extends Dis
  * If this document is changed or deleted, all associated key/value pairs are deleted.
  */
 export class DocumentCache<K, V> extends ContextCache<URI | string, K, V, string> {
-    constructor(sharedServices: LangiumSharedCoreServices) {
+
+    /**
+     * Creates a new document cache.
+     *
+     * @param sharedServices Service container instance to hook into document lifecycle events.
+     * @param state Optional document state on which the cache should evict.
+     * If not provided, the cache will evict on `DocumentBuilder#onUpdate`.
+     * Note that only *changed* documents are considered in this case.
+     *
+     * Providing a state here will use `DocumentBuilder#onDocumentPhase` instead,
+     * which triggers on all documents that have been affected by this change, assuming that the
+     * state is `DocumentState.Linked` or a later state.
+     */
+    constructor(sharedServices: LangiumSharedCoreServices, state?: DocumentState) {
         super(uri => uri.toString());
-        this.onDispose(sharedServices.workspace.DocumentBuilder.onUpdate((changed, deleted) => {
-            const allUris = changed.concat(deleted);
-            for (const uri of allUris) {
-                this.clear(uri);
-            }
-        }));
+        if (state) {
+            this.onDispose(sharedServices.workspace.DocumentBuilder.onDocumentPhase(state, document => {
+                this.clear(document.uri.toString());
+            }));
+        } else {
+            this.onDispose(sharedServices.workspace.DocumentBuilder.onUpdate((changed, deleted) => {
+                const allUris = changed.concat(deleted);
+                for (const uri of allUris) {
+                    this.clear(uri);
+                }
+            }));
+        }
     }
 }
 
@@ -157,10 +177,24 @@ export class DocumentCache<K, V> extends ContextCache<URI | string, K, V, string
  * If any document in the workspace changes, the whole cache is evicted.
  */
 export class WorkspaceCache<K, V> extends SimpleCache<K, V> {
-    constructor(sharedServices: LangiumSharedCoreServices) {
+
+    /**
+     * Creates a new workspace cache.
+     *
+     * @param sharedServices Service container instance to hook into document lifecycle events.
+     * @param state Optional document state on which the cache should evict.
+     * If not provided, the cache will evict on `DocumentBuilder#onUpdate`.
+     */
+    constructor(sharedServices: LangiumSharedCoreServices, state?: DocumentState) {
         super();
-        this.onDispose(sharedServices.workspace.DocumentBuilder.onUpdate(() => {
-            this.clear();
-        }));
+        if (state) {
+            this.onDispose(sharedServices.workspace.DocumentBuilder.onBuildPhase(state, () => {
+                this.clear();
+            }));
+        } else {
+            this.onDispose(sharedServices.workspace.DocumentBuilder.onUpdate(() => {
+                this.clear();
+            }));
+        }
     }
 }

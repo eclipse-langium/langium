@@ -8,7 +8,7 @@
 
 import { beforeEach, describe, expect, test } from 'vitest';
 import type { DefaultDocumentBuilder} from 'langium';
-import { DocumentCache, EmptyFileSystem, URI, WorkspaceCache } from 'langium';
+import { DocumentCache, DocumentState, EmptyFileSystem, URI, WorkspaceCache } from 'langium';
 import { createLangiumGrammarServices } from 'langium/grammar';
 import { setTextDocument } from 'langium/test';
 
@@ -84,6 +84,18 @@ describe('Document Cache', () => {
         expect(() => cache.clear()).toThrow();
     });
 
+    test('Document cache can trigger on document state', async () => {
+        const cache = new DocumentCache<string, string>(services.shared, DocumentState.Linked);
+        cache.set(document1.uri, 'key', 'value');
+        const documentPhase = workspace.DocumentBuilder.onDocumentPhase(DocumentState.ComputedScopes, () => {
+            expect(cache.get(document1.uri, 'key')).toBe('value');
+        });
+        await workspace.DocumentBuilder.update([document1.uri], []);
+        expect(cache.has(document1.uri, 'key')).toBe(false);
+        documentPhase.dispose();
+        cache.dispose();
+    });
+
 });
 
 describe('Workspace Cache', () => {
@@ -129,5 +141,17 @@ describe('Workspace Cache', () => {
         expect(() => cache.set('key', 'value')).toThrow();
         expect(() => cache.delete('key')).toThrow();
         expect(() => cache.clear()).toThrow();
+    });
+
+    test('Workspace cache can trigger on document state', async () => {
+        const cache = new WorkspaceCache<string, string>(services.shared, DocumentState.Linked);
+        cache.set('key', 'value');
+        const documentPhase = workspace.DocumentBuilder.onBuildPhase(DocumentState.ComputedScopes, () => {
+            expect(cache.get('key')).toBe('value');
+        });
+        await workspace.DocumentBuilder.update([document1.uri], []);
+        expect(cache.has('key')).toBe(false);
+        documentPhase.dispose();
+        cache.dispose();
     });
 });
