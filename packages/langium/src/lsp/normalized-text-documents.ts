@@ -154,7 +154,7 @@ export class NormalizedTextDocuments<T extends { uri: string }> implements TextD
     }
 
     public get(uri: string | URI): T | undefined {
-        return this._syncedDocuments.get(UriUtils.normalize(uri.toString()));
+        return this._syncedDocuments.get(UriUtils.normalize(uri));
     }
 
     public set(document: T): boolean {
@@ -164,12 +164,14 @@ export class NormalizedTextDocuments<T extends { uri: string }> implements TextD
             result = false;
         }
         this._syncedDocuments.set(uri, document);
-        this._onDidOpen.fire(Object.freeze({ document }));
+        const toFire = Object.freeze({ document });
+        this._onDidOpen.fire(toFire);
+        this._onDidChangeContent.fire(toFire);
         return result;
     }
 
     public delete(uri: string | T | URI): void {
-        const uriString = UriUtils.normalize(typeof uri === 'string' ? uri : 'uri' in uri ? uri.uri : uri.toString());
+        const uriString = UriUtils.normalize(typeof uri === 'object' && 'uri' in uri ? uri.uri : uri);
         const syncedDocument = this._syncedDocuments.get(uriString);
         if (syncedDocument !== undefined) {
             this._syncedDocuments.delete(uriString);
