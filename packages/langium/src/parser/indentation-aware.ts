@@ -15,6 +15,8 @@ import { DefaultLexer, isTokenTypeArray } from './lexer.js';
 
 type IndentationAwareDelimiter<TokenName extends string> = [begin: TokenName, end: TokenName];
 
+export type TokenGroups = { [groupName: string]: IToken[] };
+
 export interface IndentationTokenBuilderOptions<TerminalName extends string = string, KeywordName extends string = string> {
     /**
      * The name of the token used to denote indentation in the grammar.
@@ -112,13 +114,13 @@ export class IndentationAwareTokenBuilder<Terminals extends string = string, Key
 
         this.indentTokenType = createToken({
             name: this.options.indentTokenName,
-            pattern: this.indentMatcher,
+            pattern: this.indentMatcher.bind(this),
             line_breaks: false,
         });
 
         this.dedentTokenType = createToken({
             name: this.options.dedentTokenName,
-            pattern: this.dedentMatcher,
+            pattern: this.dedentMatcher.bind(this),
             line_breaks: false,
         });
     }
@@ -229,7 +231,7 @@ export class IndentationAwareTokenBuilder<Terminals extends string = string, Key
      * @param tokens Previously scanned Tokens
      * @param groups Token Groups
      */
-    protected indentMatcher: CustomPatternMatcherFunc = (text, offset, tokens, _groups) => {
+    protected indentMatcher(text: string, offset: number, tokens: IToken[], _groups: TokenGroups): ReturnType<CustomPatternMatcherFunc> {
         const { indentTokenName } = this.options;
 
         if (!this.isStartOfLine(text, offset)) {
@@ -256,7 +258,7 @@ export class IndentationAwareTokenBuilder<Terminals extends string = string, Key
 
         // Token already added, let the indentation now be consumed as whitespace and ignored
         return null;
-    };
+    }
 
     /**
      * A custom pattern for matching dedents
@@ -266,7 +268,7 @@ export class IndentationAwareTokenBuilder<Terminals extends string = string, Key
      * @param tokens Previously scanned Tokens
      * @param groups Token Groups
      */
-    protected dedentMatcher: CustomPatternMatcherFunc = (text, offset, tokens, _groups) => {
+    protected dedentMatcher(text: string, offset: number, tokens: IToken[], _groups: TokenGroups): ReturnType<CustomPatternMatcherFunc> {
         const { dedentTokenName } = this.options;
 
         if (!this.isStartOfLine(text, offset)) {
@@ -306,7 +308,7 @@ export class IndentationAwareTokenBuilder<Terminals extends string = string, Key
 
         // Token already added, let the dedentation now be consumed as whitespace and ignored
         return null;
-    };
+    }
 
     protected override buildTerminalToken(terminal: TerminalRule): TokenType {
         const tokenType = super.buildTerminalToken(terminal);
