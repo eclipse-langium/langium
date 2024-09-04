@@ -54,14 +54,14 @@ export interface IndentationTokenBuilderOptions<TerminalName extends string = st
      *
      * @default []
      */
-    ignoreIndentationDelimeters: Array<IndentationAwareDelimiter<TerminalName | KeywordName>>
+    ignoreIndentationDelimiters: Array<IndentationAwareDelimiter<TerminalName | KeywordName>>
 }
 
 export const indentationBuilderDefaultOptions: IndentationTokenBuilderOptions = {
     indentTokenName: 'INDENT',
     dedentTokenName: 'DEDENT',
     whitespaceTokenName: 'WS',
-    ignoreIndentationDelimeters: [],
+    ignoreIndentationDelimiters: [],
 };
 
 export enum LexingMode {
@@ -129,7 +129,7 @@ export class IndentationAwareTokenBuilder<Terminals extends string = string, Key
             throw new Error('Invalid tokens built by default builder');
         }
 
-        const { indentTokenName, dedentTokenName, whitespaceTokenName, ignoreIndentationDelimeters } = this.options;
+        const { indentTokenName, dedentTokenName, whitespaceTokenName, ignoreIndentationDelimiters } = this.options;
 
         // Rearrange tokens because whitespace (which is ignored) goes to the beginning by default, consuming indentation as well
         // Order should be: dedent, indent, spaces
@@ -138,7 +138,7 @@ export class IndentationAwareTokenBuilder<Terminals extends string = string, Key
         let ws: TokenType | undefined;
         const otherTokens: TokenType[] = [];
         for (const tokenType of tokenTypes) {
-            for (const [begin, end] of ignoreIndentationDelimeters) {
+            for (const [begin, end] of ignoreIndentationDelimiters) {
                 if (tokenType.name === begin) {
                     tokenType.PUSH_MODE = LexingMode.IGNORE_INDENTATION;
                 } else if (tokenType.name === end) {
@@ -159,7 +159,7 @@ export class IndentationAwareTokenBuilder<Terminals extends string = string, Key
             throw new Error('Some indentation/whitespace tokens not found!');
         }
 
-        if (ignoreIndentationDelimeters.length > 0) {
+        if (ignoreIndentationDelimiters.length > 0) {
             const multiModeLexerDef: IMultiModeLexerDefinition = {
                 modes: {
                     [LexingMode.REGULAR]: [dedent, indent, ...otherTokens, ws],

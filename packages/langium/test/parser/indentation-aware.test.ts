@@ -204,7 +204,7 @@ describe('IndentationAwareLexer', () => {
 
 });
 
-describe('IndentationAwareTokenBuilder#ignoreIndentationDelimeters', async () => {
+describe('IndentationAwareTokenBuilder#ignoreIndentationDelimiters', async () => {
 
     const grammar = `
         grammar PythonIfWithLists
@@ -232,7 +232,7 @@ describe('IndentationAwareTokenBuilder#ignoreIndentationDelimeters', async () =>
     `;
 
     const lexer = await getLexer(grammar, {
-        ignoreIndentationDelimeters: [
+        ignoreIndentationDelimiters: [
             ['(', ')'],
             ['[', ']'],
         ],
@@ -248,7 +248,7 @@ describe('IndentationAwareTokenBuilder#ignoreIndentationDelimeters', async () =>
         expect(errors).toHaveLength(0);
     });
 
-    test('should ignore indentation inside the given delimeters', async () => {
+    test('should ignore indentation inside the given delimiters', async () => {
         const { errors, tokens } = lexer.tokenize(expandToString`
             return [
                 false,
@@ -267,7 +267,7 @@ describe('IndentationAwareTokenBuilder#ignoreIndentationDelimeters', async () =>
         expect(tokenNames).not.toContain('DEDENT');
     });
 
-    test('should handle nested delimeters', async () => {
+    test('should handle nested delimiters', async () => {
         const { errors, tokens } = lexer.tokenize(expandToString`
             return [
                 [
