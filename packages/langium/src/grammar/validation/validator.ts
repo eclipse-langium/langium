@@ -833,14 +833,14 @@ export class LangiumGrammarValidator {
         }
 
         // create the warnings
-        for (const entry of map.entries()) {
-            if (entry[1].counter >= 2) {
-                for (const assignment of entry[1].assignments) {
+        for (const entry of map.values()) {
+            if (entry.counter >= 2) {
+                for (const assignment of entry.assignments) {
                     if (assignment.operator !== '+=') {
                         accept(
                             'warning',
-                            `It seems, that you are assigning multiple values to the feature '${assignment.feature}', while you are using '${assignment.operator}' as assignment operator. Consider to use '+=' instead in order not to loose some of the assigned values.`,
-                            { node: assignment, property: 'operator' }
+                            `Found multiple assignments to '${assignment.feature}' with the '${assignment.operator}' assignment operator. Consider using '+=' instead to prevent data loss.`,
+                            { node: assignment, property: 'feature' } // use 'feature' instead of 'operator', since it is pretty hard to see
                         );
                     }
                 }
@@ -880,7 +880,7 @@ export class LangiumGrammarValidator {
                 if (ast.isAction(child)) {
                     // Actions are a special case: a new object is created => following assignments are put into the new object
                     // (This counts for rewriting actions as well as for unassigned actions, i.e. actions without feature name)
-                    if (nodesForNewObject.length >= 1) {
+                    if (nodesForNewObject.length > 0) {
                         // all collected nodes are put into the new object => check their assignments independently
                         this.checkOperatorMultiplicitiesForMultiAssignmentsLogic(nodesForNewObject, accept);
                         // is it possible to have two or more Actions within the same parser rule? the grammar allows that ...
@@ -890,7 +890,7 @@ export class LangiumGrammarValidator {
                     nodesForNewObject.push(child);
                 } else {
                     // for non-Actions
-                    if (nodesForNewObject.length >= 1) {
+                    if (nodesForNewObject.length > 0) {
                         // nodes go into a new object
                         nodesForNewObject.push(child);
                     } else {
