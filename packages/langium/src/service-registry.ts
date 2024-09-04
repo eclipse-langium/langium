@@ -81,7 +81,7 @@ export class DefaultServiceRegistry implements ServiceRegistry {
         if (this.languageIdMap.size === 0) {
             throw new Error('The service registry is empty. Use `register` to register the services of a language.');
         }
-        const languageId = this.textDocuments?.get(uri.toString())?.languageId;
+        const languageId = this.textDocuments?.get(uri)?.languageId;
         if (languageId !== undefined) {
             const services = this.languageIdMap.get(languageId);
             if (services) {

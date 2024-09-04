@@ -4,7 +4,7 @@
  * terms of the MIT License, which is available in the project root.
 ******************************************************************************/
 
-import { type Connection, TextDocuments } from 'vscode-languageserver';
+import type { Connection } from 'vscode-languageserver';
 import { createDefaultCoreModule, createDefaultSharedCoreModule, type DefaultCoreModuleContext, type DefaultSharedCoreModuleContext } from '../default-module.js';
 import { Module } from '../dependency-injection.js';
 import type { LangiumDefaultCoreServices, LangiumDefaultSharedCoreServices } from '../services.js';
@@ -23,6 +23,7 @@ import { DefaultNodeKindProvider } from './node-kind-provider.js';
 import { DefaultReferencesProvider } from './references-provider.js';
 import { DefaultRenameProvider } from './rename-provider.js';
 import { DefaultWorkspaceSymbolProvider } from './workspace-symbol-provider.js';
+import { NormalizedTextDocuments } from './normalized-text-documents.js';
 
 /**
  * Context required for creating the default language-specific dependency injection module.
@@ -95,7 +96,7 @@ export function createDefaultSharedLSPModule(context: DefaultSharedModuleContext
             FuzzyMatcher: () => new DefaultFuzzyMatcher(),
         },
         workspace: {
-            TextDocuments: () => new TextDocuments(TextDocument)
+            TextDocuments: () => new NormalizedTextDocuments(TextDocument)
         }
     };
 }

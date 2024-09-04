@@ -112,7 +112,7 @@ export interface DocumentSegment {
  * No implementation object is expected to be offered by `LangiumCoreServices`, but only by `LangiumLSPServices`.
  */
 export type TextDocumentProvider = {
-    get(uri: string): TextDocument | undefined
+    get(uri: string | URI): TextDocument | undefined
 }
 
 /**
