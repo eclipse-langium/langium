@@ -9,7 +9,6 @@ import type { LangiumServices } from 'langium/lsp';
 import { describe, expect, test } from 'vitest';
 import { DocumentState, EmptyFileSystem, TextDocument } from 'langium';
 import { createLangiumGrammarServices } from 'langium/grammar';
-import { setTextDocument } from 'langium/test';
 import { CancellationToken } from 'vscode-languageserver';
 
 describe('DefaultLangiumDocumentFactory', () => {
@@ -50,6 +49,6 @@ describe('DefaultLangiumDocumentFactory', () => {
 
 function createTextDocument(uri: string, text: string, services: LangiumServices): TextDocument {
     const document = TextDocument.create(uri, 'langium', 0, text);
-    setTextDocument(services, document);
+    services.shared.workspace.TextDocuments.set(document);
     return document;
 }

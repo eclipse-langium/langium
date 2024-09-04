@@ -4,14 +4,13 @@
  * terms of the MIT License, which is available in the project root.
  ******************************************************************************/
 
-import type { AstNode, DocumentBuilder, FileSystemProvider, LangiumDocument, LangiumDocumentFactory, LangiumDocuments, Module, Reference, TextDocumentProvider, ValidationChecks } from 'langium';
+import type { AstNode, DocumentBuilder, FileSystemProvider, LangiumDocument, LangiumDocumentFactory, LangiumDocuments, Module, Reference, ValidationChecks } from 'langium';
 import { AstUtils, DocumentState, TextDocument, URI, isOperationCancelled } from 'langium';
 import { createServicesForGrammar } from 'langium/grammar';
-import { setTextDocument } from 'langium/test';
 import { describe, expect, test, vi, beforeEach, afterEach } from 'vitest';
 import { CancellationToken, CancellationTokenSource } from 'vscode-languageserver';
 import { fail } from 'assert';
-import type { LangiumServices, LangiumSharedServices } from '../../lib/lsp/lsp-services.js';
+import type { LangiumServices, LangiumSharedServices, TextDocuments } from 'langium/lsp';
 
 describe('DefaultDocumentBuilder', () => {
     async function createServices(shared?: Module<LangiumSharedServices, object>) {
@@ -52,32 +51,34 @@ describe('DefaultDocumentBuilder', () => {
 
     test('emits `onUpdate` on `update` call', async () => {
         const services = await createServices();
-        const documentFactory = services.shared.workspace.LangiumDocumentFactory;
-        const documents = services.shared.workspace.LangiumDocuments;
+        const workspace = services.shared.workspace;
+        const documentFactory = workspace.LangiumDocumentFactory;
+        const documents = workspace.LangiumDocuments;
         const document = documentFactory.fromString('', URI.parse('file:///test1.txt'));
         documents.addDocument(document);
 
-        const builder = services.shared.workspace.DocumentBuilder;
+        const builder = workspace.DocumentBuilder;
         await builder.build([document], {});
-        setTextDocument(services, document.textDocument);
         let called = false;
         builder.onUpdate(() => {
             called = true;
         });
+        workspace.TextDocuments.set(document.textDocument);
         await builder.update([document.uri], []);
         expect(called).toBe(true);
     });
 
     test('emits `onUpdate` on `build` call', async () => {
         const services = await createServices();
-        const documentFactory = services.shared.workspace.LangiumDocumentFactory;
-        const documents = services.shared.workspace.LangiumDocuments;
+        const workspace = services.shared.workspace;
+        const documentFactory = workspace.LangiumDocumentFactory;
+        const documents = workspace.LangiumDocuments;
         const document = documentFactory.fromString('', URI.parse('file:///test1.txt'));
         documents.addDocument(document);
 
-        const builder = services.shared.workspace.DocumentBuilder;
+        const builder = workspace.DocumentBuilder;
         await builder.build([document], {});
-        setTextDocument(services, document.textDocument);
+        workspace.TextDocuments.set(document.textDocument);
         let called = false;
         builder.onUpdate(() => {
             called = true;
@@ -127,8 +128,9 @@ describe('DefaultDocumentBuilder', () => {
 
     test('resumes document build after cancellation', async () => {
         const services = await createServices();
-        const documentFactory = services.shared.workspace.LangiumDocumentFactory;
-        const documents = services.shared.workspace.LangiumDocuments;
+        const workspace = services.shared.workspace;
+        const documentFactory = workspace.LangiumDocumentFactory;
+        const documents = workspace.LangiumDocuments;
         const document1 = documentFactory.fromString(`
             foo 1 A
             foo 11 B
@@ -144,7 +146,7 @@ describe('DefaultDocumentBuilder', () => {
         `, URI.parse('file:///test2.txt'));
         documents.addDocument(document2);
 
-        const builder = services.shared.workspace.DocumentBuilder;
+        const builder = workspace.DocumentBuilder;
         const tokenSource1 = new CancellationTokenSource();
         builder.onBuildPhase(DocumentState.IndexedContent, () => {
             tokenSource1.cancel();
@@ -157,7 +159,7 @@ describe('DefaultDocumentBuilder', () => {
         expect(document1.state).toBe(DocumentState.IndexedContent);
         expect(document2.state).toBe(DocumentState.IndexedContent);
 
-        setTextDocument(services, document1.textDocument);
+        workspace.TextDocuments.set(document1.textDocument);
         await builder.update([document1.uri], []);
         // While the first document is built with validation due to its reported update, the second one
         // is resumed with its initial build options, which did not include validation.
@@ -171,8 +173,9 @@ describe('DefaultDocumentBuilder', () => {
 
     test('includes document with references to updated document', async () => {
         const services = await createServices();
-        const documentFactory = services.shared.workspace.LangiumDocumentFactory;
-        const documents = services.shared.workspace.LangiumDocuments;
+        const workspace = services.shared.workspace;
+        const documentFactory = workspace.LangiumDocumentFactory;
+        const documents = workspace.LangiumDocuments;
         const document1 = documentFactory.fromString(`
             foo 1 A
             foo 11 B
@@ -187,20 +190,20 @@ describe('DefaultDocumentBuilder', () => {
         `, URI.parse('file:///test2.txt'));
         documents.addDocument(document2);
 
-        const builder = services.shared.workspace.DocumentBuilder;
+        const builder = workspace.DocumentBuilder;
         await builder.build([document1, document2], {});
         expect(document1.state).toBe(DocumentState.IndexedReferences);
         expect(document1.references.filter(r => r.error !== undefined)).toHaveLength(0);
         expect(document2.state).toBe(DocumentState.IndexedReferences);
         expect(document2.references.filter(r => r.error !== undefined)).toHaveLength(0);
 
-        setTextDocument(services, document1.textDocument);
+        workspace.TextDocuments.set(document1.textDocument);
         TextDocument.update(document1.textDocument, [{
             // Change `foo 1 A` to `foo 1 D`, breaking the local reference
             range: { start: { line: 1, character: 18 }, end: { line: 1, character: 19 } },
             text: 'D'
         }], 1);
-        setTextDocument(services, document2.textDocument);
+        workspace.TextDocuments.set(document2.textDocument);
         builder.updateBuildOptions = {
             validation: {
                 // Only the linking error is reported for the first document
@@ -442,8 +445,9 @@ describe('DefaultDocumentBuilder', () => {
 
     test("References are unlinked on update even though the document didn't change", async () => {
         const services = await createServices();
-        const documentFactory = services.shared.workspace.LangiumDocumentFactory;
-        const documents = services.shared.workspace.LangiumDocuments;
+        const workspace = services.shared.workspace;
+        const documentFactory = workspace.LangiumDocumentFactory;
+        const documents = workspace.LangiumDocuments;
         const document = documentFactory.fromString(`
             foo 1 A
             foo 11 B
@@ -452,12 +456,12 @@ describe('DefaultDocumentBuilder', () => {
         `, URI.parse('file:///test1.txt'));
         documents.addDocument(document);
 
-        const builder = services.shared.workspace.DocumentBuilder;
+        const builder = workspace.DocumentBuilder;
         await builder.build([document], { validation: true });
         expect(document.state).toBe(DocumentState.Validated);
         expect(document.references).toHaveLength(2);
 
-        setTextDocument(services, document.textDocument);
+        workspace.TextDocuments.set(document.textDocument);
         try {
             // Immediately cancel the update to prevent the document from being rebuilt
             await builder.update([document.uri], [], CancellationToken.Cancelled);
@@ -478,8 +482,9 @@ describe('DefaultDocumentBuilder', () => {
 
     test("References are unlinked on update even if the document didn't reach linked phase yet", async () => {
         const services = await createServices();
-        const documentFactory = services.shared.workspace.LangiumDocumentFactory;
-        const documents = services.shared.workspace.LangiumDocuments;
+        const workspace = services.shared.workspace;
+        const documentFactory = workspace.LangiumDocumentFactory;
+        const documents = workspace.LangiumDocuments;
         const document = documentFactory.fromString(`
             foo 1 A
             foo 11 B
@@ -489,7 +494,7 @@ describe('DefaultDocumentBuilder', () => {
         documents.addDocument(document);
 
         const tokenSource = new CancellationTokenSource();
-        const builder = services.shared.workspace.DocumentBuilder;
+        const builder = workspace.DocumentBuilder;
         builder.onBuildPhase(DocumentState.ComputedScopes, () => {
             tokenSource.cancel();
         });
@@ -511,7 +516,7 @@ describe('DefaultDocumentBuilder', () => {
 
         expect(document.references).toHaveLength(1);
 
-        setTextDocument(services, document.textDocument);
+        workspace.TextDocuments.set(document.textDocument);
         try {
             // Immediately cancel the update to prevent the document from being rebuilt
             await builder.update([document.uri], [], CancellationToken.Cancelled);
@@ -535,7 +540,7 @@ describe('DefaultDocumentBuilder', () => {
         let documentFactory: LangiumDocumentFactory;
         let documents: LangiumDocuments;
         let builder: DocumentBuilder;
-        let textDocuments: TextDocumentProvider;
+        let textDocuments: TextDocuments<TextDocument>;
         let sortSpy: ReturnType<typeof vi.spyOn>;
 
         beforeEach(async () => {
@@ -564,9 +569,7 @@ describe('DefaultDocumentBuilder', () => {
         }
 
         async function openDocuments(docs: LangiumDocument[]): Promise<void> {
-            docs.forEach(doc => {
-                (textDocuments as unknown as MockTextDocumentProvider).addDocument(doc.uri.toString(), doc.textDocument);
-            });
+            docs.forEach(doc => textDocuments.set(doc.textDocument));
         }
 
         async function updateAndGetSortedDocuments(docs: LangiumDocument[]): Promise<LangiumDocument[]> {
@@ -576,7 +579,7 @@ describe('DefaultDocumentBuilder', () => {
         }
 
         function isDocumentOpen(doc: LangiumDocument): boolean {
-            return Boolean((textDocuments as unknown as MockTextDocumentProvider).get(doc.uri.toString()));
+            return Boolean(textDocuments.get(doc.uri));
         }
 
         test('Open documents are sorted before closed documents', async () => {
@@ -643,19 +646,6 @@ describe('DefaultDocumentBuilder', () => {
     });
 });
 
-class MockTextDocumentProvider implements TextDocumentProvider {
-    isMockTextDocumentProvider = true;
-    private docs: Map<string, TextDocument> = new Map();
-
-    // simulate opening a file in the mock text document provider
-    addDocument(uri: string, document: TextDocument): void {
-        this.docs.set(uri, document);
-    }
-
-    get(uri: string): TextDocument | undefined {
-        return this.docs.get(uri);
-    }
-}
 class MockFileSystemProvider implements FileSystemProvider {
     isMockFileSystemProvider = true;
 
@@ -672,7 +662,6 @@ class MockFileSystemProvider implements FileSystemProvider {
 
 export const mockSharedModule: Module<LangiumSharedServices, object> = {
     workspace: {
-        TextDocuments: () => new MockTextDocumentProvider(),
         FileSystemProvider: () => new MockFileSystemProvider()
     }
 };

@@ -6,7 +6,7 @@
 
 import type { AstNode, LangiumDocument, ReferenceDescription, URI } from 'langium';
 import { AstUtils, EmptyFileSystem, TextDocument } from 'langium';
-import { parseDocument, setTextDocument } from 'langium/test';
+import { parseDocument } from 'langium/test';
 import { describe, expect, test } from 'vitest';
 import { createDomainModelServices } from '../src/language-server/domain-model-module.js';
 import type { Domainmodel } from '../src/language-server/generated/ast.js';
@@ -20,15 +20,15 @@ describe('Cross references indexed after affected process', () => {
         let allRefs = await getReferences((superDoc.parseResult.value as Domainmodel).elements[0]);
         expect(allRefs.length).toEqual(0); // linking error
 
-        setTextDocument(
-            shared,
+        shared.workspace.TextDocuments.set(
             TextDocument.create(
-                superDoc.textDocument.uri.toString(),
+                superDoc.textDocument.uri,
                 superDoc.textDocument.languageId,
                 0,
                 'entity SuperEntity {}'
             )
         );
+
         await shared.workspace.DocumentBuilder.update([superDoc.uri], []);
 
         const updatedSuperDoc = await shared.workspace.LangiumDocuments.getOrCreateDocument(superDoc.uri);

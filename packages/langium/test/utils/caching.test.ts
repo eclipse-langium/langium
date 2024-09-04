@@ -10,14 +10,13 @@ import { beforeEach, describe, expect, test } from 'vitest';
 import type { DefaultDocumentBuilder} from 'langium';
 import { DocumentCache, EmptyFileSystem, URI, WorkspaceCache } from 'langium';
 import { createLangiumGrammarServices } from 'langium/grammar';
-import { setTextDocument } from 'langium/test';
 
 const services = createLangiumGrammarServices(EmptyFileSystem);
 const workspace = services.shared.workspace;
 const document1 = workspace.LangiumDocumentFactory.fromString('', URI.file('/document1.langium'));
-setTextDocument(services.shared, document1.textDocument);
+workspace.TextDocuments.set(document1.textDocument);
 const document2 = workspace.LangiumDocumentFactory.fromString('', URI.file('/document2.langium'));
-setTextDocument(services.shared, document2.textDocument);
+workspace.TextDocuments.set(document2.textDocument);
 workspace.LangiumDocuments.addDocument(document1);
 workspace.LangiumDocuments.addDocument(document2);
 

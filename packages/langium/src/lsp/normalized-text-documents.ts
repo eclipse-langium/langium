@@ -9,6 +9,7 @@ import type {
     TextDocumentWillSaveEvent, RequestHandler, TextEdit, Event, WillSaveTextDocumentParams, CancellationToken, DidSaveTextDocumentParams
 } from 'vscode-languageserver';
 import { TextDocumentSyncKind, Disposable, Emitter } from 'vscode-languageserver';
+import type { URI } from '../utils/uri-utils.js';
 import { UriUtils } from '../utils/uri-utils.js';
 
 /**
@@ -54,7 +55,17 @@ export interface TextDocuments<T extends { uri: string }> {
      * @param uri The text document's URI to retrieve.
      * @return the text document or `undefined`.
      */
-    get(uri: string): T | undefined;
+    get(uri: string | URI): T | undefined;
+    /**
+     * Sets the text document managed by this instance.
+     * @param document The text document to add.
+     * @returns `true` if the document didn't exist yet, `false` if it was already present.
+     */
+    set(document: T): boolean;
+    /**
+     * Deletes a text document managed by this instance.
+     */
+    delete(uri: string | URI | T): void;
     /**
      * Returns all text documents managed by this instance.
      *
@@ -142,8 +153,28 @@ export class NormalizedTextDocuments<T extends { uri: string }> implements TextD
         return this._onDidClose.event;
     }
 
-    public get(uri: string): T | undefined {
-        return this._syncedDocuments.get(UriUtils.normalize(uri));
+    public get(uri: string | URI): T | undefined {
+        return this._syncedDocuments.get(UriUtils.normalize(uri.toString()));
+    }
+
+    public set(document: T): boolean {
+        const uri = UriUtils.normalize(document.uri);
+        let result = true;
+        if (this._syncedDocuments.has(uri)) {
+            result = false;
+        }
+        this._syncedDocuments.set(uri, document);
+        this._onDidOpen.fire(Object.freeze({ document }));
+        return result;
+    }
+
+    public delete(uri: string | T | URI): void {
+        const uriString = UriUtils.normalize(typeof uri === 'string' ? uri : 'uri' in uri ? uri.uri : uri.toString());
+        const syncedDocument = this._syncedDocuments.get(uriString);
+        if (syncedDocument !== undefined) {
+            this._syncedDocuments.delete(uriString);
+            this._onDidClose.fire(Object.freeze({ document: syncedDocument }));
+        }
     }
 
     public all(): T[] {

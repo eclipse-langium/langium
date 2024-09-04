@@ -701,14 +701,15 @@ export function expectWarning<T extends AstNode = AstNode, N extends AstNode = A
 
 /**
  * Add the given document to the `TextDocuments` service, simulating it being opened in an editor.
+ *
+ * @deprecated Since 3.2.0. Use `set`/`delete` from `TextDocuments` instead.
  */
 export function setTextDocument(services: LangiumServices | LangiumSharedLSPServices, document: TextDocument): Disposable {
     const shared = 'shared' in services ? services.shared : services;
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const textDocuments = shared.workspace.TextDocuments as any;
-    textDocuments._syncedDocuments.set(document.uri, document);
+    const textDocuments = shared.workspace.TextDocuments;
+    textDocuments.set(document);
     return Disposable.create(() => {
-        textDocuments._syncedDocuments.delete(document.uri);
+        textDocuments.delete(document.uri);
     });
 }
 

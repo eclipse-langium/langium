@@ -272,7 +272,7 @@ export class DefaultDocumentBuilder implements DocumentBuilder {
     }
 
     private hasTextDocument(doc: LangiumDocument): boolean {
-        return Boolean(this.textDocuments?.get(doc.uri.toString()));
+        return Boolean(this.textDocuments?.get(doc.uri));
     }
 
     /**
