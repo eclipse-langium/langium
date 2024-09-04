@@ -11,6 +11,11 @@ import type {
 import { TextDocumentSyncKind, Disposable, Emitter } from 'vscode-languageserver';
 import { UriUtils } from '../utils/uri-utils.js';
 
+/**
+ * A manager service that keeps track of all currently opened text documents.
+ *
+ * Designed to be compatible with the `TextDocuments` class in the `vscode-languageserver` package.
+ */
 export interface TextDocuments<T extends { uri: string }> {
     /**
      * An event that fires when a text document managed by this manager
