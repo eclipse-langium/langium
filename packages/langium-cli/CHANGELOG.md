@@ -1,5 +1,9 @@
 # Change Log of `langium-cli`
 
+## v3.2.0 (Sep. 2024)
+
+Fixed an `undefined` error on certain regexes in the monarch generator ([#1594](https://github.com/eclipse-langium/langium/pull/1594)).
+
 ## v3.1.0 (Jun. 2024)
 
 Fixed string escaping for generated code ([#1537](https://github.com/eclipse-langium/langium/pull/1537), [#1514](https://github.com/eclipse-langium/langium/pull/1514)).
