@@ -15,8 +15,6 @@ import { DefaultLexer, isTokenTypeArray } from './lexer.js';
 
 type IndentationAwareDelimiter<TokenName extends string> = [begin: TokenName, end: TokenName];
 
-export type TokenGroups = { [groupName: string]: IToken[] };
-
 export interface IndentationTokenBuilderOptions<TerminalName extends string = string, KeywordName extends string = string> {
     /**
      * The name of the token used to denote indentation in the grammar.
@@ -231,7 +229,7 @@ export class IndentationAwareTokenBuilder<Terminals extends string = string, Key
      * @param tokens Previously scanned Tokens
      * @param groups Token Groups
      */
-    protected indentMatcher(text: string, offset: number, tokens: IToken[], _groups: TokenGroups): ReturnType<CustomPatternMatcherFunc> {
+    protected indentMatcher(text: string, offset: number, tokens: IToken[], _groups: Record<string, IToken[]>): ReturnType<CustomPatternMatcherFunc> {
         const { indentTokenName } = this.options;
 
         if (!this.isStartOfLine(text, offset)) {
@@ -268,7 +266,7 @@ export class IndentationAwareTokenBuilder<Terminals extends string = string, Key
      * @param tokens Previously scanned Tokens
      * @param groups Token Groups
      */
-    protected dedentMatcher(text: string, offset: number, tokens: IToken[], _groups: TokenGroups): ReturnType<CustomPatternMatcherFunc> {
+    protected dedentMatcher(text: string, offset: number, tokens: IToken[], _groups: Record<string, IToken[]>): ReturnType<CustomPatternMatcherFunc> {
         const { dedentTokenName } = this.options;
 
         if (!this.isStartOfLine(text, offset)) {
