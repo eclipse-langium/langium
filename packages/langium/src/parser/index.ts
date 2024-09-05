@@ -11,6 +11,7 @@ export * from './indentation-aware.js';
 export * from './langium-parser-builder.js';
 export * from './langium-parser.js';
 export * from './lexer.js';
+export * from './parser-builder-base.js';
 export * from './parser-config.js';
 export * from './token-builder.js';
 export * from './value-converter.js';
