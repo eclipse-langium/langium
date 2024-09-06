@@ -18,6 +18,7 @@ import { streamAst } from '../utils/ast-utils.js';
 import { tokenToRange } from '../utils/cst-utils.js';
 import { interruptAndCheck, isOperationCancelled } from '../utils/promise-utils.js';
 import { diagnosticData } from './validation-registry.js';
+import type { LexingDiagnostic } from '../parser/token-builder.js';
 
 export interface ValidationOptions {
     /**
@@ -97,21 +98,23 @@ export class DefaultDocumentValidator implements DocumentValidator {
     }
 
     protected processLexingErrors(parseResult: ParseResult, diagnostics: Diagnostic[], _options: ValidationOptions): void {
-        for (const lexerError of parseResult.lexerErrors) {
+        const lexerDiagnostics = [...parseResult.lexerErrors, ...parseResult.lexerReport?.diagnostics ?? []] as LexingDiagnostic[];
+        for (const lexerDiagnostic of lexerDiagnostics) {
+            const severity = lexerDiagnostic?.severity ?? 'error';
             const diagnostic: Diagnostic = {
-                severity: toDiagnosticSeverity('error'),
+                severity: toDiagnosticSeverity(severity),
                 range: {
                     start: {
-                        line: lexerError.line! - 1,
-                        character: lexerError.column! - 1
+                        line: lexerDiagnostic.line! - 1,
+                        character: lexerDiagnostic.column! - 1
                     },
                     end: {
-                        line: lexerError.line! - 1,
-                        character: lexerError.column! + lexerError.length - 1
+                        line: lexerDiagnostic.line! - 1,
+                        character: lexerDiagnostic.column! + lexerDiagnostic.length - 1
                     }
                 },
-                message: lexerError.message,
-                data: diagnosticData(DocumentValidator.LexingError),
+                message: lexerDiagnostic.message,
+                data: toDiagnosticData(severity),
                 source: this.getSource()
             };
             diagnostics.push(diagnostic);
@@ -245,8 +248,26 @@ export function toDiagnosticSeverity(severity: 'error' | 'warning' | 'info' | 'h
     }
 }
 
+export function toDiagnosticData(severity: 'error' | 'warning' | 'info' | 'hint'): DiagnosticData {
+    switch (severity) {
+        case 'error':
+            return diagnosticData(DocumentValidator.LexingError);
+        case 'warning':
+            return diagnosticData(DocumentValidator.LexingWarning);
+        case 'info':
+            return diagnosticData(DocumentValidator.LexingInfo);
+        case 'hint':
+            return diagnosticData(DocumentValidator.LexingHint);
+        default:
+            throw new Error('Invalid diagnostic severity: ' + severity);
+    }
+}
+
 export namespace DocumentValidator {
     export const LexingError = 'lexing-error';
+    export const LexingWarning = 'lexing-warning';
+    export const LexingInfo = 'lexing-info';
+    export const LexingHint = 'lexing-hint';
     export const ParsingError = 'parsing-error';
     export const LinkingError = 'linking-error';
 }

@@ -6,12 +6,13 @@
 
 import type { TokenType } from '@chevrotain/types';
 import type { AstNode, Grammar, IndentationTokenBuilderOptions, LangiumParser, Lexer, Module } from 'langium';
-import { beforeEach, describe, expect, test } from 'vitest';
+import { describe, expect, test } from 'vitest';
 import { EmptyFileSystem, IndentationAwareLexer, IndentationAwareTokenBuilder } from 'langium';
 import { createLangiumGrammarServices, createServicesForGrammar } from 'langium/grammar';
 import type { LangiumServices, PartialLangiumServices } from 'langium/lsp';
 import { expandToString } from 'langium/generate';
 import { parseHelper } from 'langium/test';
+import type { IMultiModeLexerDefinition } from 'chevrotain';
 
 const grammarServices = createLangiumGrammarServices(EmptyFileSystem).grammar;
 const helper = parseHelper<Grammar>(grammarServices);
@@ -20,7 +21,7 @@ const tokenBuilder = new IndentationAwareTokenBuilder();
 
 async function getTokens(grammarString: string): Promise<TokenType[]> {
     const grammar = (await helper(grammarString)).parseResult.value;
-    const tokens = tokenBuilder.buildTokens(grammar);
+    const tokens = tokenBuilder.buildTokens(grammar) as IMultiModeLexerDefinition | TokenType[];
     if (Array.isArray(tokens)) {
         return tokens;
     } else {
@@ -50,10 +51,6 @@ async function createIndentationAwareServices(grammar: string, options?: Partial
     });
     return services;
 }
-
-beforeEach(() => {
-    tokenBuilder.popRemainingDedents('');
-});
 
 describe('IndentationAwareTokenBuilder', () => {
 
@@ -333,8 +330,26 @@ describe('IndentationAware parsing', () => {
           else:
             return true
         `);
-
         expect(parserErrors.length).toBeGreaterThan(0);
+    });
+
+    test('should report error on non-matching dedent', async () => {
+        const parser = await getParser(sampleGrammar);
+        const { lexerReport } = parser.parse(expandToString`
+        if true:
+            return false
+          else:
+            return true
+        `);
+        expect(lexerReport?.diagnostics.length).toBe(1);
+        const diagnostic = lexerReport?.diagnostics[0];
+        expect(diagnostic).toBeDefined();
+        expect(diagnostic!.severity).toBe('error');
+        expect(diagnostic!.message).toContain('Invalid dedent level');
+        // offset should be 26 on Linux/MacOs and 28 on Windows due to differences in line endings
+        expect([26, 28]).toContain(diagnostic!.offset);
+        expect(diagnostic!.length).toBe(2);
+        expect(diagnostic!.line).toBe(3);
     });
 
     test('should throw an error on unexpected indent', async () => {

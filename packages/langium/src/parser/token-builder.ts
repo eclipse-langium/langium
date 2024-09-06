@@ -4,7 +4,7 @@
  * terms of the MIT License, which is available in the project root.
  ******************************************************************************/
 
-import type { CustomPatternMatcherFunc, TokenPattern, TokenType, TokenVocabulary } from 'chevrotain';
+import type { CustomPatternMatcherFunc, ILexingError, TokenPattern, TokenType, TokenVocabulary } from 'chevrotain';
 import type { AbstractRule, Grammar, Keyword, TerminalRule } from '../languages/generated/ast.js';
 import type { Stream } from '../utils/stream.js';
 import { Lexer } from 'chevrotain';
@@ -20,9 +20,31 @@ export interface TokenBuilderOptions {
 
 export interface TokenBuilder {
     buildTokens(grammar: Grammar, options?: TokenBuilderOptions): TokenVocabulary;
+    /**
+     * Produces a lexing report for the given text that was just tokenized using the tokens provided by this builder.
+     *
+     * @param text The text that was tokenized.
+     */
+    popLexingReport?(text: string): LexingReport;
+}
+
+/**
+ * A custom lexing report that can be produced by the token builder during the lexing process.
+ * Adopters need to ensure that the any custom fields are serializable so they can be sent across worker threads.
+ */
+export interface LexingReport {
+    diagnostics: LexingDiagnostic[];
+}
+
+export interface LexingDiagnostic extends ILexingError {
+    severity?: 'error' | 'warning' | 'info' | 'hint';
 }
 
 export class DefaultTokenBuilder implements TokenBuilder {
+    /**
+     * The list of diagnostics stored during the lexing process of a single text.
+     */
+    protected diagnostics: LexingDiagnostic[] = [];
 
     buildTokens(grammar: Grammar, options?: TokenBuilderOptions): TokenVocabulary {
         const reachableRules = stream(getAllReachableRules(grammar, false));
@@ -40,6 +62,16 @@ export class DefaultTokenBuilder implements TokenBuilder {
         // We don't need to add the EOF token explicitly.
         // It is automatically available at the end of the token stream.
         return tokens;
+    }
+
+    popLexingReport(_text: string): LexingReport {
+        return { diagnostics: this.popDiagnostics() };
+    }
+
+    protected popDiagnostics(): LexingDiagnostic[] {
+        const diagnostics = [...this.diagnostics];
+        this.diagnostics = [];
+        return diagnostics;
     }
 
     protected buildTerminalTokens(rules: Stream<AbstractRule>): TokenType[] {
