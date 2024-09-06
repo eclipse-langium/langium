@@ -179,11 +179,11 @@ export class IndentationAwareTokenBuilder<Terminals extends string = string, Key
         }
     }
 
-    override popLexingReport(text: string): IndentationLexingReport {
-        const result = super.popLexingReport(text);
+    override flushLexingReport(text: string): IndentationLexingReport {
+        const result = super.flushLexingReport(text);
         return {
             ...result,
-            remainingDedents: this.popRemainingDedents(text),
+            remainingDedents: this.flushRemainingDedents(text),
         };
     }
 
@@ -203,9 +203,12 @@ export class IndentationAwareTokenBuilder<Terminals extends string = string, Key
      *
      * @param text The full input string.
      * @param offset The current position at which to attempt a match
+     * @param tokens Previously scanned tokens
+     * @param groups Token Groups
      * @returns The current and previous indentation levels and the matched whitespace
      */
-    protected matchWhitespace(text: string, offset: number, _tokens: IToken[], _groups: Record<string, IToken[]>): { currIndentLevel: number, prevIndentLevel: number, match: RegExpExecArray | null } {
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
+    protected matchWhitespace(text: string, offset: number, tokens: IToken[], groups: Record<string, IToken[]>): { currIndentLevel: number, prevIndentLevel: number, match: RegExpExecArray | null } {
         this.whitespaceRegExp.lastIndex = offset;
         const match = this.whitespaceRegExp.exec(text);
         return {
@@ -251,12 +254,10 @@ export class IndentationAwareTokenBuilder<Terminals extends string = string, Key
      *
      * @param text The full input string.
      * @param offset The offset at which to attempt a match
-     * @param tokens Previously scanned Tokens
+     * @param tokens Previously scanned tokens
      * @param groups Token Groups
      */
     protected indentMatcher(text: string, offset: number, tokens: IToken[], groups: Record<string, IToken[]>): ReturnType<CustomPatternMatcherFunc> {
-        const { indentTokenName } = this.options;
-
         if (!this.isStartOfLine(text, offset)) {
             return null;
         }
@@ -274,7 +275,7 @@ export class IndentationAwareTokenBuilder<Terminals extends string = string, Key
         const indentToken = this.createIndentationTokenInstance(
             this.indentTokenType,
             text,
-            match?.[0] ?? indentTokenName,
+            match?.[0] ?? '',
             offset,
         );
         tokens.push(indentToken);
@@ -288,12 +289,10 @@ export class IndentationAwareTokenBuilder<Terminals extends string = string, Key
      *
      * @param text The full input string.
      * @param offset The offset at which to attempt a match
-     * @param tokens Previously scanned Tokens
+     * @param tokens Previously scanned tokens
      * @param groups Token Groups
      */
     protected dedentMatcher(text: string, offset: number, tokens: IToken[], groups: Record<string, IToken[]>): ReturnType<CustomPatternMatcherFunc> {
-        const { dedentTokenName } = this.options;
-
         if (!this.isStartOfLine(text, offset)) {
             return null;
         }
@@ -327,7 +326,7 @@ export class IndentationAwareTokenBuilder<Terminals extends string = string, Key
             const token = this.createIndentationTokenInstance(
                 this.dedentTokenType,
                 text,
-                match?.[0] ?? dedentTokenName,
+                match?.[0] ?? '',
                 offset,
             );
             tokens.push(token);
@@ -362,7 +361,7 @@ export class IndentationAwareTokenBuilder<Terminals extends string = string, Key
      * @param text Full text that was tokenized
      * @returns Remaining dedent tokens to match all previous indents at the end of the file
      */
-    popRemainingDedents(text: string): IToken[] {
+    flushRemainingDedents(text: string): IToken[] {
         const remainingDedents: IToken[] = [];
         while (this.indentationStack.length > 1) {
             remainingDedents.push(

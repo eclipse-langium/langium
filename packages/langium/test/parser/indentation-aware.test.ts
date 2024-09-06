@@ -11,7 +11,7 @@ import { EmptyFileSystem, IndentationAwareLexer, IndentationAwareTokenBuilder } 
 import { createLangiumGrammarServices, createServicesForGrammar } from 'langium/grammar';
 import type { LangiumServices, PartialLangiumServices } from 'langium/lsp';
 import { expandToString } from 'langium/generate';
-import { parseHelper } from 'langium/test';
+import { expectCompletion, parseHelper } from 'langium/test';
 import type { IMultiModeLexerDefinition } from 'chevrotain';
 
 const grammarServices = createLangiumGrammarServices(EmptyFileSystem).grammar;
@@ -401,6 +401,27 @@ describe('IndentationAware parsing', () => {
         expect(return2.value).toBe(true);
     });
 
+    test('should offer correct auto-completion parsing', async () => {
+        const text = expandToString`
+        <|>if true:
+            <|>return true
+        <|>else:
+            <|>if false:
+                <|>return true
+                <|>return false
+            <|>return true
+        `;
+
+        const services = await createIndentationAwareServices(sampleGrammar);
+        const completion = expectCompletion(services);
+        await completion({ text, index: 0, expectedItems: ['if', 'return'] });
+        await completion({ text, index: 1, expectedItems: ['if', 'return'] });
+        await completion({ text, index: 2, expectedItems: ['else'] });
+        await completion({ text, index: 3, expectedItems: ['if', 'return'] });
+        await completion({ text, index: 4, expectedItems: ['if', 'return'] });
+        await completion({ text, index: 5, expectedItems: ['if', 'return'] });
+        await completion({ text, index: 6, expectedItems: ['if', 'return'] });
+    });
 });
 
 type Statement = If | Return;
