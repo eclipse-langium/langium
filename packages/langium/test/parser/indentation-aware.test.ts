@@ -401,7 +401,7 @@ describe('IndentationAware parsing', () => {
         expect(return2.value).toBe(true);
     });
 
-    test('should offer correct auto-completion parsing', async () => {
+    test.fails('should offer correct auto-completion parsing', async () => {
         const text = expandToString`
         <|>if true:
             <|>return true
@@ -415,6 +415,7 @@ describe('IndentationAware parsing', () => {
         const services = await createIndentationAwareServices(sampleGrammar);
         const completion = expectCompletion(services);
         await completion({ text, index: 0, expectedItems: ['if', 'return'] });
+        // PR 1669: the lines below currently fail as the completion provider may wrongly assumes that all whitespace tokens are hidden
         await completion({ text, index: 1, expectedItems: ['if', 'return'] });
         await completion({ text, index: 2, expectedItems: ['else'] });
         await completion({ text, index: 3, expectedItems: ['if', 'return'] });

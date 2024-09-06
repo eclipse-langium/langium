@@ -28,7 +28,7 @@ export interface LexerResult {
 export type TokenizeMode = 'full' | 'partial';
 
 export interface TokenizeOptions {
-    mode: TokenizeMode;
+    mode?: TokenizeMode;
 }
 
 export const DEFAULT_TOKENIZE_OPTIONS: TokenizeOptions = { mode: 'full' };

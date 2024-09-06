@@ -315,7 +315,7 @@ export class IndentationAwareTokenBuilder<Terminals extends string = string, Key
                 offset,
                 length: match?.[0]?.length ?? 0,
                 line: this.getLineNumber(text, offset),
-                column: 0
+                column: 1
             });
             return null;
         }
