@@ -1,5 +1,21 @@
 # Change Log of `langium`
 
+## v3.2.0 (Sep. 2024)
+
+### General Improvements
+
+* Add indentation aware lexer and token builder implementations ([#1578](https://github.com/eclipse-langium/langium/pull/1578)).
+* Add support for overriding semantic token types ([#1600](https://github.com/eclipse-langium/langium/pull/1600)).
+* Improve support for non-vscode language clients on Windows ([#1660](https://github.com/eclipse-langium/langium/pull/1660)).
+* Improve tree-shaking behavior of all Langium packages ([#1643](https://github.com/eclipse-langium/langium/pull/1643)).
+* Make service containers readonly ([#1635](https://github.com/eclipse-langium/langium/pull/1635)).
+* Improve class signatures of default service implementations ([#1604](https://github.com/eclipse-langium/langium/pull/1604)).
+
+### Bug Fixes
+
+* Call build phase callbacks for `Parsed` state ([#1572](https://github.com/eclipse-langium/langium/pull/1572)).
+* Fix a few formatter related issues ([#1628](https://github.com/eclipse-langium/langium/pull/1628)).
+
 ## v3.1.2 (Jul. 2024)
 
 * Fixes a minor issue in how we determine whether a grammar internal type is a primitive or an object type ([#1563](https://github.com/eclipse-langium/langium/pull/1563)).
