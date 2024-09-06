@@ -13,6 +13,7 @@ import { streamAllContents } from '../utils/ast-utils.js';
 import { getAllReachableRules, terminalRegex } from '../utils/grammar-utils.js';
 import { getCaseInsensitivePattern, isWhitespace, partialMatches } from '../utils/regexp-utils.js';
 import { stream } from '../utils/stream.js';
+import type { ILexingDiagnostic } from './lexer.js';
 
 export interface TokenBuilderOptions {
     caseInsensitive?: boolean
@@ -20,9 +21,27 @@ export interface TokenBuilderOptions {
 
 export interface TokenBuilder {
     buildTokens(grammar: Grammar, options?: TokenBuilderOptions): TokenVocabulary;
+    /**
+     * Produces a lexing report for the given text that was just tokenized using the tokens provided by this builder.
+     *
+     * @param text The text that was tokenized.
+     */
+    popLexingReport?(text: string): ILexingReport;
+}
+
+/**
+ * A custom lexing report that can be produced by the token builder during the lexing process.
+ * Adopters need to ensure that the any custom fields are serializable so they can be sent across worker threads.
+ */
+export interface ILexingReport {
+    diagnostics: ILexingDiagnostic[];
 }
 
 export class DefaultTokenBuilder implements TokenBuilder {
+    /**
+     * The list of diagnostics stored during the lexing process of a single text.
+     */
+    protected diagnostics: ILexingDiagnostic[] = [];
 
     buildTokens(grammar: Grammar, options?: TokenBuilderOptions): TokenVocabulary {
         const reachableRules = stream(getAllReachableRules(grammar, false));
@@ -40,6 +59,16 @@ export class DefaultTokenBuilder implements TokenBuilder {
         // We don't need to add the EOF token explicitly.
         // It is automatically available at the end of the token stream.
         return tokens;
+    }
+
+    popLexingReport(_text: string): ILexingReport {
+        return { diagnostics: this.popDiagnostics() };
+    }
+
+    protected popDiagnostics(): ILexingDiagnostic[] {
+        const diagnostics = [...this.diagnostics];
+        this.diagnostics = [];
+        return diagnostics;
     }
 
     protected buildTerminalTokens(rules: Stream<AbstractRule>): TokenType[] {

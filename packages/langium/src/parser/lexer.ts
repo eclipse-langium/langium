@@ -7,6 +7,11 @@
 import type { ILexingError, IMultiModeLexerDefinition, IToken, TokenType, TokenTypeDictionary, TokenVocabulary } from 'chevrotain';
 import type { LangiumCoreServices } from '../services.js';
 import { Lexer as ChevrotainLexer } from 'chevrotain';
+import type { ILexingReport, TokenBuilder } from './token-builder.js';
+
+export interface ILexingDiagnostic extends ILexingError {
+    severity?: 'error' | 'warning' | 'info' | 'hint';
+}
 
 export interface LexerResult {
     /**
@@ -21,6 +26,7 @@ export interface LexerResult {
      */
     hidden: IToken[];
     errors: ILexingError[];
+    report?: ILexingReport;
 }
 
 export interface Lexer {
@@ -31,10 +37,12 @@ export interface Lexer {
 export class DefaultLexer implements Lexer {
 
     protected chevrotainLexer: ChevrotainLexer;
+    protected tokenBuilder: TokenBuilder;
     protected tokenTypes: TokenTypeDictionary;
 
-    constructor(services: LangiumCoreServices) {
-        const tokens = services.parser.TokenBuilder.buildTokens(services.Grammar, {
+    constructor( services: LangiumCoreServices) {
+        this.tokenBuilder = services.parser.TokenBuilder;
+        const tokens = this.tokenBuilder.buildTokens(services.Grammar, {
             caseInsensitive: services.LanguageMetaData.caseInsensitive
         });
         this.tokenTypes = this.toTokenTypeDictionary(tokens);
@@ -53,7 +61,8 @@ export class DefaultLexer implements Lexer {
         return {
             tokens: chevrotainResult.tokens,
             errors: chevrotainResult.errors,
-            hidden: chevrotainResult.groups.hidden ?? []
+            hidden: chevrotainResult.groups.hidden ?? [],
+            report: this.tokenBuilder.popLexingReport?.(text)
         };
     }
 

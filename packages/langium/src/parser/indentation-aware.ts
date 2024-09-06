@@ -6,7 +6,7 @@
 
 import type { CustomPatternMatcherFunc, TokenType, IToken, IMultiModeLexerDefinition } from 'chevrotain';
 import type { Grammar, TerminalRule } from '../languages/generated/ast.js';
-import type { TokenBuilderOptions } from './token-builder.js';
+import type { ILexingReport, TokenBuilderOptions } from './token-builder.js';
 import type { LexerResult } from './lexer.js';
 import type { LangiumCoreServices } from '../services.js';
 import { createToken, createTokenInstance, Lexer } from 'chevrotain';
@@ -69,22 +69,28 @@ export enum LexingMode {
     IGNORE_INDENTATION = 'ignore-indentation',
 }
 
+export interface IndentationLexingReport extends ILexingReport {
+    /** Dedent tokens that are necessary to close the remaining indents. */
+    remainingDedents: IToken[];
+}
+
 /**
  * A token builder that is sensitive to indentation in the input text.
  * It will generate tokens for indentation and dedentation based on the indentation level.
  *
  * The first generic parameter corresponds to the names of terminal tokens,
- * while the second one corresonds to the names of keyword tokens.
+ * while the second one corresponds to the names of keyword tokens.
  * Both parameters are optional and can be imported from `./generated/ast.js`.
  *
  * Inspired by https://github.com/chevrotain/chevrotain/blob/master/examples/lexer/python_indentation/python_indentation.js
  */
 export class IndentationAwareTokenBuilder<Terminals extends string = string, KeywordName extends string = string> extends DefaultTokenBuilder {
     /**
-     * The stack in which all the previous matched indentation levels are stored
-     * to understand how deep a the next tokens are nested.
+     * The stack stores all the previously matched indentation levels to understand how deeply the next tokens are nested.
+     * The stack is valid for lexing
      */
     protected indentationStack: number[] = [0];
+
     readonly options: IndentationTokenBuilderOptions<Terminals, KeywordName>;
 
     /**
@@ -123,7 +129,7 @@ export class IndentationAwareTokenBuilder<Terminals extends string = string, Key
         });
     }
 
-    override buildTokens(grammar: Grammar, options?: TokenBuilderOptions | undefined) {
+    override buildTokens(grammar: Grammar, options?: TokenBuilderOptions | undefined): TokenType[] | IMultiModeLexerDefinition {
         const tokenTypes = super.buildTokens(grammar, options);
         if (!isTokenTypeArray(tokenTypes)) {
             throw new Error('Invalid tokens built by default builder');
@@ -173,6 +179,14 @@ export class IndentationAwareTokenBuilder<Terminals extends string = string, Key
         }
     }
 
+    override popLexingReport(text: string): IndentationLexingReport {
+        const result = super.popLexingReport(text);
+        return {
+            ...result,
+            remainingDedents: this.popRemainingDedents(text),
+        };
+    }
+
     /**
      * Helper function to check if the current position is the start of a new line.
      *
@@ -191,7 +205,7 @@ export class IndentationAwareTokenBuilder<Terminals extends string = string, Key
      * @param offset The current position at which to attempt a match
      * @returns The current and previous indentation levels and the matched whitespace
      */
-    protected matchWhitespace(text: string, offset: number) {
+    protected matchWhitespace(text: string, offset: number, _tokens: IToken[], _groups: Record<string, IToken[]>): { currIndentLevel: number, prevIndentLevel: number, match: RegExpExecArray | null } {
         this.whitespaceRegExp.lastIndex = offset;
         const match = this.whitespaceRegExp.exec(text);
         return {
@@ -210,8 +224,8 @@ export class IndentationAwareTokenBuilder<Terminals extends string = string, Key
      * @param offset Current position in the input string
      * @returns The indentation token instance
      */
-    protected createIndentationTokenInstance(tokenType: TokenType, text: string, image: string, offset: number) {
-        const lineNumber = text.substring(0, offset).split(/\r\n|\r|\n/).length;
+    protected createIndentationTokenInstance(tokenType: TokenType, text: string, image: string, offset: number): IToken {
+        const lineNumber = this.getLineNumber(text, offset);
         return createTokenInstance(
             tokenType,
             image,
@@ -222,6 +236,17 @@ export class IndentationAwareTokenBuilder<Terminals extends string = string, Key
     }
 
     /**
+     * Helper function to get the line number at a given offset.
+     *
+     * @param text Full input string, used to calculate the line number
+     * @param offset Current position in the input string
+     * @returns The line number at the given offset
+     */
+    protected getLineNumber(text: string, offset: number): number {
+        return text.substring(0, offset).split(/\r\n|\r|\n/).length;
+    }
+
+    /**
      * A custom pattern for matching indents
      *
      * @param text The full input string.
@@ -229,14 +254,14 @@ export class IndentationAwareTokenBuilder<Terminals extends string = string, Key
      * @param tokens Previously scanned Tokens
      * @param groups Token Groups
      */
-    protected indentMatcher(text: string, offset: number, tokens: IToken[], _groups: Record<string, IToken[]>): ReturnType<CustomPatternMatcherFunc> {
+    protected indentMatcher(text: string, offset: number, tokens: IToken[], groups: Record<string, IToken[]>): ReturnType<CustomPatternMatcherFunc> {
         const { indentTokenName } = this.options;
 
         if (!this.isStartOfLine(text, offset)) {
             return null;
         }
 
-        const { currIndentLevel, prevIndentLevel, match } = this.matchWhitespace(text, offset);
+        const { currIndentLevel, prevIndentLevel, match } = this.matchWhitespace(text, offset, tokens, groups);
 
         if (currIndentLevel <= prevIndentLevel) {
             // shallower indentation (should be matched by dedent)
@@ -266,14 +291,14 @@ export class IndentationAwareTokenBuilder<Terminals extends string = string, Key
      * @param tokens Previously scanned Tokens
      * @param groups Token Groups
      */
-    protected dedentMatcher(text: string, offset: number, tokens: IToken[], _groups: Record<string, IToken[]>): ReturnType<CustomPatternMatcherFunc> {
+    protected dedentMatcher(text: string, offset: number, tokens: IToken[], groups: Record<string, IToken[]>): ReturnType<CustomPatternMatcherFunc> {
         const { dedentTokenName } = this.options;
 
         if (!this.isStartOfLine(text, offset)) {
             return null;
         }
 
-        const { currIndentLevel, prevIndentLevel, match } = this.matchWhitespace(text, offset);
+        const { currIndentLevel, prevIndentLevel, match } = this.matchWhitespace(text, offset, tokens, groups);
 
         if (currIndentLevel >= prevIndentLevel) {
             // bigger indentation (should be matched by indent)
@@ -285,9 +310,14 @@ export class IndentationAwareTokenBuilder<Terminals extends string = string, Key
 
         // Any dedent must match some previous indentation level.
         if (matchIndentIndex === -1) {
-            console.error(`Invalid dedent level ${currIndentLevel} at offset: ${offset}. Current indetation stack: ${this.indentationStack}`);
-            // throwing an error would crash the language server
-            // TODO: find a way to report error diagnostics message
+            this.diagnostics.push({
+                severity: 'error',
+                message: `Invalid dedent level ${currIndentLevel} at offset: ${offset}. Current indetation stack: ${this.indentationStack}`,
+                offset,
+                length: match?.[0]?.length ?? 0,
+                line: this.getLineNumber(text, offset),
+                column: 0
+            });
             return null;
         }
 
@@ -375,9 +405,11 @@ export class IndentationAwareLexer extends DefaultLexer {
     override tokenize(text: string): LexerResult {
         const result = super.tokenize(text);
 
-        // reset the indent stack between processing of different text inputs
-        const remainingDedents = this.indentationTokenBuilder.popRemainingDedents(text);
+        // consuming all remaining dedents and remove them as they might not be serializable
+        const report = result.report as IndentationLexingReport;
+        const remainingDedents = report.remainingDedents;
         result.tokens.push(...remainingDedents);
+        report.remainingDedents = [];
 
         // remove any "indent-dedent" pair with an empty body as these are typically
         // added by comments or lines with just whitespace but have no real value
