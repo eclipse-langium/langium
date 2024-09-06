@@ -19,13 +19,13 @@ import { isAssignment, isCrossReference, isKeyword } from '../languages/generate
 import { getExplicitRuleType, isDataTypeRule } from '../utils/grammar-utils.js';
 import { assignMandatoryProperties, getContainerOfType, linkContentToContainer } from '../utils/ast-utils.js';
 import { CstNodeBuilder } from './cst-node-builder.js';
-import type { ILexingReport } from './token-builder.js';
+import type { LexingReport } from './token-builder.js';
 
 export type ParseResult<T = AstNode> = {
     value: T,
     parserErrors: IRecognitionException[],
     lexerErrors: ILexingError[],
-    lexerReport?: ILexingReport
+    lexerReport?: LexingReport
 }
 
 export const DatatypeSymbol = Symbol('Datatype');

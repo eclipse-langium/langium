@@ -7,11 +7,7 @@
 import type { ILexingError, IMultiModeLexerDefinition, IToken, TokenType, TokenTypeDictionary, TokenVocabulary } from 'chevrotain';
 import type { LangiumCoreServices } from '../services.js';
 import { Lexer as ChevrotainLexer } from 'chevrotain';
-import type { ILexingReport, TokenBuilder } from './token-builder.js';
-
-export interface ILexingDiagnostic extends ILexingError {
-    severity?: 'error' | 'warning' | 'info' | 'hint';
-}
+import type { LexingReport, TokenBuilder } from './token-builder.js';
 
 export interface LexerResult {
     /**
@@ -26,7 +22,7 @@ export interface LexerResult {
      */
     hidden: IToken[];
     errors: ILexingError[];
-    report?: ILexingReport;
+    report?: LexingReport;
 }
 
 export interface Lexer {

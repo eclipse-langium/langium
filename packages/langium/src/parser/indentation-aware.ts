@@ -4,9 +4,9 @@
  * terms of the MIT License, which is available in the project root.
  ******************************************************************************/
 
-import type { CustomPatternMatcherFunc, TokenType, IToken, IMultiModeLexerDefinition } from 'chevrotain';
+import type { CustomPatternMatcherFunc, TokenType, IToken, IMultiModeLexerDefinition, TokenVocabulary } from 'chevrotain';
 import type { Grammar, TerminalRule } from '../languages/generated/ast.js';
-import type { ILexingReport, TokenBuilderOptions } from './token-builder.js';
+import type { LexingReport, TokenBuilderOptions } from './token-builder.js';
 import type { LexerResult } from './lexer.js';
 import type { LangiumCoreServices } from '../services.js';
 import { createToken, createTokenInstance, Lexer } from 'chevrotain';
@@ -69,7 +69,7 @@ export enum LexingMode {
     IGNORE_INDENTATION = 'ignore-indentation',
 }
 
-export interface IndentationLexingReport extends ILexingReport {
+export interface IndentationLexingReport extends LexingReport {
     /** Dedent tokens that are necessary to close the remaining indents. */
     remainingDedents: IToken[];
 }
@@ -129,7 +129,7 @@ export class IndentationAwareTokenBuilder<Terminals extends string = string, Key
         });
     }
 
-    override buildTokens(grammar: Grammar, options?: TokenBuilderOptions | undefined): TokenType[] | IMultiModeLexerDefinition {
+    override buildTokens(grammar: Grammar, options?: TokenBuilderOptions | undefined): TokenVocabulary {
         const tokenTypes = super.buildTokens(grammar, options);
         if (!isTokenTypeArray(tokenTypes)) {
             throw new Error('Invalid tokens built by default builder');
@@ -312,7 +312,7 @@ export class IndentationAwareTokenBuilder<Terminals extends string = string, Key
         if (matchIndentIndex === -1) {
             this.diagnostics.push({
                 severity: 'error',
-                message: `Invalid dedent level ${currIndentLevel} at offset: ${offset}. Current indetation stack: ${this.indentationStack}`,
+                message: `Invalid dedent level ${currIndentLevel} at offset: ${offset}. Current indentation stack: ${this.indentationStack}`,
                 offset,
                 length: match?.[0]?.length ?? 0,
                 line: this.getLineNumber(text, offset),
