@@ -527,7 +527,7 @@ export class LangiumCompletionParser extends AbstractLangiumParser {
 
     parse(input: string): CompletionParserResult {
         this.resetState();
-        const tokens = this.lexer.tokenize(input);
+        const tokens = this.lexer.tokenize(input, { mode: 'partial' });
         this.tokens = tokens.tokens;
         this.wrapper.input = [...this.tokens];
         this.mainRule.call(this.wrapper, {});

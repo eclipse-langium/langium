@@ -57,7 +57,9 @@ export function diagnosticData(code: string): DiagnosticData {
     return { code };
 }
 
-export type ValidationAcceptor = <N extends AstNode>(severity: 'error' | 'warning' | 'info' | 'hint', message: string, info: DiagnosticInfo<N>) => void
+export type ValidationSeverity = 'error' | 'warning' | 'info' | 'hint';
+
+export type ValidationAcceptor = <N extends AstNode>(severity: ValidationSeverity, message: string, info: DiagnosticInfo<N>) => void
 
 export type ValidationCheck<T extends AstNode = AstNode> = (node: T, accept: ValidationAcceptor, cancelToken: CancellationToken) => MaybePromise<void>;
 

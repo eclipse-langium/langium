@@ -11,14 +11,14 @@ import type { ParseResult } from '../parser/langium-parser.js';
 import type { LangiumCoreServices } from '../services.js';
 import type { AstNode, CstNode } from '../syntax-tree.js';
 import type { LangiumDocument } from '../workspace/documents.js';
-import type { DiagnosticData, DiagnosticInfo, ValidationAcceptor, ValidationCategory, ValidationRegistry } from './validation-registry.js';
+import type { DiagnosticData, DiagnosticInfo, ValidationAcceptor, ValidationCategory, ValidationRegistry, ValidationSeverity } from './validation-registry.js';
 import { CancellationToken } from '../utils/cancellation.js';
 import { findNodeForKeyword, findNodeForProperty } from '../utils/grammar-utils.js';
 import { streamAst } from '../utils/ast-utils.js';
 import { tokenToRange } from '../utils/cst-utils.js';
 import { interruptAndCheck, isOperationCancelled } from '../utils/promise-utils.js';
 import { diagnosticData } from './validation-registry.js';
-import type { LexingDiagnostic } from '../parser/token-builder.js';
+import type { LexingDiagnostic, LexingDiagnosticSeverity } from '../parser/token-builder.js';
 
 export interface ValidationOptions {
     /**
@@ -100,7 +100,7 @@ export class DefaultDocumentValidator implements DocumentValidator {
     protected processLexingErrors(parseResult: ParseResult, diagnostics: Diagnostic[], _options: ValidationOptions): void {
         const lexerDiagnostics = [...parseResult.lexerErrors, ...parseResult.lexerReport?.diagnostics ?? []] as LexingDiagnostic[];
         for (const lexerDiagnostic of lexerDiagnostics) {
-            const severity = lexerDiagnostic?.severity ?? 'error';
+            const severity = lexerDiagnostic.severity ?? 'error';
             const diagnostic: Diagnostic = {
                 severity: toDiagnosticSeverity(severity),
                 range: {
@@ -180,7 +180,7 @@ export class DefaultDocumentValidator implements DocumentValidator {
 
     protected async validateAst(rootNode: AstNode, options: ValidationOptions, cancelToken = CancellationToken.None): Promise<Diagnostic[]> {
         const validationItems: Diagnostic[] = [];
-        const acceptor: ValidationAcceptor = <N extends AstNode>(severity: 'error' | 'warning' | 'info' | 'hint', message: string, info: DiagnosticInfo<N>) => {
+        const acceptor: ValidationAcceptor = <N extends AstNode>(severity: ValidationSeverity, message: string, info: DiagnosticInfo<N>) => {
             validationItems.push(this.toDiagnostic(severity, message, info));
         };
 
@@ -194,7 +194,7 @@ export class DefaultDocumentValidator implements DocumentValidator {
         return validationItems;
     }
 
-    protected toDiagnostic<N extends AstNode>(severity: 'error' | 'warning' | 'info' | 'hint', message: string, info: DiagnosticInfo<N, string>): Diagnostic {
+    protected toDiagnostic<N extends AstNode>(severity: ValidationSeverity, message: string, info: DiagnosticInfo<N, string>): Diagnostic {
         return {
             message,
             range: getDiagnosticRange(info),
@@ -233,7 +233,7 @@ export function getDiagnosticRange<N extends AstNode>(info: DiagnosticInfo<N, st
     return cstNode.range;
 }
 
-export function toDiagnosticSeverity(severity: 'error' | 'warning' | 'info' | 'hint'): DiagnosticSeverity {
+export function toDiagnosticSeverity(severity: LexingDiagnosticSeverity): DiagnosticSeverity {
     switch (severity) {
         case 'error':
             return 1; // according to vscode-languageserver-types/lib/esm/main.js#DiagnosticSeverity.Error
@@ -248,7 +248,7 @@ export function toDiagnosticSeverity(severity: 'error' | 'warning' | 'info' | 'h
     }
 }
 
-export function toDiagnosticData(severity: 'error' | 'warning' | 'info' | 'hint'): DiagnosticData {
+export function toDiagnosticData(severity: LexingDiagnosticSeverity): DiagnosticData {
     switch (severity) {
         case 'error':
             return diagnosticData(DocumentValidator.LexingError);

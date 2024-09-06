@@ -25,9 +25,17 @@ export interface LexerResult {
     report?: LexingReport;
 }
 
+export type TokenizeMode = 'full' | 'partial';
+
+export interface TokenizeOptions {
+    mode?: TokenizeMode;
+}
+
+export const DEFAULT_TOKENIZE_OPTIONS: TokenizeOptions = { mode: 'full' };
+
 export interface Lexer {
     readonly definition: TokenTypeDictionary;
-    tokenize(text: string): LexerResult;
+    tokenize(text: string, options?: TokenizeOptions): LexerResult;
 }
 
 export class DefaultLexer implements Lexer {
@@ -36,7 +44,7 @@ export class DefaultLexer implements Lexer {
     protected tokenBuilder: TokenBuilder;
     protected tokenTypes: TokenTypeDictionary;
 
-    constructor( services: LangiumCoreServices) {
+    constructor(services: LangiumCoreServices) {
         this.tokenBuilder = services.parser.TokenBuilder;
         const tokens = this.tokenBuilder.buildTokens(services.Grammar, {
             caseInsensitive: services.LanguageMetaData.caseInsensitive
@@ -52,13 +60,13 @@ export class DefaultLexer implements Lexer {
         return this.tokenTypes;
     }
 
-    tokenize(text: string): LexerResult {
+    tokenize(text: string, _options: TokenizeOptions = DEFAULT_TOKENIZE_OPTIONS): LexerResult {
         const chevrotainResult = this.chevrotainLexer.tokenize(text);
         return {
             tokens: chevrotainResult.tokens,
             errors: chevrotainResult.errors,
             hidden: chevrotainResult.groups.hidden ?? [],
-            report: this.tokenBuilder.popLexingReport?.(text)
+            report: this.tokenBuilder.flushLexingReport?.(text)
         };
     }
 

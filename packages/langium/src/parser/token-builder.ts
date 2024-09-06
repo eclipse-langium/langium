@@ -25,7 +25,7 @@ export interface TokenBuilder {
      *
      * @param text The text that was tokenized.
      */
-    popLexingReport?(text: string): LexingReport;
+    flushLexingReport?(text: string): LexingReport;
 }
 
 /**
@@ -36,8 +36,10 @@ export interface LexingReport {
     diagnostics: LexingDiagnostic[];
 }
 
+export type LexingDiagnosticSeverity = 'error' | 'warning' | 'info' | 'hint';
+
 export interface LexingDiagnostic extends ILexingError {
-    severity?: 'error' | 'warning' | 'info' | 'hint';
+    severity?: LexingDiagnosticSeverity;
 }
 
 export class DefaultTokenBuilder implements TokenBuilder {
@@ -64,7 +66,8 @@ export class DefaultTokenBuilder implements TokenBuilder {
         return tokens;
     }
 
-    popLexingReport(_text: string): LexingReport {
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
+    flushLexingReport(text: string): LexingReport {
         return { diagnostics: this.popDiagnostics() };
     }
 
