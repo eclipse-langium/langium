@@ -18,6 +18,7 @@ import { isRootCstNode, isCompositeCstNode, isLeafCstNode, isAstNode, isReferenc
 import { streamAst } from '../utils/ast-utils.js';
 import { BiMap } from '../utils/collections.js';
 import { streamCst } from '../utils/cst-utils.js';
+import type { ILexingReport } from '../parser/token-builder.js';
 
 /**
  * The hydrator service is responsible for allowing AST parse results to be sent across worker threads.
@@ -64,8 +65,16 @@ export class DefaultHydrator implements Hydrator {
             // We need to create shallow copies of the errors
             // The original errors inherit from the `Error` class, which is not transferable across worker threads
             lexerErrors: result.lexerErrors.map(e => ({ ...e, message: e.message })),
+            lexerReport: result.lexerReport ? this.dehydrateLexerReport(result.lexerReport) : undefined,
             parserErrors: result.parserErrors.map(e => ({ ...e, message: e.message })),
             value: this.dehydrateAstNode(result.value, this.createDehyrationContext(result.value))
+        };
+    }
+
+    protected dehydrateLexerReport(lexerReport: ILexingReport): ILexingReport {
+        return {
+            ...lexerReport,
+            diagnostics: lexerReport.diagnostics.map(d => ({ ...d, message: d.message }))
         };
     }
 
@@ -162,6 +171,7 @@ export class DefaultHydrator implements Hydrator {
         }
         return {
             lexerErrors: result.lexerErrors,
+            lexerReport: result.lexerReport,
             parserErrors: result.parserErrors,
             value: this.hydrateAstNode(node, context) as T
         };
