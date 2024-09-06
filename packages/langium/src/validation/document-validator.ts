@@ -18,7 +18,7 @@ import { streamAst } from '../utils/ast-utils.js';
 import { tokenToRange } from '../utils/cst-utils.js';
 import { interruptAndCheck, isOperationCancelled } from '../utils/promise-utils.js';
 import { diagnosticData } from './validation-registry.js';
-import type { ILexingDiagnostic } from '../parser/lexer.js';
+import type { LexingDiagnostic } from '../parser/token-builder.js';
 
 export interface ValidationOptions {
     /**
@@ -98,7 +98,7 @@ export class DefaultDocumentValidator implements DocumentValidator {
     }
 
     protected processLexingErrors(parseResult: ParseResult, diagnostics: Diagnostic[], _options: ValidationOptions): void {
-        const lexerDiagnostics = [...parseResult.lexerErrors, ...parseResult.lexerReport?.diagnostics ?? []] as ILexingDiagnostic[];
+        const lexerDiagnostics = [...parseResult.lexerErrors, ...parseResult.lexerReport?.diagnostics ?? []] as LexingDiagnostic[];
         for (const lexerDiagnostic of lexerDiagnostics) {
             const severity = lexerDiagnostic?.severity ?? 'error';
             const diagnostic: Diagnostic = {

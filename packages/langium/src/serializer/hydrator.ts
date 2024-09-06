@@ -18,7 +18,7 @@ import { isRootCstNode, isCompositeCstNode, isLeafCstNode, isAstNode, isReferenc
 import { streamAst } from '../utils/ast-utils.js';
 import { BiMap } from '../utils/collections.js';
 import { streamCst } from '../utils/cst-utils.js';
-import type { ILexingReport } from '../parser/token-builder.js';
+import type { LexingReport } from '../parser/token-builder.js';
 
 /**
  * The hydrator service is responsible for allowing AST parse results to be sent across worker threads.
@@ -62,20 +62,18 @@ export class DefaultHydrator implements Hydrator {
 
     dehydrate(result: ParseResult<AstNode>): ParseResult<object> {
         return {
+            lexerErrors: result.lexerErrors,
+            lexerReport: result.lexerReport ? this.dehydrateLexerReport(result.lexerReport) : undefined,
             // We need to create shallow copies of the errors
             // The original errors inherit from the `Error` class, which is not transferable across worker threads
-            lexerErrors: result.lexerErrors.map(e => ({ ...e, message: e.message })),
-            lexerReport: result.lexerReport ? this.dehydrateLexerReport(result.lexerReport) : undefined,
             parserErrors: result.parserErrors.map(e => ({ ...e, message: e.message })),
             value: this.dehydrateAstNode(result.value, this.createDehyrationContext(result.value))
         };
     }
 
-    protected dehydrateLexerReport(lexerReport: ILexingReport): ILexingReport {
-        return {
-            ...lexerReport,
-            diagnostics: lexerReport.diagnostics.map(d => ({ ...d, message: d.message }))
-        };
+    protected dehydrateLexerReport(lexerReport: LexingReport): LexingReport {
+        // By default, lexer reports are serializable
+        return lexerReport;
     }
 
     protected createDehyrationContext(node: AstNode): DehydrateContext {

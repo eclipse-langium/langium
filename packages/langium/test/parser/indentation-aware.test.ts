@@ -12,6 +12,7 @@ import { createLangiumGrammarServices, createServicesForGrammar } from 'langium/
 import type { LangiumServices, PartialLangiumServices } from 'langium/lsp';
 import { expandToString } from 'langium/generate';
 import { parseHelper } from 'langium/test';
+import type { IMultiModeLexerDefinition } from 'chevrotain';
 
 const grammarServices = createLangiumGrammarServices(EmptyFileSystem).grammar;
 const helper = parseHelper<Grammar>(grammarServices);
@@ -20,7 +21,7 @@ const tokenBuilder = new IndentationAwareTokenBuilder();
 
 async function getTokens(grammarString: string): Promise<TokenType[]> {
     const grammar = (await helper(grammarString)).parseResult.value;
-    const tokens = tokenBuilder.buildTokens(grammar);
+    const tokens = tokenBuilder.buildTokens(grammar) as IMultiModeLexerDefinition | TokenType[];
     if (Array.isArray(tokens)) {
         return tokens;
     } else {
