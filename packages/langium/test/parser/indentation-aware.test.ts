@@ -193,6 +193,18 @@ describe('IndentationAwareLexer', () => {
         expect(dedent.tokenType.name).toBe('DEDENT');
     });
 
+    test('should NOT add remaining dedents to the end if partial tokenizing', async () => {
+        const lexer = await getLexer(sampleGrammar);
+        const { tokens } = lexer.tokenize(expandToString`
+        // single-line comment
+        {
+            name`, { mode: 'partial' });
+        expect(tokens).toHaveLength(3);
+
+        const [/* L_BRAC */, indent, /* id */] = tokens;
+        expect(indent.tokenType.name).toBe('INDENT');
+    });
+
     test('should not return any tokens for empty input', async () => {
         const lexer = await getLexer(sampleGrammar);
         const { tokens } = lexer.tokenize('');

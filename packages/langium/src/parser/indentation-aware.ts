@@ -7,11 +7,11 @@
 import type { CustomPatternMatcherFunc, TokenType, IToken, IMultiModeLexerDefinition, TokenVocabulary } from 'chevrotain';
 import type { Grammar, TerminalRule } from '../languages/generated/ast.js';
 import type { LexingReport, TokenBuilderOptions } from './token-builder.js';
-import type { LexerResult } from './lexer.js';
+import type { LexerResult, TokenizeOptions } from './lexer.js';
 import type { LangiumCoreServices } from '../services.js';
 import { createToken, createTokenInstance, Lexer } from 'chevrotain';
 import { DefaultTokenBuilder } from './token-builder.js';
-import { DefaultLexer, isTokenTypeArray } from './lexer.js';
+import { DEFAULT_TOKENIZE_OPTIONS, DefaultLexer, isTokenTypeArray } from './lexer.js';
 
 type IndentationAwareDelimiter<TokenName extends string> = [begin: TokenName, end: TokenName];
 
@@ -402,13 +402,15 @@ export class IndentationAwareLexer extends DefaultLexer {
         }
     }
 
-    override tokenize(text: string): LexerResult {
+    override tokenize(text: string, options: TokenizeOptions = DEFAULT_TOKENIZE_OPTIONS): LexerResult {
         const result = super.tokenize(text);
 
         // consuming all remaining dedents and remove them as they might not be serializable
         const report = result.report as IndentationLexingReport;
-        const remainingDedents = report.remainingDedents;
-        result.tokens.push(...remainingDedents);
+        if (options?.mode === 'full') {
+            // auto-complete document with remaining dedents
+            result.tokens.push(...report.remainingDedents);
+        }
         report.remainingDedents = [];
 
         // remove any "indent-dedent" pair with an empty body as these are typically

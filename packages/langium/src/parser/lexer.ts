@@ -25,9 +25,15 @@ export interface LexerResult {
     report?: LexingReport;
 }
 
+export interface TokenizeOptions {
+    mode: 'full' | 'partial';
+}
+
+export const DEFAULT_TOKENIZE_OPTIONS: TokenizeOptions = { mode: 'full' };
+
 export interface Lexer {
     readonly definition: TokenTypeDictionary;
-    tokenize(text: string): LexerResult;
+    tokenize(text: string, options?: TokenizeOptions): LexerResult;
 }
 
 export class DefaultLexer implements Lexer {
@@ -52,7 +58,7 @@ export class DefaultLexer implements Lexer {
         return this.tokenTypes;
     }
 
-    tokenize(text: string): LexerResult {
+    tokenize(text: string, _options: TokenizeOptions = DEFAULT_TOKENIZE_OPTIONS): LexerResult {
         const chevrotainResult = this.chevrotainLexer.tokenize(text);
         return {
             tokens: chevrotainResult.tokens,
