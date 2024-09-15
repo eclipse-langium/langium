@@ -36,6 +36,12 @@ export interface WorkspaceManager {
     readonly ready: Promise<void>;
 
     /**
+     * The workspace folders of the current workspace.
+     * Available only after the `ready` promise resolves.
+     */
+    get workspaceFolders(): readonly WorkspaceFolder[] | undefined;
+
+    /**
      * When used in a language server context, this method is called when the server receives
      * the `initialize` request.
      */
@@ -83,6 +89,10 @@ export class DefaultWorkspaceManager implements WorkspaceManager {
 
     get ready(): Promise<void> {
         return this._ready.promise;
+    }
+
+    get workspaceFolders(): readonly WorkspaceFolder[] | undefined {
+        return this.folders;
     }
 
     initialize(params: InitializeParams): void {
