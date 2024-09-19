@@ -12,6 +12,7 @@
         "watch": "tsc -b <%= tsconfig %> --watch",
         "lint": "eslint src --ext ts",
         "langium:generate": "langium generate",
+        "langium:generate:production": "langium generate --mode=production",
         "langium:watch": "langium generate --watch"
     },
     "dependencies": {
