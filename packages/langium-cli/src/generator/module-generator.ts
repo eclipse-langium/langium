@@ -5,13 +5,14 @@
  ******************************************************************************/
 
 import type { Grammar, IParserConfig } from 'langium';
-import { type Generated, expandToNode, joinToNode, toString } from 'langium/generate';
+import { EOL, type Generated, expandToNode, joinToNode, toString } from 'langium/generate';
 import type { LangiumConfig, LangiumLanguageConfig } from '../package-types.js';
 import { generatedHeader } from './node-util.js';
 
 export function generateModule(grammars: Grammar[], config: LangiumConfig, grammarConfigMap: Map<Grammar, LangiumLanguageConfig>): string {
     const grammarsWithName = grammars.filter(grammar => !!grammar.name);
     const parserConfig = config.chevrotainParserConfig;
+    const mode = config.mode;
     const hasIParserConfigImport = Boolean(parserConfig) || grammars.some(grammar => grammarConfigMap.get(grammar)?.chevrotainParserConfig !== undefined);
     let needsGeneralParserConfig = undefined;
 
@@ -41,12 +42,13 @@ export function generateModule(grammars: Grammar[], config: LangiumConfig, gramm
             grammarsWithName,
             grammar => {
                 const config = grammarConfigMap.get(grammar)!;
+                const modeValue = mode ? `,${EOL}    mode: '${mode}'` : '';
                 return expandToNode`
 
                     export const ${ grammar.name }LanguageMetaData = {
                         languageId: '${config.id}',
                         fileExtensions: [${config.fileExtensions && joinToNode(config.fileExtensions, e => appendQuotesAndDot(e), { separator: ', ' })}],
-                        caseInsensitive: ${Boolean(config.caseInsensitive)}
+                        caseInsensitive: ${Boolean(config.caseInsensitive)}${modeValue}
                     } as const satisfies LanguageMetaData;
                 `;
             },
