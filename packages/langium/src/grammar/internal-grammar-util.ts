@@ -182,7 +182,8 @@ export async function createServicesForGrammar<L extends LangiumServices = Langi
     const languageMetaData = config.languageMetaData ?? {
         caseInsensitive: false,
         fileExtensions: [`.${grammarNode.name?.toLowerCase() ?? 'unknown'}`],
-        languageId: grammarNode.name ?? 'UNKNOWN'
+        languageId: grammarNode.name ?? 'UNKNOWN',
+        mode: 'development'
     };
     const generatedSharedModule: Module<LangiumGeneratedSharedCoreServices> = {
         AstReflection: () => interpretAstReflection(grammarNode),

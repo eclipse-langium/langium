@@ -5,7 +5,7 @@
  ******************************************************************************/
 
 import type { Grammar, IParserConfig } from 'langium';
-import { EOL, type Generated, expandToNode, joinToNode, toString } from 'langium/generate';
+import { type Generated, expandToNode, joinToNode, toString } from 'langium/generate';
 import type { LangiumConfig, LangiumLanguageConfig } from '../package-types.js';
 import { generatedHeader } from './node-util.js';
 
@@ -42,13 +42,14 @@ export function generateModule(grammars: Grammar[], config: LangiumConfig, gramm
             grammarsWithName,
             grammar => {
                 const config = grammarConfigMap.get(grammar)!;
-                const modeValue = mode ? `,${EOL}    mode: '${mode}'` : '';
+                const modeValue = mode === 'production' ? mode : 'development';
                 return expandToNode`
 
                     export const ${ grammar.name }LanguageMetaData = {
                         languageId: '${config.id}',
                         fileExtensions: [${config.fileExtensions && joinToNode(config.fileExtensions, e => appendQuotesAndDot(e), { separator: ', ' })}],
-                        caseInsensitive: ${Boolean(config.caseInsensitive)}${modeValue}
+                        caseInsensitive: ${Boolean(config.caseInsensitive)},
+                        mode: '${modeValue}'
                     } as const satisfies LanguageMetaData;
                 `;
             },

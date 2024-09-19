@@ -13,8 +13,8 @@ export interface LanguageMetaData {
     caseInsensitive: boolean;
     /**
      * Mode used to optimize code for development or production environments.
-     * 
-     * In production mode, all lexer/parser validations are disabled.
+     *
+     * In production mode, all Chevrotain lexer/parser validations are disabled.
      */
-    mode?: 'development' | 'production';
+    mode: 'development' | 'production';
 }

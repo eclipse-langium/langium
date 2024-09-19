@@ -10,13 +10,15 @@ import { RequirementsGrammar, TestsGrammar } from './grammar.js';
 export const RequirementsLanguageMetaData = {
     languageId: 'requirements-lang',
     fileExtensions: ['.req'],
-    caseInsensitive: false
+    caseInsensitive: false,
+    mode: 'development'
 } as const satisfies LanguageMetaData;
 
 export const TestsLanguageMetaData = {
     languageId: 'tests-lang',
     fileExtensions: ['.tst'],
-    caseInsensitive: false
+    caseInsensitive: false,
+    mode: 'development'
 } as const satisfies LanguageMetaData;
 
 export const RequirementsAndTestsGeneratedSharedModule: Module<LangiumSharedCoreServices, LangiumGeneratedSharedCoreServices> = {
