@@ -57,6 +57,7 @@
     "build": "tsc",
     "watch": "tsc --watch",
     "lint": "eslint src test --ext .ts",
+    "docs": "typedoc",
     "validate-exports": "tsc -p test/tsconfig.export-main.json",
     "langium:generate": "langium generate",
     "langium:generate:production": "langium generate --mode=production",
@@ -71,7 +72,8 @@
     "vscode-uri": "~3.0.8"
   },
   "devDependencies": {
-    "langium-cli": "~3.2.0"
+    "langium-cli": "~3.2.0",
+    "typedoc": "^0.26.7"
   },
   "volta": {
     "node": "18.19.1",
