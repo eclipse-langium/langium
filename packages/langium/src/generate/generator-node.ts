@@ -14,7 +14,7 @@ export const EOL = (typeof process === 'undefined') ? '\n' : (process.platform =
 
 /**
  * Common type of expected results of functions contributing to code generation.
- * Includes `undefined` for allowing contributing functions to explicitely contribute
+ * Includes `undefined` for allowing contributing functions to explicitly contribute
  * nothing, if required, in contrast to contributing empty strings,
  * which facilitates better formatting of the desired output, for example.
  */
