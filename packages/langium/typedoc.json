@@ -7,6 +7,7 @@
 		"./src/node/index.ts",
 		"./src/test/index.ts"
 	],
+	"tsconfig": "tsconfig.src.json",
 	"out": "./docs",
 	"includeVersion": true,
 	"githubPages": true
