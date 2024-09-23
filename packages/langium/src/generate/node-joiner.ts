@@ -145,10 +145,6 @@ export function joinToNode<T>(
  * @param property the value property name (string) corresponding to the appended content,
  *  if e.g. the content corresponds to some `string` or `number` property of `astNode`, is optional
  *
- * @param index the index of the value within a list property corresponding to the appended content,
- *  if the property contains a list of elements, is ignored otherwise, is optinal,
- *  should not be given if no `property` is given
- *
  * @returns a function behaving as described above, which in turn returns a {@link CompositeGeneratorNode}.
  *
  * @example
@@ -252,10 +248,6 @@ export function joinTracedToNode<T extends AstNode>(source: T | undefined | Sour
  *
  * @param property the value property name (string) corresponding to the appended content,
  *  if e.g. the content corresponds to some `string` or `number` property of `astNode`, is optional
- *
- * @param index the index of the value within a list property corresponding to the appended content,
- *  if the property contains a list of elements, is ignored otherwise, is optinal,
- *  should not be given if no `property` is given
  *
  * @returns a function behaving as described above, which in turn returns a {@link CompositeGeneratorNode} or `undefined`.
  *

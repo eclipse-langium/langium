@@ -42,9 +42,7 @@ export interface Linker {
     /**
      * Determines a candidate AST node description for linking the given reference.
      *
-     * @param node The AST node containing the reference.
-     * @param refId The reference identifier used to build a scope.
-     * @param reference The actual reference to resolve.
+     * @param refInfo Information about the reference.
      */
     getCandidate(refInfo: ReferenceInfo): AstNodeDescription | LinkingError;
 
@@ -60,8 +58,8 @@ export interface Linker {
      *    and further resolution attempts will *not* be performed.
      *
      * @param node The containing AST node
+     * @param property The AST node property being referenced
      * @param refNode The corresponding CST node
-     * @param refId The cross reference identifier like '<entityTypeName>:<propertyName>'
      * @param refText The cross reference text denoting the target AstNode
      * @returns the desired Reference node, whose behavior wrt. resolving the cross reference is implementation specific.
      */
