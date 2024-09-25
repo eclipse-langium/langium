@@ -21,6 +21,7 @@ import * as assert from 'node:assert';
 import { stream } from '../utils/stream.js';
 import { Disposable } from '../utils/disposable.js';
 import { normalizeEOL } from '../generate/template-string.js';
+import { DocumentValidator } from '../validation/document-validator.js';
 
 export interface ParseHelperOptions extends BuildOptions {
     /**
@@ -550,18 +551,29 @@ export interface ValidationResult<T extends AstNode = AstNode> extends AsyncDisp
     document: LangiumDocument<T>;
 }
 
-export function validationHelper<T extends AstNode = AstNode>(services: LangiumCoreServices): (input: string, options?: ParseHelperOptions) => Promise<ValidationResult<T>> {
+export type ValidationHelperOptions = ParseHelperOptions & { failOnParsingErrors?: boolean };
+
+export function validationHelper<T extends AstNode = AstNode>(services: LangiumCoreServices): (input: string, options?: ValidationHelperOptions) => Promise<ValidationResult<T>> {
     const parse = parseHelper<T>(services);
     return async (input, options) => {
         const document = await parse(input, {
             ...(options ?? {}),
             validation: true
         });
-        return {
+        const result = {
             document,
             diagnostics: document.diagnostics ?? [],
             dispose: () => clearDocuments(services, [document])
         };
+        if (options?.failOnParsingErrors) {
+            expectNoIssues(result, {
+                severity: DiagnosticSeverity.Error,
+                data: {
+                    code: DocumentValidator.ParsingError,
+                },
+            });
+        }
+        return result;
     };
 }
 
