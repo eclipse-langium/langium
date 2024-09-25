@@ -551,7 +551,7 @@ export interface ValidationResult<T extends AstNode = AstNode> extends AsyncDisp
     document: LangiumDocument<T>;
 }
 
-export type ValidationHelperOptions = ParseHelperOptions & { failOnParseErrors?: true };
+export type ValidationHelperOptions = ParseHelperOptions & { failOnParsingErrors?: boolean };
 
 export function validationHelper<T extends AstNode = AstNode>(services: LangiumCoreServices): (input: string, options?: ValidationHelperOptions) => Promise<ValidationResult<T>> {
     const parse = parseHelper<T>(services);
@@ -565,7 +565,7 @@ export function validationHelper<T extends AstNode = AstNode>(services: LangiumC
             diagnostics: document.diagnostics ?? [],
             dispose: () => clearDocuments(services, [document])
         };
-        if (options?.failOnParseErrors) {
+        if (options?.failOnParsingErrors) {
             expectNoIssues(result, {
                 severity: DiagnosticSeverity.Error,
                 data: {
