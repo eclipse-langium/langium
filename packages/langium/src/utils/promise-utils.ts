@@ -31,7 +31,7 @@ let globalInterruptionPeriod = 10;
  * Reset the global interruption period and create a cancellation token source.
  */
 export function startCancelableOperation(): AbstractCancellationTokenSource {
-    lastTick = Date.now();
+    lastTick = performance.now();
     return new CancellationTokenSource();
 }
 
@@ -74,7 +74,7 @@ export async function interruptAndCheck(token: CancellationToken): Promise<void>
         // Early exit in case cancellation was disabled by the caller
         return;
     }
-    const current = Date.now();
+    const current = performance.now();
     if (current - lastTick >= globalInterruptionPeriod) {
         lastTick = current;
         await delayNextTick();

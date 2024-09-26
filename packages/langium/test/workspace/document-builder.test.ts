@@ -5,10 +5,10 @@
  ******************************************************************************/
 
 import type { AstNode, DocumentBuilder, FileSystemProvider, LangiumDocument, LangiumDocumentFactory, LangiumDocuments, Module, Reference, ValidationChecks } from 'langium';
-import { AstUtils, DocumentState, TextDocument, URI, isOperationCancelled } from 'langium';
+import { AstUtils, DocumentState, TextDocument, URI, isOperationCancelled, startCancelableOperation } from 'langium';
 import { createServicesForGrammar } from 'langium/grammar';
 import { describe, expect, test, vi, beforeEach, afterEach } from 'vitest';
-import { CancellationToken, CancellationTokenSource } from 'vscode-languageserver';
+import { CancellationToken } from 'vscode-languageserver';
 import { fail } from 'assert';
 import type { LangiumServices, LangiumSharedServices, TextDocuments } from 'langium/lsp';
 
@@ -147,7 +147,7 @@ describe('DefaultDocumentBuilder', () => {
         documents.addDocument(document2);
 
         const builder = workspace.DocumentBuilder;
-        const tokenSource1 = new CancellationTokenSource();
+        const tokenSource1 = startCancelableOperation();
         builder.onBuildPhase(DocumentState.IndexedContent, () => {
             tokenSource1.cancel();
         });
@@ -316,7 +316,7 @@ describe('DefaultDocumentBuilder', () => {
         documents.addDocument(document);
 
         const actual: string[] = [];
-        const cancelTokenSource = new CancellationTokenSource();
+        const cancelTokenSource = startCancelableOperation();
         function wait(state: DocumentState): void {
             builder.onBuildPhase(state, async () => {
                 actual.push('B' + state);
@@ -351,7 +351,7 @@ describe('DefaultDocumentBuilder', () => {
         const document = documentFactory.fromString('', URI.parse('file:///test1.txt'));
         documents.addDocument(document);
 
-        const cancelTokenSource = new CancellationTokenSource();
+        const cancelTokenSource = startCancelableOperation();
         builder.waitUntil(DocumentState.IndexedReferences, cancelTokenSource.token).then(() => {
             fail('The test should fail here because the cancellation should reject the promise');
         }).catch(err => {
@@ -413,7 +413,7 @@ describe('DefaultDocumentBuilder', () => {
         documents.addDocument(document2);
 
         const builder = services.shared.workspace.DocumentBuilder;
-        const tokenSource = new CancellationTokenSource();
+        const tokenSource = startCancelableOperation();
 
         const buildPhases = new Set<DocumentState>();
 
@@ -493,7 +493,7 @@ describe('DefaultDocumentBuilder', () => {
         `, URI.parse('file:///test1.txt'));
         documents.addDocument(document);
 
-        const tokenSource = new CancellationTokenSource();
+        const tokenSource = startCancelableOperation();
         const builder = workspace.DocumentBuilder;
         builder.onBuildPhase(DocumentState.ComputedScopes, () => {
             tokenSource.cancel();
