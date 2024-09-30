@@ -6,15 +6,12 @@ permissions:
 on:
   release:
     types: [published]
-  # To manually trigger a rebuild of the API docs if needed
-  workflow_dispatch:
 
 jobs:
   publish:
     name: Langium Publish
     runs-on: ubuntu-latest
     timeout-minutes: 20
-    if: ${{ github.event_name == 'release' }}
     steps:
     - name: Checkout
       uses: actions/checkout@v3
@@ -59,31 +56,3 @@ jobs:
         PACKAGE_VERSION=`npm pkg get version --workspaces=false | tr -d \"`
         vsce package
         ovsx publish langium-vscode-$PACKAGE_VERSION.vsix -p ${{ secrets.OVSX_TOKEN }}
-
-  docs:
-    name: Build and publish API docs
-    runs-on: ubuntu-latest
-    permissions:
-      pages: write      # to deploy to Pages
-      id-token: write   # to verify the deployment originates from an appropriate source
-    environment:
-      name: github-pages
-      url: ${{ steps.deployment.outputs.page_url }}
-    steps:
-      - name: Checkout
-        uses: actions/checkout@v4
-      - name: Use Node.js
-        uses: actions/setup-node@v4
-        with:
-          node-version: '18'
-      - name: Build API docs
-        run: |
-          npm ci
-          npm run docs -w langium
-      - name: Upload docs artifact
-        uses: actions/upload-pages-artifact@v3
-        with:
-          path: packages/langium/docs
-      - name: Deploy to GitHub Pages
-        id: deployment
-        uses: actions/deploy-pages@v4
