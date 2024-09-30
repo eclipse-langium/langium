@@ -157,18 +157,20 @@ export class DocumentCache<K, V> extends ContextCache<URI | string, K, V, string
      */
     constructor(sharedServices: LangiumSharedCoreServices, state?: DocumentState) {
         super(uri => uri.toString());
+        let disposable: Disposable;
         if (state) {
-            this.onDispose(sharedServices.workspace.DocumentBuilder.onDocumentPhase(state, document => {
+            disposable = sharedServices.workspace.DocumentBuilder.onDocumentPhase(state, document => {
                 this.clear(document.uri.toString());
-            }));
+            });
         } else {
-            this.onDispose(sharedServices.workspace.DocumentBuilder.onUpdate((changed, deleted) => {
+            disposable = sharedServices.workspace.DocumentBuilder.onUpdate((changed, deleted) => {
                 const allUris = changed.concat(deleted);
                 for (const uri of allUris) {
                     this.clear(uri);
                 }
-            }));
+            });
         }
+        this.toDispose.push(disposable);
     }
 }
 
@@ -187,14 +189,16 @@ export class WorkspaceCache<K, V> extends SimpleCache<K, V> {
      */
     constructor(sharedServices: LangiumSharedCoreServices, state?: DocumentState) {
         super();
+        let disposable: Disposable;
         if (state) {
-            this.onDispose(sharedServices.workspace.DocumentBuilder.onBuildPhase(state, () => {
+            disposable = sharedServices.workspace.DocumentBuilder.onBuildPhase(state, () => {
                 this.clear();
-            }));
+            });
         } else {
-            this.onDispose(sharedServices.workspace.DocumentBuilder.onUpdate(() => {
+            disposable = sharedServices.workspace.DocumentBuilder.onUpdate(() => {
                 this.clear();
-            }));
+            });
         }
+        this.toDispose.push(disposable);
     }
 }
