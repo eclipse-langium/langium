@@ -51,8 +51,10 @@ export class DefaultLexer implements Lexer {
         });
         this.tokenTypes = this.toTokenTypeDictionary(tokens);
         const lexerTokens = isTokenTypeDictionary(tokens) ? Object.values(tokens) : tokens;
+        const production = services.LanguageMetaData.mode === 'production';
         this.chevrotainLexer = new ChevrotainLexer(lexerTokens, {
-            positionTracking: 'full'
+            positionTracking: 'full',
+            skipValidations: production
         });
     }
 

@@ -12,6 +12,7 @@ import { generatedHeader } from './node-util.js';
 export function generateModule(grammars: Grammar[], config: LangiumConfig, grammarConfigMap: Map<Grammar, LangiumLanguageConfig>): string {
     const grammarsWithName = grammars.filter(grammar => !!grammar.name);
     const parserConfig = config.chevrotainParserConfig;
+    const mode = config.mode;
     const hasIParserConfigImport = Boolean(parserConfig) || grammars.some(grammar => grammarConfigMap.get(grammar)?.chevrotainParserConfig !== undefined);
     let needsGeneralParserConfig = undefined;
 
@@ -41,12 +42,14 @@ export function generateModule(grammars: Grammar[], config: LangiumConfig, gramm
             grammarsWithName,
             grammar => {
                 const config = grammarConfigMap.get(grammar)!;
+                const modeValue = mode === 'production' ? mode : 'development';
                 return expandToNode`
 
                     export const ${ grammar.name }LanguageMetaData = {
                         languageId: '${config.id}',
                         fileExtensions: [${config.fileExtensions && joinToNode(config.fileExtensions, e => appendQuotesAndDot(e), { separator: ', ' })}],
-                        caseInsensitive: ${Boolean(config.caseInsensitive)}
+                        caseInsensitive: ${Boolean(config.caseInsensitive)},
+                        mode: '${modeValue}'
                     } as const satisfies LanguageMetaData;
                 `;
             },

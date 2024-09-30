@@ -4,8 +4,17 @@
  * terms of the MIT License, which is available in the project root.
  ******************************************************************************/
 
+/**
+ * Metadata of a language.
+ */
 export interface LanguageMetaData {
     languageId: string;
     fileExtensions: readonly string[];
     caseInsensitive: boolean;
+    /**
+     * Mode used to optimize code for development or production environments.
+     *
+     * In production mode, all Chevrotain lexer/parser validations are disabled.
+     */
+    mode: 'development' | 'production';
 }

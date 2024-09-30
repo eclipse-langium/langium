@@ -135,8 +135,10 @@ export abstract class AbstractLangiumParser implements BaseParser {
     constructor(services: LangiumCoreServices) {
         this.lexer = services.parser.Lexer;
         const tokens = this.lexer.definition;
+        const production = services.LanguageMetaData.mode === 'production';
         this.wrapper = new ChevrotainWrapper(tokens, {
             ...services.parser.ParserConfig,
+            skipValidations: production,
             errorMessageProvider: services.parser.ParserErrorMessageProvider
         });
     }
@@ -631,13 +633,16 @@ class ChevrotainWrapper extends EmbeddedActionsParser {
     // This array is set in the base implementation of Chevrotain.
     definitionErrors: IParserDefinitionError[];
 
-    constructor(tokens: TokenVocabulary, config?: IParserConfig) {
+    constructor(tokens: TokenVocabulary, config: IParserConfig) {
         const useDefaultLookahead = config && 'maxLookahead' in config;
         super(tokens, {
             ...defaultConfig,
             lookaheadStrategy: useDefaultLookahead
                 ? new LLkLookaheadStrategy({ maxLookahead: config.maxLookahead })
-                : new LLStarLookaheadStrategy(),
+                : new LLStarLookaheadStrategy({
+                    // If validations are skipped, don't log the lookahead warnings
+                    logging: config.skipValidations ? () => { } : undefined
+                }),
             ...config,
         });
     }

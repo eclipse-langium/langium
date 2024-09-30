@@ -10,7 +10,8 @@ import { StatemachineGrammar } from './grammar.js';
 export const StatemachineLanguageMetaData = {
     languageId: 'statemachine',
     fileExtensions: ['.statemachine'],
-    caseInsensitive: false
+    caseInsensitive: false,
+    mode: 'development'
 } as const satisfies LanguageMetaData;
 
 export const StatemachineGeneratedSharedModule: Module<LangiumSharedCoreServices, LangiumGeneratedSharedCoreServices> = {

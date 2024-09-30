@@ -13,7 +13,8 @@ import { LangiumGrammarGrammar } from './grammar.js';
 export const LangiumGrammarLanguageMetaData = {
     languageId: 'langium',
     fileExtensions: ['.langium'],
-    caseInsensitive: false
+    caseInsensitive: false,
+    mode: 'development'
 } as const satisfies LanguageMetaData;
 
 export const LangiumGrammarParserConfig: IParserConfig = {
