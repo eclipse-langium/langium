@@ -16,7 +16,7 @@ import { Emitter } from '../utils/event.js';
 /**
  * Async parser that allows cancellation of the current parsing process.
  *
- * The sync parser implementation is blocking the event loop, which can become quite problematic for large files.
+ * Remark: The sync parser implementation is blocking the event loop, which can become quite problematic for large files.
  * The default implementation is not actually async. It just wraps the sync parser in a promise. A real implementation would create worker threads or web workers to offload the parsing work.
  */
 export interface AsyncParser {
@@ -35,7 +35,7 @@ export interface AsyncParser {
 /**
  * Default implementation of the async parser which simply wraps the sync parser in a promise.
  *
- * A real implementation would create worker threads or web workers to offload the parsing work.
+ * Remark: A real implementation would create worker threads or web workers to offload the parsing work.
  */
 export class DefaultAsyncParser implements AsyncParser {
 
