@@ -317,14 +317,14 @@ export class IndentationAwareTokenBuilder<Terminals extends string = string, Key
             const token = this.createIndentationTokenInstance(
                 this.dedentTokenType,
                 text,
-                match?.[0] ?? '',
+                '',  // Dedents are 0-width tokens
                 offset,
             );
             tokens.push(token);
             this.indentationStack.pop();
         }
 
-        // Token already added, let the dedentation now be consumed as whitespace and ignored
+        // Token already added, let the dedentation now be consumed as whitespace (if any) and ignored
         return null;
     }
 
@@ -356,7 +356,7 @@ export class IndentationAwareTokenBuilder<Terminals extends string = string, Key
         const remainingDedents: IToken[] = [];
         while (this.indentationStack.length > 1) {
             remainingDedents.push(
-                this.createIndentationTokenInstance(this.dedentTokenType, text, this.options.dedentTokenName, text.length)
+                this.createIndentationTokenInstance(this.dedentTokenType, text, '', text.length)
             );
             this.indentationStack.pop();
         }
