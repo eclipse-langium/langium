@@ -312,13 +312,14 @@ export class IndentationAwareTokenBuilder<Terminals extends string = string, Key
         }
 
         const numberOfDedents = this.indentationStack.length - matchIndentIndex - 1;
+        const newlinesBeforeDedent = text.substring(0, offset).match(/[\r\n]+$/)?.[0].length ?? 1;
 
         for (let i = 0; i < numberOfDedents; i++) {
             const token = this.createIndentationTokenInstance(
                 this.dedentTokenType,
                 text,
                 '',  // Dedents are 0-width tokens
-                offset,
+                offset - (newlinesBeforeDedent - 1), // Place the dedent after the first new line character
             );
             tokens.push(token);
             this.indentationStack.pop();
