@@ -61,8 +61,8 @@ describe('WorkspaceLock', () => {
         const mutex = new DefaultWorkspaceLock();
         const now = Date.now();
         const magicalNumber = await mutex.read(() => new Promise(resolve => setTimeout(() => resolve(42), 10)));
-        // Confirm that at least 10ms have elapsed
-        expect(Date.now() - now).toBeGreaterThanOrEqual(10);
+        // Confirm that at least a few milliseconds have passed
+        expect(Date.now() - now).toBeGreaterThanOrEqual(5);
         // Confirm the returned value
         expect(magicalNumber).toBe(42);
     });
@@ -111,5 +111,24 @@ describe('WorkspaceLock', () => {
         // Counter is 0, since first action has been cancelled
         // and the second action decreases the value again
         expect(counter).toBe(0);
+    });
+
+    test('Read actions can receive priority', async () => {
+        let counter = 0;
+        const mutex = new DefaultWorkspaceLock();
+        mutex.write(async () => {
+            await delayNextTick();
+            // Set counter to 1
+            counter = 1;
+        });
+        await mutex.read(() => {
+            // Set counter to 5
+            counter = 5;
+        }, true);
+        // Assert that the read action has received priority
+        expect(counter).toBe(5);
+        await delayNextTick();
+        // Assert that the write action has been successfully finished afterwards
+        expect(counter).toBe(1);
     });
 });

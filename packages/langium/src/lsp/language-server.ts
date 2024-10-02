@@ -553,12 +553,14 @@ export function addCodeLensHandler(connection: Connection, services: LangiumShar
 
 export function addWorkspaceSymbolHandler(connection: Connection, services: LangiumSharedServices): void {
     const workspaceSymbolProvider = services.lsp.WorkspaceSymbolProvider;
+    const lock = services.workspace.WorkspaceLock;
     if (workspaceSymbolProvider) {
         const documentBuilder = services.workspace.DocumentBuilder;
         connection.onWorkspaceSymbol(async (params, token) => {
             try {
                 await documentBuilder.waitUntil(DocumentState.IndexedContent, token);
-                return await workspaceSymbolProvider.getSymbols(params, token);
+                const result = await lock.read(() => workspaceSymbolProvider.getSymbols(params, token), true);
+                return result;
             } catch (err) {
                 return responseError(err);
             }
@@ -568,7 +570,8 @@ export function addWorkspaceSymbolHandler(connection: Connection, services: Lang
             connection.onWorkspaceSymbolResolve(async (workspaceSymbol, token) => {
                 try {
                     await documentBuilder.waitUntil(DocumentState.IndexedContent, token);
-                    return await resolveWorkspaceSymbol(workspaceSymbol, token);
+                    const result = await lock.read(() => resolveWorkspaceSymbol(workspaceSymbol, token), true);
+                    return result;
                 } catch (err) {
                     return responseError(err);
                 }
@@ -655,6 +658,7 @@ export function createHierarchyRequestHandler<P extends TypeHierarchySupertypesP
     serviceCall: (services: LangiumCoreAndPartialLSPServices, params: P, cancelToken: CancellationToken) => HandlerResult<R, E>,
     sharedServices: LangiumSharedServices,
 ): ServerRequestHandler<P, R, PR, E> {
+    const lock = sharedServices.workspace.WorkspaceLock;
     const serviceRegistry = sharedServices.ServiceRegistry;
     return async (params: P, cancelToken: CancellationToken) => {
         const uri = URI.parse(params.item.uri);
@@ -669,7 +673,10 @@ export function createHierarchyRequestHandler<P extends TypeHierarchySupertypesP
         }
         const language = serviceRegistry.getServices(uri);
         try {
-            return await serviceCall(language, params, cancelToken);
+            const result = await lock.read(async () => {
+                return await serviceCall(language, params, cancelToken);
+            }, true); // Give this priority, since we already waited until the target state
+            return result;
         } catch (err) {
             return responseError<E>(err);
         }
@@ -682,6 +689,7 @@ export function createServerRequestHandler<P extends { textDocument: TextDocumen
     targetState?: DocumentState
 ): ServerRequestHandler<P, R, PR, E> {
     const documents = sharedServices.workspace.LangiumDocuments;
+    const lock = sharedServices.workspace.WorkspaceLock;
     const serviceRegistry = sharedServices.ServiceRegistry;
     return async (params: P, cancelToken: CancellationToken) => {
         const uri = URI.parse(params.textDocument.uri);
@@ -695,9 +703,17 @@ export function createServerRequestHandler<P extends { textDocument: TextDocumen
             return responseError<E>(new Error(errorText));
         }
         const language = serviceRegistry.getServices(uri);
+        const document = documents.getDocument(uri);
+        if (!document) {
+            const errorText = `Could not find document for uri: '${uri}'`;
+            console.debug(errorText);
+            return responseError<E>(new Error(errorText));
+        }
         try {
-            const document = await documents.getOrCreateDocument(uri);
-            return await serviceCall(language, document, params, cancelToken);
+            const result = await lock.read(async () => {
+                return await serviceCall(language, document, params, cancelToken);
+            }, true); // Give this priority, since we already waited until the target state
+            return result;
         } catch (err) {
             return responseError<E>(err);
         }
@@ -710,6 +726,7 @@ export function createRequestHandler<P extends { textDocument: TextDocumentIdent
     targetState?: DocumentState
 ): RequestHandler<P, R | null, E> {
     const documents = sharedServices.workspace.LangiumDocuments;
+    const lock = sharedServices.workspace.WorkspaceLock;
     const serviceRegistry = sharedServices.ServiceRegistry;
     return async (params: P, cancelToken: CancellationToken) => {
         const uri = URI.parse(params.textDocument.uri);
@@ -722,9 +739,17 @@ export function createRequestHandler<P extends { textDocument: TextDocumentIdent
             return null;
         }
         const language = serviceRegistry.getServices(uri);
+        const document = documents.getDocument(uri);
+        if (!document) {
+            const errorText = `Could not find document for uri: '${uri}'`;
+            console.debug(errorText);
+            return responseError<E>(new Error(errorText));
+        }
         try {
-            const document = await documents.getOrCreateDocument(uri);
-            return await serviceCall(language, document, params, cancelToken);
+            const result = await lock.read(async () => {
+                return await serviceCall(language, document, params, cancelToken);
+            }, true); // Give this priority, since we already waited until the target state
+            return result;
         } catch (err) {
             return responseError<E>(err);
         }
