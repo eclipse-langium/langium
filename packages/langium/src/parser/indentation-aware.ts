@@ -272,16 +272,7 @@ export class IndentationAwareTokenBuilder<Terminals extends string = string, Key
 
         this.indentationStack.push(currIndentLevel);
 
-        const indentToken = this.createIndentationTokenInstance(
-            this.indentTokenType,
-            text,
-            match?.[0] ?? '',
-            offset,
-        );
-        tokens.push(indentToken);
-
-        // Token already added, let the indentation now be consumed as whitespace and ignored
-        return null;
+        return match;
     }
 
     /**
