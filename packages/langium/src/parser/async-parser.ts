@@ -16,8 +16,9 @@ import { Emitter } from '../utils/event.js';
 /**
  * Async parser that allows cancellation of the current parsing process.
  *
- * @remark The sync parser implementation is blocking the event loop, which can become quite problematic for large files.
- * @remark The default implementation is not actually async. It just wraps the sync parser in a promise. A real implementation would create worker threads or web workers to offload the parsing work.
+ * @remarks
+ * The sync parser implementation is blocking the event loop, which can become quite problematic for large files.
+ * The default implementation is not actually async. It just wraps the sync parser in a promise. A real implementation would create worker threads or web workers to offload the parsing work.
  */
 export interface AsyncParser {
     /**
@@ -27,7 +28,7 @@ export interface AsyncParser {
      * @param cancelToken A cancellation token that can be used to cancel the parsing process.
      * @returns A promise that resolves to the parse result.
      *
-     * @throw `OperationCancelled` if the parsing process is cancelled.
+     * @throws `OperationCancelled` if the parsing process is cancelled.
      */
     parse<T extends AstNode>(text: string, cancelToken: CancellationToken): Promise<ParseResult<T>>;
 }
@@ -35,7 +36,8 @@ export interface AsyncParser {
 /**
  * Default implementation of the async parser which simply wraps the sync parser in a promise.
  *
- * @remark A real implementation would create worker threads or web workers to offload the parsing work.
+ * @remarks
+ * A real implementation would create worker threads or web workers to offload the parsing work.
  */
 export class DefaultAsyncParser implements AsyncParser {
 

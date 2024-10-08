@@ -2,6 +2,7 @@
 .vscode-test/
 coverage/
 dist/
+docs/
 lib/
 out/
 node_modules/

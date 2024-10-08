@@ -57,7 +57,7 @@ export function isAstNodeWithComment(node: AstNode): node is AstNodeWithComment 
 }
 
 /**
- * A {@DocumentSegment} representing the definition area of an AstNode within the DSL text.
+ * A {@link DocumentSegment} representing the definition area of an AstNode within the DSL text.
  * Usually contains text region information on all assigned property values of the AstNode,
  * and may contain the defining file's URI as string.
  */
@@ -81,7 +81,7 @@ export interface JsonSerializer {
     /**
      * Serialize an `AstNode` into a JSON `string`.
      * @param node The `AstNode` to be serialized.
-     * @param space Adds indentation, white space, and line break characters to the return-value JSON text to make it easier to read.
+     * @param options Serialization options
      */
     serialize(node: AstNode, options?: JsonSerializeOptions): string;
     /**

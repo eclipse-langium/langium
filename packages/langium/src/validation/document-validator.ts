@@ -233,16 +233,22 @@ export function getDiagnosticRange<N extends AstNode>(info: DiagnosticInfo<N, st
     return cstNode.range;
 }
 
+/**
+ * Transforms the diagnostic severity from the {@link LexingDiagnosticSeverity} format to LSP's `DiagnosticSeverity` format.
+ *
+ * @param severity The lexing diagnostic severity
+ * @returns Diagnostic severity according to `vscode-languageserver-types/lib/esm/main.js#DiagnosticSeverity`
+ */
 export function toDiagnosticSeverity(severity: LexingDiagnosticSeverity): DiagnosticSeverity {
     switch (severity) {
         case 'error':
-            return 1; // according to vscode-languageserver-types/lib/esm/main.js#DiagnosticSeverity.Error
+            return 1 satisfies typeof DiagnosticSeverity.Error;
         case 'warning':
-            return 2; // according to vscode-languageserver-types/lib/esm/main.js#DiagnosticSeverity.Warning
+            return 2 satisfies typeof DiagnosticSeverity.Warning;
         case 'info':
-            return 3; // according to vscode-languageserver-types/lib/esm/main.js#DiagnosticSeverity.Information
+            return 3 satisfies typeof DiagnosticSeverity.Information;
         case 'hint':
-            return 4; // according to vscode-languageserver-types/lib/esm/main.js#DiagnosticSeverity.Hint
+            return 4 satisfies typeof DiagnosticSeverity.Hint;
         default:
             throw new Error('Invalid diagnostic severity: ' + severity);
     }

@@ -1,0 +1,19 @@
+{
+	"name": "Langium",
+	"entryPoints": [
+		"./src/index.ts",
+		"./src/generate/index.ts",
+		"./src/grammar/index.ts",
+		"./src/lsp/index.ts",
+		"./src/node/index.ts",
+		"./src/test/index.ts"
+	],
+	"tsconfig": "tsconfig.src.json",
+	"out": "./docs",
+	"navigation": {
+		"includeFolders": false
+	},
+	"includeVersion": true,
+	"sortEntryPoints": false,
+	"githubPages": true
+}
