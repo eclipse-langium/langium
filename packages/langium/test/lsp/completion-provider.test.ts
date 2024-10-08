@@ -131,7 +131,35 @@ describe('Completion within alternatives', () => {
             expectedItems: ['c', 'd']
         });
     });
+    test('Should show correct keywords in completion of group', async () => {
 
+        const grammar = `
+        grammar g
+        entry Main: ('a' a+=ID | 'b' b+=ID | 'c' c+=ID)*;
+        hidden terminal WS: /\\s+/;
+        terminal ID: /\\w+/;
+        `;
+
+        const services = await createServicesForGrammar({ grammar });
+        const completion = expectCompletion(services);
+        const text = '<|>a id1 <|>b id2 <|>c id3';
+
+        await completion({
+            text,
+            index: 0,
+            expectedItems: ['a', 'b', 'c']
+        });
+        await completion({
+            text,
+            index: 1,
+            expectedItems: ['a', 'b', 'c']
+        });
+        await completion({
+            text,
+            index: 2,
+            expectedItems: ['a', 'b', 'c']
+        });
+    });
     test('Should show correct cross reference and keyword in completion', async () => {
 
         const grammar = `
