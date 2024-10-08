@@ -5,15 +5,16 @@
  ******************************************************************************/
 
 import type { CodeDescription, DiagnosticRelatedInformation, DiagnosticTag, integer, Range } from 'vscode-languageserver-types';
-import type { CancellationToken } from '../utils/cancellation.js';
+import { assertUnreachable } from '../index.js';
 import type { LangiumCoreServices } from '../services.js';
 import type { AstNode, AstReflection, Properties } from '../syntax-tree.js';
-import type { MaybePromise } from '../utils/promise-utils.js';
-import type { Stream } from '../utils/stream.js';
-import type { DocumentSegment } from '../workspace/documents.js';
+import type { CancellationToken } from '../utils/cancellation.js';
 import { MultiMap } from '../utils/collections.js';
+import type { MaybePromise } from '../utils/promise-utils.js';
 import { isOperationCancelled } from '../utils/promise-utils.js';
+import type { Stream } from '../utils/stream.js';
 import { stream } from '../utils/stream.js';
+import type { DocumentSegment } from '../workspace/documents.js';
 
 export type DiagnosticInfo<N extends AstNode, P extends string = Properties<N>> = {
     /** The AST node to which the diagnostic is attached. */
@@ -64,6 +65,20 @@ export type ValidationAcceptor = <N extends AstNode>(severity: ValidationSeverit
 export type ValidationCheck<T extends AstNode = AstNode> = (node: T, accept: ValidationAcceptor, cancelToken: CancellationToken) => MaybePromise<void>;
 
 /**
+ * A utility type for describing functions which will be called once before or after all the AstNodes of an AST/Langium document are validated.
+ *
+ * The AST is represented by its root AstNode.
+ *
+ * The given validation acceptor helps to report some early or lately detected issues.
+ *
+ * The 'categories' indicate, which validation categories are executed for all the AstNodes.
+ * This helps to tailor the preparations/tear-down logic to the actually executed checks on the nodes.
+ *
+ * It is recommended to support interrupts during long-running logic with 'interruptAndCheck(cancelToken)'.
+ */
+export type ValidationPreparation = (rootNode: AstNode, accept: ValidationAcceptor, categories: ValidationCategory[], cancelToken: CancellationToken) => MaybePromise<void>;
+
+/**
  * A utility type for associating non-primitive AST types to corresponding validation checks. For example:
  *
  * ```ts
@@ -110,6 +125,9 @@ export class ValidationRegistry {
     private readonly entries = new MultiMap<string, ValidationCheckEntry>();
     private readonly reflection: AstReflection;
 
+    private entriesBefore: ValidationPreparation[] = [];
+    private entriesAfter: ValidationPreparation[] = [];
+
     constructor(services: LangiumCoreServices) {
         this.reflection = services.shared.AstReflection;
     }
@@ -142,26 +160,32 @@ export class ValidationRegistry {
                     category
                 };
                 this.addEntry(type, entry);
+            } else {
+                assertUnreachable(callbacks);
             }
         }
     }
 
     protected wrapValidationException(check: ValidationCheck, thisObj: unknown): ValidationCheck {
         return async (node, accept, cancelToken) => {
-            try {
-                await check.call(thisObj, node, accept, cancelToken);
-            } catch (err) {
-                if (isOperationCancelled(err)) {
-                    throw err;
-                }
-                console.error('An error occurred during validation:', err);
-                const message = err instanceof Error ? err.message : String(err);
-                if (err instanceof Error && err.stack) {
-                    console.error(err.stack);
-                }
-                accept('error', 'An error occurred during validation: ' + message, { node });
-            }
+            await this.handleException(() => check.call(thisObj, node, accept, cancelToken), 'An error occurred during validation', accept, node);
         };
+    }
+
+    protected async handleException(functionality: () => MaybePromise<void>, messageContext: string, accept: ValidationAcceptor, node: AstNode): Promise<void> {
+        try {
+            await functionality();
+        } catch (err) {
+            if (isOperationCancelled(err)) {
+                throw err;
+            }
+            console.error(`${messageContext}:`, err);
+            if (err instanceof Error && err.stack) {
+                console.error(err.stack);
+            }
+            const messageDetails = err instanceof Error ? err.message : String(err);
+            accept('error', `${messageContext}: ${messageDetails}`, { node });
+        }
     }
 
     protected addEntry(type: string, entry: ValidationCheckEntry): void {
@@ -181,6 +205,60 @@ export class ValidationRegistry {
             checks = checks.filter(entry => categories.includes(entry.category));
         }
         return checks.map(entry => entry.check);
+    }
+
+    /**
+     * Register logic which will be executed once before validating all the nodes of an AST/Langium document.
+     * This helps to prepare or initialize some information which are required or reusable for the following checks on the AstNodes.
+     *
+     * As an example, for validating unique fully-qualified names of nodes in the AST,
+     * here the map for mapping names to nodes could be established.
+     * During the usual checks on the nodes, they are put into this map with their name.
+     *
+     * Note that this approach makes validations stateful, which is relevant e.g. when cancelling the validation.
+     * Therefore it is recommended to clear stored information
+     * _before_ validating an AST to validate each AST unaffected from other ASTs
+     * AND _after_ validating the AST to free memory by information which are no longer used.
+     *
+     * @param checkBefore a set-up function which will be called once before actually validating an AST
+     * @param thisObj Optional object to be used as `this` when calling the validation check functions.
+     */
+    registerBeforeDocument(checkBefore: ValidationPreparation, thisObj: ThisParameterType<unknown> = this): void {
+        this.entriesBefore.push(this.wrapPreparationException(checkBefore, 'An error occurred during set-up of the validation', thisObj));
+    }
+
+    /**
+     * Register logic which will be executed once after validating all the nodes of an AST/Langium document.
+     * This helps to finally evaluate information which are collected during the checks on the AstNodes.
+     *
+     * As an example, for validating unique fully-qualified names of nodes in the AST,
+     * here the map with all the collected nodes and their names is checked
+     * and validation hints are created for all nodes with the same name.
+     *
+     * Note that this approach makes validations stateful, which is relevant e.g. when cancelling the validation.
+     * Therefore it is recommended to clear stored information
+     * _before_ validating an AST to validate each AST unaffected from other ASTs
+     * AND _after_ validating the AST to free memory by information which are no longer used.
+     *
+     * @param checkBefore a set-up function which will be called once before actually validating an AST
+     * @param thisObj Optional object to be used as `this` when calling the validation check functions.
+     */
+    registerAfterDocument(checkAfter: ValidationPreparation, thisObj: ThisParameterType<unknown> = this): void {
+        this.entriesAfter.push(this.wrapPreparationException(checkAfter, 'An error occurred during tear-down of the validation', thisObj));
+    }
+
+    protected wrapPreparationException(check: ValidationPreparation, messageContext: string, thisObj: unknown): ValidationPreparation {
+        return async (rootNode, accept, categories, cancelToken) => {
+            await this.handleException(() => check.call(thisObj, rootNode, accept, categories, cancelToken), messageContext, accept, rootNode);
+        };
+    }
+
+    get checksBefore(): ValidationPreparation[] {
+        return this.entriesBefore;
+    }
+
+    get checksAfter(): ValidationPreparation[] {
+        return this.entriesAfter;
     }
 
 }
