@@ -9,8 +9,8 @@ import { WorkerThreadAsyncParser } from 'langium/node';
 import { createLangiumGrammarServices } from 'langium/grammar';
 import type { Grammar, LangiumCoreServices, ParseResult } from 'langium';
 import type { LangiumServices } from 'langium/lsp';
-import { EmptyFileSystem, GrammarUtils, CstUtils, GrammarAST, isOperationCancelled } from 'langium';
-import { CancellationToken, CancellationTokenSource } from 'vscode-languageserver';
+import { EmptyFileSystem, GrammarUtils, CstUtils, GrammarAST, isOperationCancelled, startCancelableOperation } from 'langium';
+import { CancellationToken } from 'vscode-languageserver';
 import { fail } from 'node:assert';
 import { fileURLToPath } from 'node:url';
 
@@ -46,16 +46,16 @@ describe('WorkerThreadAsyncParser', () => {
         // This file should take a few seconds to parse
         const file = createLargeFile(100000);
         const asyncParser = services.parser.AsyncParser;
-        const cancellationTokenSource = new CancellationTokenSource();
+        const cancellationTokenSource = startCancelableOperation();
         setTimeout(() => cancellationTokenSource.cancel(), 50);
-        const start = Date.now();
+        const start = performance.now();
         try {
             await asyncParser.parse<Grammar>(file, cancellationTokenSource.token);
             fail('Parsing should have been cancelled');
         } catch (err) {
             expect(isOperationCancelled(err)).toBe(true);
         }
-        const end = Date.now();
+        const end = performance.now();
         // The whole parsing process should have been successfully cancelled within a second
         expect(end - start).toBeLessThan(1000);
     });
@@ -65,7 +65,7 @@ describe('WorkerThreadAsyncParser', () => {
         // This file should take a few seconds to parse
         const file = createLargeFile(100000);
         const asyncParser = services.parser.AsyncParser;
-        const cancellationTokenSource = new CancellationTokenSource();
+        const cancellationTokenSource = startCancelableOperation();
         setTimeout(() => cancellationTokenSource.cancel(), 50);
         try {
             await asyncParser.parse<Grammar>(file, cancellationTokenSource.token);

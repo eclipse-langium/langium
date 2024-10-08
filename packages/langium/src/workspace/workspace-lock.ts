@@ -4,8 +4,8 @@
  * terms of the MIT License, which is available in the project root.
  ******************************************************************************/
 
-import { CancellationToken, CancellationTokenSource } from '../utils/cancellation.js';
-import { Deferred, isOperationCancelled, type MaybePromise } from '../utils/promise-utils.js';
+import { type AbstractCancellationTokenSource, CancellationToken, CancellationTokenSource } from '../utils/cancellation.js';
+import { Deferred, isOperationCancelled, startCancelableOperation, type MaybePromise } from '../utils/promise-utils.js';
 
 /**
  * Utility service to execute mutually exclusive actions.
@@ -47,14 +47,14 @@ interface LockEntry {
 
 export class DefaultWorkspaceLock implements WorkspaceLock {
 
-    private previousTokenSource = new CancellationTokenSource();
+    private previousTokenSource: AbstractCancellationTokenSource = new CancellationTokenSource();
     private writeQueue: LockEntry[] = [];
     private readQueue: LockEntry[] = [];
     private done = true;
 
     write(action: (token: CancellationToken) => MaybePromise<void>): Promise<void> {
         this.cancelWrite();
-        const tokenSource = new CancellationTokenSource();
+        const tokenSource = startCancelableOperation();
         this.previousTokenSource = tokenSource;
         return this.enqueue(this.writeQueue, action, tokenSource.token);
     }
