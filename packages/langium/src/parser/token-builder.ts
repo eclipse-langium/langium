@@ -131,13 +131,17 @@ export class DefaultTokenBuilder implements TokenBuilder {
 
     protected buildKeywordToken(keyword: Keyword, terminalTokens: TokenType[], caseInsensitive: boolean): TokenType {
         const keywordPattern = this.buildKeywordPattern(keyword, caseInsensitive);
-
-        return {
+        const tokenType: TokenType = {
             name: keyword.value,
             PATTERN: keywordPattern,
-            LINE_BREAKS: typeof keywordPattern === 'function',
             LONGER_ALT: this.findLongerAlt(keyword, terminalTokens)
         };
+
+        if (typeof keywordPattern === 'function') {
+            tokenType.LINE_BREAKS = true;
+        }
+
+        return tokenType;
     }
 
     protected buildKeywordPattern(keyword: Keyword, caseInsensitive: boolean): TokenPattern {
