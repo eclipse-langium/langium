@@ -88,8 +88,10 @@ export class DefaultTokenBuilder implements TokenBuilder {
         const tokenType: TokenType = {
             name: terminal.name,
             PATTERN: pattern,
-            LINE_BREAKS: true
         };
+        if (typeof pattern === 'function') {
+            tokenType.LINE_BREAKS = true;
+        }
         if (terminal.hidden) {
             // Only skip tokens that are able to accept whitespace
             tokenType.GROUP = isWhitespace(regex) ? Lexer.SKIPPED : 'hidden';
