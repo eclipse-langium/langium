@@ -4,23 +4,24 @@
  * terms of the MIT License, which is available in the project root.
  ******************************************************************************/
 
+import type { Range } from 'vscode-languageserver-types';
+import { DiagnosticTag } from 'vscode-languageserver-types';
+import * as ast from '../../languages/generated/ast.js';
 import type { NamedAstNode } from '../../references/name-provider.js';
 import type { References } from '../../references/references.js';
 import type { AstNode, Properties, Reference } from '../../syntax-tree.js';
-import type { Stream } from '../../utils/stream.js';
-import type { DiagnosticData, ValidationAcceptor, ValidationChecks } from '../../validation/validation-registry.js';
-import type { LangiumDocuments } from '../../workspace/documents.js';
-import type { LangiumGrammarServices } from '../langium-grammar-module.js';
-import type { Range } from 'vscode-languageserver-types';
-import { DiagnosticTag } from 'vscode-languageserver-types';
 import { getContainerOfType, streamAllContents } from '../../utils/ast-utils.js';
 import { MultiMap } from '../../utils/collections.js';
 import { toDocumentSegment } from '../../utils/cst-utils.js';
-import { findNameAssignment, findNodeForKeyword, findNodeForProperty, getAllReachableRules, isDataTypeRule, isOptionalCardinality, terminalRegex } from '../../utils/grammar-utils.js';
+import { findNameAssignment, findNodeForKeyword, findNodeForProperty, getAllReachableRules, isArrayCardinality, isDataTypeRule, isOptionalCardinality, terminalRegex } from '../../utils/grammar-utils.js';
+import type { Stream } from '../../utils/stream.js';
 import { stream } from '../../utils/stream.js';
+import type { DiagnosticData, ValidationAcceptor, ValidationChecks } from '../../validation/validation-registry.js';
 import { diagnosticData } from '../../validation/validation-registry.js';
-import * as ast from '../../languages/generated/ast.js';
+import type { AstNodeLocator } from '../../workspace/ast-node-locator.js';
+import type { LangiumDocuments } from '../../workspace/documents.js';
 import { getTypeNameWithoutError, hasDataTypeReturn, isPrimitiveGrammarType, isStringGrammarType, resolveImport, resolveTransitiveImports } from '../internal-grammar-util.js';
+import type { LangiumGrammarServices } from '../langium-grammar-module.js';
 import { typeDefinitionToPropertyType } from '../type-system/type-collector/declared-types.js';
 import { flattenPlainType, isPlainReferenceType } from '../type-system/type-collector/plain-types.js';
 
@@ -43,6 +44,7 @@ export function registerValidationChecks(services: LangiumGrammarServices): void
             validator.checkRuleParametersUsed,
             validator.checkEmptyParserRule,
             validator.checkParserRuleReservedName,
+            validator.checkOperatorMultiplicitiesForMultiAssignments,
         ],
         TerminalRule: [
             validator.checkTerminalRuleReturnType,
@@ -78,7 +80,7 @@ export function registerValidationChecks(services: LangiumGrammarServices): void
             validator.checkUsedHiddenTerminalRule,
             validator.checkUsedFragmentTerminalRule,
             validator.checkRuleCallParameters,
-            validator.checkRuleCallMultiplicity
+            validator.checkMultiRuleCallsAreAssigned
         ],
         TerminalRuleCall: validator.checkUsedHiddenTerminalRule,
         CrossReference: [
@@ -118,10 +120,12 @@ export namespace IssueCodes {
 export class LangiumGrammarValidator {
 
     protected readonly references: References;
+    protected readonly nodeLocator: AstNodeLocator;
     protected readonly documents: LangiumDocuments;
 
     constructor(services: LangiumGrammarServices) {
         this.references = services.references.References;
+        this.nodeLocator = services.workspace.AstNodeLocator;
         this.documents = services.shared.workspace.LangiumDocuments;
     }
 
@@ -722,7 +726,8 @@ export class LangiumGrammarValidator {
         }
     }
 
-    checkRuleCallMultiplicity(call: ast.RuleCall, accept: ValidationAcceptor): void {
+    /** This validation checks, that parser rules which are called multiple times are assigned (except for fragments). */
+    checkMultiRuleCallsAreAssigned(call: ast.RuleCall, accept: ValidationAcceptor): void {
         const findContainerWithCardinality = (node: AstNode) => {
             let result: AstNode | undefined = node;
             while (result !== undefined) {
@@ -864,6 +869,108 @@ export class LangiumGrammarValidator {
                     property: 'terminal'
                 }
             );
+        }
+    }
+
+    /** This validation recursively looks at all assignments (and rewriting actions) with '=' as assignment operator and checks,
+     * whether the operator should be '+=' instead. */
+    checkOperatorMultiplicitiesForMultiAssignments(rule: ast.ParserRule, accept: ValidationAcceptor): void {
+        // for usual parser rules AND for fragments, but not for data type rules!
+        if (!rule.dataType) {
+            this.checkOperatorMultiplicitiesForMultiAssignmentsLogic([rule.definition], accept);
+        }
+    }
+
+    private checkOperatorMultiplicitiesForMultiAssignmentsLogic(startNodes: AstNode[], accept: ValidationAcceptor): void {
+        // new map to store usage information of the assignments
+        const map: Map<string, AssignmentUse> = new Map();
+
+        // top-down traversal for all starting nodes
+        for (const node of startNodes) {
+            this.checkAssignmentNumbersForNode(node, 1, map, accept);
+        }
+
+        // create the warnings
+        for (const entry of map.values()) {
+            if (entry.counter >= 2) {
+                for (const assignment of entry.assignments) {
+                    if (assignment.operator !== '+=') {
+                        accept(
+                            'warning',
+                            `Found multiple assignments to '${assignment.feature}' with the '${assignment.operator}' assignment operator. Consider using '+=' instead to prevent data loss.`,
+                            { node: assignment, property: 'feature' } // use 'feature' instead of 'operator', since it is pretty hard to see
+                        );
+                    }
+                }
+            }
+        }
+    }
+
+    private checkAssignmentNumbersForNode(currentNode: AstNode, parentMultiplicity: number, map: Map<string, AssignmentUse>, accept: ValidationAcceptor) {
+        // the current element can occur multiple times => its assignments can occur multiple times as well
+        let currentMultiplicity = parentMultiplicity;
+        if (ast.isAbstractElement(currentNode) && isArrayCardinality(currentNode.cardinality)) {
+            currentMultiplicity *= 2; // note, that the result is not exact (but it is sufficient for the current case)!
+        }
+
+        // assignment
+        if (ast.isAssignment(currentNode)) {
+            storeAssignmentUse(map, currentNode.feature, 1 * currentMultiplicity, currentNode);
+        }
+
+        // Search for assignments in used fragments as well, since their property values are stored in the current object.
+        // But do not search in calls of regular parser rules, since parser rules create new objects.
+        if (ast.isRuleCall(currentNode) && ast.isParserRule(currentNode.rule.ref) && currentNode.rule.ref.fragment) {
+            this.checkAssignmentNumbersForNode(currentNode.rule.ref.definition, currentMultiplicity, map, accept);
+        }
+
+        // rewriting actions are a special case for assignments
+        if (ast.isAction(currentNode) && currentNode.feature) {
+            storeAssignmentUse(map, currentNode.feature, 1 * currentMultiplicity, currentNode);
+        }
+
+        // look for assignments to the same feature nested within groups
+        if (ast.isGroup(currentNode) || ast.isUnorderedGroup(currentNode) || ast.isAlternatives(currentNode)) {
+            const mapAllAlternatives: Map<string, AssignmentUse> = new Map(); // store assignments for Alternatives separately
+            let nodesForNewObject: AstNode[] = [];
+            // check all elements inside the current group
+            for (const child of currentNode.elements) {
+                if (ast.isAction(child)) {
+                    // Actions are a special case: a new object is created => following assignments are put into the new object
+                    // (This counts for rewriting actions as well as for unassigned actions, i.e. actions without feature name)
+                    if (nodesForNewObject.length > 0) {
+                        // all collected nodes are put into the new object => check their assignments independently
+                        this.checkOperatorMultiplicitiesForMultiAssignmentsLogic(nodesForNewObject, accept);
+                        // is it possible to have two or more Actions within the same parser rule? the grammar allows that ...
+                        nodesForNewObject = [];
+                    }
+                    // push the current node into a new object
+                    nodesForNewObject.push(child);
+                } else {
+                    // for non-Actions
+                    if (nodesForNewObject.length > 0) {
+                        // nodes go into a new object
+                        nodesForNewObject.push(child);
+                    } else {
+                        // count the relevant child assignments
+                        if (ast.isAlternatives(currentNode)) {
+                            // for alternatives, only a single alternative is used => assume the worst case and take the maximum number of assignments
+                            const mapCurrentAlternative: Map<string, AssignmentUse> = new Map();
+                            this.checkAssignmentNumbersForNode(child, currentMultiplicity, mapCurrentAlternative, accept);
+                            mergeAssignmentUse(mapCurrentAlternative, mapAllAlternatives, (s, t) => Math.max(s, t));
+                        } else {
+                            // all members of the group are relavant => collect them all
+                            this.checkAssignmentNumbersForNode(child, currentMultiplicity, map, accept);
+                        }
+                    }
+                }
+            }
+            // merge alternatives
+            mergeAssignmentUse(mapAllAlternatives, map);
+            if (nodesForNewObject.length >= 1) {
+                // these nodes are put into a new object => check their assignments independently
+                this.checkOperatorMultiplicitiesForMultiAssignmentsLogic(nodesForNewObject, accept);
+            }
         }
     }
 
@@ -1094,4 +1201,49 @@ function findLookAheadGroup(rule: AstNode | undefined): ast.TerminalGroup | unde
     } else {
         return findLookAheadGroup(terminalGroup.$container);
     }
+}
+
+/*
+ * Internal helper stuff for collecting information about assignments to features and their cardinalities
+ */
+
+interface AssignmentUse {
+    /**
+     * Collects assignments for the same feature, while an Action represents a "special assignment", when it is a rewrite action.
+     * The Set is used in order not to store the same assignment multiple times.
+     */
+    assignments: Set<ast.Assignment | ast.Action>;
+    /**
+     * Note, that this number is not exact and "estimates the potential number",
+     * i.e. multiplicities like + and * are counted as 2x/twice,
+     * and for alternatives, the worst case is assumed.
+     * In other words, here it is enough to know, whether there are two or more assignments possible to the same feature.
+     */
+    counter: number;
+}
+
+function storeAssignmentUse(map: Map<string, AssignmentUse>, feature: string, increment: number, ...assignments: Array<ast.Assignment | ast.Action>) {
+    let entry = map.get(feature);
+    if (!entry) {
+        entry = {
+            assignments: new Set(),
+            counter: 0,
+        };
+        map.set(feature, entry);
+    }
+    assignments.forEach(a => entry!.assignments.add(a)); // a Set is necessary, since assignments in Fragements might be used multiple times by different parser rules, but they should be marked only once!
+    entry.counter += increment;
+}
+
+function mergeAssignmentUse(mapSoure: Map<string, AssignmentUse>, mapTarget: Map<string, AssignmentUse>, counterOperation: (s: number, t: number) => number = (s, t) => s + t): void {
+    for (const [key, source] of mapSoure.entries()) {
+        const target = mapTarget.get(key);
+        if (target) {
+            source.assignments.forEach(a => target.assignments.add(a));
+            target.counter = counterOperation(source.counter, target.counter);
+        } else {
+            mapTarget.set(key, source);
+        }
+    }
+    mapSoure.clear();
 }
