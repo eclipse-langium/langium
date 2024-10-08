@@ -253,11 +253,11 @@ export class ValidationRegistry {
         };
     }
 
-    getChecksBefore(): ValidationPreparation[] {
+    get checksBefore(): ValidationPreparation[] {
         return this.entriesBefore;
     }
 
-    getChecksAfter(): ValidationPreparation[] {
+    get checksAfter(): ValidationPreparation[] {
         return this.entriesAfter;
     }
 

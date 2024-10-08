@@ -192,7 +192,7 @@ export class DefaultDocumentValidator implements DocumentValidator {
     }
 
     protected async validateAstBefore(rootNode: AstNode, options: ValidationOptions, acceptor: ValidationAcceptor, cancelToken = CancellationToken.None): Promise<void> {
-        const checksBefore = this.validationRegistry.getChecksBefore();
+        const checksBefore = this.validationRegistry.checksBefore;
         for (const checkBefore of checksBefore) {
             await interruptAndCheck(cancelToken);
             await checkBefore(rootNode, acceptor, options.categories ?? [], cancelToken);
@@ -210,7 +210,7 @@ export class DefaultDocumentValidator implements DocumentValidator {
     }
 
     protected async validateAstAfter(rootNode: AstNode, options: ValidationOptions, acceptor: ValidationAcceptor, cancelToken = CancellationToken.None): Promise<void> {
-        const checksAfter = this.validationRegistry.getChecksAfter();
+        const checksAfter = this.validationRegistry.checksAfter;
         for (const checkAfter of checksAfter) {
             await interruptAndCheck(cancelToken);
             await checkAfter(rootNode, acceptor, options.categories ?? [], cancelToken);
