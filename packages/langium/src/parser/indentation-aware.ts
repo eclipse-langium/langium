@@ -272,16 +272,7 @@ export class IndentationAwareTokenBuilder<Terminals extends string = string, Key
 
         this.indentationStack.push(currIndentLevel);
 
-        const indentToken = this.createIndentationTokenInstance(
-            this.indentTokenType,
-            text,
-            match?.[0] ?? '',
-            offset,
-        );
-        tokens.push(indentToken);
-
-        // Token already added, let the indentation now be consumed as whitespace and ignored
-        return null;
+        return match;
     }
 
     /**
@@ -321,19 +312,20 @@ export class IndentationAwareTokenBuilder<Terminals extends string = string, Key
         }
 
         const numberOfDedents = this.indentationStack.length - matchIndentIndex - 1;
+        const newlinesBeforeDedent = text.substring(0, offset).match(/[\r\n]+$/)?.[0].length ?? 1;
 
         for (let i = 0; i < numberOfDedents; i++) {
             const token = this.createIndentationTokenInstance(
                 this.dedentTokenType,
                 text,
-                match?.[0] ?? '',
-                offset,
+                '',  // Dedents are 0-width tokens
+                offset - (newlinesBeforeDedent - 1), // Place the dedent after the first new line character
             );
             tokens.push(token);
             this.indentationStack.pop();
         }
 
-        // Token already added, let the dedentation now be consumed as whitespace and ignored
+        // Token already added, let the dedentation now be consumed as whitespace (if any) and ignored
         return null;
     }
 
@@ -365,7 +357,7 @@ export class IndentationAwareTokenBuilder<Terminals extends string = string, Key
         const remainingDedents: IToken[] = [];
         while (this.indentationStack.length > 1) {
             remainingDedents.push(
-                this.createIndentationTokenInstance(this.dedentTokenType, text, this.options.dedentTokenName, text.length)
+                this.createIndentationTokenInstance(this.dedentTokenType, text, '', text.length)
             );
             this.indentationStack.pop();
         }
