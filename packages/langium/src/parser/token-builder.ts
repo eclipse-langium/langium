@@ -88,8 +88,10 @@ export class DefaultTokenBuilder implements TokenBuilder {
         const tokenType: TokenType = {
             name: terminal.name,
             PATTERN: pattern,
-            LINE_BREAKS: true
         };
+        if (typeof pattern === 'function') {
+            tokenType.LINE_BREAKS = true;
+        }
         if (terminal.hidden) {
             // Only skip tokens that are able to accept whitespace
             tokenType.GROUP = isWhitespace(regex) ? Lexer.SKIPPED : 'hidden';
@@ -130,11 +132,18 @@ export class DefaultTokenBuilder implements TokenBuilder {
     }
 
     protected buildKeywordToken(keyword: Keyword, terminalTokens: TokenType[], caseInsensitive: boolean): TokenType {
-        return {
+        const keywordPattern = this.buildKeywordPattern(keyword, caseInsensitive);
+        const tokenType: TokenType = {
             name: keyword.value,
-            PATTERN: this.buildKeywordPattern(keyword, caseInsensitive),
+            PATTERN: keywordPattern,
             LONGER_ALT: this.findLongerAlt(keyword, terminalTokens)
         };
+
+        if (typeof keywordPattern === 'function') {
+            tokenType.LINE_BREAKS = true;
+        }
+
+        return tokenType;
     }
 
     protected buildKeywordPattern(keyword: Keyword, caseInsensitive: boolean): TokenPattern {
