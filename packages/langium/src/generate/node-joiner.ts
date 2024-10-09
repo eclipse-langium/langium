@@ -134,7 +134,7 @@ export function joinToNode<T>(
  *  arguments as expected by {@link joinToNode}, i.e. an `iterable`, a function `toGenerated`
  *  converting each element into a `Generated`, as well as some `options`.
  *
- * That function than joins the elements of `iterable` by delegating to {@link joinToNode}.
+ * That function then joins the elements of `iterable` by delegating to {@link joinToNode}.
  * Via {@link traceToNode} the resulting generator node is supplemented with the provided tracing
  *  information in form of `{astNode, property?, index?}`, and finally returned. In addition,
  *  if `property` is given each element's generator node representation is augmented with the
@@ -167,7 +167,7 @@ export function joinTracedToNode<T extends AstNode>(astNode: T, property?: Prope
  *  arguments as expected by {@link joinToNode}, i.e. an `iterable`, a function `toGenerated`
  *  converting each element into a `Generated`, as well as some `options`.
  *
- * That function than joins the elements of `iterable` by delegating to {@link joinToNode}.
+ * That function then joins the elements of `iterable` by delegating to {@link joinToNode}.
  * Via {@link traceToNode} the resulting generator node is supplemented with the provided tracing
  *  information, and finally returned. Elementwise tracing need to be implemented by client code
  *  within `toGenerated`, if required.
@@ -193,7 +193,7 @@ export function joinTracedToNode(sourceRegion: SourceRegion | undefined): // esl
  *  arguments as expected by {@link joinToNode}, i.e. an `iterable`, a function `toGenerated`
  *  converting each element into a `Generated`, as well as some `options`.
  *
- * That function than joins the elements of `iterable` by delegating to {@link joinToNode}.
+ * That function then joins the elements of `iterable` by delegating to {@link joinToNode}.
  * Via {@link traceToNode} the resulting generator node is supplemented with the provided tracing
  *  information, and finally returned. Elementwise tracing need to be implemented by client code
  *  within `toGenerated`, if required.
@@ -238,7 +238,7 @@ export function joinTracedToNode<T extends AstNode>(source: T | undefined | Sour
  *  and that expects same list of arguments as expected by {@link joinToNode}, i.e. an `iterable`,
  *  a function `toGenerated` converting each element into a `Generated`, as well as some `options`.
  *
- * That function than joins the elements of `iterable` by delegating to {@link joinToNode}.
+ * That function then joins the elements of `iterable` by delegating to {@link joinToNode}.
  * Via {@link traceToNode} the resulting generator node is supplemented with the provided tracing
  *  information, and finally returned. In addition, if `property` is given each element's
  *  generator node representation is augmented with the provided tracing information
@@ -275,7 +275,7 @@ export function joinTracedToNodeIf<T extends AstNode>(condition: boolean, astNod
  *  and that expects same list of arguments as expected by {@link joinToNode}, i.e. an `iterable`,
  *  a function `toGenerated` converting each element into a `Generated`, as well as some `options`.
  *
- * That function than joins the elements of `iterable` by delegating to {@link joinToNode}.
+ * That function then joins the elements of `iterable` by delegating to {@link joinToNode}.
  * Via {@link traceToNode} the resulting generator node is supplemented with the provided tracing
  *  information, and finally returned. Element-wise tracing need to be implemented by client code
  *  within `toGenerated`, if required.
@@ -307,7 +307,7 @@ export function joinTracedToNodeIf(condition: boolean, sourceRegion: SourceRegio
  *  and that expects same list of arguments as expected by {@link joinToNode}, i.e. an `iterable`,
  *  a function `toGenerated` converting each element into a `Generated`, as well as some `options`.
  *
- * That function than joins the elements of `iterable` by delegating to {@link joinToNode}.
+ * That function then joins the elements of `iterable` by delegating to {@link joinToNode}.
  * Via {@link traceToNode} the resulting generator node is supplemented with the provided tracing
  *  information, and finally returned. Element-wise tracing need to be implemented by client code
  *  within `toGenerated`, if required.
