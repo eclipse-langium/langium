@@ -183,7 +183,7 @@ export function joinTracedToNode<T extends AstNode>(astNode: T, property?: Prope
  *   `.appendNewLine()
  */
 export function joinTracedToNode(sourceRegion: SourceRegion | undefined): // eslint-disable-next-line @typescript-eslint/indent
-    <E>(iterable: Iterable<E> | E[], toGenerated?: ((element: E, index: number, isLast: boolean) => Generated) | JoinOptions<E>, options?: JoinOptions<E>) => CompositeGeneratorNode | undefined;
+    <E>(iterable: Iterable<E> | E[], toGenerated?: ((element: E, index: number, isLast: boolean) => Generated) | JoinOptions<E>, options?: JoinOptions<E>) => CompositeGeneratorNode;
 
 /**
  * Convenience function for joining the elements of some `iterable` and gathering tracing information
@@ -212,11 +212,11 @@ export function joinTracedToNode(sourceRegion: SourceRegion | undefined): // esl
  *   `.appendNewLine()
  */
 export function joinTracedToNode(sourceRegions: SourceRegion[]): // eslint-disable-next-line @typescript-eslint/indent
-    <E>(iterable: Iterable<E> | E[], toGenerated?: ((element: E, index: number, isLast: boolean) => Generated) | JoinOptions<E>, options?: JoinOptions<E>) => CompositeGeneratorNode | undefined;
+    <E>(iterable: Iterable<E> | E[], toGenerated?: ((element: E, index: number, isLast: boolean) => Generated) | JoinOptions<E>, options?: JoinOptions<E>) => CompositeGeneratorNode;
 
 // implementation:
 export function joinTracedToNode<T extends AstNode>(source: T | undefined | SourceRegion | SourceRegion[], property?: Properties<T>): // eslint-disable-next-line @typescript-eslint/indent
-    <E>(iterable: Iterable<E> | E[], toGenerated?: ((element: E, index: number, isLast: boolean) => Generated) | JoinOptions<E>, options?: JoinOptions<E>) => CompositeGeneratorNode | undefined {
+    <E>(iterable: Iterable<E> | E[], toGenerated?: ((element: E, index: number, isLast: boolean) => Generated) | JoinOptions<E>, options?: JoinOptions<E>) => CompositeGeneratorNode {
     return (iterable, toGeneratedOrOptions, options) => {
         options ??= typeof toGeneratedOrOptions === 'object' ? toGeneratedOrOptions : undefined;
         const toGenerated = typeof toGeneratedOrOptions === 'function' ? toGeneratedOrOptions : defaultToGenerated;
