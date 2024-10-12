@@ -149,7 +149,7 @@ export class DocumentCache<K, V> extends ContextCache<URI | string, K, V, string
      * @param sharedServices Service container instance to hook into document lifecycle events.
      * @param state Optional document state on which the cache should evict.
      * If not provided, the cache will evict on `DocumentBuilder#onUpdate`.
-     * Note that only *changed* documents are considered in this case.
+     * *Deleted* documents are considered in both cases.
      *
      * Providing a state here will use `DocumentBuilder#onDocumentPhase` instead,
      * which triggers on all documents that have been affected by this change, assuming that the
@@ -157,26 +157,29 @@ export class DocumentCache<K, V> extends ContextCache<URI | string, K, V, string
      */
     constructor(sharedServices: LangiumSharedCoreServices, state?: DocumentState) {
         super(uri => uri.toString());
-        let disposable: Disposable;
         if (state) {
-            disposable = sharedServices.workspace.DocumentBuilder.onDocumentPhase(state, document => {
+            this.toDispose.push(sharedServices.workspace.DocumentBuilder.onDocumentPhase(state, document => {
                 this.clear(document.uri.toString());
-            });
+            }));
+            this.toDispose.push(sharedServices.workspace.DocumentBuilder.onUpdate((_changed, deleted) => {
+                for (const uri of deleted) { // react only on deleted documents
+                    this.clear(uri);
+                }
+            }));
         } else {
-            disposable = sharedServices.workspace.DocumentBuilder.onUpdate((changed, deleted) => {
-                const allUris = changed.concat(deleted);
+            this.toDispose.push(sharedServices.workspace.DocumentBuilder.onUpdate((changed, deleted) => {
+                const allUris = changed.concat(deleted); // react on both changed and deleted documents
                 for (const uri of allUris) {
                     this.clear(uri);
                 }
-            });
+            }));
         }
-        this.toDispose.push(disposable);
     }
 }
 
 /**
  * Every key/value pair in this cache is scoped to the whole workspace.
- * If any document in the workspace changes, the whole cache is evicted.
+ * If any document in the workspace is added, changed or deleted, the whole cache is evicted.
  */
 export class WorkspaceCache<K, V> extends SimpleCache<K, V> {
 
@@ -186,19 +189,23 @@ export class WorkspaceCache<K, V> extends SimpleCache<K, V> {
      * @param sharedServices Service container instance to hook into document lifecycle events.
      * @param state Optional document state on which the cache should evict.
      * If not provided, the cache will evict on `DocumentBuilder#onUpdate`.
+     * *Deleted* documents are considered in both cases.
      */
     constructor(sharedServices: LangiumSharedCoreServices, state?: DocumentState) {
         super();
-        let disposable: Disposable;
         if (state) {
-            disposable = sharedServices.workspace.DocumentBuilder.onBuildPhase(state, () => {
+            this.toDispose.push(sharedServices.workspace.DocumentBuilder.onBuildPhase(state, () => {
                 this.clear();
-            });
+            }));
+            this.toDispose.push(sharedServices.workspace.DocumentBuilder.onUpdate((_changed, deleted) => {
+                if (deleted.length > 0) { // react only on deleted documents
+                    this.clear();
+                }
+            }));
         } else {
-            disposable = sharedServices.workspace.DocumentBuilder.onUpdate(() => {
+            this.toDispose.push(sharedServices.workspace.DocumentBuilder.onUpdate(() => { // react on both changed and deleted documents
                 this.clear();
-            });
+            }));
         }
-        this.toDispose.push(disposable);
     }
 }
