@@ -95,6 +95,30 @@ describe('Document Cache', () => {
         cache.dispose();
     });
 
+    test('Set value should be reset on document removal (without DocumentState)', async () => {
+        const cache = new DocumentCache<string, string>(services.shared);
+        cache.set(document1.uri, 'key', 'document1');
+        cache.set(document2.uri, 'key', 'document2');
+        await workspace.DocumentBuilder.update([], [document1.uri]);
+        // The previous line should clear the cache for document1
+        expect(cache.has(document1.uri, 'key')).toBe(false);
+        // The cache for document2 should be unaffected
+        expect(cache.get(document2.uri, 'key')).toBe('document2');
+        cache.dispose();
+    });
+
+    test('Set value should be reset on document removal (with DocumentState)', async () => {
+        const cache = new DocumentCache<string, string>(services.shared, DocumentState.Linked);
+        cache.set(document1.uri, 'key', 'document1');
+        cache.set(document2.uri, 'key', 'document2');
+        await workspace.DocumentBuilder.update([], [document1.uri]);
+        // The previous line should clear the cache for document1
+        expect(cache.has(document1.uri, 'key')).toBe(false);
+        // The cache for document2 should be unaffected
+        expect(cache.get(document2.uri, 'key')).toBe('document2');
+        cache.dispose();
+    });
+
 });
 
 describe('Workspace Cache', () => {
@@ -126,7 +150,7 @@ describe('Workspace Cache', () => {
         cache.dispose();
     });
 
-    test('Workspace cache can be property disposed', async () => {
+    test('Workspace cache can be properly disposed', async () => {
         const documentBuilder = workspace.DocumentBuilder as DefaultDocumentBuilder;
         const listenerCount = documentBuilder['updateListeners'].length;
         const cache = new WorkspaceCache<string, string>(services.shared);
@@ -151,6 +175,22 @@ describe('Workspace Cache', () => {
         await workspace.DocumentBuilder.update([document1.uri], []);
         expect(cache.has('key')).toBe(false);
         documentPhase.dispose();
+        cache.dispose();
+    });
+
+    test('Whole cache should be reset on document removal (without DocumentState)', async () => {
+        const cache = new WorkspaceCache<string, string>(services.shared);
+        cache.set('key', 'workspace');
+        await workspace.DocumentBuilder.update([], [document1.uri]);
+        expect(cache.has('key')).toBe(false);
+        cache.dispose();
+    });
+
+    test('Whole cache should be reset on document removal (with DocumentState)', async () => {
+        const cache = new WorkspaceCache<string, string>(services.shared, DocumentState.Linked);
+        cache.set('key', 'workspace');
+        await workspace.DocumentBuilder.update([], [document1.uri]);
+        expect(cache.has('key')).toBe(false);
         cache.dispose();
     });
 });
