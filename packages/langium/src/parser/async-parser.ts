@@ -4,13 +4,13 @@
  * terms of the MIT License, which is available in the project root.
  ******************************************************************************/
 
-import type { CancellationToken } from '../utils/cancellation.js';
+import { OperationCancelled, type CancellationToken } from '../utils/cancellation.js';
 import type { LangiumCoreServices } from '../services.js';
 import type { AstNode } from '../syntax-tree.js';
 import type { LangiumParser, ParseResult } from './langium-parser.js';
 import type { Hydrator } from '../serializer/hydrator.js';
 import type { Event } from '../utils/event.js';
-import { Deferred, OperationCancelled } from '../utils/promise-utils.js';
+import { Deferred } from '../utils/promise-utils.js';
 import { Emitter } from '../utils/event.js';
 
 /**

@@ -7,7 +7,7 @@
 import type {
     CallHierarchyIncomingCallsParams,
     CallHierarchyOutgoingCallsParams,
-    CancellationToken,
+    CancellationToken as LSPCancellationToken,
     Connection,
     Disposable,
     Event,
@@ -31,7 +31,6 @@ import type {
 import { DidChangeConfigurationNotification, Emitter, LSPErrorCodes, ResponseError, TextDocumentSyncKind } from 'vscode-languageserver-protocol';
 import { eagerLoad } from '../dependency-injection.js';
 import type { LangiumCoreServices } from '../services.js';
-import { isOperationCancelled } from '../utils/promise-utils.js';
 import { URI } from '../utils/uri-utils.js';
 import type { ConfigurationInitializedParams } from '../workspace/configuration.js';
 import { DocumentState, type LangiumDocument } from '../workspace/documents.js';
@@ -39,6 +38,8 @@ import { mergeCompletionProviderOptions } from './completion/completion-provider
 import type { LangiumSharedServices, PartialLangiumLSPServices } from './lsp-services.js';
 import { DefaultSemanticTokenOptions } from './semantic-token-provider.js';
 import { mergeSignatureHelpOptions } from './signature-help-provider.js';
+import { WorkspaceLockPriority } from '../workspace/workspace-lock.js';
+import { CancellationToken, isOperationCancelled } from '../utils/cancellation.js';
 
 export interface LanguageServer {
     initialize(params: InitializeParams): Promise<InitializeResult>
@@ -518,7 +519,7 @@ export function addExecuteCommandHandler(connection: Connection, services: Langi
     if (commandHandler) {
         connection.onExecuteCommand(async (params, token) => {
             try {
-                return await commandHandler.executeCommand(params.command, params.arguments ?? [], token);
+                return await commandHandler.executeCommand(params.command, params.arguments ?? [], CancellationToken.create(token));
             } catch (err) {
                 return responseError(err);
             }
@@ -557,8 +558,9 @@ export function addWorkspaceSymbolHandler(connection: Connection, services: Lang
         const documentBuilder = services.workspace.DocumentBuilder;
         connection.onWorkspaceSymbol(async (params, token) => {
             try {
-                await documentBuilder.waitUntil(DocumentState.IndexedContent, token);
-                const result = await lock.read(() => workspaceSymbolProvider.getSymbols(params, token), true);
+                const cancellationToken = CancellationToken.create(token);
+                await documentBuilder.waitUntil(DocumentState.IndexedContent, cancellationToken);
+                const result = await lock.read(() => workspaceSymbolProvider.getSymbols(params, cancellationToken), WorkspaceLockPriority.Immediate);
                 return result;
             } catch (err) {
                 return responseError(err);
@@ -568,8 +570,9 @@ export function addWorkspaceSymbolHandler(connection: Connection, services: Lang
         if (resolveWorkspaceSymbol) {
             connection.onWorkspaceSymbolResolve(async (workspaceSymbol, token) => {
                 try {
-                    await documentBuilder.waitUntil(DocumentState.IndexedContent, token);
-                    const result = await lock.read(() => resolveWorkspaceSymbol(workspaceSymbol, token), true);
+                    const cancellationToken = CancellationToken.create(token);
+                    await documentBuilder.waitUntil(DocumentState.IndexedContent, cancellationToken);
+                    const result = await lock.read(() => resolveWorkspaceSymbol(workspaceSymbol, cancellationToken), WorkspaceLockPriority.Immediate);
                     return result;
                 } catch (err) {
                     return responseError(err);
@@ -659,9 +662,10 @@ export function createHierarchyRequestHandler<P extends TypeHierarchySupertypesP
 ): ServerRequestHandler<P, R, PR, E> {
     const lock = sharedServices.workspace.WorkspaceLock;
     const serviceRegistry = sharedServices.ServiceRegistry;
-    return async (params: P, cancelToken: CancellationToken) => {
+    return async (params: P, cancelToken: LSPCancellationToken) => {
         const uri = URI.parse(params.item.uri);
-        const cancellationError = await waitUntilPhase<E>(sharedServices, cancelToken, uri, DocumentState.IndexedReferences);
+        const token = CancellationToken.create(cancelToken);
+        const cancellationError = await waitUntilPhase<E>(sharedServices, token, uri, DocumentState.IndexedReferences);
         if (cancellationError) {
             return cancellationError;
         }
@@ -672,9 +676,8 @@ export function createHierarchyRequestHandler<P extends TypeHierarchySupertypesP
         }
         const language = serviceRegistry.getServices(uri);
         try {
-            const result = await lock.read(async () => {
-                return await serviceCall(language, params, cancelToken);
-            }, true); // Give this priority, since we already waited until the target state
+            // Give this priority, since we already waited until the target state
+            const result = await lock.read(async () => await serviceCall(language, params, token), WorkspaceLockPriority.Immediate);
             return result;
         } catch (err) {
             return responseError<E>(err);
@@ -690,9 +693,10 @@ export function createServerRequestHandler<P extends { textDocument: TextDocumen
     const documents = sharedServices.workspace.LangiumDocuments;
     const lock = sharedServices.workspace.WorkspaceLock;
     const serviceRegistry = sharedServices.ServiceRegistry;
-    return async (params: P, cancelToken: CancellationToken) => {
+    return async (params: P, cancelToken: LSPCancellationToken) => {
         const uri = URI.parse(params.textDocument.uri);
-        const cancellationError = await waitUntilPhase<E>(sharedServices, cancelToken, uri, targetState);
+        const token = CancellationToken.create(cancelToken);
+        const cancellationError = await waitUntilPhase<E>(sharedServices, token, uri, targetState);
         if (cancellationError) {
             return cancellationError;
         }
@@ -709,9 +713,8 @@ export function createServerRequestHandler<P extends { textDocument: TextDocumen
             return responseError<E>(new Error(errorText));
         }
         try {
-            const result = await lock.read(async () => {
-                return await serviceCall(language, document, params, cancelToken);
-            }, true); // Give this priority, since we already waited until the target state
+            // Give this priority, since we already waited until the target state
+            const result = await lock.read(async () => await serviceCall(language, document, params, token), WorkspaceLockPriority.Immediate);
             return result;
         } catch (err) {
             return responseError<E>(err);
@@ -727,9 +730,10 @@ export function createRequestHandler<P extends { textDocument: TextDocumentIdent
     const documents = sharedServices.workspace.LangiumDocuments;
     const lock = sharedServices.workspace.WorkspaceLock;
     const serviceRegistry = sharedServices.ServiceRegistry;
-    return async (params: P, cancelToken: CancellationToken) => {
+    return async (params: P, cancelToken: LSPCancellationToken) => {
         const uri = URI.parse(params.textDocument.uri);
-        const cancellationError = await waitUntilPhase<E>(sharedServices, cancelToken, uri, targetState);
+        const token = CancellationToken.create(cancelToken);
+        const cancellationError = await waitUntilPhase<E>(sharedServices, token, uri, targetState);
         if (cancellationError) {
             return cancellationError;
         }
@@ -745,9 +749,8 @@ export function createRequestHandler<P extends { textDocument: TextDocumentIdent
             return responseError<E>(new Error(errorText));
         }
         try {
-            const result = await lock.read(async () => {
-                return await serviceCall(language, document, params, cancelToken);
-            }, true); // Give this priority, since we already waited until the target state
+            // Give this priority, since we already waited until the target state
+            const result = await lock.read(async () => await serviceCall(language, document, params, token), WorkspaceLockPriority.Immediate);
             return result;
         } catch (err) {
             return responseError<E>(err);

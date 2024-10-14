@@ -10,7 +10,6 @@ import { CancellationToken } from '../utils/cancellation.js';
 import type { MaybePromise } from '../utils/promise-utils.js';
 import type { LangiumDocument } from '../workspace/documents.js';
 import { streamAst } from '../utils/ast-utils.js';
-import { interruptAndCheck } from '../utils/promise-utils.js';
 
 export type InlayHintAcceptor = (inlayHint: InlayHint) => void;
 
@@ -33,7 +32,7 @@ export abstract class AbstractInlayHintProvider implements InlayHintProvider {
         const inlayHints: InlayHint[] = [];
         const acceptor: InlayHintAcceptor = hint => inlayHints.push(hint);
         for (const node of streamAst(root, { range: params.range })) {
-            await interruptAndCheck(cancelToken);
+            await cancelToken.check();
             this.computeInlayHint(node, acceptor);
         }
         return inlayHints;

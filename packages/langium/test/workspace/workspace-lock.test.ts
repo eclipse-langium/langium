@@ -5,7 +5,7 @@
  ******************************************************************************/
 
 import { describe, expect, test } from 'vitest';
-import { Deferred, delayNextTick, DefaultWorkspaceLock } from 'langium';
+import { Deferred, delayNextTick, DefaultWorkspaceLock, WorkspaceLockPriority } from 'langium';
 
 describe('WorkspaceLock', () => {
 
@@ -124,7 +124,7 @@ describe('WorkspaceLock', () => {
         await mutex.read(() => {
             // Set counter to 5
             counter = 5;
-        }, true);
+        }, WorkspaceLockPriority.Immediate);
         // Assert that the read action has received priority
         expect(counter).toBe(5);
         await delayNextTick();

@@ -4,8 +4,8 @@
  * terms of the MIT License, which is available in the project root.
  ******************************************************************************/
 
-import { CancellationToken, CancellationTokenSource } from '../utils/cancellation.js';
-import { Deferred, isOperationCancelled, type MaybePromise } from '../utils/promise-utils.js';
+import { CancellationToken, CancellationTokenSource, isOperationCancelled } from '../utils/cancellation.js';
+import { Deferred, delayNextTick, type MaybePromise } from '../utils/promise-utils.js';
 
 /**
  * Utility service to execute mutually exclusive actions.
@@ -22,24 +22,32 @@ export interface WorkspaceLock {
 
     /**
      * Performs a single action, like computing completion results or providing workspace symbols.
-     * Read actions will only be executed after all write actions have finished. They will be executed in parallel if possible.
-     *
-     * If a write action is currently running, the read action will be queued up and executed afterwards.
-     * If a new write action is queued up while a read action is waiting, the write action will receive priority and will be handled before the read action.
+     * Read actions will be executed in parallel if possible.
      *
      * Note that read actions are not allowed to modify anything in the workspace. Please use {@link write} instead.
      *
      * @param action the action to perform.
-     * @param priority
-     * If set to true, the action will receive immediate attention and will be instantly executed. All other queued read/write actions will be postponed.
-     * This should only be used for actions that require a specific document state and have already awaited the necessary write actions.
+     * @param priority the priority for this action. See {@link WorkspaceLockPriority} for more info.
      */
-    read<T>(action: () => MaybePromise<T>, priority?: boolean): Promise<T>;
+    read<T>(action: () => MaybePromise<T>, priority?: WorkspaceLockPriority): Promise<T>;
 
     /**
      * Cancels the last queued write action. All previous write actions already have been cancelled.
      */
     cancelWrite(): void;
+}
+
+export enum WorkspaceLockPriority {
+    /**
+     * The action is put into the queue and executed after the current write action is done.
+     * If the action in question is a read action, it will be executed in parallel with other read actions.
+     * The action will block the lock until it is done or has been aborted.
+     */
+    Normal = 0,
+    /**
+     * The action should be executed immediately, and afterwards behaves like a normal action.
+     */
+    Immediate = 1
 }
 
 type LockAction<T = void> = (token: CancellationToken) => MaybePromise<T>;
@@ -64,21 +72,22 @@ export class DefaultWorkspaceLock implements WorkspaceLock {
         return this.enqueue(this.writeQueue, action, tokenSource.token);
     }
 
-    read<T>(action: () => MaybePromise<T>, priority?: boolean): Promise<T> {
-        if (priority) {
+    read<T>(action: () => MaybePromise<T>, priority?: WorkspaceLockPriority): Promise<T> {
+        if (priority === WorkspaceLockPriority.Immediate) {
             this.counter++;
             const deferred = new Deferred<T>();
-            const end = (run: () => void) => {
-                run();
-                // Ensure that in any case the counter is decremented and the next operation is performed
-                this.counter--;
-                this.performNextOperation();
-            };
-            // Instanly run the action and resolve/reject the promise afterwards
-            Promise.resolve(action()).then(
-                result => end(() => deferred.resolve(result)),
-                err => end(() => deferred.reject(err))
-            );
+            (async () => {
+                try {
+                    await delayNextTick();
+                    const result = await action();
+                    deferred.resolve(result);
+                } catch (err) {
+                    deferred.reject(err);
+                } finally {
+                    this.counter--;
+                    this.performNextOperation();
+                }
+            })();
             return deferred.promise;
         } else {
             return this.enqueue(this.readQueue, action);
@@ -114,8 +123,9 @@ export class DefaultWorkspaceLock implements WorkspaceLock {
         this.counter += entries.length;
         await Promise.all(entries.map(async ({ action, deferred, cancellationToken }) => {
             try {
-                // Move the execution of the action to the next event loop tick via `Promise.resolve()`
-                const result = await Promise.resolve().then(() => action(cancellationToken));
+                // Move the execution of the action to the next event loop tick
+                await delayNextTick();
+                const result = await action(cancellationToken);
                 deferred.resolve(result);
             } catch (err) {
                 if (isOperationCancelled(err)) {

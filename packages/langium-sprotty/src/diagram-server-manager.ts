@@ -4,13 +4,13 @@
  * terms of the MIT License, which is available in the project root.
  ******************************************************************************/
 
-import type { CancellationToken, Connection } from 'vscode-languageserver';
+import type { Connection } from 'vscode-languageserver';
 import type { ActionMessage, DiagramOptions, DiagramServer, RequestModelAction } from 'sprotty-protocol';
-import type { LangiumDocument, ServiceRegistry, URI } from 'langium';
+import type { CancellationToken, LangiumDocument, ServiceRegistry, URI } from 'langium';
 import type { LangiumSprottyServices, LangiumSprottySharedServices } from './sprotty-services.js';
 import type { LangiumDiagramGeneratorArguments } from './diagram-generator.js';
 import { isRequestAction, RejectAction } from 'sprotty-protocol';
-import { DocumentState, UriUtils, interruptAndCheck, stream } from 'langium';
+import { DocumentState, UriUtils, stream } from 'langium';
 import { DiagramActionNotification } from './lsp.js';
 
 /**
@@ -89,7 +89,7 @@ export class DefaultDiagramServerManager implements DiagramServerManager {
 
     protected async updateDiagrams(documents: Map<LangiumDocument, DiagramServer[]>, cancelToken: CancellationToken): Promise<void> {
         while (documents.size > 0) {
-            await interruptAndCheck(cancelToken);
+            await cancelToken.check();
             const [firstEntry] = documents;
             const [document, diagramServers] = firstEntry;
             const language = this.serviceRegistry.getServices(document.uri) as LangiumSprottyServices;

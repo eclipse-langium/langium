@@ -5,6 +5,7 @@
  ******************************************************************************/
 
 export * from './caching.js';
+export * from './cancellation.js';
 export * from './event.js';
 export * from './collections.js';
 export * from './disposable.js';
@@ -15,8 +16,7 @@ export * from './stream.js';
 export * from './uri-utils.js';
 
 import * as AstUtils from './ast-utils.js';
-import * as Cancellation from './cancellation.js';
 import * as CstUtils from './cst-utils.js';
 import * as GrammarUtils from './grammar-utils.js';
 import * as RegExpUtils from './regexp-utils.js';
-export { AstUtils, Cancellation, CstUtils, GrammarUtils, RegExpUtils };
+export { AstUtils, CstUtils, GrammarUtils, RegExpUtils };

@@ -9,8 +9,7 @@ import { WorkerThreadAsyncParser } from 'langium/node';
 import { createLangiumGrammarServices } from 'langium/grammar';
 import type { Grammar, LangiumCoreServices, ParseResult } from 'langium';
 import type { LangiumServices } from 'langium/lsp';
-import { EmptyFileSystem, GrammarUtils, CstUtils, GrammarAST, isOperationCancelled } from 'langium';
-import { CancellationToken, CancellationTokenSource } from 'vscode-languageserver';
+import { EmptyFileSystem, GrammarUtils, CstUtils, GrammarAST, isOperationCancelled, CancellationToken, CancellationTokenSource } from 'langium';
 import { fail } from 'node:assert';
 import { fileURLToPath } from 'node:url';
 

@@ -12,7 +12,6 @@ import type { AstNodeDescription } from '../syntax-tree.js';
 import type { NodeKindProvider } from './node-kind-provider.js';
 import type { FuzzyMatcher } from './fuzzy-matcher.js';
 import { CancellationToken } from '../utils/cancellation.js';
-import { interruptAndCheck } from '../utils/promise-utils.js';
 
 /**
  * Shared service for handling workspace symbols requests.
@@ -58,7 +57,7 @@ export class DefaultWorkspaceSymbolProvider implements WorkspaceSymbolProvider {
         const workspaceSymbols: WorkspaceSymbol[] = [];
         const query = params.query.toLowerCase();
         for (const description of this.indexManager.allElements()) {
-            await interruptAndCheck(cancelToken);
+            await cancelToken.check();
             if (this.fuzzyMatcher.match(query, description.name)) {
                 const symbol = this.getWorkspaceSymbol(description);
                 if (symbol) {

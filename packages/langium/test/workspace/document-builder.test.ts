@@ -5,11 +5,10 @@
  ******************************************************************************/
 
 import type { AstNode, DocumentBuilder, FileSystemProvider, LangiumDocument, LangiumDocumentFactory, LangiumDocuments, Module, Reference, TextDocumentProvider, ValidationChecks } from 'langium';
-import { AstUtils, DocumentState, TextDocument, URI, isOperationCancelled } from 'langium';
+import { AstUtils, DocumentState, TextDocument, URI, isOperationCancelled, CancellationToken, CancellationTokenSource } from 'langium';
 import { createServicesForGrammar } from 'langium/grammar';
 import { setTextDocument } from 'langium/test';
 import { describe, expect, test, vi, beforeEach, afterEach } from 'vitest';
-import { CancellationToken, CancellationTokenSource } from 'vscode-languageserver';
 import { fail } from 'assert';
 import type { LangiumServices, LangiumSharedServices } from '../../lib/lsp/lsp-services.js';
 

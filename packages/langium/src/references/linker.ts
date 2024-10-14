@@ -12,7 +12,6 @@ import type { ScopeProvider } from './scope-provider.js';
 import { CancellationToken } from '../utils/cancellation.js';
 import { isAstNode, isAstNodeDescription, isLinkingError } from '../syntax-tree.js';
 import { findRootNode, streamAst, streamReferences } from '../utils/ast-utils.js';
-import { interruptAndCheck } from '../utils/promise-utils.js';
 import { DocumentState } from '../workspace/documents.js';
 
 /**
@@ -91,7 +90,7 @@ export class DefaultLinker implements Linker {
 
     async link(document: LangiumDocument, cancelToken = CancellationToken.None): Promise<void> {
         for (const node of streamAst(document.parseResult.value)) {
-            await interruptAndCheck(cancelToken);
+            await cancelToken.check();
             streamReferences(node).forEach(ref => this.doLink(ref, document));
         }
     }

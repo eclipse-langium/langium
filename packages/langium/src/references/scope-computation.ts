@@ -12,7 +12,6 @@ import type { NameProvider } from './name-provider.js';
 import { CancellationToken } from '../utils/cancellation.js';
 import { streamAllContents, streamContents } from '../utils/ast-utils.js';
 import { MultiMap } from '../utils/collections.js';
-import { interruptAndCheck } from '../utils/promise-utils.js';
 
 /**
  * Language-specific service for precomputing global and local scopes. The service methods are executed
@@ -94,7 +93,7 @@ export class DefaultScopeComputation implements ScopeComputation {
 
         this.exportNode(parentNode, exports, document);
         for (const node of children(parentNode)) {
-            await interruptAndCheck(cancelToken);
+            await cancelToken.check();
             this.exportNode(node, exports, document);
         }
         return exports;
@@ -116,7 +115,7 @@ export class DefaultScopeComputation implements ScopeComputation {
         const scopes = new MultiMap<AstNode, AstNodeDescription>();
         // Here we navigate the full AST - local scopes shall be available in the whole document
         for (const node of streamAllContents(rootNode)) {
-            await interruptAndCheck(cancelToken);
+            await cancelToken.check();
             this.processNode(node, document, scopes);
         }
         return scopes;

@@ -4,7 +4,7 @@
  * terms of the MIT License, which is available in the project root.
  ******************************************************************************/
 
-import { CancellationToken } from '../utils/cancellation.js';
+import { CancellationToken, isOperationCancelled, OperationCancelled } from '../utils/cancellation.js';
 import { Disposable } from '../utils/disposable.js';
 import type { ServiceRegistry } from '../service-registry.js';
 import type { LangiumSharedCoreServices } from '../services.js';
@@ -15,7 +15,6 @@ import type { ValidationOptions } from '../validation/document-validator.js';
 import type { IndexManager } from '../workspace/index-manager.js';
 import type { LangiumDocument, LangiumDocuments, LangiumDocumentFactory, TextDocumentProvider } from './documents.js';
 import { MultiMap } from '../utils/collections.js';
-import { OperationCancelled, interruptAndCheck, isOperationCancelled } from '../utils/promise-utils.js';
 import { stream } from '../utils/stream.js';
 import type { URI } from '../utils/uri-utils.js';
 import { ValidationCategory } from '../validation/validation-registry.js';
@@ -223,7 +222,7 @@ export class DefaultDocumentBuilder implements DocumentBuilder {
         // Notify listeners of the update
         await this.emitUpdate(changed, deleted);
         // Only allow interrupting the execution after all state changes are done
-        await interruptAndCheck(cancelToken);
+        await cancelToken.check();
 
         // Collect and sort all documents that we should rebuild
         const rebuildDocuments = this.sortDocuments(
@@ -382,7 +381,7 @@ export class DefaultDocumentBuilder implements DocumentBuilder {
         callback: (document: LangiumDocument) => MaybePromise<unknown>): Promise<void> {
         const filtered = documents.filter(doc => doc.state < targetState);
         for (const document of filtered) {
-            await interruptAndCheck(cancelToken);
+            await cancelToken.check();
             await callback(document);
             document.state = targetState;
             await this.notifyDocumentPhase(document, targetState, cancelToken);
@@ -472,7 +471,7 @@ export class DefaultDocumentBuilder implements DocumentBuilder {
         }
         const listeners = this.buildPhaseListeners.get(state);
         for (const listener of listeners) {
-            await interruptAndCheck(cancelToken);
+            await cancelToken.check();
             await listener(documents, cancelToken);
         }
     }

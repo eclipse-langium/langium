@@ -9,7 +9,7 @@ import type { WorkspaceFolder } from 'vscode-languageserver-types';
 import type { ServiceRegistry } from '../service-registry.js';
 import type { LangiumSharedCoreServices } from '../services.js';
 import { CancellationToken } from '../utils/cancellation.js';
-import { Deferred, interruptAndCheck } from '../utils/promise-utils.js';
+import { Deferred } from '../utils/promise-utils.js';
 import { URI, UriUtils } from '../utils/uri-utils.js';
 import type { BuildOptions, DocumentBuilder } from './document-builder.js';
 import type { LangiumDocument, LangiumDocuments } from './documents.js';
@@ -99,7 +99,7 @@ export class DefaultWorkspaceManager implements WorkspaceManager {
         const documents = await this.performStartup(folders);
         // Only after creating all documents do we check whether we need to cancel the initialization
         // The document builder will later pick up on all unprocessed documents
-        await interruptAndCheck(cancelToken);
+        await cancelToken.check();
         await this.documentBuilder.build(documents, this.initialBuildOptions, cancelToken);
     }
 

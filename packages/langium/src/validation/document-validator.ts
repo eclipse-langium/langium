@@ -12,11 +12,10 @@ import type { LangiumCoreServices } from '../services.js';
 import type { AstNode, CstNode } from '../syntax-tree.js';
 import type { LangiumDocument } from '../workspace/documents.js';
 import type { DiagnosticData, DiagnosticInfo, ValidationAcceptor, ValidationCategory, ValidationRegistry } from './validation-registry.js';
-import { CancellationToken } from '../utils/cancellation.js';
+import { CancellationToken, isOperationCancelled } from '../utils/cancellation.js';
 import { findNodeForKeyword, findNodeForProperty } from '../utils/grammar-utils.js';
 import { streamAst } from '../utils/ast-utils.js';
 import { tokenToRange } from '../utils/cst-utils.js';
-import { interruptAndCheck, isOperationCancelled } from '../utils/promise-utils.js';
 import { diagnosticData } from './validation-registry.js';
 
 export interface ValidationOptions {
@@ -62,7 +61,7 @@ export class DefaultDocumentValidator implements DocumentValidator {
         const parseResult = document.parseResult;
         const diagnostics: Diagnostic[] = [];
 
-        await interruptAndCheck(cancelToken);
+        await cancelToken.check();
 
         if (!options.categories || options.categories.includes('built-in')) {
             this.processLexingErrors(parseResult, diagnostics, options);
@@ -91,7 +90,7 @@ export class DefaultDocumentValidator implements DocumentValidator {
             console.error('An error occurred during validation:', err);
         }
 
-        await interruptAndCheck(cancelToken);
+        await cancelToken.check();
 
         return diagnostics;
     }
@@ -182,7 +181,7 @@ export class DefaultDocumentValidator implements DocumentValidator {
         };
 
         await Promise.all(streamAst(rootNode).map(async node => {
-            await interruptAndCheck(cancelToken);
+            await cancelToken.check();
             const checks = this.validationRegistry.getChecks(node.$type, options.categories);
             for (const check of checks) {
                 await check(node, acceptor, cancelToken);

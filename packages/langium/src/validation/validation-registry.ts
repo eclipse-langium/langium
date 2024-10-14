@@ -5,14 +5,13 @@
  ******************************************************************************/
 
 import type { CodeDescription, DiagnosticRelatedInformation, DiagnosticTag, integer, Range } from 'vscode-languageserver-types';
-import type { CancellationToken } from '../utils/cancellation.js';
+import { isOperationCancelled, type CancellationToken } from '../utils/cancellation.js';
 import type { LangiumCoreServices } from '../services.js';
 import type { AstNode, AstReflection, Properties } from '../syntax-tree.js';
 import type { MaybePromise } from '../utils/promise-utils.js';
 import type { Stream } from '../utils/stream.js';
 import type { DocumentSegment } from '../workspace/documents.js';
 import { MultiMap } from '../utils/collections.js';
-import { isOperationCancelled } from '../utils/promise-utils.js';
 import { stream } from '../utils/stream.js';
 
 export type DiagnosticInfo<N extends AstNode, P extends string = Properties<N>> = {

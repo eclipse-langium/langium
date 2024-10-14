@@ -14,7 +14,6 @@ import { streamAst } from '../utils/ast-utils.js';
 import { inRange } from '../utils/cst-utils.js';
 import { findNodeForKeyword, findNodeForProperty, findNodesForKeyword, findNodesForProperty } from '../utils/grammar-utils.js';
 import type { MaybePromise } from '../utils/promise-utils.js';
-import { interruptAndCheck } from '../utils/promise-utils.js';
 import type { LangiumDocument } from '../workspace/documents.js';
 import type { LangiumServices } from './lsp-services.js';
 
@@ -287,7 +286,7 @@ export abstract class AbstractSemanticTokenProvider implements SemanticTokenProv
         do {
             result = treeIterator.next();
             if (!result.done) {
-                await interruptAndCheck(cancelToken);
+                await cancelToken.check();
                 const node = result.value;
                 if (this.highlightElement(node, acceptor) === 'prune') {
                     treeIterator.prune();
