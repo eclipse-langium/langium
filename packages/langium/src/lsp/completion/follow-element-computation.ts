@@ -52,8 +52,6 @@ function findNextFeaturesInternal(options: { next: NextFeature, cardinalities: M
     const feature = next.feature;
     if (visited.has(feature)) {
         return [];
-    } else {
-        visited.add(feature);
     }
     let parent: ast.Group | undefined;
     let item = feature;
