@@ -157,7 +157,7 @@ export function joinToNode<T>(
  *   `.appendNewLine()
  */
 export function joinTracedToNode<T extends AstNode>(astNode: T, property?: Properties<T>): // eslint-disable-next-line @typescript-eslint/indent
-    <E>(iterable: Iterable<E> | E[], toGenerated?: ((element: E, index: number, isLast: boolean) => Generated) | JoinOptions<E>, options?: JoinOptions<E>) => CompositeGeneratorNode | undefined;
+    <E>(iterable: Iterable<E> | E[], toGenerated?: ((element: E, index: number, isLast: boolean) => Generated) | JoinOptions<E>, options?: JoinOptions<E>) => CompositeGeneratorNode;
 
 /**
  * Convenience function for joining the elements of some `iterable` and gathering tracing information
