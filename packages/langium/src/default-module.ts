@@ -35,6 +35,7 @@ import { LangiumParserErrorMessageProvider } from './parser/langium-parser.js';
 import { DefaultAsyncParser } from './parser/async-parser.js';
 import { DefaultWorkspaceLock } from './workspace/workspace-lock.js';
 import { DefaultHydrator } from './serializer/hydrator.js';
+import { defaultLexerErrorProvider } from 'chevrotain';
 
 /**
  * Context required for creating the default language-specific dependency injection module.
@@ -61,7 +62,8 @@ export function createDefaultCoreModule(context: DefaultCoreModuleContext): Modu
             ValueConverter: () => new DefaultValueConverter(),
             TokenBuilder: () => new DefaultTokenBuilder(),
             Lexer: (services) => new DefaultLexer(services),
-            ParserErrorMessageProvider: () => new LangiumParserErrorMessageProvider()
+            ParserErrorMessageProvider: () => new LangiumParserErrorMessageProvider(),
+            LexerErrorMessageProvider: () => defaultLexerErrorProvider
         },
         workspace: {
             AstNodeLocator: () => new DefaultAstNodeLocator(),
