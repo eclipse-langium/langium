@@ -5,7 +5,7 @@
  ******************************************************************************/
 
 // Ensure that all imports are erased at runtime to avoid circular dependencies.
-import type { IParserErrorMessageProvider } from 'chevrotain';
+import type { IParserErrorMessageProvider, ILexerErrorMessageProvider } from 'chevrotain';
 import type { CommentProvider } from './documentation/comment-provider.js';
 import type { DocumentationProvider } from './documentation/documentation-provider.js';
 import type { Grammar } from './languages/generated/ast.js';
@@ -60,6 +60,7 @@ export type LangiumDefaultCoreServices = {
         readonly ValueConverter: ValueConverter
         readonly LangiumParser: LangiumParser
         readonly ParserErrorMessageProvider: IParserErrorMessageProvider
+        readonly LexerErrorMessageProvider: ILexerErrorMessageProvider
         readonly CompletionParser: LangiumCompletionParser
         readonly TokenBuilder: TokenBuilder
         readonly Lexer: Lexer
