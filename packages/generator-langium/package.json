@@ -42,8 +42,7 @@
     "@types/lodash": "~4.17.0",
     "@types/which": "~3.0.3",
     "@yeoman/types": "~1.2.0",
-    "yeoman-test": "~8.2.0",
-    "yo": "~5.0.0"
+    "yeoman-test": "~8.2.0"
   },
   "volta": {
     "node": "18.19.1",
