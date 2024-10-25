@@ -342,6 +342,7 @@ export class LangiumParser extends AbstractLangiumParser {
             let last = this.current;
             if (action.feature && action.operator) {
                 last = this.construct();
+                this.nodeBuilder.removeNode(last.$cstNode);
                 const node = this.nodeBuilder.buildCompositeNode(action);
                 node.content.push(last.$cstNode);
                 const newItem = { $type };

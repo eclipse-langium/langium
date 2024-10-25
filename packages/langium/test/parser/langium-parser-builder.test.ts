@@ -6,7 +6,7 @@
 
 import type { TokenType, TokenVocabulary } from 'chevrotain';
 import type { AstNode, CstNode, GenericAstNode, Grammar, GrammarAST, LangiumParser, ParseResult, TokenBuilderOptions } from 'langium';
-import { EmptyFileSystem, DefaultTokenBuilder, GrammarUtils } from 'langium';
+import { EmptyFileSystem, DefaultTokenBuilder, GrammarUtils, CstUtils } from 'langium';
 import { describe, expect, test, onTestFailed, beforeAll } from 'vitest';
 import { createLangiumGrammarServices, createServicesForGrammar } from 'langium/grammar';
 import { expandToString } from 'langium/generate';
@@ -924,6 +924,21 @@ describe('Unassigned subrules', () => {
         testProps('public A 100 C 100 {}', 'value1', 'value2');
     });
 
+});
+
+describe('Handling hidden nodes', () => {
+    test('Should find comment node of element affected by an assigned action', async () => {
+        const grammar = createLangiumGrammarServices(EmptyFileSystem);
+        const parser = parseHelper(grammar.grammar);
+        const doc = await parser("Test returns string: /** comment 1 */ 'A' | /** comment 2 */  'B' | /** comment 3 */ 'C';");
+        expect(doc).toBeDefined();
+        const value = doc.parseResult.value as Grammar;
+        const ruleDef = value.rules[0].definition as GrammarAST.Alternatives;
+        const a = ruleDef.elements[0];
+        const commentNode = CstUtils.findCommentNode(a.$cstNode, ['ML_COMMENT']);
+        expect(commentNode).toBeDefined();
+        expect(commentNode!.text).toBe('/** comment 1 */');
+    });
 });
 
 describe('Handling EOF', () => {
