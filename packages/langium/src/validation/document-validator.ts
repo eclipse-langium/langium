@@ -184,6 +184,22 @@ export class DefaultDocumentValidator implements DocumentValidator {
             validationItems.push(this.toDiagnostic(severity, message, info));
         };
 
+        await this.validateAstBefore(rootNode, options, acceptor, cancelToken);
+        await this.validateAstNodes(rootNode, options, acceptor, cancelToken);
+        await this.validateAstAfter(rootNode, options, acceptor, cancelToken);
+
+        return validationItems;
+    }
+
+    protected async validateAstBefore(rootNode: AstNode, options: ValidationOptions, acceptor: ValidationAcceptor, cancelToken = CancellationToken.None): Promise<void> {
+        const checksBefore = this.validationRegistry.checksBefore;
+        for (const checkBefore of checksBefore) {
+            await interruptAndCheck(cancelToken);
+            await checkBefore(rootNode, acceptor, options.categories ?? [], cancelToken);
+        }
+    }
+
+    protected async validateAstNodes(rootNode: AstNode, options: ValidationOptions, acceptor: ValidationAcceptor, cancelToken = CancellationToken.None): Promise<void> {
         await Promise.all(streamAst(rootNode).map(async node => {
             await interruptAndCheck(cancelToken);
             const checks = this.validationRegistry.getChecks(node.$type, options.categories);
@@ -191,7 +207,14 @@ export class DefaultDocumentValidator implements DocumentValidator {
                 await check(node, acceptor, cancelToken);
             }
         }));
-        return validationItems;
+    }
+
+    protected async validateAstAfter(rootNode: AstNode, options: ValidationOptions, acceptor: ValidationAcceptor, cancelToken = CancellationToken.None): Promise<void> {
+        const checksAfter = this.validationRegistry.checksAfter;
+        for (const checkAfter of checksAfter) {
+            await interruptAndCheck(cancelToken);
+            await checkAfter(rootNode, acceptor, options.categories ?? [], cancelToken);
+        }
     }
 
     protected toDiagnostic<N extends AstNode>(severity: ValidationSeverity, message: string, info: DiagnosticInfo<N, string>): Diagnostic {
