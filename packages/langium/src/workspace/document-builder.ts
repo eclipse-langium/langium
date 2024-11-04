@@ -452,7 +452,8 @@ export class DefaultDocumentBuilder implements DocumentBuilder {
 
     protected async notifyDocumentPhase(document: LangiumDocument, state: DocumentState, cancelToken: CancellationToken): Promise<void> {
         const listeners = this.documentPhaseListeners.get(state);
-        for (const listener of listeners) {
+        const listenersCopy = listeners.slice();
+        for (const listener of listenersCopy) {
             try {
                 await listener(document, cancelToken);
             } catch (err) {
@@ -471,7 +472,8 @@ export class DefaultDocumentBuilder implements DocumentBuilder {
             return;
         }
         const listeners = this.buildPhaseListeners.get(state);
-        for (const listener of listeners) {
+        const listenersCopy = listeners.slice();
+        for (const listener of listenersCopy) {
             await interruptAndCheck(cancelToken);
             await listener(documents, cancelToken);
         }

@@ -283,6 +283,30 @@ describe('DefaultDocumentBuilder', () => {
         ]);
     });
 
+    test('can handle multiple listeners', async () => {
+        const services = await createServices();
+        const workspace = services.shared.workspace;
+        const documentFactory = workspace.LangiumDocumentFactory;
+        const documents = workspace.LangiumDocuments;
+        const uri = URI.parse('file:///test1.txt');
+        const document1 = documentFactory.fromString(`
+            foo 1 A
+            foo 11 B
+            bar A
+            bar B
+        `, uri);
+        documents.addDocument(document1);
+
+        const builder = workspace.DocumentBuilder;
+        const p1 = builder.waitUntil(DocumentState.IndexedReferences, uri).then(() => {
+        });
+        const p2 = builder.waitUntil(DocumentState.IndexedReferences, uri).then(() => {
+        });
+        await builder.build([document1], {});
+        await Promise.all([p1, p2]);
+        expect(document1.state).toBe(DocumentState.IndexedReferences);
+    });
+
     test('waits until a specific workspace stage has been reached', async () => {
         const services = await createServices();
         const documentFactory = services.shared.workspace.LangiumDocumentFactory;
