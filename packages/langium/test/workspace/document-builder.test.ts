@@ -283,7 +283,7 @@ describe('DefaultDocumentBuilder', () => {
         ]);
     });
 
-    test('can handle multiple listeners', async () => {
+    test('can handle multiple listeners (buildPhase)', async () => {
         const services = await createServices();
         const workspace = services.shared.workspace;
         const documentFactory = workspace.LangiumDocumentFactory;
@@ -305,6 +305,36 @@ describe('DefaultDocumentBuilder', () => {
         await builder.build([document1], {});
         await Promise.all([p1, p2]);
         expect(document1.state).toBe(DocumentState.IndexedReferences);
+    });
+
+    test('can handle multiple listeners (documentPhase)', async () => {
+        const services = await createServices();
+        const workspace = services.shared.workspace;
+        const documentFactory = workspace.LangiumDocumentFactory;
+        const documents = workspace.LangiumDocuments;
+        const uri = URI.parse('file:///test1.txt');
+        const document1 = documentFactory.fromString(`
+            foo 1 A
+            foo 11 B
+            bar A
+            bar B
+        `, uri);
+        documents.addDocument(document1);
+
+        const builder = workspace.DocumentBuilder;
+        let p1called = false;
+        const p1 = builder.onDocumentPhase(DocumentState.IndexedReferences, (_d) => {
+            p1called = true;
+            p1.dispose();
+        });
+        let p2called = false;
+        const p2 = builder.onDocumentPhase(DocumentState.IndexedReferences, (_d) => {
+            p2called = true;
+            p2.dispose();
+        });
+        await builder.build([document1], {});
+        expect(p1called).toBe(true);
+        expect(p2called).toBe(true);
     });
 
     test('waits until a specific workspace stage has been reached', async () => {
