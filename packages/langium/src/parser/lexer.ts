@@ -9,7 +9,7 @@ import type { LangiumCoreServices } from '../services.js';
 import { Lexer as ChevrotainLexer, defaultLexerErrorProvider } from 'chevrotain';
 import type { LexingReport, TokenBuilder } from './token-builder.js';
 
-export abstract class AbstractLexerErrorMessageProvider implements ILexerErrorMessageProvider {
+export class DefaultLexerErrorMessageProvider implements ILexerErrorMessageProvider {
 
     buildUnexpectedCharactersMessage(fullText: string, startOffset: number, length: number, line?: number, column?: number): string {
         return defaultLexerErrorProvider.buildUnexpectedCharactersMessage(fullText, startOffset, length, line, column);
