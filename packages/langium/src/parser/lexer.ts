@@ -4,10 +4,21 @@
  * terms of the MIT License, which is available in the project root.
  ******************************************************************************/
 
-import type { ILexingError, IMultiModeLexerDefinition, IToken, TokenType, TokenTypeDictionary, TokenVocabulary } from 'chevrotain';
+import type { ILexerErrorMessageProvider, ILexingError, IMultiModeLexerDefinition, IToken, TokenType, TokenTypeDictionary, TokenVocabulary } from 'chevrotain';
 import type { LangiumCoreServices } from '../services.js';
-import { Lexer as ChevrotainLexer } from 'chevrotain';
+import { Lexer as ChevrotainLexer, defaultLexerErrorProvider } from 'chevrotain';
 import type { LexingReport, TokenBuilder } from './token-builder.js';
+
+export class DefaultLexerErrorMessageProvider implements ILexerErrorMessageProvider {
+
+    buildUnexpectedCharactersMessage(fullText: string, startOffset: number, length: number, line?: number, column?: number): string {
+        return defaultLexerErrorProvider.buildUnexpectedCharactersMessage(fullText, startOffset, length, line, column);
+    }
+
+    buildUnableToPopLexerModeMessage(token: IToken): string {
+        return defaultLexerErrorProvider.buildUnableToPopLexerModeMessage(token);
+    }
+}
 
 export interface LexerResult {
     /**
@@ -40,11 +51,13 @@ export interface Lexer {
 
 export class DefaultLexer implements Lexer {
 
-    protected chevrotainLexer: ChevrotainLexer;
-    protected tokenBuilder: TokenBuilder;
+    protected readonly tokenBuilder: TokenBuilder;
+    protected readonly errorMessageProvider: ILexerErrorMessageProvider;
     protected tokenTypes: TokenTypeDictionary;
+    protected chevrotainLexer: ChevrotainLexer;
 
     constructor(services: LangiumCoreServices) {
+        this.errorMessageProvider = services.parser.LexerErrorMessageProvider;
         this.tokenBuilder = services.parser.TokenBuilder;
         const tokens = this.tokenBuilder.buildTokens(services.Grammar, {
             caseInsensitive: services.LanguageMetaData.caseInsensitive
@@ -54,7 +67,8 @@ export class DefaultLexer implements Lexer {
         const production = services.LanguageMetaData.mode === 'production';
         this.chevrotainLexer = new ChevrotainLexer(lexerTokens, {
             positionTracking: 'full',
-            skipValidations: production
+            skipValidations: production,
+            errorMessageProvider: this.errorMessageProvider
         });
     }
 
