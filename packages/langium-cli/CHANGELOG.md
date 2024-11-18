@@ -1,5 +1,9 @@
 # Change Log of `langium-cli`
 
+## v3.3.0 (Nov. 2024)
+
+The `mode` flag (i.e. `production` or `development`) is now exposed via the generated language meta data ([#1688](https://github.com/eclipse-langium/langium/pull/1688)).
+
 ## v3.2.0 (Sep. 2024)
 
 Fixed an `undefined` error on certain regexes in the monarch generator ([#1594](https://github.com/eclipse-langium/langium/pull/1594)).

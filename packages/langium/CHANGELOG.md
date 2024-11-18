@@ -1,5 +1,24 @@
 # Change Log of `langium`
 
+## 3.3.0 (Nov. 2024)
+
+### General Improvements
+
+* Expose a new `LexerErrorMessageProvider` service to easily override lexer error messages ([#1716](https://github.com/eclipse-langium/langium/pull/1716)).
+* Improve parser performance in `production` mode ([#1688](https://github.com/eclipse-langium/langium/pull/1688)).
+* Expose workspace folders from the `WorkspaceManager` service ([#1679](https://github.com/eclipse-langium/langium/pull/1679)).
+* Caching now supports invalidation on specific document states ([#1659](https://github.com/eclipse-langium/langium/pull/1659), [#1712](https://github.com/eclipse-langium/langium/pull/1712)).
+* Improve performance of cancelable operations ([#1701](https://github.com/eclipse-langium/langium/pull/1701)).
+
+### Bug Fixes
+
+* Fixes for token builders ([#1708](https://github.com/eclipse-langium/langium/pull/1708), [#1685](https://github.com/eclipse-langium/langium/pull/1685)).
+
+## v3.2.1 (Nov. 2024)
+
+* Fix erroneous CST elements after assigned actions ([#1674](https://github.com/eclipse-langium/langium/pull/1674)).
+* Fix a bug in the document build listener logic ([#1738](https://github.com/eclipse-langium/langium/pull/1738)).
+
 ## v3.2.0 (Sep. 2024)
 
 ### General Improvements
