@@ -1,7 +1,7 @@
 {
     "name": "langium-statemachine-dsl",
     "displayName": "State Machine DSL",
-    "version": "3.2.0",
+    "version": "3.3.0",
     "description": "Example language built with Langium",
     "homepage": "https://langium.org",
     "engines": {
@@ -59,12 +59,12 @@
     "dependencies": {
         "chalk": "~5.3.0",
         "commander": "~11.0.0",
-        "langium": "~3.2.0",
+        "langium": "~3.3.0",
         "vscode-languageclient": "~9.0.1",
         "vscode-languageserver": "~9.0.1"
     },
     "devDependencies": {
-        "langium-cli": "~3.2.0"
+        "langium-cli": "~3.3.0"
     },
     "volta": {
         "node": "18.19.1",
