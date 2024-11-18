@@ -2,6 +2,9 @@
 
 ## 3.3.0 (Nov. 2024)
 
+This release marks the graduation of Langium to a mature Eclipse Foundation project.
+See the [GitLab issue](https://gitlab.eclipse.org/eclipsefdn/emo-team/emo/-/issues/810) for more information.
+
 ### General Improvements
 
 * Expose a new `LexerErrorMessageProvider` service to easily override lexer error messages ([#1716](https://github.com/eclipse-langium/langium/pull/1716)).
