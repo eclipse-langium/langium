@@ -35,6 +35,11 @@ export interface GenericAstNode extends AstNode {
     [key: string]: unknown
 }
 
+export type OptionalAstNode<T extends AstNode> = {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    [P in keyof T]: P extends keyof AstNode ? T[P] : T[P] extends any[] | boolean ? T[P] : T[P] | undefined;
+};
+
 type SpecificNodeProperties<N extends AstNode> = keyof Omit<N, keyof AstNode | number | symbol>;
 
 /**

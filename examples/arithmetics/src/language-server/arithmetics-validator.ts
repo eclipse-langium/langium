@@ -4,7 +4,7 @@
  * terms of the MIT License, which is available in the project root.
  ******************************************************************************/
 
-import type { ValidationAcceptor, ValidationChecks } from 'langium';
+import type { ValidationAcceptor, ValidationChecks, OptionalAstNode } from 'langium';
 import { MultiMap, stream } from 'langium';
 import { evalExpression } from './arithmetics-evaluator.js';
 import type { ArithmeticsServices } from './arithmetics-module.js';
@@ -26,16 +26,16 @@ export function registerValidationChecks(services: ArithmeticsServices): void {
 }
 
 export class ArithmeticsValidator {
-    checkDivByZero(binExpr: BinaryExpression, accept: ValidationAcceptor): void {
-        if ((binExpr.operator === '/' || binExpr.operator === '%') && evalExpression(binExpr.right) === 0) {
+    checkDivByZero(binExpr: OptionalAstNode<BinaryExpression>, accept: ValidationAcceptor): void {
+        if (binExpr.right && (binExpr.operator === '/' || binExpr.operator === '%') && evalExpression(binExpr.right) === 0) {
             accept('error', 'Division by zero is detected.', { node: binExpr, property: 'right' });
         }
     }
 
-    checkNormalisable(def: Definition, accept: ValidationAcceptor): void {
-        const context = new Map<Expression, number>();
+    checkNormalisable(def: OptionalAstNode<Definition>, accept: ValidationAcceptor): void {
+        const context = new Map<OptionalAstNode<Expression> | undefined, number>();
 
-        const makeOp = (expr: BinaryExpression, op: (x: number, y: number) => number): void => {
+        const makeOp = (expr: OptionalAstNode<BinaryExpression>, op: (x: number, y: number) => number): void => {
             const subExprs = [expr.left, expr.right];
             subExprs.forEach(e => evalExpr(e));
             const [left, right] = subExprs.map(e => isNumberLiteral(e) ? e.value : context.get(e));
@@ -45,7 +45,7 @@ export class ArithmeticsValidator {
             }
         };
 
-        const evalExpr = (expr: Expression): void => {
+        const evalExpr = (expr?: Expression): void => {
             if (isBinaryExpression(expr)) {
                 makeOp(expr, applyOp(expr.operator));
             }
@@ -53,13 +53,13 @@ export class ArithmeticsValidator {
 
         evalExpr(def.expr);
         for (const [expr, result] of context) {
-            if (result) {
+            if (expr && result) {
                 accept('warning', 'Expression could be normalized to constant ' + result, { node: expr });
             }
         }
     }
 
-    checkUniqueDefinitions(module: Module, accept: ValidationAcceptor): void {
+    checkUniqueDefinitions(module: OptionalAstNode<Module>, accept: ValidationAcceptor): void {
         const names = new MultiMap<string, Definition>();
         for (const def of module.statements) {
             if (isDefinition(def) && def.name) {
@@ -75,7 +75,7 @@ export class ArithmeticsValidator {
         }
     }
 
-    checkFunctionRecursion(module: Module, accept: ValidationAcceptor): void {
+    checkFunctionRecursion(module: OptionalAstNode<Module>, accept: ValidationAcceptor): void {
         const traversedFunctions = new Set<Definition>();
         function* getNotTraversedNestedCalls(func: Definition): Generator<NestedFunctionCall> {
             if (!traversedFunctions.has(func)) {
@@ -122,7 +122,7 @@ export class ArithmeticsValidator {
         }
     }
 
-    checkUniqueParameters(definition: Definition, accept: ValidationAcceptor): void {
+    checkUniqueParameters(definition: OptionalAstNode<Definition>, accept: ValidationAcceptor): void {
         const names = new MultiMap<string, DeclaredParameter>();
         for (const def of definition.args) {
             if (def.name) {
@@ -138,7 +138,7 @@ export class ArithmeticsValidator {
         }
     }
 
-    checkMatchingParameters(functionCall: FunctionCall, accept: ValidationAcceptor): void {
+    checkMatchingParameters(functionCall: OptionalAstNode<FunctionCall>, accept: ValidationAcceptor): void {
         if (!isResolvedFunctionCall(functionCall) || !functionCall.func.ref.args) {
             return;
         }
