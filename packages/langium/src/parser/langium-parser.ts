@@ -94,7 +94,7 @@ export interface BaseParser {
      * Requires a unique index within the rule for a specific sub rule.
      * Arguments can be supplied to the rule invocation for semantic predicates
      */
-    subrule(idx: number, rule: RuleResult, feature: AbstractElement, args: Args): void;
+    subrule(idx: number, rule: RuleResult, fragment: boolean, feature: AbstractElement, args: Args): void;
     /**
      * Executes a grammar action that modifies the currently active AST node
      */
@@ -161,7 +161,7 @@ export abstract class AbstractLangiumParser implements BaseParser {
 
     abstract rule(rule: ParserRule, impl: RuleImpl): RuleResult;
     abstract consume(idx: number, tokenType: TokenType, feature: AbstractElement): void;
-    abstract subrule(idx: number, rule: RuleResult, feature: AbstractElement, args: Args): void;
+    abstract subrule(idx: number, rule: RuleResult, fragment: boolean, feature: AbstractElement, args: Args): void;
     abstract action($type: string, action: Action): void;
     abstract construct(): unknown;
 
@@ -251,7 +251,9 @@ export class LangiumParser extends AbstractLangiumParser {
 
     private startImplementation($type: string | symbol | undefined, implementation: RuleImpl): RuleImpl {
         return (args) => {
-            if (!this.isRecording()) {
+            // Only create a new AST node in case the calling rule is not a fragment rule
+            const createNode = $type !== undefined;
+            if (!this.isRecording() && createNode) {
                 const node: any = { $type };
                 this.stack.push(node);
                 if ($type === DatatypeSymbol) {
@@ -264,7 +266,7 @@ export class LangiumParser extends AbstractLangiumParser {
             } catch (err) {
                 result = undefined;
             }
-            if (!this.isRecording() && result === undefined) {
+            if (!this.isRecording() && result === undefined && createNode) {
                 result = this.construct();
             }
             return result;
@@ -300,9 +302,11 @@ export class LangiumParser extends AbstractLangiumParser {
         return !token.isInsertedInRecovery && !isNaN(token.startOffset) && typeof token.endOffset === 'number' && !isNaN(token.endOffset);
     }
 
-    subrule(idx: number, rule: RuleResult, feature: AbstractElement, args: Args): void {
+    subrule(idx: number, rule: RuleResult, fragment: boolean, feature: AbstractElement, args: Args): void {
         let cstNode: CompositeCstNode | undefined;
-        if (!this.isRecording()) {
+        if (!this.isRecording() && !fragment) {
+            // If the called rule is a fragment rule, we just add all parsed CST nodes to the already existing CST node
+            // Note that this also skips the subrule assignment later on. This is intended, as fragment rules only enrich the current AST node
             cstNode = this.nodeBuilder.buildCompositeNode(feature);
         }
         const subruleResult = this.wrapper.wrapSubrule(idx, rule, args) as any;
@@ -325,11 +329,7 @@ export class LangiumParser extends AbstractLangiumParser {
             if (isDataTypeNode(current)) {
                 current.value += result.toString();
             } else if (typeof result === 'object' && result) {
-                const resultKind = result.$type;
                 const object = this.assignWithoutOverride(result, current);
-                if (resultKind) {
-                    object.$type = resultKind;
-                }
                 const newItem = object;
                 this.stack.pop();
                 this.stack.push(newItem);
@@ -592,7 +592,7 @@ export class LangiumCompletionParser extends AbstractLangiumParser {
         }
     }
 
-    subrule(idx: number, rule: RuleResult, feature: AbstractElement, args: Args): void {
+    subrule(idx: number, rule: RuleResult, fragment: boolean, feature: AbstractElement, args: Args): void {
         this.before(feature);
         this.wrapper.wrapSubrule(idx, rule, args);
         this.after(feature);

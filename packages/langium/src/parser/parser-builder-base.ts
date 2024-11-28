@@ -99,8 +99,9 @@ function buildRuleCall(ctx: RuleContext, ruleCall: RuleCall): Method {
     const rule = ruleCall.rule.ref;
     if (isParserRule(rule)) {
         const idx = ctx.subrule++;
+        const fragment = rule.fragment;
         const predicate = ruleCall.arguments.length > 0 ? buildRuleCallPredicate(rule, ruleCall.arguments) : () => ({});
-        return (args) => ctx.parser.subrule(idx, getRule(ctx, rule), ruleCall, predicate(args));
+        return (args) => ctx.parser.subrule(idx, getRule(ctx, rule), fragment, ruleCall, predicate(args));
     } else if (isTerminalRule(rule)) {
         const idx = ctx.consume++;
         const method = getToken(ctx, rule.name);
@@ -273,8 +274,9 @@ function buildCrossReference(ctx: RuleContext, crossRef: CrossReference, termina
         }
         return buildCrossReference(ctx, crossRef, assignTerminal);
     } else if (isRuleCall(terminal) && isParserRule(terminal.rule.ref)) {
+        const rule = terminal.rule.ref;
         const idx = ctx.subrule++;
-        return (args) => ctx.parser.subrule(idx, getRule(ctx, terminal.rule.ref as ParserRule), crossRef, args);
+        return (args) => ctx.parser.subrule(idx, getRule(ctx, rule), false, crossRef, args);
     } else if (isRuleCall(terminal) && isTerminalRule(terminal.rule.ref)) {
         const idx = ctx.consume++;
         const terminalRule = getToken(ctx, terminal.rule.ref.name);

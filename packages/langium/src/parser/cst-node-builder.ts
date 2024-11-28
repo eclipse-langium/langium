@@ -18,7 +18,7 @@ export class CstNodeBuilder {
     private nodeStack: CompositeCstNodeImpl[] = [];
 
     private get current(): CompositeCstNodeImpl {
-        return this.nodeStack[this.nodeStack.length - 1];
+        return this.nodeStack[this.nodeStack.length - 1] ?? this.rootNode;
     }
 
     buildRootNode(input: string): RootCstNode {
