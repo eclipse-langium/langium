@@ -14,8 +14,8 @@ export const ArithmeticsGrammar = (): Grammar => loadedArithmeticsGrammar ?? (lo
   "rules": [
     {
       "$type": "ParserRule",
-      "name": "Module",
       "entry": true,
+      "name": "Module",
       "definition": {
         "$type": "Group",
         "elements": [
