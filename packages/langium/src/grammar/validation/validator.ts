@@ -904,58 +904,57 @@ export class LangiumGrammarValidator {
     private checkOperatorMultiplicitiesForMultiAssignmentsNested(nodes: AstNode[], parentMultiplicity: number, map: Map<string, AssignmentUse>, accept: ValidationAcceptor): void {
         // check all given elements
         for (let i = 0; i < nodes.length; i++) {
-            const child = nodes[i];
-            if (ast.isAction(child) && child.feature) {
-                // Tree-Rewrite-Actions are a special case: a new object is created => following assignments are put into the new object
+            const currentNode = nodes[i];
+
+            // Tree-Rewrite-Actions are a special case: a new object is created => following assignments are put into the new object
+            if (ast.isAction(currentNode) && currentNode.feature) {
                 // (This does NOT count for unassigned actions, i.e. actions without feature name, since they change only the type of the current object.)
                 const mapForNewObject = new Map();
-                storeAssignmentUse(map, child.feature, 1, child); // remember the special rewriting feature
+                storeAssignmentUse(map, currentNode.feature, 1, currentNode); // remember the special rewriting feature
                 // all following nodes are put into the new object => check their assignments independently
                 this.checkOperatorMultiplicitiesForMultiAssignmentsIndependent(nodes.slice(i + 1), mapForNewObject, accept);
-                break;
-            } else {
-                // for all elements which don't create new objects themselves:
-                this.checkAssignmentNumbersForNode(child, parentMultiplicity, map, accept);
+                break; // breaks the current loop
+            }
+
+            // all other elements don't create new objects themselves:
+
+            // the current element can occur multiple times => its assignments can occur multiple times as well
+            let currentMultiplicity = parentMultiplicity;
+            if (ast.isAbstractElement(currentNode) && isArrayCardinality(currentNode.cardinality)) {
+                currentMultiplicity *= 2; // note that the result is not exact (but it is sufficient for the current use case)!
+            }
+
+            // assignment
+            if (ast.isAssignment(currentNode)) {
+                storeAssignmentUse(map, currentNode.feature, 1 * currentMultiplicity, currentNode);
+            }
+
+            // Search for assignments in used fragments as well, since their property values are stored in the current object.
+            // But do not search in calls of regular parser rules, since parser rules create new objects.
+            if (ast.isRuleCall(currentNode) && ast.isParserRule(currentNode.rule.ref) && currentNode.rule.ref.fragment) {
+                this.checkOperatorMultiplicitiesForMultiAssignmentsNested([currentNode.rule.ref.definition], currentMultiplicity, map, accept);
+            }
+
+            // look for assignments to the same feature nested within groups
+            if (ast.isGroup(currentNode) || ast.isUnorderedGroup(currentNode)) {
+                // all members of the group are relavant => collect them all
+                this.checkOperatorMultiplicitiesForMultiAssignmentsNested(currentNode.elements, currentMultiplicity, map, accept);
+            }
+
+            // for alternatives, only a single alternative is used => assume the worst case and take the maximum number of assignments
+            if (ast.isAlternatives(currentNode)) {
+                const mapAllAlternatives: Map<string, AssignmentUse> = new Map(); // store assignments for Alternatives separately
+                for (const child of currentNode.elements) {
+                    const mapCurrentAlternative: Map<string, AssignmentUse> = new Map();
+                    this.checkOperatorMultiplicitiesForMultiAssignmentsNested([child], currentMultiplicity, mapCurrentAlternative, accept); // TODO ich muss wissen, dass hier ein neues Objekt erstellt wurde!!
+                    mergeAssignmentUse(mapCurrentAlternative, mapAllAlternatives, (s, t) => Math.max(s, t));
+                }
+                // merge alternatives
+                mergeAssignmentUse(mapAllAlternatives, map);
             }
         }
     }
 
-    private checkAssignmentNumbersForNode(currentNode: AstNode, parentMultiplicity: number, map: Map<string, AssignmentUse>, accept: ValidationAcceptor) {
-        // the current element can occur multiple times => its assignments can occur multiple times as well
-        let currentMultiplicity = parentMultiplicity;
-        if (ast.isAbstractElement(currentNode) && isArrayCardinality(currentNode.cardinality)) {
-            currentMultiplicity *= 2; // note that the result is not exact (but it is sufficient for the current use case)!
-        }
-
-        // assignment
-        if (ast.isAssignment(currentNode)) {
-            storeAssignmentUse(map, currentNode.feature, 1 * currentMultiplicity, currentNode);
-        }
-
-        // Search for assignments in used fragments as well, since their property values are stored in the current object.
-        // But do not search in calls of regular parser rules, since parser rules create new objects.
-        if (ast.isRuleCall(currentNode) && ast.isParserRule(currentNode.rule.ref) && currentNode.rule.ref.fragment) {
-            this.checkAssignmentNumbersForNode(currentNode.rule.ref.definition, currentMultiplicity, map, accept);
-        }
-
-        // look for assignments to the same feature nested within groups
-        if (ast.isGroup(currentNode) || ast.isUnorderedGroup(currentNode)) {
-            // all members of the group are relavant => collect them all
-            this.checkOperatorMultiplicitiesForMultiAssignmentsNested(currentNode.elements, currentMultiplicity, map, accept);
-        }
-
-        // for alternatives, only a single alternative is used => assume the worst case and take the maximum number of assignments
-        if (ast.isAlternatives(currentNode)) {
-            const mapAllAlternatives: Map<string, AssignmentUse> = new Map(); // store assignments for Alternatives separately
-            for (const child of currentNode.elements) {
-                const mapCurrentAlternative: Map<string, AssignmentUse> = new Map();
-                this.checkAssignmentNumbersForNode(child, currentMultiplicity, mapCurrentAlternative, accept); // TODO ich muss wissen, dass hier ein neues Objekt erstellt wurde!!
-                mergeAssignmentUse(mapCurrentAlternative, mapAllAlternatives, (s, t) => Math.max(s, t));
-            }
-            // merge alternatives
-            mergeAssignmentUse(mapAllAlternatives, map);
-        }
-    }
 
     checkInterfacePropertyTypes(interfaceDecl: ast.Interface, accept: ValidationAcceptor): void {
         for (const attribute of interfaceDecl.attributes) {
