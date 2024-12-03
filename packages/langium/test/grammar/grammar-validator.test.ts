@@ -857,7 +857,7 @@ describe('Assignments with = instead of +=', () => {
                 (persons=Person) | (persons=Person);
             Person: 'person' name=ID ;
         `));
-        expect(validation.diagnostics.length).toBe(0);
+        expectNoIssues(validation);
     });
 
     test('assignments in different alternatives, but looped', async () => {
@@ -978,7 +978,7 @@ describe('Assignments with = instead of +=', () => {
                 ',' persons=Person;
             Person: 'person' name=ID ;
         `));
-        expect(validation.diagnostics.length).toBe(0);
+        expectNoIssues(validation);
     });
 
     test('no problem: assignments in different parser rules', async () => {
@@ -987,7 +987,7 @@ describe('Assignments with = instead of +=', () => {
                 persons=Person;
             Person: 'person' name=ID persons=Person;
         `));
-        expect(validation.diagnostics.length).toBe(0);
+        expectNoIssues(validation);
     });
 
     test('no problem with actions: assignment is looped, but stored in a new object each time', async () => {
@@ -997,7 +997,7 @@ describe('Assignments with = instead of +=', () => {
             Person infers Expression:
                 {infer Person} 'person' name=ID ;
         `));
-        expect(validation.diagnostics.length).toBe(0);
+        expectNoIssues(validation);
     });
 
     test('no problem with actions: second assignment is stored in a new object', async () => {
@@ -1007,7 +1007,7 @@ describe('Assignments with = instead of +=', () => {
             Person infers Expression:
                 {infer Person} 'person' name=ID ;
         `));
-        expect(validation.diagnostics.length).toBe(0);
+        expectNoIssues(validation);
     });
 
     test('no problem with actions: three assignments into three different objects', async () => {
@@ -1017,7 +1017,7 @@ describe('Assignments with = instead of +=', () => {
             Person infers Expression:
                 {infer Person} 'person' name=ID ;
         `));
-        expect(validation.diagnostics.length).toBe(0);
+        expectNoIssues(validation);
     });
 
     test('actions: the rewrite part is a special assignment, which needs to be checked as well!', async () => {
