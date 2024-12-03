@@ -1031,6 +1031,72 @@ describe('Assignments with = instead of +=', () => {
         expect(validation.diagnostics[0].message).toBe(getMessage('left'));
         expect(validation.diagnostics[1].message).toBe(getMessage('left'));
     });
+
+    test('rewrite actions inside loop #1756 (complete examples, slightly adapted)', async () => {
+        const validation = await validate(getGrammar(`
+            entry Model:
+                expr=Expression;
+
+            Expression: Equality;
+
+            Equality infers Expression:
+                Literal ( ( {infer Equals.left=current} '==' | {infer NotEquals.left=current} '!=' )  right=Literal)*;
+
+            Literal: value=ID;
+        `));
+        expectNoIssues(validation);
+    });
+
+    test('rewrite actions inside loop #1756 (with a single alternative only)', async () => {
+        const validation = await validate(getGrammar(`
+            entry Model:
+                expr=Expression;
+
+            Expression: Equality;
+
+            Equality infers Expression:
+                Literal ( {infer Equals.left=current} '==' right=Literal)*;
+
+            Literal: value=ID;
+        `));
+        expectNoIssues(validation);
+    });
+
+    test.only('rewrite actions inside loop #1756 (single alternative in non-empty group)', async () => {
+        const validation = await validate(getGrammar(`
+            entry Model:
+                expr=Expression;
+
+            Expression: Equality;
+
+            Equality infers Expression:
+                Literal ( ( {infer Equals.left=current} 'nonemptygroup' ) '==' right=Literal)*;
+
+            Literal: value=ID;
+        `));
+        expectNoIssues(validation);
+    });
+
+    test('no problem with rewrite actions on top-level: unassigned action', async () => {
+        const validation = await validate(getGrammar(`
+            entry Model:
+                persons=Person {infer Model} persons=Person;
+            Person: 'person' name=ID ;
+        `));
+        expect(validation.diagnostics.length).toBe(2);
+        expect(validation.diagnostics[0].message).toBe(getMessage('persons'));
+        expect(validation.diagnostics[1].message).toBe(getMessage('persons'));
+    });
+
+    test('no problem with rewrite actions on top-level: rewrite action', async () => {
+        const validation = await validate(getGrammar(`
+            entry Model:
+                persons=Person {infer Model.left=current} persons=Person;
+            Person: 'person' name=ID ;
+        `));
+        expectNoIssues(validation);
+    });
+
 });
 
 describe('Missing required properties are not arrays or booleans', () => {
