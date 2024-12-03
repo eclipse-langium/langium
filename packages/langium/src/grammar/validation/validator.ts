@@ -901,7 +901,8 @@ export class LangiumGrammarValidator {
         }
     }
 
-    private checkOperatorMultiplicitiesForMultiAssignmentsNested(nodes: AstNode[], parentMultiplicity: number, map: Map<string, AssignmentUse>, accept: ValidationAcceptor): void {
+    private checkOperatorMultiplicitiesForMultiAssignmentsNested(nodes: AstNode[], parentMultiplicity: number, map: Map<string, AssignmentUse>, accept: ValidationAcceptor): boolean {
+        let resultCreatedNewObject = false;
         // check all given elements
         for (let i = 0; i < nodes.length; i++) {
             const currentNode = nodes[i];
@@ -910,9 +911,10 @@ export class LangiumGrammarValidator {
             if (ast.isAction(currentNode) && currentNode.feature) {
                 // (This does NOT count for unassigned actions, i.e. actions without feature name, since they change only the type of the current object.)
                 const mapForNewObject = new Map();
-                storeAssignmentUse(map, currentNode.feature, 1, currentNode); // remember the special rewriting feature
+                storeAssignmentUse(mapForNewObject, currentNode.feature, 1, currentNode); // remember the special rewriting feature
                 // all following nodes are put into the new object => check their assignments independently
                 this.checkOperatorMultiplicitiesForMultiAssignmentsIndependent(nodes.slice(i + 1), mapForNewObject, accept);
+                resultCreatedNewObject = true;
                 break; // breaks the current loop
             }
 
@@ -932,29 +934,47 @@ export class LangiumGrammarValidator {
             // Search for assignments in used fragments as well, since their property values are stored in the current object.
             // But do not search in calls of regular parser rules, since parser rules create new objects.
             if (ast.isRuleCall(currentNode) && ast.isParserRule(currentNode.rule.ref) && currentNode.rule.ref.fragment) {
-                this.checkOperatorMultiplicitiesForMultiAssignmentsNested([currentNode.rule.ref.definition], currentMultiplicity, map, accept);
+                const createdNewObject = this.checkOperatorMultiplicitiesForMultiAssignmentsNested([currentNode.rule.ref.definition], currentMultiplicity, map, accept);
+                resultCreatedNewObject = createdNewObject || resultCreatedNewObject;
             }
 
             // look for assignments to the same feature nested within groups
             if (ast.isGroup(currentNode) || ast.isUnorderedGroup(currentNode)) {
                 // all members of the group are relavant => collect them all
-                this.checkOperatorMultiplicitiesForMultiAssignmentsNested(currentNode.elements, currentMultiplicity, map, accept);
+                const mapGroup: Map<string, AssignmentUse> = new Map(); // store assignments for Alternatives separately
+                const createdNewObject = this.checkOperatorMultiplicitiesForMultiAssignmentsNested(currentNode.elements, 1, mapGroup, accept);
+                mergeAssignmentUse(mapGroup, map, createdNewObject
+                    ? (s, t) => (s + t)                         // if a new object is created in the group: ignore the current multiplicity, since a new object is created for each loop cycle!
+                    : (s, t) => (s * currentMultiplicity + t)   // otherwise as usual: take the current multiplicity into account
+                );
+                resultCreatedNewObject = createdNewObject || resultCreatedNewObject;
             }
 
             // for alternatives, only a single alternative is used => assume the worst case and take the maximum number of assignments
             if (ast.isAlternatives(currentNode)) {
                 const mapAllAlternatives: Map<string, AssignmentUse> = new Map(); // store assignments for Alternatives separately
+                let countCreatedObjects = 0;
                 for (const child of currentNode.elements) {
                     const mapCurrentAlternative: Map<string, AssignmentUse> = new Map();
-                    this.checkOperatorMultiplicitiesForMultiAssignmentsNested([child], currentMultiplicity, mapCurrentAlternative, accept); // TODO ich muss wissen, dass hier ein neues Objekt erstellt wurde!!
-                    mergeAssignmentUse(mapCurrentAlternative, mapAllAlternatives, (s, t) => Math.max(s, t));
+                    const createdNewObject = this.checkOperatorMultiplicitiesForMultiAssignmentsNested([child], 1, mapCurrentAlternative, accept);
+                    mergeAssignmentUse(mapCurrentAlternative, mapAllAlternatives, createdNewObject
+                        ? (s, t) => Math.max(s, t)                         // if a new object is created in an alternative: ignore the current multiplicity, since a new object is created for each loop cycle!
+                        : (s, t) => Math.max(s * currentMultiplicity, t)   // otherwise as usual: take the current multiplicity into account
+                    );
+                    if (createdNewObject) {
+                        countCreatedObjects++;
+                    }
                 }
                 // merge alternatives
                 mergeAssignmentUse(mapAllAlternatives, map);
+                // since we assume the worst case, we define, that the entire Alternatives node created a new object, if ALL its alternatives created a new object
+                if (countCreatedObjects === currentNode.elements.length) {
+                    resultCreatedNewObject = true;
+                }
             }
         }
+        return resultCreatedNewObject; // indicates, whether a new object was created
     }
-
 
     checkInterfacePropertyTypes(interfaceDecl: ast.Interface, accept: ValidationAcceptor): void {
         for (const attribute of interfaceDecl.attributes) {
@@ -1225,6 +1245,7 @@ function mergeAssignmentUse(mapSoure: Map<string, AssignmentUse>, mapTarget: Map
             target.counter = counterOperation(source.counter, target.counter);
         } else {
             mapTarget.set(key, source);
+            source.counter = counterOperation(source.counter, 0);
         }
     }
     mapSoure.clear();

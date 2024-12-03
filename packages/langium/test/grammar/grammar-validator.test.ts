@@ -1062,7 +1062,22 @@ describe('Assignments with = instead of +=', () => {
         expectNoIssues(validation);
     });
 
-    test.only('rewrite actions inside loop #1756 (single alternative in non-empty group)', async () => {
+    test('rewrite actions inside loop #1756 (single alternative in non-empty group)', async () => {
+        const validation = await validate(getGrammar(`
+            entry Model:
+                expr=Expression;
+
+            Expression: Equality;
+
+            Equality infers Expression:
+                Literal ( {infer Equals.left=current} 'nonemptygroup' '==' right=Literal)*;
+
+            Literal: value=ID;
+        `));
+        expectNoIssues(validation);
+    });
+
+    test('rewrite actions inside loop #1756 (single alternative in non-empty grouped group)', async () => {
         const validation = await validate(getGrammar(`
             entry Model:
                 expr=Expression;
@@ -1075,6 +1090,23 @@ describe('Assignments with = instead of +=', () => {
             Literal: value=ID;
         `));
         expectNoIssues(validation);
+    });
+
+    test('rewrite actions inside loop #1756 (only a single alternative creates a new object)', async () => {
+        // Since we assume the worst case and since 'right' is assigned twice, if the alternative without the rewrite action is used, we expect a warning here as well!
+        const validation = await validate(getGrammar(`
+            entry Model:
+                expr=Expression;
+
+            Expression: Equality;
+
+            Equality infers Expression:
+                Literal ( ( {infer Equals.left=current} '==' | '!=' )  right=Literal)*;
+
+            Literal: value=ID;
+        `));
+        expect(validation.diagnostics.length).toBe(1);
+        expect(validation.diagnostics[0].message).toBe(getMessage('right'));
     });
 
     test('no problem with rewrite actions on top-level: unassigned action', async () => {
