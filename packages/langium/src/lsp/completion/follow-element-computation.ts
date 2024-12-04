@@ -52,6 +52,10 @@ function findNextFeaturesInternal(options: { next: NextFeature, cardinalities: M
     const feature = next.feature;
     if (visited.has(feature)) {
         return [];
+    } else if (!ast.isGroup(feature)) {
+        // Do not add the feature to the list if it is a group
+        // `findFirstFeaturesInternal` will take care of this
+        visited.add(feature);
     }
     let parent: ast.Group | undefined;
     let item = feature;
@@ -130,8 +134,6 @@ function findFirstFeaturesInternal(options: { next: NextFeature, cardinalities: 
         } else {
             visited.add(feature);
         }
-    }
-    if (ast.isGroup(feature)) {
         return findNextFeaturesInGroup(next as NextFeature<ast.Group>, 0, cardinalities, visited, plus)
             .map(e => modifyCardinality(e, feature.cardinality, cardinalities));
     } else if (ast.isAlternatives(feature) || ast.isUnorderedGroup(feature)) {
