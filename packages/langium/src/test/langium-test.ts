@@ -4,24 +4,24 @@
  * terms of the MIT License, which is available in the project root.
  ******************************************************************************/
 
+import * as assert from 'node:assert';
 import type { CompletionItem, CompletionList, Diagnostic, DocumentSymbol, FoldingRange, FormattingOptions, Range, ReferenceParams, SemanticTokensParams, SemanticTokenTypes, TextDocumentIdentifier, TextDocumentPositionParams, WorkspaceSymbol } from 'vscode-languageserver-protocol';
+import { DiagnosticSeverity, MarkupContent } from 'vscode-languageserver-types';
+import { normalizeEOL } from '../generate/template-string.js';
+import type { LangiumServices, LangiumSharedLSPServices } from '../lsp/lsp-services.js';
+import { SemanticTokensDecoder } from '../lsp/semantic-token-provider.js';
+import type { ParserOptions } from '../parser/langium-parser.js';
 import type { LangiumCoreServices, LangiumSharedCoreServices } from '../services.js';
 import type { AstNode, CstNode, Properties } from '../syntax-tree.js';
-import { type LangiumDocument, TextDocument } from '../workspace/documents.js';
-import type { BuildOptions } from '../workspace/document-builder.js';
 import type { AsyncDisposable } from '../utils/disposable.js';
-import type { LangiumServices, LangiumSharedLSPServices } from '../lsp/lsp-services.js';
-import type { ParserOptions } from '../parser/langium-parser.js';
-import { DiagnosticSeverity, MarkupContent } from 'vscode-languageserver-types';
-import { escapeRegExp } from '../utils/regexp-utils.js';
-import { URI } from '../utils/uri-utils.js';
-import { findNodeForProperty } from '../utils/grammar-utils.js';
-import { SemanticTokensDecoder } from '../lsp/semantic-token-provider.js';
-import * as assert from 'node:assert';
-import { stream } from '../utils/stream.js';
 import { Disposable } from '../utils/disposable.js';
-import { normalizeEOL } from '../generate/template-string.js';
+import { findNodeForProperty } from '../utils/grammar-utils.js';
+import { escapeRegExp } from '../utils/regexp-utils.js';
+import { stream } from '../utils/stream.js';
+import { URI } from '../utils/uri-utils.js';
 import { DocumentValidator } from '../validation/document-validator.js';
+import type { BuildOptions } from '../workspace/document-builder.js';
+import { TextDocument, type LangiumDocument } from '../workspace/documents.js';
 
 export interface ParseHelperOptions extends BuildOptions {
     /**
@@ -682,7 +682,7 @@ export function filterByOptions<T extends AstNode = AstNode, N extends AstNode =
 
 export function expectNoIssues<T extends AstNode = AstNode, N extends AstNode = AstNode>(validationResult: ValidationResult<T>, filterOptions?: ExpectDiagnosticOptions<N>): void {
     const filtered = filterOptions ? filterByOptions<T, N>(validationResult, filterOptions) : validationResult.diagnostics;
-    expectedFunction(filtered.length, 0, `Expected no issues, but found ${filtered.length}`);
+    expectedFunction(filtered.length, 0, `Expected no issues, but found ${filtered.length}:\n${printDiagnostics(filtered)}`);
 }
 
 export function expectIssue<T extends AstNode = AstNode, N extends AstNode = AstNode>(validationResult: ValidationResult<T>, filterOptions?: ExpectDiagnosticOptions<N>): void {
@@ -709,6 +709,10 @@ export function expectWarning<T extends AstNode = AstNode, N extends AstNode = A
         ...filterOptions,
         ...content,
     });
+}
+
+export function printDiagnostics(diagnostics: Diagnostic[] | undefined): string {
+    return diagnostics?.map(d => `line ${d.range.start.line}, column ${d.range.start.character}: ${d.message}`).join('\n') ?? '';
 }
 
 /**

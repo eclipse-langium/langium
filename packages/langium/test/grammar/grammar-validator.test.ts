@@ -857,7 +857,7 @@ describe('Assignments with = instead of +=', () => {
                 (persons=Person) | (persons=Person);
             Person: 'person' name=ID ;
         `));
-        expect(validation.diagnostics.length).toBe(0);
+        expectNoIssues(validation);
     });
 
     test('assignments in different alternatives, but looped', async () => {
@@ -978,7 +978,7 @@ describe('Assignments with = instead of +=', () => {
                 ',' persons=Person;
             Person: 'person' name=ID ;
         `));
-        expect(validation.diagnostics.length).toBe(0);
+        expectNoIssues(validation);
     });
 
     test('no problem: assignments in different parser rules', async () => {
@@ -987,7 +987,7 @@ describe('Assignments with = instead of +=', () => {
                 persons=Person;
             Person: 'person' name=ID persons=Person;
         `));
-        expect(validation.diagnostics.length).toBe(0);
+        expectNoIssues(validation);
     });
 
     test('no problem with actions: assignment is looped, but stored in a new object each time', async () => {
@@ -997,7 +997,7 @@ describe('Assignments with = instead of +=', () => {
             Person infers Expression:
                 {infer Person} 'person' name=ID ;
         `));
-        expect(validation.diagnostics.length).toBe(0);
+        expectNoIssues(validation);
     });
 
     test('no problem with actions: second assignment is stored in a new object', async () => {
@@ -1007,7 +1007,7 @@ describe('Assignments with = instead of +=', () => {
             Person infers Expression:
                 {infer Person} 'person' name=ID ;
         `));
-        expect(validation.diagnostics.length).toBe(0);
+        expectNoIssues(validation);
     });
 
     test('no problem with actions: three assignments into three different objects', async () => {
@@ -1017,7 +1017,7 @@ describe('Assignments with = instead of +=', () => {
             Person infers Expression:
                 {infer Person} 'person' name=ID ;
         `));
-        expect(validation.diagnostics.length).toBe(0);
+        expectNoIssues(validation);
     });
 
     test('actions: the rewrite part is a special assignment, which needs to be checked as well!', async () => {
@@ -1031,6 +1031,104 @@ describe('Assignments with = instead of +=', () => {
         expect(validation.diagnostics[0].message).toBe(getMessage('left'));
         expect(validation.diagnostics[1].message).toBe(getMessage('left'));
     });
+
+    test('rewrite actions inside loop #1756 (complete examples, slightly adapted)', async () => {
+        const validation = await validate(getGrammar(`
+            entry Model:
+                expr=Expression;
+
+            Expression: Equality;
+
+            Equality infers Expression:
+                Literal ( ( {infer Equals.left=current} '==' | {infer NotEquals.left=current} '!=' )  right=Literal)*;
+
+            Literal: value=ID;
+        `));
+        expectNoIssues(validation);
+    });
+
+    test('rewrite actions inside loop #1756 (with a single alternative only)', async () => {
+        const validation = await validate(getGrammar(`
+            entry Model:
+                expr=Expression;
+
+            Expression: Equality;
+
+            Equality infers Expression:
+                Literal ( {infer Equals.left=current} '==' right=Literal)*;
+
+            Literal: value=ID;
+        `));
+        expectNoIssues(validation);
+    });
+
+    test('rewrite actions inside loop #1756 (single alternative in non-empty group)', async () => {
+        const validation = await validate(getGrammar(`
+            entry Model:
+                expr=Expression;
+
+            Expression: Equality;
+
+            Equality infers Expression:
+                Literal ( {infer Equals.left=current} 'nonemptygroup' '==' right=Literal)*;
+
+            Literal: value=ID;
+        `));
+        expectNoIssues(validation);
+    });
+
+    test('rewrite actions inside loop #1756 (single alternative in non-empty grouped group)', async () => {
+        const validation = await validate(getGrammar(`
+            entry Model:
+                expr=Expression;
+
+            Expression: Equality;
+
+            Equality infers Expression:
+                Literal ( ( {infer Equals.left=current} 'nonemptygroup' ) '==' right=Literal)*;
+
+            Literal: value=ID;
+        `));
+        expectNoIssues(validation);
+    });
+
+    test('rewrite actions inside loop #1756 (only a single alternative creates a new object)', async () => {
+        // Since we assume the worst case and since 'right' is assigned twice, if the alternative without the rewrite action is used, we expect a warning here as well!
+        const validation = await validate(getGrammar(`
+            entry Model:
+                expr=Expression;
+
+            Expression: Equality;
+
+            Equality infers Expression:
+                Literal ( ( {infer Equals.left=current} '==' | '!=' )  right=Literal)*;
+
+            Literal: value=ID;
+        `));
+        expect(validation.diagnostics.length).toBe(1);
+        expect(validation.diagnostics[0].message).toBe(getMessage('right'));
+    });
+
+    test('no problem with rewrite actions on top-level: unassigned action', async () => {
+        const validation = await validate(getGrammar(`
+            entry Model:
+                persons=Person {infer Model} persons=Person;
+            Person: 'person' name=ID ;
+        `));
+        expect(validation.diagnostics.length).toBe(2);
+        expect(validation.diagnostics[0].message).toBe(getMessage('persons'));
+        expect(validation.diagnostics[1].message).toBe(getMessage('persons'));
+    });
+
+    test('no problem with rewrite actions on top-level: rewrite action', async () => {
+        const validation = await validate(getGrammar(`
+            entry Model:
+                persons=Person {infer Model.left=current} persons=Person;
+            Person: 'person' name=ID ;
+        `));
+        expectNoIssues(validation);
+    });
+
 });
 
 describe('Missing required properties are not arrays or booleans', () => {
