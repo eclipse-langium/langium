@@ -14,8 +14,8 @@ export const DomainModelGrammar = (): Grammar => loadedDomainModelGrammar ?? (lo
   "rules": [
     {
       "$type": "ParserRule",
-      "name": "Domainmodel",
       "entry": true,
+      "name": "Domainmodel",
       "definition": {
         "$type": "Assignment",
         "feature": "elements",

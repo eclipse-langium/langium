@@ -14,8 +14,8 @@ export const StatemachineGrammar = (): Grammar => loadedStatemachineGrammar ?? (
   "rules": [
     {
       "$type": "ParserRule",
-      "name": "Statemachine",
       "entry": true,
+      "name": "Statemachine",
       "definition": {
         "$type": "Group",
         "elements": [

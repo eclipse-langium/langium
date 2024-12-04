@@ -15,8 +15,8 @@ export const RequirementsGrammar = (): Grammar => loadedRequirementsGrammar ?? (
   "rules": [
     {
       "$type": "ParserRule",
-      "name": "RequirementModel",
       "entry": true,
+      "name": "RequirementModel",
       "definition": {
         "$type": "Group",
         "elements": [
@@ -321,8 +321,8 @@ export const TestsGrammar = (): Grammar => loadedTestsGrammar ?? (loadedTestsGra
   "rules": [
     {
       "$type": "ParserRule",
-      "name": "TestModel",
       "entry": true,
+      "name": "TestModel",
       "definition": {
         "$type": "Group",
         "elements": [
@@ -519,8 +519,8 @@ export const TestsGrammar = (): Grammar => loadedTestsGrammar ?? (loadedTestsGra
     },
     {
       "$type": "ParserRule",
-      "name": "RequirementModel",
       "entry": false,
+      "name": "RequirementModel",
       "definition": {
         "$type": "Group",
         "elements": [
