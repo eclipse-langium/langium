@@ -4,7 +4,7 @@
  * terms of the MIT License, which is available in the project root.
  ******************************************************************************/
 
-import type { ResolvedReference } from 'langium';
+import type { OptionalAstNode, ResolvedReference } from 'langium';
 import { isDefinition, type BinaryExpression, type Definition, type FunctionCall } from './generated/ast.js';
 
 export function applyOp(op: BinaryExpression['operator']): (x: number, y: number) => number {
@@ -28,6 +28,6 @@ export type ResolvedFunctionCall = FunctionCall & {
     func: ResolvedReference<Definition>
 }
 
-export function isResolvedFunctionCall(functionCall: FunctionCall): functionCall is ResolvedFunctionCall {
-    return isDefinition(functionCall.func.ref);
+export function isResolvedFunctionCall(functionCall: OptionalAstNode<FunctionCall>): functionCall is ResolvedFunctionCall {
+    return !!functionCall.func && isDefinition(functionCall.func.ref);
 }
