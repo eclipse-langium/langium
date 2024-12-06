@@ -278,19 +278,22 @@ export function isRootCstNode(node: unknown): node is RootCstNode {
 }
 
 /**
- * Returns a type to have only properties names (!) of a type T whose property value is of a certain type K.
+ * Describes a union type including only names(!) of properties of type T whose property value is of a certain type K,
+ *  or 'never' in case of no such properties.
+ * It evaluates the value type regardless of the property being optional or not by converting T to Required<T>.
+ * Note the '-?' in '[I in keyof T]-?:' that is required to map all optional but un-intended properties to 'never'.
+ * Without that, optional props like those inherited from 'AstNode' would be mapped to 'never|undefined',
+ *  and the subsequent value mapping ('...[keyof T]') would yield 'undefined' instead of 'never' for AstNode types
+ *  not having any property matching type K, which in turn yields follow-up errors.
  */
-type ExtractKeysOfValueType<T, K> = { [I in keyof T]: T[I] extends K ? I : never }[keyof T];
+type ExtractKeysOfValueType<T, K> = { [I in keyof T]-?: Required<T>[I] extends K ? I : never }[keyof T];
 
 /**
- * Returns the property names (!) of an AstNode that are cross-references.
- * Meant to be used during cross-reference resolution in combination with `assertUnreachable(context.property)`.
+ * Describes a union type including only names(!) of the cross-reference properties of the given AstNode type.
+ * Enhances compile-time validation of cross-reference distinctions, e.g. in scope providers
+ *  in combination with `assertUnreachable(context.property)`.
  */
-export type CrossReferencesOfAstNodeType<N extends AstNode> = (
-    ExtractKeysOfValueType<N, Reference|undefined>
-    | ExtractKeysOfValueType<N, Array<Reference|undefined>|undefined>
-// eslint-disable-next-line @typescript-eslint/ban-types
-) & {};
+export type CrossReferencesOfAstNodeType<N extends AstNode> = ExtractKeysOfValueType<N, Reference | Reference[]>;
 
 /**
  * Represents the enumeration-like type, that lists all AstNode types of your grammar.
@@ -298,11 +301,13 @@ export type CrossReferencesOfAstNodeType<N extends AstNode> = (
 export type AstTypeList<T> = Record<keyof T, AstNode>;
 
 /**
- * Returns all types that contain cross-references, A is meant to be the interface `XXXAstType` fromm your generated `ast.ts` file.
- * Meant to be used during cross-reference resolution in combination with `assertUnreachable(context.container)`.
+ * Describes a union type including of all AstNode types containing cross-references.
+ *  A is meant to be the interface `XXXAstType` fromm your generated `ast.ts` file.
+ * Enhances compile-time validation of cross-reference distinctions, e.g. in scope providers
+ *  in combination with `assertUnreachable(context.container)`.
  */
 export type AstNodeTypesWithCrossReferences<A extends AstTypeList<A>> = {
-    [T in keyof A]: CrossReferencesOfAstNodeType<A[T]> extends never ? never : A[T]
+    [T in keyof A]-?: CrossReferencesOfAstNodeType<A[T]> extends never ? never : A[T]
 }[keyof A];
 
 export type Mutable<T> = {
