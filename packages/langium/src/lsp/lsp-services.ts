@@ -34,7 +34,7 @@ import type { SignatureHelpProvider } from './signature-help-provider.js';
 import type { TypeHierarchyProvider } from './type-hierarchy-provider.js';
 import type { TypeDefinitionProvider } from './type-provider.js';
 import type { WorkspaceSymbolProvider } from './workspace-symbol-provider.js';
-import type { TextDocuments } from './normalized-text-documents.js';
+import type { NotebookDocuments, TextDocuments } from './normalized-text-documents.js';
 
 /**
  * Combined Core + LSP services of Langium (total services)
@@ -91,6 +91,7 @@ export type LangiumSharedLSPServices = {
     },
     readonly workspace: {
         readonly TextDocuments: TextDocuments<TextDocument>
+        readonly NotebookDocuments: NotebookDocuments<TextDocument>
     }
 };
 
