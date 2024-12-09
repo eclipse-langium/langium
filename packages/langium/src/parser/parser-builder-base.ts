@@ -274,6 +274,7 @@ function buildCrossReference(ctx: RuleContext, crossRef: CrossReference, termina
         }
         return buildCrossReference(ctx, crossRef, assignTerminal);
     } else if (isRuleCall(terminal) && isParserRule(terminal.rule.ref)) {
+        // The terminal is a data type rule here. Everything else will result in a validation error.
         const rule = terminal.rule.ref;
         const idx = ctx.subrule++;
         return (args) => ctx.parser.subrule(idx, getRule(ctx, rule), false, crossRef, args);

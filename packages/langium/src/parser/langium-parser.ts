@@ -305,8 +305,9 @@ export class LangiumParser extends AbstractLangiumParser {
     subrule(idx: number, rule: RuleResult, fragment: boolean, feature: AbstractElement, args: Args): void {
         let cstNode: CompositeCstNode | undefined;
         if (!this.isRecording() && !fragment) {
-            // If the called rule is a fragment rule, we just add all parsed CST nodes to the already existing CST node
-            // Note that this also skips the subrule assignment later on. This is intended, as fragment rules only enrich the current AST node
+            // We only want to create a new CST node if the subrule actually creates a new AST node.
+            // In other cases like calls of fragment rules the current CST/AST is populated further.
+            // This also then skips the subrule assignment.
             cstNode = this.nodeBuilder.buildCompositeNode(feature);
         }
         const subruleResult = this.wrapper.wrapSubrule(idx, rule, args) as any;
