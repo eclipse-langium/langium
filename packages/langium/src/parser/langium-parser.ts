@@ -252,8 +252,8 @@ export class LangiumParser extends AbstractLangiumParser {
     private startImplementation($type: string | symbol | undefined, implementation: RuleImpl): RuleImpl {
         return (args) => {
             // Only create a new AST node in case the calling rule is not a fragment rule
-            const createNode = $type !== undefined;
-            if (!this.isRecording() && createNode) {
+            const createNode = !this.isRecording() && $type !== undefined;
+            if (createNode) {
                 const node: any = { $type };
                 this.stack.push(node);
                 if ($type === DatatypeSymbol) {
@@ -266,7 +266,7 @@ export class LangiumParser extends AbstractLangiumParser {
             } catch (err) {
                 result = undefined;
             }
-            if (!this.isRecording() && result === undefined && createNode) {
+            if (result === undefined && createNode) {
                 result = this.construct();
             }
             return result;
@@ -307,7 +307,8 @@ export class LangiumParser extends AbstractLangiumParser {
         if (!this.isRecording() && !fragment) {
             // We only want to create a new CST node if the subrule actually creates a new AST node.
             // In other cases like calls of fragment rules the current CST/AST is populated further.
-            // This also then skips the subrule assignment.
+            // Note that skipping this initialization and leaving cstNode unassigned also skips the subrule assignment later on.
+            // This is intended, as fragment rules only enrich the current AST node
             cstNode = this.nodeBuilder.buildCompositeNode(feature);
         }
         const subruleResult = this.wrapper.wrapSubrule(idx, rule, args) as any;

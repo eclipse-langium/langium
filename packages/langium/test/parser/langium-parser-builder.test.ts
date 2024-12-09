@@ -708,56 +708,66 @@ describe('Fragment rules', () => {
         expect(result.value).toHaveProperty('values', ['ab', 'cd', 'ef']);
     });
 
-    test("Fragment rules don't create AST elements during parsing", async () => {
-        // This test is mostly based on a bug report in a GitHub discussion:
-        // https://github.com/eclipse-langium/langium/discussions/1638
-        // In particular, the issue was that fragment rules used to create AST elements with type "undefined"
-        // When passing those into references, the reference would fail to resolve because the created AST element was just a placeholder
-        // Eventually, the parser would assign the properties of the fragment rule to the actual AST element
-        // But the reference would still use the old reference
-        // The fixed implementation no longer creates these fake AST elements, thereby skipping any potential issues completely.
-        let resolved = false;
-        const services = await createServicesForGrammar({
-            grammar: `
-                grammar FragmentRuleOverride
-                entry Entry: items+=(MemberCall|Def)*;
-                Def: 'def' name=ID;
-                MemberCall:
-                    Start ({infer MemberCall.previous=current} "." element=[Def]
-                    ArrayCallSignature? )*;
-
-                Start:
-                    element=[Def]
-                    ArrayCallSignature?;
-
-                fragment ArrayCallSignature:
-                    (isArray?='[' ']');
-
-                terminal ID: /[_a-zA-Z][\\w_]*/;
-                hidden terminal WS: /\\s+/;
-            `, module: {
-                references: {
-                    ScopeProvider: (services: any) => new class extends DefaultScopeProvider {
-                        override getScope(context: ReferenceInfo): Scope {
-                            const item = context.container as any;
-                            const previous = item.previous;
-                            if (previous) {
-                                const previousElement = previous.element.ref;
-                                // Ensure that the reference can be resolved
-                                resolved = Boolean(previousElement);
+    for (const [name, content] of [
+        ['Array in fragment', `
+            Start:
+                element=[Def]
+                ArrayCallSignature?;
+            fragment ArrayCallSignature:
+                (isArray?='[' ']');`],
+        ['Reference in fragment', `
+            Start:
+                ElementRef
+                (isArray?='[' ']')?;
+            fragment ElementRef:
+                element=[Def];`]
+    ]) {
+        test(`Fragment rules don't create AST elements during parsing - ${name}`, async () => {
+            // This test is mostly based on a bug report in a GitHub discussion:
+            // https://github.com/eclipse-langium/langium/discussions/1638
+            // In particular, the issue was that fragment rules used to create AST elements with type "undefined"
+            // When passing those into references, the reference would fail to resolve because the created AST element was just a placeholder
+            // Eventually, the parser would assign the properties of the fragment rule to the actual AST element
+            // But the reference would still use the old reference
+            // The fixed implementation no longer creates these fake AST elements, thereby skipping any potential issues completely.
+            let resolved = false;
+            const services = await createServicesForGrammar({
+                grammar: `
+                    grammar FragmentRuleOverride
+                    entry Entry: items+=(MemberCall|Def)*;
+                    Def: 'def' name=ID;
+                    MemberCall:
+                        Start ({infer MemberCall.previous=current} "." element=[Def])*;
+    
+                    ${content}
+    
+                    terminal ID: /[_a-zA-Z][\\w_]*/;
+                    hidden terminal WS: /\\s+/;
+                `, module: {
+                    references: {
+                        ScopeProvider: (services: any) => new class extends DefaultScopeProvider {
+                            override getScope(context: ReferenceInfo): Scope {
+                                const item = context.container as any;
+                                const previous = item.previous;
+                                if (previous) {
+                                    const previousElement = previous.element.ref;
+                                    // Ensure that the reference can be resolved
+                                    resolved = Boolean(previousElement);
+                                }
+                                return super.getScope(context);
                             }
-                            return super.getScope(context);
-                        }
-                    }(services)
+                        }(services)
+                    }
                 }
-            }
+            });
+            const document = services.shared.workspace.LangiumDocumentFactory.fromString('def a def b a[].b', URI.parse('file:///test'));
+            await services.shared.workspace.DocumentBuilder.build([document]);
+            expect(document.parseResult.lexerErrors).toHaveLength(0);
+            expect(document.parseResult.parserErrors).toHaveLength(0);
+            expect(resolved).toBe(true);
         });
-        const document = services.shared.workspace.LangiumDocumentFactory.fromString('def a def b a[].b', URI.parse('file:///test'));
-        await services.shared.workspace.DocumentBuilder.build([document]);
-        expect(document.parseResult.lexerErrors).toHaveLength(0);
-        expect(document.parseResult.parserErrors).toHaveLength(0);
-        expect(resolved).toBe(true);
-    });
+    }
+
 });
 
 describe('Unicode terminal rules', () => {
