@@ -877,11 +877,11 @@ export class LangiumGrammarValidator {
     checkOperatorMultiplicitiesForMultiAssignments(rule: ast.ParserRule, accept: ValidationAcceptor): void {
         // for usual parser rules AND for fragments, but not for data type rules!
         if (!rule.dataType) {
-            this.checkOperatorMultiplicitiesForMultiAssignmentsIndependent([rule.definition], new Map(), accept);
+            this.checkOperatorMultiplicitiesForMultiAssignmentsIndependent([rule.definition], accept);
         }
     }
 
-    private checkOperatorMultiplicitiesForMultiAssignmentsIndependent(startNodes: AstNode[], map: Map<string, AssignmentUse>, accept: ValidationAcceptor): void {
+    private checkOperatorMultiplicitiesForMultiAssignmentsIndependent(startNodes: AstNode[], accept: ValidationAcceptor, map: Map<string, AssignmentUse> = new Map()): void {
         // check all starting nodes
         this.checkOperatorMultiplicitiesForMultiAssignmentsNested(startNodes, 1, map, accept);
 
@@ -913,7 +913,7 @@ export class LangiumGrammarValidator {
                 const mapForNewObject = new Map();
                 storeAssignmentUse(mapForNewObject, currentNode.feature, 1, currentNode); // remember the special rewriting feature
                 // all following nodes are put into the new object => check their assignments independently
-                this.checkOperatorMultiplicitiesForMultiAssignmentsIndependent(nodes.slice(i + 1), mapForNewObject, accept);
+                this.checkOperatorMultiplicitiesForMultiAssignmentsIndependent(nodes.slice(i + 1), accept, mapForNewObject);
                 resultCreatedNewObject = true;
                 break; // breaks the current loop
             }
@@ -928,7 +928,7 @@ export class LangiumGrammarValidator {
 
             // assignment
             if (ast.isAssignment(currentNode)) {
-                storeAssignmentUse(map, currentNode.feature, 1 * currentMultiplicity, currentNode);
+                storeAssignmentUse(map, currentNode.feature, currentMultiplicity, currentNode);
             }
 
             // Search for assignments in used fragments as well, since their property values are stored in the current object.
