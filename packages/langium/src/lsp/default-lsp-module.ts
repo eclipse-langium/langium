@@ -97,7 +97,7 @@ export function createDefaultSharedLSPModule(context: DefaultSharedModuleContext
         },
         workspace: {
             TextDocuments: () => new NormalizedTextDocuments(TextDocument),
-            NotebookDocuments: () => new NormalizedNotebookDocuments(TextDocument)
+            NotebookDocuments: (services) => new NormalizedNotebookDocuments(services.workspace.TextDocuments)
         }
     };
 }

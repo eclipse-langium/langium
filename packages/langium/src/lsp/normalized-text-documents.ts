@@ -325,8 +325,8 @@ export class NormalizedNotebookDocuments<T extends { uri: DocumentUri }> impleme
         return this.notebookDocuments.get(UriUtils.normalize(uri));
     }
 
-    getNotebookCell(uri: DocumentUri): NotebookCell | undefined {
-        const value = this.notebookCellMap.get(uri);
+    getNotebookCell(uri: string | URI): NotebookCell | undefined {
+        const value = this.notebookCellMap.get(UriUtils.normalize(uri));
         return value && value[0];
     }
 
