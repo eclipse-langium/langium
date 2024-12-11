@@ -14,8 +14,8 @@ export const LangiumGrammarGrammar = (): Grammar => loadedLangiumGrammarGrammar 
   "rules": [
     {
       "$type": "ParserRule",
-      "name": "Grammar",
       "entry": true,
+      "name": "Grammar",
       "definition": {
         "$type": "Group",
         "elements": [
@@ -1348,8 +1348,8 @@ export const LangiumGrammarGrammar = (): Grammar => loadedLangiumGrammarGrammar 
     },
     {
       "$type": "ParserRule",
-      "name": "RuleNameAndParams",
       "fragment": true,
+      "name": "RuleNameAndParams",
       "definition": {
         "$type": "Group",
         "elements": [
