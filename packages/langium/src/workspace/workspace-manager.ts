@@ -159,8 +159,11 @@ export class DefaultWorkspaceManager implements WorkspaceManager {
             folders.map(wf => this.getRootFolder(wf))
                 .map(async entry => this.traverseFolder(entry, uris))
         );
-        // Ensure that we only create one document per URI/file
-        const uniqueUris = stream(uris).distinct(uri => uri.toString());
+        const uniqueUris = stream(uris)
+            // Ensure that we only create one document per URI/file
+            .distinct(uri => uri.toString())
+            // Also ensure that the documents don't already exist
+            .filter(uri => !this.langiumDocuments.hasDocument(uri));
         await Promise.all(uniqueUris.map(async uri => {
             const document = await this.langiumDocuments.getOrCreateDocument(uri);
             collector(document);
