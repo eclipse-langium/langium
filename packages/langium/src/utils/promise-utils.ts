@@ -76,8 +76,11 @@ export async function interruptAndCheck(token: CancellationToken): Promise<void>
     }
     const current = performance.now();
     if (current - lastTick >= globalInterruptionPeriod) {
-        lastTick = current;
         await delayNextTick();
+        // prevent calling delayNextTick every iteration of loop
+        // where delayNextTick takes up the majority or all of the
+        // globalInterruptionPeriod itself
+        lastTick = performance.now();
     }
     if (token.isCancellationRequested) {
         throw OperationCancelled;
