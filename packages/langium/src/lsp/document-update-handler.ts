@@ -126,9 +126,6 @@ export class DefaultDocumentUpdateHandler implements DocumentUpdateHandler {
     }
 
     protected fireDocumentUpdate(changed: URI[], deleted: URI[]): void {
-        // Filter out URIs that do not have a service in the registry
-        // Running the document builder update will fail for those URIs
-        changed = changed.filter(uri => this.serviceRegistry.hasServices(uri));
         // Only fire the document update when the workspace manager is ready
         // Otherwise, we might miss the initial indexing of the workspace
         this.workspaceManager.ready.then(() => {

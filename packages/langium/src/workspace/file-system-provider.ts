@@ -18,6 +18,8 @@ export type FileSystemFilter = (node: FileSystemNode) => boolean;
  * Provides methods to interact with an abstract file system. The default implementation is based on the node.js `fs` API.
  */
 export interface FileSystemProvider {
+    stat(uri: URI): Promise<FileSystemNode>;
+    statSync(uri: URI): FileSystemNode;
     /**
      * Reads a document asynchronously from a given URI.
      * @returns The string content of the file with the specified URI.
@@ -31,6 +33,14 @@ export interface FileSystemProvider {
 }
 
 export class EmptyFileSystemProvider implements FileSystemProvider {
+
+    stat(_uri: URI): Promise<FileSystemNode> {
+        throw new Error('No file system is available.');
+    }
+
+    statSync(_uri: URI): FileSystemNode {
+        throw new Error('No file system is available.');
+    }
 
     readFile(): Promise<string> {
         throw new Error('No file system is available.');

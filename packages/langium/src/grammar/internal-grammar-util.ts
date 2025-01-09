@@ -181,7 +181,7 @@ export async function createServicesForGrammar<L extends LangiumServices = Langi
     };
     const languageMetaData = config.languageMetaData ?? {
         caseInsensitive: false,
-        fileExtensions: [`.${grammarNode.name?.toLowerCase() ?? 'unknown'}`],
+        fileExtensions: ['.txt'],
         languageId: grammarNode.name ?? 'UNKNOWN',
         mode: 'development'
     };
