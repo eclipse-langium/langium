@@ -5,7 +5,7 @@
  ******************************************************************************/
 
 import type { Stream } from './stream.js';
-import { Reduction, stream } from './stream.js';
+import { EMPTY_STREAM, Reduction, stream } from './stream.js';
 
 /**
  * A multimap is a variation of a Map that has potentially multiple values for every key.
@@ -75,6 +75,15 @@ export class MultiMap<K, V> {
      */
     get(key: K): readonly V[] {
         return this.map.get(key) ?? [];
+    }
+
+    /**
+     * Returns a stream of all values associated with the given key. If no value exists,
+     * {@link EMPTY_STREAM} is returned.
+     */
+    getStream(key: K): Stream<V> {
+        const values = this.map.get(key);
+        return values ? stream(values) : EMPTY_STREAM;
     }
 
     /**

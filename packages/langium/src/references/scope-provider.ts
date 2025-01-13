@@ -52,13 +52,12 @@ export class DefaultScopeProvider implements ScopeProvider {
         const scopes: Array<Stream<AstNodeDescription>> = [];
         const referenceType = this.reflection.getReferenceType(context);
 
-        const precomputed = getDocument(context.container).precomputedScopes;
-        if (precomputed) {
+        const localSymbols = getDocument(context.container).localSymbols;
+        if (localSymbols) {
             let currentNode: AstNode | undefined = context.container;
             do {
-                const allDescriptions = precomputed.get(currentNode);
-                if (allDescriptions.length > 0) {
-                    scopes.push(stream(allDescriptions).filter(
+                if (localSymbols.has(currentNode)) {
+                    scopes.push(localSymbols.getStream(currentNode).filter(
                         desc => this.reflection.isSubtype(desc.type, referenceType)));
                 }
                 currentNode = currentNode.$container;

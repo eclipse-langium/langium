@@ -356,14 +356,14 @@ export class DefaultDocumentBuilder implements DocumentBuilder {
         await this.runCancelable(documents, DocumentState.Parsed, cancelToken, doc =>
             this.langiumDocumentFactory.update(doc, cancelToken)
         );
-        // 1. Index content
+        // 1. Index content: collect the documents' symbols being accessible by other documents
         await this.runCancelable(documents, DocumentState.IndexedContent, cancelToken, doc =>
             this.indexManager.updateContent(doc, cancelToken)
         );
-        // 2. Compute scopes
+        // 2. Local symbols: collect each documents' symbols being accessible within the document (only)
         await this.runCancelable(documents, DocumentState.ComputedScopes, cancelToken, async doc => {
             const scopeComputation = this.serviceRegistry.getServices(doc.uri).references.ScopeComputation;
-            doc.precomputedScopes = await scopeComputation.computeLocalScopes(doc, cancelToken);
+            doc.localSymbols = await scopeComputation.collectLocalSymbols(doc, cancelToken);
         });
         // 3. Linking
         const toBeLinked = documents.filter(doc => this.shouldLink(doc));

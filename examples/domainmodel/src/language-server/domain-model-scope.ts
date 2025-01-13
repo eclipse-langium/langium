@@ -4,7 +4,7 @@
  * terms of the MIT License, which is available in the project root.
  ******************************************************************************/
 
-import type { AstNode, AstNodeDescription, LangiumDocument, PrecomputedScopes } from 'langium';
+import type { AstNode, AstNodeDescription, LangiumDocument, LocalSymbols } from 'langium';
 import type { DomainModelServices } from './domain-model-module.js';
 import type { QualifiedNameProvider } from './domain-model-naming.js';
 import type { Domainmodel, PackageDeclaration } from './generated/ast.js';
@@ -23,7 +23,7 @@ export class DomainModelScopeComputation extends DefaultScopeComputation {
     /**
      * Exports only types (`DataType or `Entity`) with their qualified names.
      */
-    override async computeExports(document: LangiumDocument, cancelToken = Cancellation.CancellationToken.None): Promise<AstNodeDescription[]> {
+    override async collectExportedSymbols(document: LangiumDocument, cancelToken = Cancellation.CancellationToken.None): Promise<AstNodeDescription[]> {
         const descr: AstNodeDescription[] = [];
         for (const modelNode of AstUtils.streamAllContents(document.parseResult.value)) {
             await interruptAndCheck(cancelToken);
@@ -40,14 +40,14 @@ export class DomainModelScopeComputation extends DefaultScopeComputation {
         return descr;
     }
 
-    override async computeLocalScopes(document: LangiumDocument, cancelToken = Cancellation.CancellationToken.None): Promise<PrecomputedScopes> {
-        const model = document.parseResult.value as Domainmodel;
-        const scopes = new MultiMap<AstNode, AstNodeDescription>();
-        await this.processContainer(model, scopes, document, cancelToken);
-        return scopes;
+    override async collectLocalSymbols(document: LangiumDocument<Domainmodel>, cancelToken = Cancellation.CancellationToken.None): Promise<LocalSymbols> {
+        const model = document.parseResult.value;
+        const symbols = new MultiMap<AstNode, AstNodeDescription>();
+        await this.processContainer(model, symbols, document, cancelToken);
+        return symbols;
     }
 
-    protected async processContainer(container: Domainmodel | PackageDeclaration, scopes: PrecomputedScopes, document: LangiumDocument, cancelToken: Cancellation.CancellationToken): Promise<AstNodeDescription[]> {
+    protected async processContainer(container: Domainmodel | PackageDeclaration, symbols: MultiMap<AstNode, AstNodeDescription>, document: LangiumDocument, cancelToken: Cancellation.CancellationToken): Promise<AstNodeDescription[]> {
         const localDescriptions: AstNodeDescription[] = [];
         for (const element of container.elements) {
             await interruptAndCheck(cancelToken);
@@ -55,7 +55,7 @@ export class DomainModelScopeComputation extends DefaultScopeComputation {
                 const description = this.descriptions.createDescription(element, element.name, document);
                 localDescriptions.push(description);
             } else if (isPackageDeclaration(element)) {
-                const nestedDescriptions = await this.processContainer(element, scopes, document, cancelToken);
+                const nestedDescriptions = await this.processContainer(element, symbols, document, cancelToken);
                 for (const description of nestedDescriptions) {
                     // Add qualified names to the container
                     const qualified = this.createQualifiedDescription(element, description, document);
@@ -63,7 +63,7 @@ export class DomainModelScopeComputation extends DefaultScopeComputation {
                 }
             }
         }
-        scopes.addAll(container, localDescriptions);
+        symbols.addAll(container, localDescriptions);
         return localDescriptions;
     }
 

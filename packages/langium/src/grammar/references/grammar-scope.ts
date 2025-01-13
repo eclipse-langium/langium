@@ -7,16 +7,16 @@
 import type { Scope } from '../../references/scope.js';
 import type { LangiumCoreServices } from '../../services.js';
 import type { AstNode, AstNodeDescription, ReferenceInfo } from '../../syntax-tree.js';
+import type { MultiMap } from '../../utils/collections.js';
 import type { Stream } from '../../utils/stream.js';
 import type { AstNodeLocator } from '../../workspace/ast-node-locator.js';
-import type { DocumentSegment, LangiumDocument, LangiumDocuments, PrecomputedScopes } from '../../workspace/documents.js';
+import type { DocumentSegment, LangiumDocument, LangiumDocuments } from '../../workspace/documents.js';
 import type { Grammar } from '../../languages/generated/ast.js';
 import { EMPTY_SCOPE, MultiMapScope } from '../../references/scope.js';
 import { DefaultScopeComputation } from '../../references/scope-computation.js';
 import { DefaultScopeProvider } from '../../references/scope-provider.js';
 import { findRootNode, getContainerOfType, getDocument, streamAllContents } from '../../utils/ast-utils.js';
 import { toDocumentSegment } from '../../utils/cst-utils.js';
-import { stream } from '../../utils/stream.js';
 import { AbstractType, InferredType, Interface, NamedArgument, Type, isAction, isGrammar, isInfixRule, isParserRule, isReturnType, isRuleCall } from '../../languages/generated/ast.js';
 import { resolveImportUri } from '../internal-grammar-util.js';
 
@@ -55,12 +55,11 @@ export class LangiumGrammarScopeProvider extends DefaultScopeProvider {
 
     private getTypeScope(referenceType: string, context: ReferenceInfo): Scope {
         let localScope: Stream<AstNodeDescription> | undefined;
-        const precomputed = getDocument(context.container).precomputedScopes;
+        const localSymbols = getDocument(context.container).localSymbols;
         const rootNode = findRootNode(context.container);
-        if (precomputed && rootNode) {
-            const allDescriptions = precomputed.get(rootNode);
-            if (allDescriptions.length > 0) {
-                localScope = stream(allDescriptions).filter(des => des.type === Interface.$type || des.type === Type.$type || des.type === InferredType.$type);
+        if (localSymbols && rootNode) {
+            if (localSymbols.has(rootNode)) {
+                localScope = localSymbols.getStream(rootNode).filter(des => des.type === Interface.$type || des.type === Type.$type || des.type === InferredType.$type);
             }
         }
 
@@ -112,7 +111,7 @@ export class LangiumGrammarScopeComputation extends DefaultScopeComputation {
         this.astNodeLocator = services.workspace.AstNodeLocator;
     }
 
-    protected override exportNode(node: AstNode, exports: AstNodeDescription[], document: LangiumDocument): void {
+    protected override addExportedSymbol(node: AstNode, exports: AstNodeDescription[], document: LangiumDocument): void {
         // this function is called in order to export nodes to the GLOBAL scope
 
         /* Among others, TYPES need to be exported.
@@ -128,7 +127,7 @@ export class LangiumGrammarScopeComputation extends DefaultScopeComputation {
          */
 
         // export the top-level elements: parser rules, terminal rules, types, interfaces
-        super.exportNode(node, exports, document);
+        super.addExportedSymbol(node, exports, document);
 
         // additionally, export inferred types:
         if (isParserRule(node)) {
@@ -146,25 +145,25 @@ export class LangiumGrammarScopeComputation extends DefaultScopeComputation {
         }
     }
 
-    protected override processNode(node: AstNode, document: LangiumDocument, scopes: PrecomputedScopes): void {
+    protected override addLocalSymbol(node: AstNode, document: LangiumDocument, symbols: MultiMap<AstNode, AstNodeDescription>): void {
         // for the precompution of the local scope
         if (isReturnType(node)) {
             return;
         }
-        this.processTypeNode(node, document, scopes);
-        this.processActionNode(node, document, scopes);
-        super.processNode(node, document, scopes);
+        this.processTypeNode(node, document, symbols);
+        this.processActionNode(node, document, symbols);
+        super.addLocalSymbol(node, document, symbols);
     }
 
     /**
      * Add synthetic type into the scope in case of explicitly or implicitly inferred type:<br>
      * cases: `ParserRule: ...;` or `ParserRule infers Type: ...;`
      */
-    protected processTypeNode(node: AstNode, document: LangiumDocument, scopes: PrecomputedScopes): void {
+    protected processTypeNode(node: AstNode, document: LangiumDocument, symbols: MultiMap<AstNode, AstNodeDescription>): void {
         const container = node.$container;
         if (container && isParserRule(node) && !node.returnType && !node.dataType) {
             const typeNode = node.inferredType ?? node;
-            scopes.add(container, this.createInferredTypeDescription(typeNode, typeNode.name, document));
+            symbols.add(container, this.createInferredTypeDescription(typeNode, typeNode.name, document));
         }
     }
 
@@ -173,10 +172,10 @@ export class LangiumGrammarScopeComputation extends DefaultScopeComputation {
      *
      * case: `{infer Action}`
      */
-    protected processActionNode(node: AstNode, document: LangiumDocument, scopes: PrecomputedScopes): void {
+    protected processActionNode(node: AstNode, document: LangiumDocument, symbols: MultiMap<AstNode, AstNodeDescription>): void {
         const container = findRootNode(node);
         if (container && isAction(node) && node.inferredType) {
-            scopes.add(container, this.createInferredTypeDescription(node.inferredType, node.inferredType.name, document));
+            symbols.add(container, this.createInferredTypeDescription(node.inferredType, node.inferredType.name, document));
         }
     }
 

@@ -69,13 +69,13 @@ export class JSDocDocumentationProvider implements DocumentationProvider {
 
     protected findNameInPrecomputedScopes(node: AstNode, name: string): AstNodeDescription | undefined {
         const document = getDocument(node);
-        const precomputed = document.precomputedScopes;
+        const precomputed = document.localSymbols;
         if (!precomputed) {
             return undefined;
         }
         let currentNode: AstNode | undefined = node;
         do {
-            const allDescriptions = precomputed.get(currentNode);
+            const allDescriptions = precomputed.getStream(currentNode);
             const description = allDescriptions.find(e => e.name === name);
             if (description) {
                 return description;

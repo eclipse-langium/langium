@@ -6,13 +6,13 @@
 
 import type { LangiumCoreServices } from '../services.js';
 import type { AstNode, AstNodeDescription } from '../syntax-tree.js';
-import type { AstNodeDescriptionProvider } from '../workspace/ast-descriptions.js';
-import type { LangiumDocument, PrecomputedScopes } from '../workspace/documents.js';
-import type { NameProvider } from './name-provider.js';
-import { CancellationToken } from '../utils/cancellation.js';
 import { streamAllContents, streamContents } from '../utils/ast-utils.js';
+import { CancellationToken } from '../utils/cancellation.js';
 import { MultiMap } from '../utils/collections.js';
 import { interruptAndCheck } from '../utils/promise-utils.js';
+import type { AstNodeDescriptionProvider } from '../workspace/ast-descriptions.js';
+import type { LangiumDocument, LocalSymbols } from '../workspace/documents.js';
+import type { NameProvider } from './name-provider.js';
 
 /**
  * Language-specific service for precomputing global and local scopes. The service methods are executed
@@ -33,34 +33,35 @@ export interface ScopeComputation {
      * @param cancelToken Indicates when to cancel the current operation.
      * @throws `OperationCanceled` if a user action occurs during execution
      */
-    computeExports(document: LangiumDocument, cancelToken?: CancellationToken): Promise<AstNodeDescription[]>;
+    collectExportedSymbols(document: LangiumDocument, cancelToken?: CancellationToken): Promise<AstNodeDescription[]>;
 
     /**
-     * Precomputes the _local_ scopes for a document, which are necessary for the default way of
-     * resolving references to symbols in the same document. The result is a multimap assigning a
-     * set of AST node descriptions to every level of the AST. These data are used by the `ScopeProvider`
-     * service to determine which target nodes are visible in the context of a specific cross-reference.
+     * Creates descriptions of the _local_ symbols being accessible within a document.
+     * The result is a `LocalSymbols` table assigning sets of AST node descriptions to the corresponding
+     * nodes/subtrees within the AST. The descriptions are considered in the default reference resolution
+     * implementation, i.e. they are used by the `ScopeProvider` service to determine which symbols
+     * are visible in the context of a specific cross-reference.
      *
      * _Note:_ You should not resolve any cross-references in this service method. Cross-reference
      * resolution depends on the scope computation phase to be completed.
      *
-     * @param document The document in which to compute scopes.
+     * @param document The document for which to compute its local symbols.
      * @param cancelToken Indicates when to cancel the current operation.
      * @throws `OperationCanceled` if a user action occurs during execution
      */
-    computeLocalScopes(document: LangiumDocument, cancelToken?: CancellationToken): Promise<PrecomputedScopes>;
-
+    collectLocalSymbols(document: LangiumDocument, cancelToken?: CancellationToken): Promise<LocalSymbols>;
 }
 
 /**
- * The default scope computation creates and collectes descriptions of the AST nodes to be exported into the
+ * The default scope computation creates and collects descriptions of the AST nodes to be exported into the
  * _global_ scope from the given document. By default those are the document's root AST node and its directly
  * contained child nodes.
  *
- * Besides, it gathers all AST nodes that have a name (according to the `NameProvider` service) and includes them
- * in the local scope of their particular container nodes. As a result, for every cross-reference in the AST,
- * target elements from the same level (siblings) and further up towards the root (parents and siblings of parents)
- * are visible. Elements being nested inside lower levels (children, children of siblings and parents' siblings)
+ * Besides, it gathers all AST nodes that have a name (according to the `NameProvider` service) and that are to be
+ * included in the local scope of their particular container nodes. They are collected in a `DocumentSymbols` table.
+ * As a result, for every cross-reference in the AST, target elements from the same level (siblings) and further up
+ * towards the root (parents and siblings of parents) are visible.
+ * Elements being nested inside lower levels (children, children of siblings and parents' siblings)
  * are _invisible_ by default, but that can be changed by customizing this service.
  */
 export class DefaultScopeComputation implements ScopeComputation {
@@ -73,8 +74,8 @@ export class DefaultScopeComputation implements ScopeComputation {
         this.descriptions = services.workspace.AstNodeDescriptionProvider;
     }
 
-    async computeExports(document: LangiumDocument, cancelToken = CancellationToken.None): Promise<AstNodeDescription[]> {
-        return this.computeExportsForNode(document.parseResult.value, document, undefined, cancelToken);
+    async collectExportedSymbols(document: LangiumDocument, cancelToken = CancellationToken.None): Promise<AstNodeDescription[]> {
+        return this.collectExportedSymbolsForNode(document.parseResult.value, document, undefined, cancelToken);
     }
 
     /**
@@ -89,50 +90,52 @@ export class DefaultScopeComputation implements ScopeComputation {
      * @throws `OperationCancelled` if a user action occurs during execution.
      * @returns A list of {@link AstNodeDescription AstNodeDescriptions} to be published to index.
      */
-    async computeExportsForNode(parentNode: AstNode, document: LangiumDocument<AstNode>, children: (root: AstNode) => Iterable<AstNode> = streamContents, cancelToken: CancellationToken = CancellationToken.None): Promise<AstNodeDescription[]> {
+    async collectExportedSymbolsForNode(parentNode: AstNode, document: LangiumDocument<AstNode>, children: (root: AstNode) => Iterable<AstNode> = streamContents, cancelToken: CancellationToken = CancellationToken.None): Promise<AstNodeDescription[]> {
         const exports: AstNodeDescription[] = [];
 
-        this.exportNode(parentNode, exports, document);
+        this.addExportedSymbol(parentNode, exports, document);
         for (const node of children(parentNode)) {
             await interruptAndCheck(cancelToken);
-            this.exportNode(node, exports, document);
+            this.addExportedSymbol(node, exports, document);
         }
         return exports;
     }
 
     /**
-     * Add a single node to the list of exports if it has a name. Override this method to change how
+     * Adds a single node to the list of exports if it has a name. Override this method to change how
      * symbols are exported, e.g. by modifying their exported name.
      */
-    protected exportNode(node: AstNode, exports: AstNodeDescription[], document: LangiumDocument): void {
+    protected addExportedSymbol(node: AstNode, exports: AstNodeDescription[], document: LangiumDocument): void {
         const name = this.nameProvider.getName(node);
         if (name) {
             exports.push(this.descriptions.createDescription(node, name, document));
         }
     }
 
-    async computeLocalScopes(document: LangiumDocument, cancelToken = CancellationToken.None): Promise<PrecomputedScopes> {
+    // --- local symbols gathering ---
+
+    async collectLocalSymbols(document: LangiumDocument, cancelToken = CancellationToken.None): Promise<LocalSymbols> {
         const rootNode = document.parseResult.value;
-        const scopes = new MultiMap<AstNode, AstNodeDescription>();
+        const symbols = new MultiMap<AstNode, AstNodeDescription>();
         // Here we navigate the full AST - local scopes shall be available in the whole document
         for (const node of streamAllContents(rootNode)) {
             await interruptAndCheck(cancelToken);
-            this.processNode(node, document, scopes);
+            this.addLocalSymbol(node, document, symbols);
         }
-        return scopes;
+        return symbols;
     }
 
     /**
-     * Process a single node during scopes computation. The default implementation makes the node visible
-     * in the subtree of its container (if the node has a name). Override this method to change this,
-     * e.g. by increasing the visibility to a higher level in the AST.
+     * Adds a single node to the local symbols of its containing document if it has a name.
+     * The default implementation makes the node visible in the subtree of its container if it does have a container.
+     * Override this method to change this, e.g. by increasing the visibility to a higher level in the AST.
      */
-    protected processNode(node: AstNode, document: LangiumDocument, scopes: PrecomputedScopes): void {
+    protected addLocalSymbol(node: AstNode, document: LangiumDocument, symbols: MultiMap<AstNode, AstNodeDescription>): void {
         const container = node.$container;
         if (container) {
             const name = this.nameProvider.getName(node);
             if (name) {
-                scopes.add(container, this.descriptions.createDescription(node, name, document));
+                symbols.add(container, this.descriptions.createDescription(node, name, document));
             }
         }
     }
