@@ -9,7 +9,6 @@ import type { Range } from 'vscode-languageserver-types';
 import type { AbstractElement } from '../languages/generated/ast.js';
 import type { AstNode, CompositeCstNode, CstNode, LeafCstNode, RootCstNode } from '../syntax-tree.js';
 import { Position } from 'vscode-languageserver-types';
-import { isCompositeCstNode } from '../syntax-tree.js';
 import { tokenToRange } from '../utils/cst-utils.js';
 
 export class CstNodeBuilder {
@@ -17,7 +16,7 @@ export class CstNodeBuilder {
     private rootNode!: RootCstNodeImpl;
     private nodeStack: CompositeCstNodeImpl[] = [];
 
-    private get current(): CompositeCstNodeImpl {
+    get current(): CompositeCstNodeImpl {
         return this.nodeStack[this.nodeStack.length - 1] ?? this.rootNode;
     }
 
@@ -37,8 +36,8 @@ export class CstNodeBuilder {
         return compositeNode;
     }
 
-    buildLeafNode(token: IToken, feature: AbstractElement): LeafCstNode {
-        const leafNode = new LeafCstNodeImpl(token.startOffset, token.image.length, tokenToRange(token), token.tokenType, false);
+    buildLeafNode(token: IToken, feature?: AbstractElement): LeafCstNode {
+        const leafNode = new LeafCstNodeImpl(token.startOffset, token.image.length, tokenToRange(token), token.tokenType, !feature);
         leafNode.grammarSource = feature;
         leafNode.root = this.rootNode;
         this.current.content.push(leafNode);
@@ -52,6 +51,33 @@ export class CstNodeBuilder {
             if (index >= 0) {
                 parent.content.splice(index, 1);
             }
+        }
+    }
+
+    addHiddenNode(token: IToken): void {
+        const leafNode = new LeafCstNodeImpl(token.startOffset, token.image.length, tokenToRange(token), token.tokenType, true);
+        leafNode.root = this.rootNode;
+        let current: CompositeCstNode = this.current;
+        let added = false;
+        // If we are within a composite node, we add the hidden node to the content
+        if (current.content.length > 0) {
+            current.content.push(leafNode);
+            return;
+        }
+        while (current.container) {
+            const index = current.container.content.indexOf(current);
+            if (index > 0) {
+                // Add the hidden node before the current node
+                current.container.content.splice(index, 0, leafNode);
+                added = true;
+                break;
+            }
+            current = current.container;
+        }
+        // If we arrive at the root node, we add the hidden node at the beginning
+        // This is the case if the hidden node is the first node in the tree
+        if (!added) {
+            this.rootNode.content.unshift(leafNode);
         }
     }
 
@@ -70,34 +96,6 @@ export class CstNodeBuilder {
             this.removeNode(node);
         }
     }
-
-    addHiddenTokens(hiddenTokens: IToken[]): void {
-        for (const token of hiddenTokens) {
-            const hiddenNode = new LeafCstNodeImpl(token.startOffset, token.image.length, tokenToRange(token), token.tokenType, true);
-            hiddenNode.root = this.rootNode;
-            this.addHiddenToken(this.rootNode, hiddenNode);
-        }
-    }
-
-    private addHiddenToken(node: CompositeCstNode, token: LeafCstNode): void {
-        const { offset: tokenStart, end: tokenEnd } = token;
-
-        for (let i = 0; i < node.content.length; i++) {
-            const child = node.content[i];
-            const { offset: childStart, end: childEnd } = child;
-            if (isCompositeCstNode(child) && tokenStart > childStart && tokenEnd < childEnd) {
-                this.addHiddenToken(child, token);
-                return;
-            } else if (tokenEnd <= childStart) {
-                node.content.splice(i, 0, token);
-                return;
-            }
-        }
-
-        // We know that we haven't found a suited position for the token
-        // So we simply add it to the end of the current node
-        node.content.push(token);
-    }
 }
 
 export abstract class AbstractCstNode implements CstNode {
@@ -107,7 +105,7 @@ export abstract class AbstractCstNode implements CstNode {
     abstract get range(): Range;
 
     container?: CompositeCstNode;
-    grammarSource: AbstractElement;
+    grammarSource?: AbstractElement;
     root: RootCstNode;
     private _astNode?: AstNode;
 
@@ -117,7 +115,7 @@ export abstract class AbstractCstNode implements CstNode {
     }
 
     /** @deprecated use `grammarSource` instead. */
-    get feature(): AbstractElement {
+    get feature(): AbstractElement | undefined {
         return this.grammarSource;
     }
 
