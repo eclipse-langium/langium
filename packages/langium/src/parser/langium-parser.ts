@@ -275,7 +275,7 @@ export class LangiumParser extends AbstractLangiumParser {
         };
     }
 
-    private getHiddenTokens(token: IToken): IToken[] {
+    private extractHiddenTokens(token: IToken): IToken[] {
         const hiddenTokens = this.lexerResult!.hidden;
         if (!hiddenTokens.length) {
             return [];
@@ -293,7 +293,7 @@ export class LangiumParser extends AbstractLangiumParser {
     consume(idx: number, tokenType: TokenType, feature: AbstractElement): void {
         const token = this.wrapper.wrapConsume(idx, tokenType);
         if (!this.isRecording() && this.isValidToken(token)) {
-            const hiddenTokens = this.getHiddenTokens(token);
+            const hiddenTokens = this.extractHiddenTokens(token);
             this.nodeBuilder.addHiddenNodes(hiddenTokens);
             const leafNode = this.nodeBuilder.buildLeafNode(token, feature);
             const { assignment, isCrossRef } = this.getAssignment(feature);

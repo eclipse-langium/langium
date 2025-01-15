@@ -68,6 +68,8 @@ export class CstNodeBuilder {
             current.content.push(...nodes);
             return;
         }
+        // Otherwise we are at a newly created node
+        // Instead of adding the hidden nodes here, we search for the first parent node with content
         while (current.container) {
             const index = current.container.content.indexOf(current);
             if (index > 0) {
