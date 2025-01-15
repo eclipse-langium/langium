@@ -54,30 +54,34 @@ export class CstNodeBuilder {
         }
     }
 
-    addHiddenNode(token: IToken): void {
-        const leafNode = new LeafCstNodeImpl(token.startOffset, token.image.length, tokenToRange(token), token.tokenType, true);
-        leafNode.root = this.rootNode;
+    addHiddenNodes(tokens: IToken[]): void {
+        const nodes: LeafCstNode[] = [];
+        for (const token of tokens) {
+            const leafNode = new LeafCstNodeImpl(token.startOffset, token.image.length, tokenToRange(token), token.tokenType, true);
+            leafNode.root = this.rootNode;
+            nodes.push(leafNode);
+        }
         let current: CompositeCstNode = this.current;
         let added = false;
-        // If we are within a composite node, we add the hidden node to the content
+        // If we are within a composite node, we add the hidden nodes to the content
         if (current.content.length > 0) {
-            current.content.push(leafNode);
+            current.content.push(...nodes);
             return;
         }
         while (current.container) {
             const index = current.container.content.indexOf(current);
             if (index > 0) {
-                // Add the hidden node before the current node
-                current.container.content.splice(index, 0, leafNode);
+                // Add the hidden nodes before the current node
+                current.container.content.splice(index, 0, ...nodes);
                 added = true;
                 break;
             }
             current = current.container;
         }
-        // If we arrive at the root node, we add the hidden node at the beginning
-        // This is the case if the hidden node is the first node in the tree
+        // If we arrive at the root node, we add the hidden nodes at the beginning
+        // This is the case if the hidden nodes are the first nodes in the tree
         if (!added) {
-            this.rootNode.content.unshift(leafNode);
+            this.rootNode.content.unshift(...nodes);
         }
     }
 

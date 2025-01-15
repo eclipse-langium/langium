@@ -240,7 +240,7 @@ export class LangiumParser extends AbstractLangiumParser {
             throw new Error(options.rule ? `No rule found with name '${options.rule}'` : 'No main rule available.');
         }
         const result = ruleMethod.call(this.wrapper, {});
-        this.appendHiddenTokens(lexerResult.hidden);
+        this.nodeBuilder.addHiddenNodes(lexerResult.hidden);
         this.unorderedGroups.clear();
         this.lexerResult = undefined;
         return {
@@ -275,12 +275,6 @@ export class LangiumParser extends AbstractLangiumParser {
         };
     }
 
-    private appendHiddenTokens(tokens: IToken[]): void {
-        for (const token of tokens) {
-            this.nodeBuilder.addHiddenNode(token);
-        }
-    }
-
     private getHiddenTokens(token: IToken): IToken[] {
         const hiddenTokens = this.lexerResult!.hidden;
         if (!hiddenTokens.length) {
@@ -300,7 +294,7 @@ export class LangiumParser extends AbstractLangiumParser {
         const token = this.wrapper.wrapConsume(idx, tokenType);
         if (!this.isRecording() && this.isValidToken(token)) {
             const hiddenTokens = this.getHiddenTokens(token);
-            this.appendHiddenTokens(hiddenTokens);
+            this.nodeBuilder.addHiddenNodes(hiddenTokens);
             const leafNode = this.nodeBuilder.buildLeafNode(token, feature);
             const { assignment, isCrossRef } = this.getAssignment(feature);
             const current = this.current;

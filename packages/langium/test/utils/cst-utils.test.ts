@@ -85,11 +85,13 @@ describe('findCommentNode', () => {
     test('Finds correct comment at the start of the file', async () => {
         const text = expandToString`
         /** A */
+        /** B */
+        /** C */
         grammar test
         `;
         const grammar = await parser(text);
         const comment = CstUtils.findCommentNode(grammar.parseResult.value.$cstNode, ['ML_COMMENT']);
-        expect(comment?.text).toBe('/** A */');
+        expect(comment?.text).toBe('/** C */');
     });
 });
 
