@@ -296,23 +296,22 @@ export class DefaultHydrator implements Hydrator {
         return this.lexer.definition[name];
     }
 
-    protected getGrammarElementId(node: AbstractElement): number | undefined {
+    protected getGrammarElementId(node: AbstractElement | undefined): number | undefined {
+        if (!node) {
+            return undefined;
+        }
         if (this.grammarElementIdMap.size === 0) {
             this.createGrammarElementIdMap();
         }
         return this.grammarElementIdMap.get(node);
     }
 
-    protected getGrammarElement(id: number): AbstractElement {
+    protected getGrammarElement(id: number): AbstractElement | undefined {
         if (this.grammarElementIdMap.size === 0) {
             this.createGrammarElementIdMap();
         }
         const element = this.grammarElementIdMap.getKey(id);
-        if (element) {
-            return element;
-        } else {
-            throw new Error('Invalid grammar element id: ' + id);
-        }
+        return element;
     }
 
     protected createGrammarElementIdMap(): void {
