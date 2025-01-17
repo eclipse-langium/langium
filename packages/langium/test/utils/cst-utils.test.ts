@@ -62,6 +62,39 @@ describe('findLeafNode', () => {
     }
 });
 
+describe('findCommentNode', () => {
+    test('Finds correct comment with multiple comments before and after', async () => {
+        const text = expandToString`
+        Main: value=AB;
+        terminal AB: 
+        /** A */
+        /** B */
+        'A'
+        /** C */
+        /** D */;
+        `;
+        const grammar = await parser(text);
+        const offset = text.indexOf("'A'") + 1;
+        const leafNode = findLeafNodeAtOffset(grammar.parseResult.value.$cstNode!, offset);
+        const keyword = leafNode?.astNode;
+        expect(keyword).toBeDefined();
+        const comment = CstUtils.findCommentNode(keyword?.$cstNode, ['ML_COMMENT']);
+        expect(comment?.text).toBe('/** B */');
+    });
+
+    test('Finds correct comment at the start of the file', async () => {
+        const text = expandToString`
+        /** A */
+        /** B */
+        /** C */
+        grammar test
+        `;
+        const grammar = await parser(text);
+        const comment = CstUtils.findCommentNode(grammar.parseResult.value.$cstNode, ['ML_COMMENT']);
+        expect(comment?.text).toBe('/** C */');
+    });
+});
+
 describe('compareRange', () => {
     test.each([
         // Different lines

@@ -4,9 +4,9 @@
  * terms of the MIT License, which is available in the project root.
  ******************************************************************************/
 
-import type { AstNode, LangiumCoreServices } from 'langium';
+import { EmptyFileSystem, type AstNode, type LangiumCoreServices } from 'langium';
 import { describe, expect, test, beforeEach } from 'vitest';
-import { createServicesForGrammar  } from 'langium/grammar';
+import { createLangiumGrammarServices, createServicesForGrammar  } from 'langium/grammar';
 import { parseHelper  } from 'langium/test';
 
 describe('Partial parsing', () => {
@@ -62,6 +62,29 @@ describe('Partial parsing', () => {
         const document = await parse('a Foo', { parserOptions: { rule: 'A' } });
         expect(document.parseResult.parserErrors.length).toBe(0);
         expect(document.parseResult.value.name).toEqual('Foo');
+    });
+
+});
+
+describe('hidden node parsing', () => {
+
+    test('finishes in expected time', async () => {
+        const parser = createLangiumGrammarServices(EmptyFileSystem).grammar.parser.LangiumParser;
+        let content = 'Rule:';
+        // Adding hidden nodes used to cause exponential parsing time behavior
+        for (let i = 0; i < 2500; i++) {
+            content += "'a' /* A */ /* B */ /* C */\n";
+        }
+        content += ';';
+        const start = Date.now();
+        // This roughly takes 100-300 ms on a modern machine
+        // If it takes longer, the hidden node parsing is likely to be exponential
+        // On an older version of the parser, this took ~5 seconds
+        const result = parser.parse(content);
+        expect(result.lexerErrors).toHaveLength(0);
+        expect(result.parserErrors).toHaveLength(0);
+        const end = Date.now();
+        expect(end - start).toBeLessThan(1000);
     });
 
 });

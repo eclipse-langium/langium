@@ -10,7 +10,7 @@ import type { AbstractElement, Action, Assignment, ParserRule } from '../languag
 import type { Linker } from '../references/linker.js';
 import type { LangiumCoreServices } from '../services.js';
 import type { AstNode, AstReflection, CompositeCstNode, CstNode } from '../syntax-tree.js';
-import type { Lexer } from './lexer.js';
+import type { Lexer, LexerResult } from './lexer.js';
 import type { IParserConfig } from './parser-config.js';
 import type { ValueConverter } from './value-converter.js';
 import { defaultParserErrorProvider, EmbeddedActionsParser, LLkLookaheadStrategy } from 'chevrotain';
@@ -195,6 +195,7 @@ export class LangiumParser extends AbstractLangiumParser {
     private readonly converter: ValueConverter;
     private readonly astReflection: AstReflection;
     private readonly nodeBuilder = new CstNodeBuilder();
+    private lexerResult?: LexerResult;
     private stack: any[] = [];
     private assignmentMap = new Map<AbstractElement, AssignmentElement | undefined>();
 
@@ -232,15 +233,16 @@ export class LangiumParser extends AbstractLangiumParser {
 
     parse<T extends AstNode = AstNode>(input: string, options: ParserOptions = {}): ParseResult<T> {
         this.nodeBuilder.buildRootNode(input);
-        const lexerResult = this.lexer.tokenize(input);
+        const lexerResult = this.lexerResult = this.lexer.tokenize(input);
         this.wrapper.input = lexerResult.tokens;
         const ruleMethod = options.rule ? this.allRules.get(options.rule) : this.mainRule;
         if (!ruleMethod) {
             throw new Error(options.rule ? `No rule found with name '${options.rule}'` : 'No main rule available.');
         }
         const result = ruleMethod.call(this.wrapper, {});
-        this.nodeBuilder.addHiddenTokens(lexerResult.hidden);
+        this.nodeBuilder.addHiddenNodes(lexerResult.hidden);
         this.unorderedGroups.clear();
+        this.lexerResult = undefined;
         return {
             value: result,
             lexerErrors: lexerResult.errors,
@@ -273,9 +275,26 @@ export class LangiumParser extends AbstractLangiumParser {
         };
     }
 
+    private extractHiddenTokens(token: IToken): IToken[] {
+        const hiddenTokens = this.lexerResult!.hidden;
+        if (!hiddenTokens.length) {
+            return [];
+        }
+        const offset = token.startOffset;
+        for (let i = 0; i < hiddenTokens.length; i++) {
+            const token = hiddenTokens[i];
+            if (token.startOffset > offset) {
+                return hiddenTokens.splice(0, i);
+            }
+        }
+        return hiddenTokens.splice(0, hiddenTokens.length);
+    }
+
     consume(idx: number, tokenType: TokenType, feature: AbstractElement): void {
         const token = this.wrapper.wrapConsume(idx, tokenType);
         if (!this.isRecording() && this.isValidToken(token)) {
+            const hiddenTokens = this.extractHiddenTokens(token);
+            this.nodeBuilder.addHiddenNodes(hiddenTokens);
             const leafNode = this.nodeBuilder.buildLeafNode(token, feature);
             const { assignment, isCrossRef } = this.getAssignment(feature);
             const current = this.current;
