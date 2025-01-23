@@ -1,5 +1,12 @@
 # Change Log of `langium`
 
+## 3.3.1 (Jan. 2025)
+
+* Improves performance for files with a lot of comments ([#1790](https://github.com/eclipse-langium/langium/pull/1790)).
+* Improves completion behavior for some edge cases ([#1689](https://github.com/eclipse-langium/langium/pull/1689)).
+* Fixes an error related to linking in rules with fragment rules ([#1762](https://github.com/eclipse-langium/langium/pull/1762)).
+* Fixes an issue related to FireFox `setTimeout` behavior ([#1787](https://github.com/eclipse-langium/langium/pull/1787)).
+
 ## 3.3.0 (Nov. 2024)
 
 This release marks the graduation of Langium to a mature Eclipse Foundation project.
