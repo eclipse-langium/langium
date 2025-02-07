@@ -172,6 +172,22 @@ describe('indentation', () => {
         expect(process(comp, '\t')).toBe(`No indent${EOL}\tIndent {${EOL}\t}${EOL}`);
     });
 
+    test('should indent nested template starting with a new line with \'ifNotEmpty\', with \'indentImmediately: false\'', () => {
+        const comp = new CompositeGeneratorNode();
+        comp.append('No indent', NL);
+        comp.indent({
+            indentImmediately: false,
+            indentedChildren: [
+                '\t',
+                NLEmpty,
+                'Indented',
+                NL,
+                'Indented',
+                NL
+            ]
+        });
+        expect(process(comp, '\t')).toBe(`No indent${EOL}\tIndented${EOL}\tIndented${EOL}`);
+    });
 });
 
 describe('composite', () => {
