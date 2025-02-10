@@ -25,8 +25,8 @@ describe('Parsing tests', () => {
             Hello Langium!
         `);
 
-        // check for absensce of parser errors the classic way:
-        //  deacivated, find a much more human readable way below!
+        // check for absence of parser errors the classic way:
+        //  deactivated, find a much more human readable way below!
         // expect(document.parseResult.parserErrors).toHaveLength(0);
 
         expect(
