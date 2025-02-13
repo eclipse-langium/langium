@@ -15,7 +15,7 @@ export { TextDocument } from 'vscode-languageserver-textdocument';
 
 import type { Diagnostic, Range } from 'vscode-languageserver-types';
 import type { FileSystemProvider } from './file-system-provider.js';
-import type { ParseResult, ParserOptions } from '../parser/langium-parser.js';
+import { CstParserMode, type ParseResult, type ParserOptions } from '../parser/langium-parser.js';
 import type { ServiceRegistry } from '../service-registry.js';
 import type { LangiumSharedCoreServices } from '../services.js';
 import type { AstNode, AstNodeDescription, Mutable, Reference } from '../syntax-tree.js';
@@ -130,7 +130,7 @@ export interface LangiumDocumentFactory {
     /**
      * Create a Langium document from a `TextDocument` asynchronously. This action can be cancelled if a cancellable parser implementation has been provided.
      */
-    fromTextDocument<T extends AstNode = AstNode>(textDocument: TextDocument, uri: URI | undefined, cancellationToken: CancellationToken): Promise<LangiumDocument<T>>;
+    fromTextDocument<T extends AstNode = AstNode>(textDocument: TextDocument, uri: URI | undefined, options: ParserOptions | undefined, cancellationToken: CancellationToken): Promise<LangiumDocument<T>>;
 
     /**
      * Create an Langium document from an in-memory string.
@@ -139,7 +139,7 @@ export interface LangiumDocumentFactory {
     /**
      * Create a Langium document from an in-memory string asynchronously. This action can be cancelled if a cancellable parser implementation has been provided.
      */
-    fromString<T extends AstNode = AstNode>(text: string, uri: URI, cancellationToken: CancellationToken): Promise<LangiumDocument<T>>;
+    fromString<T extends AstNode = AstNode>(text: string, uri: URI, options: ParserOptions | undefined, cancellationToken: CancellationToken): Promise<LangiumDocument<T>>;
 
     /**
      * Create an Langium document from a model that has been constructed in memory.
@@ -149,7 +149,7 @@ export interface LangiumDocumentFactory {
     /**
      * Create an Langium document from a specified `URI`. The factory will use the `FileSystemAccess` service to read the file.
      */
-    fromUri<T extends AstNode = AstNode>(uri: URI, cancellationToken?: CancellationToken): Promise<LangiumDocument<T>>;
+    fromUri<T extends AstNode = AstNode>(uri: URI, options?: ParserOptions, cancellationToken?: CancellationToken): Promise<LangiumDocument<T>>;
 
     /**
      * Update the given document after changes in the corresponding textual representation.
@@ -173,29 +173,29 @@ export class DefaultLangiumDocumentFactory implements LangiumDocumentFactory {
         this.fileSystemProvider = services.workspace.FileSystemProvider;
     }
 
-    async fromUri<T extends AstNode = AstNode>(uri: URI, cancellationToken = CancellationToken.None): Promise<LangiumDocument<T>> {
+    async fromUri<T extends AstNode = AstNode>(uri: URI, options?: ParserOptions | undefined, cancellationToken = CancellationToken.None): Promise<LangiumDocument<T>> {
         const content = await this.fileSystemProvider.readFile(uri);
-        return this.createAsync<T>(uri, content, cancellationToken);
+        return this.createAsync<T>(uri, content, options, cancellationToken);
     }
 
     fromTextDocument<T extends AstNode = AstNode>(textDocument: TextDocument, uri?: URI, options?: ParserOptions): LangiumDocument<T>;
-    fromTextDocument<T extends AstNode = AstNode>(textDocument: TextDocument, uri: URI | undefined, cancellationToken: CancellationToken): Promise<LangiumDocument<T>>;
-    fromTextDocument<T extends AstNode = AstNode>(textDocument: TextDocument, uri?: URI, token?: CancellationToken | ParserOptions): LangiumDocument<T> | Promise<LangiumDocument<T>> {
+    fromTextDocument<T extends AstNode = AstNode>(textDocument: TextDocument, uri: URI | undefined, options: ParserOptions | undefined, cancellationToken: CancellationToken): Promise<LangiumDocument<T>>;
+    fromTextDocument<T extends AstNode = AstNode>(textDocument: TextDocument, uri?: URI, options?: ParserOptions, cancellationToken?: CancellationToken): LangiumDocument<T> | Promise<LangiumDocument<T>> {
         uri = uri ?? URI.parse(textDocument.uri);
-        if (CancellationToken.is(token)) {
-            return this.createAsync<T>(uri, textDocument, token);
+        if (cancellationToken) {
+            return this.createAsync<T>(uri, textDocument, options, cancellationToken);
         } else {
-            return this.create<T>(uri, textDocument, token);
+            return this.create<T>(uri, textDocument, options);
         }
     }
 
     fromString<T extends AstNode = AstNode>(text: string, uri: URI, options?: ParserOptions): LangiumDocument<T>;
-    fromString<T extends AstNode = AstNode>(text: string, uri: URI, cancellationToken: CancellationToken): Promise<LangiumDocument<T>>;
-    fromString<T extends AstNode = AstNode>(text: string, uri: URI, token?: CancellationToken | ParserOptions): LangiumDocument<T> | Promise<LangiumDocument<T>> {
-        if (CancellationToken.is(token)) {
-            return this.createAsync<T>(uri, text, token);
+    fromString<T extends AstNode = AstNode>(text: string, uri: URI, options: ParserOptions | undefined, cancellationToken: CancellationToken): Promise<LangiumDocument<T>>;
+    fromString<T extends AstNode = AstNode>(text: string, uri: URI, options?: ParserOptions, cancellationToken?: CancellationToken): LangiumDocument<T> | Promise<LangiumDocument<T>> {
+        if (cancellationToken) {
+            return this.createAsync<T>(uri, text, options, cancellationToken);
         } else {
-            return this.create<T>(uri, text, token);
+            return this.create<T>(uri, text, options);
         }
     }
 
@@ -218,12 +218,12 @@ export class DefaultLangiumDocumentFactory implements LangiumDocumentFactory {
         }
     }
 
-    protected async createAsync<T extends AstNode = AstNode>(uri: URI, content: string | TextDocument, cancelToken: CancellationToken): Promise<LangiumDocument<T>> {
+    protected async createAsync<T extends AstNode = AstNode>(uri: URI, content: string | TextDocument, options: ParserOptions | undefined, cancelToken: CancellationToken): Promise<LangiumDocument<T>> {
         if (typeof content === 'string') {
-            const parseResult = await this.parseAsync<T>(uri, content, cancelToken);
+            const parseResult = await this.parseAsync<T>(uri, content, options, cancelToken);
             return this.createLangiumDocument<T>(parseResult, uri, undefined, content);
         } else {
-            const parseResult = await this.parseAsync<T>(uri, content.getText(), cancelToken);
+            const parseResult = await this.parseAsync<T>(uri, content.getText(), options, cancelToken);
             return this.createLangiumDocument(parseResult, uri, content);
         }
     }
@@ -293,7 +293,10 @@ export class DefaultLangiumDocumentFactory implements LangiumDocumentFactory {
         // Some of these documents can be pretty large, so parsing them again can be quite expensive.
         // Therefore, we only parse if the text has actually changed.
         if (oldText !== text) {
-            document.parseResult = await this.parseAsync(document.uri, text, cancellationToken);
+            const options: ParserOptions = {
+                cst: textDocument ? CstParserMode.Retain : CstParserMode.Discard
+            };
+            document.parseResult = await this.parseAsync(document.uri, text, options, cancellationToken);
             (document.parseResult.value as Mutable<AstNode>).$document = document;
         }
         document.state = DocumentState.Parsed;
@@ -305,9 +308,9 @@ export class DefaultLangiumDocumentFactory implements LangiumDocumentFactory {
         return services.parser.LangiumParser.parse<T>(text, options);
     }
 
-    protected parseAsync<T extends AstNode>(uri: URI, text: string, cancellationToken: CancellationToken): Promise<ParseResult<T>> {
+    protected parseAsync<T extends AstNode>(uri: URI, text: string, options: ParserOptions | undefined, cancellationToken: CancellationToken): Promise<ParseResult<T>> {
         const services = this.serviceRegistry.getServices(uri);
-        return services.parser.AsyncParser.parse<T>(text, cancellationToken);
+        return services.parser.AsyncParser.parse<T>(text, options, cancellationToken);
     }
 
     protected createTextDocumentGetter(uri: URI, text?: string): () => TextDocument {
@@ -346,7 +349,7 @@ export interface LangiumDocuments {
      * Retrieve the document with the given URI. If not present, a new one will be created using the file system access.
      * The new document will be added to the list of documents managed under this service.
      */
-    getOrCreateDocument(uri: URI, cancellationToken?: CancellationToken): Promise<LangiumDocument>;
+    getOrCreateDocument(uri: URI, options?: ParserOptions, cancellationToken?: CancellationToken): Promise<LangiumDocument>;
 
     /**
      * Creates a new document with the given URI and text content.
@@ -354,7 +357,7 @@ export interface LangiumDocuments {
      *
      * @throws an error if a document with the same URI is already present.
      */
-    createDocument(uri: URI, text: string): LangiumDocument;
+    createDocument(uri: URI, text: string, options?: ParserOptions): LangiumDocument;
 
     /**
      * Creates a new document with the given URI and text content asynchronously.
@@ -363,7 +366,7 @@ export interface LangiumDocuments {
      *
      * @throws an error if a document with the same URI is already present.
      */
-    createDocument(uri: URI, text: string, cancellationToken: CancellationToken): Promise<LangiumDocument>;
+    createDocument(uri: URI, text: string, options: ParserOptions | undefined, cancellationToken: CancellationToken): Promise<LangiumDocument>;
 
     /**
      * Returns `true` if a document with the given URI is managed under this service.
@@ -418,26 +421,26 @@ export class DefaultLangiumDocuments implements LangiumDocuments {
         return this.documentMap.get(uriString);
     }
 
-    async getOrCreateDocument(uri: URI, cancellationToken?: CancellationToken): Promise<LangiumDocument> {
+    async getOrCreateDocument(uri: URI, options?: ParserOptions, cancellationToken?: CancellationToken): Promise<LangiumDocument> {
         let document = this.getDocument(uri);
         if (document) {
             return document;
         }
-        document = await this.langiumDocumentFactory.fromUri(uri, cancellationToken);
+        document = await this.langiumDocumentFactory.fromUri(uri, options, cancellationToken);
         this.addDocument(document);
         return document;
     }
 
-    createDocument(uri: URI, text: string): LangiumDocument;
-    createDocument(uri: URI, text: string, cancellationToken: CancellationToken): Promise<LangiumDocument>;
-    createDocument(uri: URI, text: string, cancellationToken?: CancellationToken): LangiumDocument | Promise<LangiumDocument> {
+    createDocument(uri: URI, text: string, options?: ParserOptions): LangiumDocument;
+    createDocument(uri: URI, text: string, options: ParserOptions | undefined, cancellationToken: CancellationToken): Promise<LangiumDocument>;
+    createDocument(uri: URI, text: string, options: ParserOptions | undefined, cancellationToken?: CancellationToken): LangiumDocument | Promise<LangiumDocument> {
         if (cancellationToken) {
-            return this.langiumDocumentFactory.fromString(text, uri, cancellationToken).then(document => {
+            return this.langiumDocumentFactory.fromString(text, uri, options, cancellationToken).then(document => {
                 this.addDocument(document);
                 return document;
             });
         } else {
-            const document = this.langiumDocumentFactory.fromString(text, uri);
+            const document = this.langiumDocumentFactory.fromString(text, uri, options);
             this.addDocument(document);
             return document;
         }

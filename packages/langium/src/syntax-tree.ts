@@ -8,6 +8,7 @@ import type { TokenType } from 'chevrotain';
 import type { URI } from './utils/uri-utils.js';
 import type { AbstractElement } from './languages/generated/ast.js';
 import type { DocumentSegment, LangiumDocument } from './workspace/documents.js';
+import type { MultiMap } from './utils/collections.js';
 
 /**
  * A node in the Abstract Syntax Tree (AST).
@@ -23,6 +24,8 @@ export interface AstNode {
     readonly $containerIndex?: number;
     /** The Concrete Syntax Tree (CST) node of the text range from which this node was parsed. */
     readonly $cstNode?: CstNode;
+    /** Cache for storing segments (ranges) to respond to LSP requests */
+    readonly $segments?: AstNodeSegments;
     /** The document containing the AST; only the root node has a direct reference to the document. */
     readonly $document?: LangiumDocument;
 }
@@ -41,6 +44,12 @@ type SpecificNodeProperties<N extends AstNode> = keyof Omit<N, keyof AstNode | n
  * The property names of a given AST node type.
  */
 export type Properties<N extends AstNode> = SpecificNodeProperties<N> extends never ? string : SpecificNodeProperties<N>
+
+export interface AstNodeSegments {
+    readonly full: DocumentSegment;
+    readonly comment?: string;
+    readonly properties: MultiMap<string, DocumentSegment>;
+}
 
 /**
  * A cross-reference in the AST. Cross-references may or may not be successfully resolved.
