@@ -28,9 +28,12 @@ export class DefaultCommentProvider implements CommentProvider {
         this.grammarConfig = () => services.parser.GrammarConfig;
     }
     getComment(node: AstNode): string | undefined {
-        if(isAstNodeWithComment(node)) {
+        if (isAstNodeWithComment(node)) {
             return node.$comment;
+        } else if (node.$segments && 'comment' in node.$segments) {
+            return node.$segments.comment;
+        } else {
+            return findCommentNode(node.$cstNode, this.grammarConfig().multilineCommentRules)?.text;
         }
-        return findCommentNode(node.$cstNode, this.grammarConfig().multilineCommentRules)?.text;
     }
 }

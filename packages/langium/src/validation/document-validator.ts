@@ -61,6 +61,9 @@ export class DefaultDocumentValidator implements DocumentValidator {
 
     async validateDocument(document: LangiumDocument, options: ValidationOptions = {}, cancelToken = CancellationToken.None): Promise<Diagnostic[]> {
         const parseResult = document.parseResult;
+        if (!parseResult.value.$cstNode) {
+            return [];
+        }
         const diagnostics: Diagnostic[] = [];
 
         await interruptAndCheck(cancelToken);

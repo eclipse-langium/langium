@@ -13,7 +13,6 @@ import type { DocumentSegment, LangiumDocument } from './documents.js';
 import { CancellationToken } from '../utils/cancellation.js';
 import { isLinkingError } from '../syntax-tree.js';
 import { getDocument, streamAst, streamReferences } from '../utils/ast-utils.js';
-import { toDocumentSegment } from '../utils/cst-utils.js';
 import { interruptAndCheck } from '../utils/promise-utils.js';
 import { UriUtils } from '../utils/uri-utils.js';
 
@@ -53,15 +52,15 @@ export class DefaultAstNodeDescriptionProvider implements AstNodeDescriptionProv
         if (!name) {
             throw new Error(`Node at path ${path} has no name.`);
         }
-        let nameNodeSegment: DocumentSegment | undefined;
-        const nameSegmentGetter = () => nameNodeSegment ??= toDocumentSegment(this.nameProvider.getNameNode(node) ?? node.$cstNode);
+        const nameProperty = this.nameProvider.getNameProperty(node);
+        const nameSegment: DocumentSegment | undefined = nameProperty
+            ? node.$segments?.properties.get(nameProperty)[0]
+            : undefined;
         return {
             node,
             name,
-            get nameSegment() {
-                return nameSegmentGetter();
-            },
-            selectionSegment: toDocumentSegment(node.$cstNode),
+            nameSegment,
+            selectionSegment: node.$segments?.full,
             type: node.$type,
             documentUri: doc.uri,
             path
@@ -131,8 +130,8 @@ export class DefaultReferenceDescriptionProvider implements ReferenceDescription
 
     protected createDescription(refInfo: ReferenceInfo): ReferenceDescription | undefined {
         const targetNodeDescr = refInfo.reference.$nodeDescription;
-        const refCstNode = refInfo.reference.$refNode;
-        if (!targetNodeDescr || !refCstNode) {
+        const refSegment = refInfo.container.$segments?.properties.get(refInfo.property)[refInfo.index ?? 0];
+        if (!targetNodeDescr || !refSegment) {
             return undefined;
         }
         const docUri = getDocument(refInfo.container).uri;
@@ -141,7 +140,7 @@ export class DefaultReferenceDescriptionProvider implements ReferenceDescription
             sourcePath: this.nodeLocator.getAstNodePath(refInfo.container),
             targetUri: targetNodeDescr.documentUri,
             targetPath: targetNodeDescr.path,
-            segment: toDocumentSegment(refCstNode),
+            segment: refSegment,
             local: UriUtils.equals(targetNodeDescr.documentUri, docUri)
         };
     }
