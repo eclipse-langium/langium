@@ -303,6 +303,9 @@ export class DefaultHydrator implements Hydrator {
         if (this.grammarElementIdMap.size === 0) {
             this.createGrammarElementIdMap();
         }
+        if (!node) {
+            return undefined;
+        }
         return this.grammarElementIdMap.get(node);
     }
 

@@ -12,8 +12,8 @@ const services = createLangiumGrammarServices(EmptyFileSystem).grammar;
 const parser = services.parser.LangiumParser;
 const hydrator = services.serializer.Hydrator;
 
-parentPort.on('message', text => {
-    const result = parser.parse(text);
+parentPort.on('message', ([text, options]) => {
+    const result = parser.parse(text, options);
     const dehydrated = hydrator.dehydrate(result);
     parentPort.postMessage(dehydrated);
 });

@@ -15,7 +15,7 @@ import type { URI } from '../utils/uri-utils.js';
 import { findAssignment } from '../utils/grammar-utils.js';
 import { isReference } from '../syntax-tree.js';
 import { getDocument } from '../utils/ast-utils.js';
-import { isChildNode, toDocumentSegment } from '../utils/cst-utils.js';
+import { isChildNode } from '../utils/cst-utils.js';
 import { stream } from '../utils/stream.js';
 import { UriUtils } from '../utils/uri-utils.js';
 
@@ -25,8 +25,8 @@ import { UriUtils } from '../utils/uri-utils.js';
 export interface References {
 
     /**
-     * If the CstNode is a reference node the target CstNode will be returned.
-     * If the CstNode is a significant node of the CstNode this CstNode will be returned.
+     * If the CstNode is a reference node the target AstNode will be returned.
+     * If the CstNode is a significant node of the AstNode this AstNode will be returned.
      *
      * @param sourceCstNode CstNode that points to a AstNode
      */
@@ -37,6 +37,7 @@ export interface References {
      * If the CstNode is a significant node of the CstNode this CstNode will be returned.
      *
      * @param sourceCstNode CstNode that points to a AstNode
+     * @deprecated Since 4.0.0. Use {@link findDeclaration} instead. If the CST node of the referenced element has been discarded, this method will return `undefined`.
      */
     findDeclarationNode(sourceCstNode: CstNode): CstNode | undefined;
 
@@ -49,10 +50,6 @@ export interface References {
 }
 
 export interface FindReferencesOptions {
-    /**
-     * @deprecated Since v1.2.0. Please use `documentUri` instead.
-     */
-    onlyLocal?: boolean;
     /**
      * When set, the `findReferences` method will only return references/declarations from the specified document.
      */
@@ -130,18 +127,21 @@ export class DefaultReferences implements References {
     }
 
     protected getReferenceToSelf(targetNode: AstNode): ReferenceDescription | undefined {
-        const nameNode = this.nameProvider.getNameNode(targetNode);
-        if (nameNode) {
-            const doc = getDocument(targetNode);
-            const path = this.nodeLocator.getAstNodePath(targetNode);
-            return {
-                sourceUri: doc.uri,
-                sourcePath: path,
-                targetUri: doc.uri,
-                targetPath: path,
-                segment: toDocumentSegment(nameNode),
-                local: true
-            };
+        const nameProperty = this.nameProvider.getNameProperty(targetNode);
+        if (nameProperty && targetNode.$segments) {
+            const nameSegment = targetNode.$segments.properties.get(nameProperty)[0];
+            if (nameSegment) {
+                const doc = getDocument(targetNode);
+                const path = this.nodeLocator.getAstNodePath(targetNode);
+                return {
+                    sourceUri: doc.uri,
+                    sourcePath: path,
+                    targetUri: doc.uri,
+                    targetPath: path,
+                    segment: nameSegment,
+                    local: true
+                };
+            }
         }
         return undefined;
     }

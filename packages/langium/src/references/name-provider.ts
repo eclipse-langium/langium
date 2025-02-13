@@ -21,9 +21,16 @@ export function isNamed(node: AstNode): node is NamedAstNode {
 export interface NameProvider {
     /**
      * Returns the `name` of a given AstNode.
-     * @param node Specified `AstNode` whose name node shall be retrieved.
+     * @param node Specified `AstNode` whose name shall be retrieved.
      */
     getName(node: AstNode): string | undefined;
+
+    /**
+     * Returns the property name that is used to store the name of an AstNode.
+     * @param node The AstNode for which the name property shall be retrieved.
+     */
+    getNameProperty(node: AstNode): string | undefined;
+
     /**
      * Returns the `CstNode` which contains the parsed value of the `name` assignment.
      * @param node Specified `AstNode` whose name node shall be retrieved.
@@ -39,7 +46,11 @@ export class DefaultNameProvider implements NameProvider {
         return undefined;
     }
 
+    getNameProperty(_node: AstNode): string | undefined {
+        return 'name';
+    }
+
     getNameNode(node: AstNode): CstNode | undefined {
-        return findNodeForProperty(node.$cstNode, 'name');
+        return findNodeForProperty(node.$cstNode, this.getNameProperty(node));
     }
 }
