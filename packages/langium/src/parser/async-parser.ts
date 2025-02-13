@@ -7,7 +7,7 @@
 import type { CancellationToken } from '../utils/cancellation.js';
 import type { LangiumCoreServices } from '../services.js';
 import type { AstNode } from '../syntax-tree.js';
-import type { LangiumParser, ParseResult } from './langium-parser.js';
+import type { LangiumParser, ParseResult, ParserOptions } from './langium-parser.js';
 import type { Hydrator } from '../serializer/hydrator.js';
 import type { Event } from '../utils/event.js';
 import { Deferred, OperationCancelled } from '../utils/promise-utils.js';
@@ -30,7 +30,7 @@ export interface AsyncParser {
      *
      * @throws `OperationCancelled` if the parsing process is cancelled.
      */
-    parse<T extends AstNode>(text: string, cancelToken: CancellationToken): Promise<ParseResult<T>>;
+    parse<T extends AstNode>(text: string, options: ParserOptions | undefined, cancelToken: CancellationToken): Promise<ParseResult<T>>;
 }
 
 /**
@@ -47,8 +47,8 @@ export class DefaultAsyncParser implements AsyncParser {
         this.syncParser = services.parser.LangiumParser;
     }
 
-    parse<T extends AstNode>(text: string, _cancelToken: CancellationToken): Promise<ParseResult<T>> {
-        return Promise.resolve(this.syncParser.parse<T>(text));
+    parse<T extends AstNode>(text: string, options: ParserOptions | undefined, _cancelToken: CancellationToken): Promise<ParseResult<T>> {
+        return Promise.resolve(this.syncParser.parse<T>(text, options));
     }
 }
 
@@ -89,7 +89,7 @@ export abstract class AbstractThreadedAsyncParser implements AsyncParser {
         }
     }
 
-    async parse<T extends AstNode>(text: string, cancelToken: CancellationToken): Promise<ParseResult<T>> {
+    async parse<T extends AstNode>(text: string, options: ParserOptions | undefined, cancelToken: CancellationToken): Promise<ParseResult<T>> {
         const worker = await this.acquireParserWorker(cancelToken);
         const deferred = new Deferred<ParseResult<T>>();
         let timeout: NodeJS.Timeout | undefined;
@@ -101,7 +101,7 @@ export abstract class AbstractThreadedAsyncParser implements AsyncParser {
                 this.terminateWorker(worker);
             }, this.terminationDelay);
         });
-        worker.parse(text).then(result => {
+        worker.parse(text, options).then(result => {
             const hydrated = this.hydrator.hydrate<T>(result);
             deferred.resolve(hydrated);
         }).catch(err => {
@@ -194,13 +194,13 @@ export class ParserWorker {
         this.onReadyEmitter.fire();
     }
 
-    parse(text: string): Promise<ParseResult> {
+    parse(text: string, options: ParserOptions | undefined): Promise<ParseResult> {
         if (this._parsing) {
             throw new Error('Parser worker is busy');
         }
         this._parsing = true;
         this.deferred = new Deferred();
-        this.sendMessage(text);
+        this.sendMessage([text, options]);
         return this.deferred.promise;
     }
 }

@@ -4,17 +4,18 @@
  * terms of the MIT License, which is available in the project root.
  ******************************************************************************/
 
-import type { TextDocumentWillSaveEvent, DidChangeWatchedFilesParams, DidChangeWatchedFilesRegistrationOptions, TextDocumentChangeEvent, TextEdit } from 'vscode-languageserver';
+import type { TextDocumentWillSaveEvent, DidChangeWatchedFilesParams, DidChangeWatchedFilesRegistrationOptions, TextDocumentChangeEvent, TextEdit, Connection } from 'vscode-languageserver';
 import { DidChangeWatchedFilesNotification, FileChangeType } from 'vscode-languageserver';
 import { stream } from '../utils/stream.js';
 import { URI } from '../utils/uri-utils.js';
 import type { DocumentBuilder } from '../workspace/document-builder.js';
-import type { TextDocument } from '../workspace/documents.js';
+import type { LangiumDocuments, TextDocument } from '../workspace/documents.js';
 import type { WorkspaceLock } from '../workspace/workspace-lock.js';
 import type { LangiumSharedServices } from './lsp-services.js';
 import type { WorkspaceManager } from '../workspace/workspace-manager.js';
 import type { ServiceRegistry } from '../service-registry.js';
 import type { MaybePromise } from '../utils/promise-utils.js';
+import { discardCst } from '../utils/cst-utils.js';
 
 /**
  * Shared service for handling text document changes and watching relevant files.
@@ -71,6 +72,8 @@ export class DefaultDocumentUpdateHandler implements DocumentUpdateHandler {
     protected readonly workspaceManager: WorkspaceManager;
     protected readonly documentBuilder: DocumentBuilder;
     protected readonly workspaceLock: WorkspaceLock;
+    protected readonly documents: LangiumDocuments;
+    protected readonly connection: Connection | undefined;
     protected readonly serviceRegistry: ServiceRegistry;
 
     constructor(services: LangiumSharedServices) {
@@ -78,6 +81,8 @@ export class DefaultDocumentUpdateHandler implements DocumentUpdateHandler {
         this.documentBuilder = services.workspace.DocumentBuilder;
         this.workspaceLock = services.workspace.WorkspaceLock;
         this.serviceRegistry = services.ServiceRegistry;
+        this.documents = services.workspace.LangiumDocuments;
+        this.connection = services.lsp.Connection;
 
         let canRegisterFileWatcher = false;
         services.lsp.LanguageServer.onInitialize(params => {
@@ -98,7 +103,6 @@ export class DefaultDocumentUpdateHandler implements DocumentUpdateHandler {
             .distinct()
             .toArray();
         if (fileExtensions.length > 0) {
-            const connection = services.lsp.Connection;
             const options: DidChangeWatchedFilesRegistrationOptions = {
                 watchers: [{
                     globPattern: fileExtensions.length === 1
@@ -106,7 +110,7 @@ export class DefaultDocumentUpdateHandler implements DocumentUpdateHandler {
                         : `**/*.{${fileExtensions.join(',')}}`
                 }]
             };
-            connection?.client.register(DidChangeWatchedFilesNotification.type, options);
+            this.connection?.client.register(DidChangeWatchedFilesNotification.type, options);
         }
     }
 
@@ -140,5 +144,19 @@ export class DefaultDocumentUpdateHandler implements DocumentUpdateHandler {
             .map(c => URI.parse(c.uri))
             .toArray();
         this.fireDocumentUpdate(changedUris, deletedUris);
+    }
+
+    didCloseDocument(event: TextDocumentChangeEvent<TextDocument>): void {
+        const document = this.documents.getDocument(URI.parse(event.document.uri));
+        if (document) {
+            // Preserve memory by discarding the CST of the document
+            // Whenever the user reopens the document, the CST will be rebuilt
+            discardCst(document.parseResult.value);
+        }
+        // Discard the diagnostics for the closed document
+        this.connection?.sendDiagnostics({
+            uri: event.document.uri,
+            diagnostics: []
+        });
     }
 }
