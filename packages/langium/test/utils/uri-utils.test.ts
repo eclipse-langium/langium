@@ -72,3 +72,42 @@ describe('URIUtils#normalize', () => {
     });
 
 });
+
+describe('URIUtils#contains', () => {
+
+    test('Should return true for equal URIs', () => {
+        const parent = 'file:///path/to/file';
+        expect(UriUtils.contains(parent, parent)).toBeTruthy();
+    });
+
+    test('Should return true for equal URIs with trailing slashes', () => {
+        const parent = 'file:///path/to/file';
+        expect(UriUtils.contains(parent + '/', parent)).toBeTruthy();
+        expect(UriUtils.contains(parent, parent + '/')).toBeTruthy();
+    });
+
+    test('Should return true for child URIs', () => {
+        const parent = 'file:///path/to';
+        const child = 'file:///path/to/file';
+        expect(UriUtils.contains(parent, child)).toBeTruthy();
+    });
+
+    test('Should return true for child URIs with trailing slashes', () => {
+        const parent = 'file:///path/to/';
+        const child = 'file:///path/to/file';
+        expect(UriUtils.contains(parent, child)).toBeTruthy();
+    });
+
+    test('Should return false for parent URIs', () => {
+        const parent = 'file:///path/to/file';
+        const child = 'file:///path/to';
+        expect(UriUtils.contains(parent, child)).toBeFalsy();
+    });
+
+    test('Should return false for unrelated URIs', () => {
+        const parent = 'file:///path/to/directory';
+        const unrelated = 'file:///path/to/other';
+        expect(UriUtils.contains(parent, unrelated)).toBeFalsy();
+    });
+
+});

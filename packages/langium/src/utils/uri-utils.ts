@@ -40,4 +40,155 @@ export namespace UriUtils {
         return URI.parse(uri.toString()).toString();
     }
 
+    export function contains(parent: URI | string, child: URI | string): boolean {
+        let parentPath = typeof parent === 'string' ? parent : parent.path;
+        let childPath = typeof child === 'string' ? child : child.path;
+        // Trim trailing slashes
+        if (childPath.charAt(childPath.length - 1) === '/') {
+            childPath = childPath.slice(0, -1);
+        }
+        if (parentPath.charAt(parentPath.length - 1) === '/') {
+            parentPath = parentPath.slice(0, -1);
+        }
+        // If the paths are equal, simply return true
+        if (childPath === parentPath) {
+            return true;
+        }
+        // If the child path is shorter than the parent path, it can't be a child
+        if (childPath.length < parentPath.length) {
+            return false;
+        }
+        // If the path does not feature a slash after the parent path, it can't be a child
+        if (childPath.charAt(parentPath.length) !== '/') {
+            return false;
+        }
+        // Check if the child path starts with the parent path
+        return childPath.startsWith(parentPath);
+    }
+
+}
+
+interface InternalUriTrieNode<T> {
+    name: string,
+    children: Map<string, InternalUriTrieNode<T>>;
+    parent?: InternalUriTrieNode<T>;
+    // If this element is set, the node represents a leaf in the trie
+    element?: T;
+}
+
+export interface UriTrieNode<T> {
+    name: string;
+    uri: string;
+    element?: T;
+}
+
+export class UriTrie<T> {
+
+    private readonly root: InternalUriTrieNode<T> = { name: '', children: new Map() };
+
+    clear(): void {
+        this.root.children.clear();
+    }
+
+    insert(uri: URI | string, element: T): void {
+        const node = this.getNode(UriUtils.normalize(uri), true);
+        node.element = element;
+    }
+
+    delete(uri: URI | string): void {
+        const nodeToDelete = this.getNode(UriUtils.normalize(uri), false);
+        if (nodeToDelete?.parent) {
+            nodeToDelete.parent.children.delete(nodeToDelete.name);
+        }
+    }
+
+    has(uri: URI | string): boolean {
+        return this.getNode(UriUtils.normalize(uri), false)?.element !== undefined;
+    }
+
+    hasNode(uri: URI | string): boolean {
+        return this.getNode(UriUtils.normalize(uri), false) !== undefined;
+    }
+
+    find(uri: URI | string): T | undefined {
+        return this.getNode(UriUtils.normalize(uri), false)?.element;
+    }
+
+    findNode(uri: URI | string): UriTrieNode<T> | undefined {
+        const uriString = UriUtils.normalize(uri);
+        const node = this.getNode(uriString, false);
+        if (!node) {
+            return undefined;
+        }
+        return {
+            name: node.name,
+            uri: UriUtils.joinPath(URI.parse(uriString), node.name).toString(),
+            element: node.element
+        };
+    }
+
+    findChildren(uri: URI | string): Array<UriTrieNode<T>> {
+        const uriString = UriUtils.normalize(uri);
+        const node = this.getNode(uriString, false);
+        if (!node) {
+            return [];
+        }
+        return Array.from(node.children.values()).map(child => ({
+            name: child.name,
+            uri: UriUtils.joinPath(URI.parse(uriString), child.name).toString(),
+            element: child.element
+        }));
+    }
+
+    all(): T[] {
+        return this.collectDocuments(this.root);
+    }
+
+    findAll(prefix: URI | string): T[] {
+        const node = this.getNode(UriUtils.normalize(prefix), false);
+        if (!node) {
+            return [];
+        }
+        return this.collectDocuments(node);
+    }
+
+    private getNode(uri: string, create: true): InternalUriTrieNode<T>;
+    private getNode(uri: string, create: false): InternalUriTrieNode<T> | undefined;
+    private getNode(uri: string, create: boolean): InternalUriTrieNode<T> | undefined {
+        const parts = uri.split('/');
+        if (uri.charAt(uri.length - 1) === '/') {
+            // Remove the last part if the URI ends with a slash
+            parts.pop();
+        }
+        let current = this.root;
+        for (const part of parts) {
+            let child = current.children.get(part);
+            if (!child) {
+                if (create) {
+                    child = {
+                        name: part,
+                        children: new Map(),
+                        parent: current
+                    };
+                    current.children.set(part, child);
+                } else {
+                    return undefined;
+                }
+            }
+            current = child;
+        }
+        return current;
+    }
+
+    private collectDocuments(node: InternalUriTrieNode<T>): T[] {
+        const result: T[] = [];
+        if (node.element) {
+            result.push(node.element);
+        }
+        for (const child of node.children.values()) {
+            result.push(...this.collectDocuments(child));
+        }
+        return result;
+    }
+
 }

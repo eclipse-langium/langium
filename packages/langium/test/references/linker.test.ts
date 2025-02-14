@@ -46,7 +46,7 @@ describe('DefaultLinker', async () => {
         const document = await cyclicParser(`
             node a
             referrer a
-        `, { documentUri: 'test://test.model' });
+        `, { documentUri: 'test:/test.txt' });
         const model = document.parseResult.value;
         expect(model.referrers[0]?.node?.error).toBeDefined();
         expect(model.referrers[0].node.error?.message).toBe(
