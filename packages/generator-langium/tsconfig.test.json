@@ -9,5 +9,8 @@
   }],
   "include": [
     "test/**/*",
+  ],
+  "exclude": [
+    "test/generator-tests",
   ]
 }
