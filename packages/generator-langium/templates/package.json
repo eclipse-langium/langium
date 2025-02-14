@@ -1,0 +1,31 @@
+{
+    "name": "<%= language-id %>-workspace",
+    "description": "Base workspace package",
+    "version": "0.0.1",
+    "type": "module",
+    "private": true,
+    "scripts": {
+        "clean": "npm run clean --workspaces",
+        "watch": "tsc -b tsconfig.build.json --watch",
+        "build": "tsc -b tsconfig.build.json && npm run build --workspaces",
+        "build:clean": "npm run clean && npm run build",
+        "lint": "eslint {**/src/**/*.ts,**/src/**/*.tsx,**/test/**/*.ts,**/test/**/*.tsx}",
+        "langium:generate": "npm run --workspace packages/language langium:generate",
+        "langium:watch": "npm run --workspace packages/language langium:watch"
+    },
+    "devDependencies": {
+        "@types/node": "^18.0.0",
+        "@typescript-eslint/parser": "~7.18.0",
+        "@typescript-eslint/eslint-plugin": "~7.18.0",
+        "eslint": "~8.57.0",
+        "shx":  "~0.3.4",
+        "typescript": "~5.5.3"
+    },
+    "volta": {
+        "node": "18.20.3",
+        "npm": "10.7.0"
+    },
+    "workspaces": [
+        "packages/language"
+    ]
+}
