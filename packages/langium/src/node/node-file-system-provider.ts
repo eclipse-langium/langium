@@ -15,17 +15,51 @@ export class NodeFileSystemProvider implements FileSystemProvider {
 
     encoding: NodeTextEncoding = 'utf-8';
 
+    exists(uri: URI): Promise<boolean> {
+        return new Promise(resolve => {
+            fs.stat(uri.fsPath, err => {
+                resolve(!err);
+            });
+        });
+    }
+
+    existsSync(uri: URI): boolean {
+        return fs.existsSync(uri.fsPath);
+    }
+
+    readBinary(uri: URI): Promise<Uint8Array> {
+        return fs.promises.readFile(uri.fsPath);
+    }
+
+    readBinarySync(uri: URI): Uint8Array {
+        return fs.readFileSync(uri.fsPath);
+    }
+
     readFile(uri: URI): Promise<string> {
         return fs.promises.readFile(uri.fsPath, this.encoding);
     }
 
-    async readDirectory(folderPath: URI): Promise<FileSystemNode[]> {
-        const dirents = await fs.promises.readdir(folderPath.fsPath, { withFileTypes: true });
+    readFileSync(uri: URI): string {
+        return fs.readFileSync(uri.fsPath, this.encoding);
+    }
+
+    async readDirectory(uri: URI): Promise<FileSystemNode[]> {
+        const dirents = await fs.promises.readdir(uri.fsPath, { withFileTypes: true });
         return dirents.map(dirent => ({
             dirent, // Include the raw entry, it may be useful...
             isFile: dirent.isFile(),
             isDirectory: dirent.isDirectory(),
-            uri: UriUtils.joinPath(folderPath, dirent.name)
+            uri: UriUtils.joinPath(uri, dirent.name)
+        }));
+    }
+
+    readDirectorySync(uri: URI): FileSystemNode[] {
+        const dirents = fs.readdirSync(uri.fsPath, { withFileTypes: true });
+        return dirents.map(dirent => ({
+            dirent, // Include the raw entry, it may be useful...
+            isFile: dirent.isFile(),
+            isDirectory: dirent.isDirectory(),
+            uri: UriUtils.joinPath(uri, dirent.name)
         }));
     }
 }
