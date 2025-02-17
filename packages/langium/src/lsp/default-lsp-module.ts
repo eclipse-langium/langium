@@ -23,7 +23,7 @@ import { DefaultNodeKindProvider } from './node-kind-provider.js';
 import { DefaultReferencesProvider } from './references-provider.js';
 import { DefaultRenameProvider } from './rename-provider.js';
 import { DefaultWorkspaceSymbolProvider } from './workspace-symbol-provider.js';
-import { NormalizedTextDocuments } from './normalized-text-documents.js';
+import { NormalizedNotebookDocuments, NormalizedTextDocuments } from './normalized-text-documents.js';
 
 /**
  * Context required for creating the default language-specific dependency injection module.
@@ -96,7 +96,8 @@ export function createDefaultSharedLSPModule(context: DefaultSharedModuleContext
             FuzzyMatcher: () => new DefaultFuzzyMatcher(),
         },
         workspace: {
-            TextDocuments: () => new NormalizedTextDocuments(TextDocument)
+            TextDocuments: () => new NormalizedTextDocuments(TextDocument),
+            NotebookDocuments: (services) => new NormalizedNotebookDocuments(services.workspace.TextDocuments)
         }
     };
 }
