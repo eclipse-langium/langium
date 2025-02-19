@@ -1,6 +1,6 @@
 {
   "name": "langium",
-  "version": "3.3.0",
+  "version": "3.4.0",
   "description": "A language engineering tool for the Language Server Protocol",
   "homepage": "https://langium.org",
   "engines": {
@@ -72,7 +72,7 @@
     "vscode-uri": "~3.0.8"
   },
   "devDependencies": {
-    "langium-cli": "~3.3.0",
+    "langium-cli": "~3.4.0",
     "typedoc": "^0.26.7"
   },
   "volta": {

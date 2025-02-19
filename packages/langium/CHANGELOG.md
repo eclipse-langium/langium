@@ -1,5 +1,12 @@
 # Change Log of `langium`
 
+## 3.4.0 (Feb. 2025)
+
+* Improve definition of AST convenience types ([#1771](https://github.com/eclipse-langium/langium/pull/1771)).
+* Improve handling of Windows drive letters in `UriUtils` ([#1816](https://github.com/eclipse-langium/langium/pull/1816)).
+* Add replacement for the `NotebookDocuments` service from `vscode-languageserver` ([#1743](https://github.com/eclipse-langium/langium/pull/1743)).
+* Fix a minor bug in the text generator related to `undefined` elements and indentation ([#1814](https://github.com/eclipse-langium/langium/pull/1814)).
+
 ## 3.3.1 (Jan. 2025)
 
 * Improves performance for files with a lot of comments ([#1790](https://github.com/eclipse-langium/langium/pull/1790)).
