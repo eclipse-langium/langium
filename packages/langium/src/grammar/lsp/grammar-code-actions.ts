@@ -203,13 +203,12 @@ export class LangiumGrammarCodeActionProvider implements CodeActionProvider {
         }
         return false;
     }
-    private replaceDefinition(node: ast.AbstractElement, requiresBraces: boolean): string {
+    private replaceDefinition(node: ast.AbstractElement): string {
         if (ast.isRuleCall(node) && node.rule.ref) {
             return node.rule.ref.name;
         }
         if (ast.isAlternatives(node)) {
-            const result = node.elements.map(child => this.replaceDefinition(child, true)).join(' | ');
-            return requiresBraces && node.elements.length >= 2 ? `(${result})` : result;
+            return node.elements.map(child => this.replaceDefinition(child)).join(' | ');
         }
         throw new Error('missing code for ' + node);
     }
@@ -221,11 +220,11 @@ export class LangiumGrammarCodeActionProvider implements CodeActionProvider {
             const cstNode = findLeafNodeAtOffset(rootCst, offset);
             const rule = getContainerOfType(cstNode?.astNode, ast.isParserRule);
             if (rule && rule.$cstNode) {
-                const isRuleReplaceable = this.isRuleReplaceable(rule) && this.isDefinitionReplaceable(rule.definition);
-                if (isRuleReplaceable) {
-                    const newText = `type ${this.replaceRule(rule)} = ${this.replaceDefinition(rule.definition, false)};`;
+                const isReplaceable = this.isRuleReplaceable(rule) && this.isDefinitionReplaceable(rule.definition);
+                if (isReplaceable) {
+                    const newText = `type ${this.replaceRule(rule)} = ${this.replaceDefinition(rule.definition)};`;
                     return {
-                        title: 'Replace parser rule by type declaration',
+                        title: 'Replace with type declaration',
                         kind: CodeActionKind.QuickFix,
                         diagnostics: [diagnostic],
                         isPreferred: true,

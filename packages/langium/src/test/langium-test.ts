@@ -769,7 +769,7 @@ export function expectSemanticToken(tokensWithRanges: DecodedSemanticTokensWithR
     expectedFunction(result.length, 1, `Expected one token with the specified options but found ${result.length}`);
 }
 
-export interface QuickFixResult<T extends AstNode = AstNode> extends AsyncDisposable {
+export interface CodeActionResult<T extends AstNode = AstNode> extends AsyncDisposable {
     /** the document containing the AST */
     document: LangiumDocument<T>;
     /** all diagnostics of the validation */
@@ -781,14 +781,14 @@ export interface QuickFixResult<T extends AstNode = AstNode> extends AsyncDispos
 }
 
 /**
- * This is a helper function to easily test quick-fixes for validation problems.
- * @param services the Langium services for the language with quick fixes
- * @returns A function to easily test a single quick-fix on the given invalid 'input'.
+ * This is a helper function to easily test code actions (quick-fixes) for validation problems.
+ * @param services the Langium services for the language with code actions
+ * @returns A function to easily test a single code action on the given invalid 'input'.
  * This function expects, that 'input' contains exactly one validation problem with the given 'diagnosticCode'.
- * If 'outputAfterFix' is specified, this functions checks, that the diagnostic comes with a single quick-fix for this validation problem.
- * After applying this quick-fix, 'input' is transformed to 'outputAfterFix'.
+ * If 'outputAfterFix' is specified, this functions checks, that the diagnostic comes with a single code action for this validation problem.
+ * After applying this code action, 'input' is transformed to 'outputAfterFix'.
  */
-export function testQuickFix<T extends AstNode = AstNode>(services: LangiumServices): (input: string, diagnosticCode: string, outputAfterFix: string | undefined, options?: ParseHelperOptions) => Promise<QuickFixResult<T>> {
+export function testCodeAction<T extends AstNode = AstNode>(services: LangiumServices): (input: string, diagnosticCode: string, outputAfterFix: string | undefined, options?: ParseHelperOptions) => Promise<CodeActionResult<T>> {
     const validateHelper = validationHelper<T>(services);
     return async (input, diagnosticCode, outputAfterFix, options) => {
         // parse + validate
@@ -801,7 +801,7 @@ export function testQuickFix<T extends AstNode = AstNode>(services: LangiumServi
         expectedFunction(diagnosticsRelevant.length, 1);
         const diagnosticRelevant = diagnosticsRelevant[0];
 
-        // check, that the quick-fixes are generated for the selected validation:
+        // check, that the code actions are generated for the selected validation:
         // prepare the action provider
         const actionProvider = expectTruthy(services.lsp.CodeActionProvider);
         // request the actions for this diagnostic
@@ -818,26 +818,26 @@ export function testQuickFix<T extends AstNode = AstNode>(services: LangiumServi
         let action: CodeAction | undefined;
         let validationAfter: ValidationResult | undefined;
         if (outputAfterFix) {
-            // exactly one quick-fix is expected
+            // exactly one code action is expected
             expectTruthy(currentActions);
             expectTruthy(Array.isArray(currentActions));
             expectedFunction(currentActions!.length, 1);
             expectTruthy(CodeAction.is(currentActions![0]));
             action = currentActions![0] as CodeAction;
 
-            // execute the found quick-fix
+            // execute the found code action
             const edits = expectTruthy(action.edit?.changes![document.textDocument.uri]);
             const updatedText = TextDocument.applyEdits(document.textDocument, edits!);
 
-            // check the result after applying the quick-fix:
+            // check the result after applying the code action:
             // 1st text is updated as expected
             expectedFunction(updatedText, outputAfterFix);
-            // 2nd the validation diagnostic is gone after the fix
+            // 2nd the validation diagnostic is gone after applying the code action
             validationAfter = await validateHelper(updatedText, options);
             const diagnosticsUpdated = validationAfter.diagnostics.filter(d => d.data && 'code' in d.data && d.data.code === diagnosticCode);
             expectedFunction(diagnosticsUpdated.length, 0);
         } else {
-            // no quick-fix is expected
+            // no code action is expected
             expectFalsy(currentActions);
         }
 

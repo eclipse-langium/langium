@@ -8,10 +8,10 @@ import { EmptyFileSystem } from 'langium';
 import { describe, expect, test } from 'vitest';
 import { IssueCodes } from '../../../src/grammar/index.js';
 import { createLangiumGrammarServices } from '../../../src/grammar/langium-grammar-module.js';
-import { testQuickFix } from '../../../src/test/langium-test.js';
+import { testCodeAction } from '../../../src/test/langium-test.js';
 
 const services = createLangiumGrammarServices(EmptyFileSystem);
-const testQuickFixes = testQuickFix(services.grammar);
+const testCodeActions = testCodeAction(services.grammar);
 
 // Some of these test data are exported, since they are reused for corresponding test cases for the grammar validation itself
 
@@ -69,7 +69,7 @@ function grammarRuleVsType(body: string): string {
     `;
 }
 
-describe('Langium grammar quick-fixes for validations: Parser rules used only as type in cross-references are not marked as unused, but with a hint suggesting a type declaration', () => {
+describe('Langium grammar actions for validations: Parser rules used only as type in cross-references are not marked as unused, but with a hint suggesting a type declaration', () => {
     // these test cases target https://github.com/eclipse-langium/langium/issues/1309
 
     test('The parser rule has an implicitly inferred type: two alternatives', async () => {
@@ -89,9 +89,9 @@ describe('Langium grammar quick-fixes for validations: Parser rules used only as
     });
 
     async function testReplaceAction(textBefore: string, textAfter: string) {
-        const result = await testQuickFixes(textBefore, IssueCodes.ParserRuleToTypeDecl, textAfter);
+        const result = await testCodeActions(textBefore, IssueCodes.ParserRuleToTypeDecl, textAfter);
         const action = result.action;
         expect(action).toBeTruthy();
-        expect(action!.title).toBe('Replace parser rule by type declaration');
+        expect(action!.title).toBe('Replace with type declaration');
     }
 });

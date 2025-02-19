@@ -515,7 +515,7 @@ describe('Unused rules validation', () => {
 });
 
 describe('Parser rules used only as type in cross-references are not marked as unused, but with a hint suggesting to use a type declaration instead', () => {
-    // The used test data are defined at the test cases for possible quick-fixes for these validation problems.
+    // The used test data are defined at the test cases for possible code actions for these validation problems.
     // these test cases target https://github.com/eclipse-langium/langium/issues/1309
 
     test('union of two types', async () => {
