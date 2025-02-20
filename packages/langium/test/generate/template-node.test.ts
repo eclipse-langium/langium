@@ -832,9 +832,47 @@ describe('Multiple nested substitution templates', () => {
                         generated text!
         `);
     });
+
+    test('Nested substitution of with indented nested template starting with an _undefined_ line', () => {
+        expect(
+            toString(n`
+                begin:
+                  ${n`
+                    ${undefined}
+                    ${nestedNode}
+                  `}
+            `)
+        ).toBe(
+            s`
+                begin:
+                  More
+                  generated text!
+            `
+        );
+    });
+
+    test('Nested substitution of with indented nested template starting with an _empty string_ line', () => {
+        expect(
+            toString(n`
+                begin:
+                  ${n`
+                    ${''}
+                    ${nestedNode}
+                  `}
+            `)
+        ).toBe(
+            s`
+                begin:
+                  ${/* 's' automatically trims the empty lines completely, so insert */'<DUMMY>'}
+                  More
+                  generated text!
+            `.replace('<DUMMY>', '')
+        );
+    });
+
 });
 
-describe('Embedded forEach loops', () => {
+describe('Joining lists', () => {
     test('ForEach loop with empty iterable', () => {
         const node = n`
             Data:
@@ -1083,6 +1121,18 @@ describe('Embedded forEach loops', () => {
               b
         `);
     });
+
+    test('Nested ForEach loop with empty iterable followed by an indented line', () => {
+        const node = n`
+            ${joinToNode([], { appendNewLineIfNotEmpty: true})}
+            a
+        `;
+        const text = toString(node);
+        expect(text).toBe(s`
+            a
+        `);
+    });
+
 });
 
 describe('Appending templates to existing nodes', () => {

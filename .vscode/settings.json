@@ -11,7 +11,10 @@
         "javascript",
         "typescript"
     ],
-    "vitest.enable": true,
+    "vitest.configSearchPatternExclude": "{**/node_modules/**,**/dist/**,**/generated/**,**/templates/**,**/examples/hello*/**,**/.*/**,**/*.d.ts}",
+    "vitest.debugExclude": [
+        "<node_internals>/**", "**/node_modules/**", "!**/node_modules/vscode-uri/**"
+    ],
     "[json]": {
         "editor.defaultFormatter": "vscode.json-language-features"
     },

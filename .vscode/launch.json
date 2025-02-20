@@ -158,19 +158,25 @@
             "skipFiles": ["<node_internals>/**", "**/node_modules/**"],
             "program": "${workspaceRoot}/node_modules/vitest/vitest.mjs",
             "args": ["run", "--no-color", "--no-coverage", "--no-watch"],
-            "smartStep": true,
             "console": "integratedTerminal",
+            "smartStep": true,
         },
         {
             "name": "Vitest: Run Selected File",
             "type": "node",
             "request": "launch",
             "autoAttachChildProcesses": true,
-            "skipFiles": ["<node_internals>/**", "**/node_modules/**"],
+            "skipFiles": ["<node_internals>/**", "**/node_modules/**", "!**/node_modules/vscode-*/**"],
             "program": "${workspaceRoot}/node_modules/vitest/vitest.mjs",
             "args": ["run", "${relativeFile}"],
-            "smartStep": true,
             "console": "integratedTerminal",
+            "smartStep": true,
+            "sourceMaps": true,
+            "outFiles": [
+                // cs: surprisingly, it makes a significant difference whether the "outFiles" property is not mentioned at all or an empty array is given here;
+                //  this setup seems to work best here, cross check with 'uri-utils.test.ts', for example
+                // my assumption is that vitest now relies on it's on the fly generated source maps plus those being available in the folder of the particular js modules, like in case of external libraries
+            ]
         }
     ]
 }

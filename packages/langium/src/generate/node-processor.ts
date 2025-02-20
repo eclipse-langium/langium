@@ -94,11 +94,12 @@ class Context {
         this.length -= this.lines[this.currentLineNumber].join('').length;
         this.lines[this.currentLineNumber] = [];
         this.pendingIndent = true;
+        this.recentNonImmediateIndents.length = 0;
     }
 
     addNewLine() {
-        this.pendingIndent = true;
         this.lines.push([]);
+        this.pendingIndent = true;
         this.recentNonImmediateIndents.length = 0;
     }
 
@@ -228,20 +229,20 @@ function hasContent(node: GeneratorNode | string, ctx: Context): boolean {
 
 function processStringNode(node: string, context: Context) {
     if (node) {
-        if (context.pendingIndent) {
-            handlePendingIndent(context, false);
-        }
+        handlePendingIndent(context, false);
         context.append(node);
     }
 }
 
 function handlePendingIndent(ctx: Context, endOfLine: boolean) {
-    let indent = '';
-    for (const indentNode of ctx.relevantIndents.filter(e => e.indentEmptyLines || !endOfLine)) {
-        indent += indentNode.indentation ?? ctx.defaultIndentation;
+    if (ctx.pendingIndent) {
+        let indent = '';
+        for (const indentNode of ctx.relevantIndents.filter(e => e.indentEmptyLines || !endOfLine)) {
+            indent += indentNode.indentation ?? ctx.defaultIndentation;
+        }
+        ctx.append(indent, true);
+        ctx.pendingIndent = false;
     }
-    ctx.append(indent, true);
-    ctx.pendingIndent = false;
 }
 
 function processCompositeNode(node: CompositeGeneratorNode, context: Context) {
@@ -288,9 +289,7 @@ function processNewLineNode(node: NewLineNode, context: Context) {
     if (node.ifNotEmpty && !hasNonWhitespace(context.currentLineContent)) {
         context.resetCurrentLine();
     } else {
-        if (context.pendingIndent) {
-            handlePendingIndent(context, true);
-        }
+        handlePendingIndent(context, true);
         context.append(node.lineDelimiter);
         context.addNewLine();
     }
