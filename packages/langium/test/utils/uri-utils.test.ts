@@ -21,15 +21,33 @@ describe('URI Utils', () => {
         expect(UriUtils.relative(from, to)).toBe('../d.txt');
     });
 
+    test.skipIf(process.platform !== 'win32')('relative path in parent directory win32', () => {
+        const from = URI.file('c:\\a\\b');
+        const to = URI.file('c:\\a\\d.txt');
+        expect(UriUtils.relative(from, to)).toBe('../d.txt');
+    });
+
     test('relative path in sub directory', () => {
         const from = URI.file('/a');
         const to = URI.file('/a/b/c.txt');
         expect(UriUtils.relative(from, to)).toBe('b/c.txt');
     });
 
+    test.skipIf(process.platform !== 'win32')('relative path in sub directory win32', () => {
+        const from = URI.file('c:\\a');
+        const to = URI.file('c:\\a\\b\\c.txt');
+        expect(UriUtils.relative(from, to)).toBe('b/c.txt');
+    });
+
     test('relative path in other directory', () => {
         const from = URI.file('/a/b');
         const to = URI.file('/a/c/d.txt');
+        expect(UriUtils.relative(from, to)).toBe('../c/d.txt');
+    });
+
+    test.skipIf(process.platform !== 'win32')('relative path in other directory win32', () => {
+        const from = URI.file('c:\\a\\b');
+        const to = URI.file('c:\\a\\c\\d.txt');
         expect(UriUtils.relative(from, to)).toBe('../c/d.txt');
     });
 
