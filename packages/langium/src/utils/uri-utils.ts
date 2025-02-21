@@ -16,6 +16,8 @@ export namespace UriUtils {
     export const joinPath = Utils.joinPath;
     export const resolvePath = Utils.resolvePath;
 
+    const isWindows = process?.platform === 'win32';
+
     export function equals(a?: URI | string, b?: URI | string): boolean {
         return a?.toString() === b?.toString();
     }
@@ -25,6 +27,17 @@ export namespace UriUtils {
         const toPath = typeof to === 'string' ? to : to.path;
         const fromParts = fromPath.split('/').filter(e => e.length > 0);
         const toParts = toPath.split('/').filter(e => e.length > 0);
+
+        if (isWindows) {
+            const upperCaseDriveLetter = /^[A-Z]:$/;
+            if (fromParts[0] && upperCaseDriveLetter.test(fromParts[0])) {
+                fromParts[0] = fromParts[0].toLowerCase();
+            }
+            if (toParts[0] && upperCaseDriveLetter.test(toParts[0])) {
+                toParts[0] = toParts[0].toLowerCase();
+            }
+        }
+
         let i = 0;
         for (; i < fromParts.length; i++) {
             if (fromParts[i] !== toParts[i]) {
