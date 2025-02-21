@@ -6,7 +6,7 @@
 
 /* eslint-disable dot-notation */
 
-import { beforeEach, describe, expect, test } from 'vitest';
+import { afterEach, beforeEach, describe, expect, test } from 'vitest';
 import type { DefaultDocumentBuilder} from 'langium';
 import { DocumentCache, DocumentState, EmptyFileSystem, URI, WorkspaceCache } from 'langium';
 import { createLangiumGrammarServices } from 'langium/grammar';
@@ -17,8 +17,18 @@ const document1 = workspace.LangiumDocumentFactory.fromString('', URI.file('/doc
 workspace.TextDocuments.set(document1.textDocument);
 const document2 = workspace.LangiumDocumentFactory.fromString('', URI.file('/document2.langium'));
 workspace.TextDocuments.set(document2.textDocument);
-workspace.LangiumDocuments.addDocument(document1);
-workspace.LangiumDocuments.addDocument(document2);
+
+beforeEach(async () => {
+    // Rebuild both documents to ensure that the following build calls don't pick up on other documents
+    workspace.LangiumDocuments.addDocument(document1);
+    workspace.LangiumDocuments.addDocument(document2);
+    await workspace.DocumentBuilder.build([document1, document2]);
+});
+
+afterEach(async () => {
+    workspace.LangiumDocuments.deleteDocument(document1.uri);
+    workspace.LangiumDocuments.deleteDocument(document2.uri);
+});
 
 describe('Document Cache', () => {
 
@@ -122,11 +132,6 @@ describe('Document Cache', () => {
 });
 
 describe('Workspace Cache', () => {
-
-    beforeEach(async () => {
-        // Rebuild both documents to ensure that the following build calls don't pick up on other documents
-        await workspace.DocumentBuilder.build([document1, document2]);
-    });
 
     test('Should get and set on the whole workspace', () => {
         const cache = new WorkspaceCache<string, string>(services.shared);

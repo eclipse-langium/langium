@@ -4,13 +4,14 @@
  * terms of the MIT License, which is available in the project root.
  ******************************************************************************/
 
-import type { AstNode, DocumentBuilder, FileSystemProvider, LangiumDocument, LangiumDocumentFactory, LangiumDocuments, Module, Reference, ValidationChecks } from 'langium';
-import { AstUtils, DocumentState, TextDocument, URI, isOperationCancelled, startCancelableOperation } from 'langium';
+import type { AstNode, DocumentBuilder, FileSystemNode, FileSystemProvider, LangiumDocument, LangiumDocumentFactory, LangiumDocuments, Module, Reference, ValidationChecks } from 'langium';
+import { AstUtils, DocumentState, TextDocument, URI, UriUtils, isOperationCancelled, startCancelableOperation } from 'langium';
 import { createServicesForGrammar } from 'langium/grammar';
 import { describe, expect, test, vi, beforeEach, afterEach } from 'vitest';
 import { CancellationToken } from 'vscode-languageserver';
 import { fail } from 'assert';
 import type { LangiumServices, LangiumSharedServices, TextDocuments } from 'langium/lsp';
+import { VirtualFileSystemProvider } from 'langium/test';
 
 describe('DefaultDocumentBuilder', () => {
     async function createServices(shared?: Module<LangiumSharedServices, object>) {
@@ -85,6 +86,42 @@ describe('DefaultDocumentBuilder', () => {
         });
         await builder.build([document]);
         expect(called).toBe(true);
+    });
+
+    test('emits `onUpdate` on `update` call in a directory', async () => {
+        const virtualFileSystem = new VirtualFileSystemProvider();
+        const services = await createServices({
+            workspace: {
+                FileSystemProvider: () => virtualFileSystem
+            }
+        });
+        const workspace = services.shared.workspace;
+        const documentFactory = workspace.LangiumDocumentFactory;
+        const documents = workspace.LangiumDocuments;
+        const uri1 = URI.parse('file:/dir1/test.txt');
+        const uri2 = URI.parse('file:/dir2/test.txt');
+        virtualFileSystem.insert(uri1, '');
+        virtualFileSystem.insert(uri2, '');
+        const document1 = await documentFactory.fromUri(uri1);
+        documents.addDocument(document1);
+        const document2 = await documentFactory.fromUri(uri2);
+        documents.addDocument(document2);
+
+        const builder = workspace.DocumentBuilder;
+        await builder.build([document1, document2], {});
+        let deleted = false;
+        let updated = false;
+        builder.onUpdate((changedUris, deletedUris) => {
+            if (UriUtils.equals(changedUris[0], uri1)) {
+                updated = true;
+            }
+            if (UriUtils.equals(deletedUris[0], uri2)) {
+                deleted = true;
+            }
+        });
+        await builder.update([URI.parse('file:/dir1')], [URI.parse('file:/dir2')]);
+        expect(deleted).toBe(true);
+        expect(updated).toBe(true);
     });
 
     test('Check all onBuidPhase callbacks', async () => {
@@ -702,6 +739,22 @@ describe('DefaultDocumentBuilder', () => {
 
 class MockFileSystemProvider implements FileSystemProvider {
     isMockFileSystemProvider = true;
+
+    async stat(uri: URI): Promise<FileSystemNode> {
+        return {
+            isDirectory: false,
+            isFile: true,
+            uri
+        };
+    }
+
+    statSync(uri: URI): FileSystemNode {
+        return {
+            isDirectory: false,
+            isFile: true,
+            uri
+        };
+    }
 
     // Return an empty string for any file
     readFile(_uri: URI): Promise<string>{

@@ -38,7 +38,7 @@ describe('DefaultTraceProvider', async () => {
             node a {
                 node b {}
             }
-        `, { documentUri: 'test://test.model' });
+        `, { documentUri: 'test:/test.txt' });
         const model = document.parseResult.value;
         const source = model.nodes[0].nodes[0];
         expect(source).toBeDefined();
@@ -47,7 +47,7 @@ describe('DefaultTraceProvider', async () => {
             id: 'node0'
         };
         services.diagram.TraceProvider.trace(target, source);
-        expect(target.trace).toBe('test://test.model?2%3A16-2%3A25#%2Fnodes%400%2Fnodes%400');
+        expect(target.trace).toBe('test:/test.txt?2%3A16-2%3A25#%2Fnodes%400%2Fnodes%400');
     });
 
     test('finds source node', async () => {
@@ -55,12 +55,12 @@ describe('DefaultTraceProvider', async () => {
             node a {
                 node b {}
             }
-        `, { documentUri: 'test://test.model' });
+        `, { documentUri: 'test:/test.txt' });
         const model = document.parseResult.value;
         const target: TracedModelElement = {
             type: 'node',
             id: 'node0',
-            trace: 'test://test.model?2%3A16-2%3A25#%2Fnodes%400%2Fnodes%400'
+            trace: 'test:/test.txt?2%3A16-2%3A25#%2Fnodes%400%2Fnodes%400'
         };
         const source = services.diagram.TraceProvider.getSource(target);
         expect(source).toBeDefined();
@@ -72,7 +72,7 @@ describe('DefaultTraceProvider', async () => {
             node a {
                 node b {}
             }
-        `, { documentUri: 'test://test.model' });
+        `, { documentUri: 'test:/test.txt' });
         const model = document.parseResult.value;
         const source = model.nodes[0].nodes[0];
         expect(source).toBeDefined();
@@ -87,7 +87,7 @@ describe('DefaultTraceProvider', async () => {
                 <TracedModelElement>{
                     type: 'node',
                     id: 'node1',
-                    trace: 'test://test.model?2%3A16-2%3A25#%2Fnodes%400%2Fnodes%400'
+                    trace: 'test:/test.txt?2%3A16-2%3A25#%2Fnodes%400%2Fnodes%400'
                 }
             ]
         };
@@ -101,7 +101,7 @@ describe('DefaultTraceProvider', async () => {
             node a {
                 node b {}
             }
-        `, { documentUri: 'test://test.model' });
+        `, { documentUri: 'test:/test.txt' });
         const model = document.parseResult.value;
         const source = model.nodes[0].nodes[0];
         expect(source).toBeDefined();
@@ -116,7 +116,7 @@ describe('DefaultTraceProvider', async () => {
                 <TracedModelElement>{
                     type: 'node',
                     id: 'node0',
-                    trace: 'test://test.model?1%3A12-3%3A13#%2Fnodes%400'
+                    trace: 'test:/test.txt?1%3A12-3%3A13#%2Fnodes%400'
                 }
             ]
         };
@@ -130,7 +130,7 @@ describe('DefaultTraceProvider', async () => {
             node a {
                 node b {}
             }
-        `, { documentUri: 'test://test.model' });
+        `, { documentUri: 'test:/test.txt' });
         const model = document.parseResult.value;
         const source = model.nodes[0].nodes[0];
         expect(source).toBeDefined();
@@ -141,12 +141,12 @@ describe('DefaultTraceProvider', async () => {
                 <TracedModelElement>{
                     type: 'node',
                     id: 'node0',
-                    trace: 'test://test.model?1%3A12-3%3A13#%2Fnodes%400'
+                    trace: 'test:/test.txt?1%3A12-3%3A13#%2Fnodes%400'
                 },
                 <TracedModelElement>{
                     type: 'node',
                     id: 'node1',
-                    trace: 'test://test.model?2%3A16-2%3A25#%2Fnodes%400%2Fnodes%400'
+                    trace: 'test:/test.txt?2%3A16-2%3A25#%2Fnodes%400%2Fnodes%400'
                 }
             ]
         };
