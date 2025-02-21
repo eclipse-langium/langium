@@ -27,6 +27,24 @@ describe('URI Utils', () => {
         expect(UriUtils.relative(from, to)).toBe('../d.txt');
     });
 
+    test.skipIf(process.platform !== 'win32')('relative path in parent directory win32, uppercase drive letters', () => {
+        const from = URI.file('C:\\a\\b');
+        const to = URI.file('C:\\a\\d.txt');
+        expect(UriUtils.relative(from, to)).toBe('../d.txt');
+    });
+
+    test.skipIf(process.platform !== 'win32')('relative path in parent directory win32, mixed drive letter cases 1', () => {
+        const from = URI.file('C:\\a\\b');
+        const to = URI.file('c:\\a\\d.txt');
+        expect(UriUtils.relative(from, to)).toBe('../d.txt');
+    });
+
+    test.skipIf(process.platform !== 'win32')('relative path in parent directory win32, mixed drive letter cases 2', () => {
+        const from = URI.file('c:\\a\\b');
+        const to = URI.file('C:\\a\\d.txt');
+        expect(UriUtils.relative(from, to)).toBe('../d.txt');
+    });
+
     test('relative path in sub directory', () => {
         const from = URI.file('/a');
         const to = URI.file('/a/b/c.txt');
@@ -49,6 +67,12 @@ describe('URI Utils', () => {
         const from = URI.file('c:\\a\\b');
         const to = URI.file('c:\\a\\c\\d.txt');
         expect(UriUtils.relative(from, to)).toBe('../c/d.txt');
+    });
+
+    test.skipIf(process.platform !== 'win32')('different win32 drive letters', () => {
+        const from = URI.file('c:\\a\\b');
+        const to = URI.file('D:\\a\\c\\d.txt');
+        expect(UriUtils.relative(from, to)).toBe('D:/a/c/d.txt');
     });
 
     test('Equal uris are equal', () => {
