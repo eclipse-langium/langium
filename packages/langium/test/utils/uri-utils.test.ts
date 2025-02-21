@@ -69,6 +69,12 @@ describe('URI Utils', () => {
         expect(UriUtils.relative(from, to)).toBe('../c/d.txt');
     });
 
+    test.skipIf(process.platform !== 'win32')('different win32 drive letters', () => {
+        const from = URI.file('c:\\a\\b');
+        const to = URI.file('D:\\a\\c\\d.txt');
+        expect(UriUtils.relative(from, to)).toBe('D:/a/c/d.txt');
+    });
+
     test('Equal uris are equal', () => {
         const uri1 = 'file:///a/b';
         const uri2 = 'file:///a/b';
