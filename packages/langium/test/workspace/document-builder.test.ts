@@ -4,7 +4,7 @@
  * terms of the MIT License, which is available in the project root.
  ******************************************************************************/
 
-import type { AstNode, DocumentBuilder, FileSystemProvider, LangiumDocument, LangiumDocumentFactory, LangiumDocuments, Module, Reference, ValidationChecks } from 'langium';
+import type { AstNode, DocumentBuilder, FileSystemNode, FileSystemProvider, LangiumDocument, LangiumDocumentFactory, LangiumDocuments, Module, Reference, ValidationChecks } from 'langium';
 import { AstUtils, DocumentState, TextDocument, URI, isOperationCancelled, startCancelableOperation } from 'langium';
 import { createServicesForGrammar } from 'langium/grammar';
 import { describe, expect, test, vi, beforeEach, afterEach } from 'vitest';
@@ -706,6 +706,25 @@ class MockFileSystemProvider implements FileSystemProvider {
     // Return an empty string for any file
     readFile(_uri: URI): Promise<string>{
         return Promise.resolve('');
+    }
+
+    async exists(_uri: URI): Promise<boolean> {
+        return false;
+    }
+    existsSync(): boolean {
+        return false;
+    }
+    async readBinary(_uri: URI): Promise<Uint8Array> {
+        return new Uint8Array();
+    }
+    readBinarySync(_uri: URI): Uint8Array {
+        return new Uint8Array();
+    }
+    readFileSync(_uri: URI): string {
+        return '';
+    }
+    readDirectorySync(_uri: URI): FileSystemNode[] {
+        return [];
     }
 
     // Return an empty array for any directory
