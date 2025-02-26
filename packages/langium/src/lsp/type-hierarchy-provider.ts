@@ -58,12 +58,12 @@ export abstract class AbstractTypeHierarchyProvider implements TypeHierarchyProv
             return undefined;
         }
 
-        const declarationNode = this.references.findDeclarationNode(targetNode);
+        const declarationNode = this.references.findDeclaration(targetNode);
         if (!declarationNode) {
             return undefined;
         }
 
-        return this.getTypeHierarchyItems(declarationNode.astNode, document);
+        return this.getTypeHierarchyItems(declarationNode, document);
     }
 
     protected getTypeHierarchyItems(targetNode: AstNode, document: LangiumDocument): TypeHierarchyItem[] | undefined {
