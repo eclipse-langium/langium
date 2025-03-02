@@ -234,7 +234,7 @@ export const LangiumGrammarGrammar = (): Grammar => loadedLangiumGrammarGrammar 
                 }
               }
             ],
-            "cardinality": "+"
+            "cardinality": "*"
           }
         ]
       },

@@ -12,7 +12,7 @@ entry Grammar:
         (definesHiddenTokens?='hidden' '(' (hiddenTokens+=[AbstractRule:ID] (',' hiddenTokens+=[AbstractRule:ID])*)? ')')?
     )?
     imports+=GrammarImport*
-    (rules+=AbstractRule | interfaces+=Interface | types+=Type)+;
+    (rules+=AbstractRule | interfaces+=Interface | types+=Type)*;
 
 Interface:
     'interface' name=ID
