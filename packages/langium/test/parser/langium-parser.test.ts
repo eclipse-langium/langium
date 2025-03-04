@@ -105,7 +105,6 @@ describe('parser error recovery', () => {
             const closing = ')'.repeat(close);
             const result = services.parser.LangiumParser.parse(`${opening}a${closing};`);
             // Expect only one parser error independent of the number of missing closing parenthesis
-            console.log(result.parserErrors);
             expect(result.parserErrors).toHaveLength(1);
         });
     }
