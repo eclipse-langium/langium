@@ -1,6 +1,6 @@
 statemachine TrafficLight
 
-events 
+events
     switchCapacity
     next
 
