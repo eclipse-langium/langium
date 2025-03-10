@@ -422,7 +422,7 @@ export class DefaultDocumentBuilder implements DocumentBuilder {
         cancelToken ??= CancellationToken.None;
         if (uri) {
             const document = this.langiumDocuments.getDocument(uri);
-            if (document && document.state > state) {
+            if (document && document.state >= state) {
                 return Promise.resolve(uri);
             }
         }
