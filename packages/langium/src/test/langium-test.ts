@@ -559,7 +559,7 @@ export function validationHelper<T extends AstNode = AstNode>(services: LangiumC
         const parseOptions: ValidationHelperOptions = {
             ...(options ?? {}),
         };
-        parseOptions.validation = parseOptions.validation ?? true;
+        parseOptions.validation ??= true;
         const document = await parse(input, parseOptions);
         const result = {
             document,
