@@ -556,10 +556,11 @@ export type ValidationHelperOptions = ParseHelperOptions & { failOnParsingErrors
 export function validationHelper<T extends AstNode = AstNode>(services: LangiumCoreServices): (input: string, options?: ValidationHelperOptions) => Promise<ValidationResult<T>> {
     const parse = parseHelper<T>(services);
     return async (input, options) => {
-        const document = await parse(input, {
+        const parseOptions: ValidationHelperOptions = {
             ...(options ?? {}),
-            validation: true
-        });
+        };
+        parseOptions.validation = parseOptions.validation ?? true;
+        const document = await parse(input, parseOptions);
         const result = {
             document,
             diagnostics: document.diagnostics ?? [],
