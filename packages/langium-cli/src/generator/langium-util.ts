@@ -29,7 +29,7 @@ export function collectKeywords(grammar: Grammar): string[] {
     const reachableRules = GrammarUtils.getAllReachableRules(grammar, false);
 
     for (const keyword of stream(reachableRules)
-        .filter(GrammarAST.isParserRule)
+        .filter(rule => GrammarAST.isParserRule(rule) || GrammarAST.isInfixRule(rule))
         .flatMap(rule => AstUtils.streamAllContents(rule).filter(GrammarAST.isKeyword))) {
         keywords.add(keyword.value);
     }

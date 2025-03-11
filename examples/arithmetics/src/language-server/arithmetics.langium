@@ -20,19 +20,9 @@ Evaluation:
     expression=Expression ';';
 
 Expression:
-    Addition;
+    BinaryExpression;
 
-Addition infers Expression:
-    Multiplication ({infer BinaryExpression.left=current} operator=('+' | '-') right=Multiplication)*;
-
-Multiplication infers Expression:
-    Exponentiation ({infer BinaryExpression.left=current} operator=('*' | '/') right=Exponentiation)*;
-
-Exponentiation infers Expression:
-    Modulo ({infer BinaryExpression.left=current} operator='^' right=Modulo)*;
-
-Modulo infers Expression:
-    PrimaryExpression ({infer BinaryExpression.left=current} operator='%' right=PrimaryExpression)*;
+infix BinaryExpression on PrimaryExpression: '%' > '^' > '*' | '/' > '+' | '-';
 
 PrimaryExpression infers Expression:
     '(' Expression ')' |
