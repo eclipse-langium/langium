@@ -4,14 +4,14 @@
  * terms of the MIT License, which is available in the project root.
  ******************************************************************************/
 
-import type { ParserRule, Action, AbstractElement, Assignment, RuleCall } from '../../../languages/generated/ast.js';
+import type { ParserRule, Action, AbstractElement, Assignment, RuleCall, InfixRule, TypeAttribute } from '../../../languages/generated/ast.js';
 import type { PlainAstTypes, PlainInterface, PlainProperty, PlainPropertyType, PlainUnion } from './plain-types.js';
 import { isNamed } from '../../../references/name-provider.js';
 import { MultiMap } from '../../../utils/collections.js';
-import { isAlternatives, isKeyword, isParserRule, isAction, isGroup, isUnorderedGroup, isAssignment, isRuleCall, isCrossReference, isTerminalRule } from '../../../languages/generated/ast.js';
+import { isAlternatives, isKeyword, isParserRule, isAction, isGroup, isUnorderedGroup, isAssignment, isRuleCall, isCrossReference, isTerminalRule, isInfixRule } from '../../../languages/generated/ast.js';
 import { getTypeNameWithoutError, isPrimitiveGrammarType } from '../../internal-grammar-util.js';
 import { mergePropertyTypes } from './plain-types.js';
-import { isOptionalCardinality, terminalRegex, getRuleTypeName } from '../../../utils/grammar-utils.js';
+import { isOptionalCardinality, terminalRegex, getRuleTypeName, getTypeName } from '../../../utils/grammar-utils.js';
 
 interface TypePart {
     name?: string
@@ -250,7 +250,7 @@ function copyProperty(value: PlainProperty): PlainProperty {
     };
 }
 
-export function collectInferredTypes(parserRules: ParserRule[], datatypeRules: ParserRule[], declared: PlainAstTypes): PlainAstTypes {
+export function collectInferredTypes(parserRules: ParserRule[], datatypeRules: ParserRule[], infixRules: InfixRule[], declared: PlainAstTypes): PlainAstTypes {
     // extract interfaces and types from parser rules
     const allTypes: TypePath[] = [];
     const context: TypeCollectionContext = {
@@ -259,7 +259,7 @@ export function collectInferredTypes(parserRules: ParserRule[], datatypeRules: P
     for (const rule of parserRules) {
         allTypes.push(...getRuleTypes(context, rule));
     }
-    const interfaces = calculateInterfaces(allTypes);
+    const interfaces = calculateInterfaces(allTypes, calculateInfixInterfaces(infixRules));
     const unions = buildSuperUnions(interfaces);
     const astTypes = extractUnions(interfaces, unions, declared);
 
@@ -276,6 +276,57 @@ export function collectInferredTypes(parserRules: ParserRule[], datatypeRules: P
         });
     }
     return astTypes;
+}
+
+function calculateInfixInterfaces(rules: InfixRule[]): PlainInterface[] {
+    const interfaces: PlainInterface[] = [];
+    for (const rule of rules) {
+        const on = rule.call.rule.ref;
+        let onName = on?.name;
+        if (isParserRule(on)) {
+            onName = getTypeName(on);
+        }
+        if (onName && rule.name) {
+            const operators = rule.operators.precedences
+                .flatMap(e => e.operators).map(e => e.value).sort();
+            const expressionProperty = {
+                astNodes: new Set<Assignment | Action | TypeAttribute>(),
+                optional: false,
+                type: {
+                    value: onName
+                }
+            };
+            const interfaceType: PlainInterface = {
+                name: rule.name,
+                declared: false,
+                abstract: false,
+                properties: [
+                    {
+                        ...expressionProperty,
+                        name: 'left'
+                    },
+                    {
+                        ...expressionProperty,
+                        name: 'right'
+                    },
+                    {
+                        name: 'operator',
+                        astNodes: new Set(),
+                        optional: false,
+                        type: {
+                            types: operators.map(operator => ({
+                                string: operator
+                            }))
+                        }
+                    }
+                ],
+                subTypes: new Set(),
+                superTypes: new Set()
+            };
+            interfaces.push(interfaceType);
+        }
+    }
+    return interfaces;
 }
 
 function getDataRuleType(rule: ParserRule): PlainPropertyType {
@@ -500,7 +551,7 @@ function addRuleCall(graph: TypeGraph, current: TypePart, ruleCall: RuleCall): v
         } else {
             current.properties.push(...properties);
         }
-    } else if (isParserRule(rule)) {
+    } else if (isParserRule(rule) || isInfixRule(rule)) {
         current.ruleCalls.push(getRuleTypeName(rule));
     }
 }
@@ -524,8 +575,8 @@ function getFragmentProperties(fragment: ParserRule, context: TypeCollectionCont
  * @param alternatives The type branches that will be squashed in interfaces.
  * @returns Interfaces.
  */
-function calculateInterfaces(alternatives: TypePath[]): PlainInterface[] {
-    const interfaces = new Map<string, PlainInterface>();
+function calculateInterfaces(alternatives: TypePath[], otherInterfaces: PlainInterface[]): PlainInterface[] {
+    const interfaces = new Map<string, PlainInterface>(otherInterfaces.map(e => [e.name, e]));
     const ruleCallAlternatives: TypeAlternative[] = [];
     const flattened = alternatives.length > 0
         ? flattenTypes(alternatives, alternatives[0].current).map(e => e.alt)

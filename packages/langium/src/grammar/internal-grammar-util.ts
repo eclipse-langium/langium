@@ -143,6 +143,9 @@ export function extractAssignments(element: ast.AbstractElement): ast.Assignment
     } else if (ast.isAlternatives(element) || ast.isGroup(element) || ast.isUnorderedGroup(element)) {
         return element.elements.flatMap(e => extractAssignments(e));
     } else if (ast.isRuleCall(element) && element.rule.ref) {
+        if (ast.isInfixRule(element.rule.ref)) {
+            return [];
+        }
         return extractAssignments(element.rule.ref.definition);
     }
     return [];
