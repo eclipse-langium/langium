@@ -5,12 +5,12 @@
  ******************************************************************************/
 
 import type { IOrAlt, TokenType, TokenTypeDictionary } from 'chevrotain';
-import type { AbstractElement, Action, Alternatives, Condition, CrossReference, Grammar, Group, Keyword, NamedArgument, ParserRule, RuleCall, UnorderedGroup } from '../languages/generated/ast.js';
+import type { AbstractElement, Action, Alternatives, Assignment, Condition, CrossReference, Grammar, Group, InfixRule, Keyword, NamedArgument, ParserRule, RuleCall, UnorderedGroup } from '../languages/generated/ast.js';
 import type { BaseParser } from './langium-parser.js';
 import type { AstNode } from '../syntax-tree.js';
 import type { Cardinality } from '../utils/grammar-utils.js';
 import { EMPTY_ALT, EOF } from 'chevrotain';
-import { isAction, isAlternatives, isEndOfFile, isAssignment, isConjunction, isCrossReference, isDisjunction, isGroup, isKeyword, isNegation, isParameterReference, isParserRule, isRuleCall, isTerminalRule, isUnorderedGroup, isBooleanLiteral } from '../languages/generated/ast.js';
+import { isAction, isAlternatives, isEndOfFile, isAssignment, isConjunction, isCrossReference, isDisjunction, isGroup, isKeyword, isNegation, isParameterReference, isParserRule, isRuleCall, isTerminalRule, isUnorderedGroup, isBooleanLiteral, isInfixRule } from '../languages/generated/ast.js';
 import { assertUnreachable, ErrorWithLocation } from '../utils/errors.js';
 import { stream } from '../utils/stream.js';
 import { findNameAssignment, getAllReachableRules, getTypeName } from '../utils/grammar-utils.js';
@@ -61,6 +61,77 @@ function buildRules(parserContext: ParserContext, grammar: Grammar): void {
         };
         parserContext.parser.rule(rule, buildElement(ctx, rule.definition));
     }
+    const infixRules = stream(grammar.rules).filter(isInfixRule).filter(rule => reachable.has(rule));
+    for (const rule of infixRules) {
+        parserContext.parser.rule(rule, buildInfixRule(parserContext, rule));
+    }
+}
+
+function buildInfixRule(ctx: ParserContext, rule: InfixRule): Method {
+    const expressionRule = rule.call.rule.ref;
+    if (!expressionRule) {
+        throw new Error('Could not resolve reference to infix operator rule: ' + rule.call.rule.$refText);
+    }
+    if (isTerminalRule(expressionRule)) {
+        throw new Error('Cannot use terminal rule in infix expression');
+    }
+    // We need to construct a bunch of synthetic grammar AST nodes here
+    // This ensures that the CST and completion engine get populated as expected
+    const allKeywords = rule.operators.precedences.flatMap(e => e.operators);
+    // The outer group represents the first expression call and the whole (optional) loop
+    const outerGroup: Group = {
+        $type: 'Group',
+        elements: []
+    };
+    const part1Assignment: Assignment = {
+        $container: outerGroup,
+        $type: 'Assignment',
+        feature: 'parts',
+        operator: '+=',
+        terminal: rule.call
+    };
+    // The inner group represents the loop that contains the operator and expression call
+    // It can be infinitely repeated
+    const innerGroup: Group = {
+        $container: outerGroup,
+        $type: 'Group',
+        elements: [],
+        cardinality: '*'
+    };
+    outerGroup.elements.push(part1Assignment, innerGroup);
+    // Store all operator keywords in one alternative/assignment
+    const alternatives: Alternatives = {
+        $type: 'Alternatives',
+        elements: allKeywords
+    };
+    const operatorAssignment: Assignment = {
+        $container: innerGroup,
+        $type: 'Assignment',
+        feature: 'operators',
+        operator: '+=',
+        terminal: alternatives
+    };
+    // We need a second assignment of the called expression here
+    const part2Assignment: Assignment = {
+        ...part1Assignment,
+        $container: innerGroup
+    };
+    innerGroup.elements.push(operatorAssignment, part2Assignment);
+    const tokens = allKeywords.map(e => ctx.tokens[e.value]);
+    const orAlts: Array<IOrAlt<unknown>> = tokens.map((token, index) => ({
+        ALT: () => ctx.parser.consume(index, token, operatorAssignment)
+    }));
+    let subrule: Rule;
+    return (args) => {
+        subrule ??= getRule(ctx, expressionRule);
+        ctx.parser.subrule(0, subrule, false, part1Assignment, args);
+        ctx.parser.many(0, {
+            DEF: () => {
+                ctx.parser.alternatives(0, orAlts);
+                ctx.parser.subrule(1, subrule, false, part2Assignment, args);
+            }
+        });
+    };
 }
 
 function buildElement(ctx: RuleContext, element: AbstractElement, ignoreGuard = false): Method {
@@ -97,11 +168,15 @@ function buildAction(ctx: RuleContext, action: Action): Method {
 
 function buildRuleCall(ctx: RuleContext, ruleCall: RuleCall): Method {
     const rule = ruleCall.rule.ref;
-    if (isParserRule(rule)) {
+    if (isParserRule(rule) || isInfixRule(rule)) {
         const idx = ctx.subrule++;
-        const fragment = rule.fragment;
+        const fragment = isParserRule(rule) && rule.fragment;
         const predicate = ruleCall.arguments.length > 0 ? buildRuleCallPredicate(rule, ruleCall.arguments) : () => ({});
-        return (args) => ctx.parser.subrule(idx, getRule(ctx, rule), fragment, ruleCall, predicate(args));
+        let subrule: Rule;
+        return (args) => {
+            subrule ??= getRule(ctx, rule);
+            ctx.parser.subrule(idx, subrule, fragment, ruleCall, predicate(args));
+        };
     } else if (isTerminalRule(rule)) {
         const idx = ctx.consume++;
         const method = getToken(ctx, rule.name);
@@ -113,7 +188,7 @@ function buildRuleCall(ctx: RuleContext, ruleCall: RuleCall): Method {
     }
 }
 
-function buildRuleCallPredicate(rule: ParserRule, namedArgs: NamedArgument[]): (args: Args) => Args {
+function buildRuleCallPredicate(rule: ParserRule | InfixRule, namedArgs: NamedArgument[]): (args: Args) => Args {
     const predicates = namedArgs.map(e => buildPredicate(e.value));
     return (args) => {
         const ruleArgs: Args = {};
@@ -277,7 +352,11 @@ function buildCrossReference(ctx: RuleContext, crossRef: CrossReference, termina
         // The terminal is a data type rule here. Everything else will result in a validation error.
         const rule = terminal.rule.ref;
         const idx = ctx.subrule++;
-        return (args) => ctx.parser.subrule(idx, getRule(ctx, rule), false, crossRef, args);
+        let subrule: Rule;
+        return (args) => {
+            subrule ??= getRule(ctx, rule);
+            ctx.parser.subrule(idx, subrule, false, crossRef, args);
+        };
     } else if (isRuleCall(terminal) && isTerminalRule(terminal.rule.ref)) {
         const idx = ctx.consume++;
         const terminalRule = getToken(ctx, terminal.rule.ref.name);
@@ -364,15 +443,15 @@ function wrap(ctx: RuleContext, guard: Condition | undefined, method: Method, ca
     }
 }
 
-function getRule(ctx: ParserContext, element: ParserRule | AbstractElement): Rule {
+function getRule(ctx: ParserContext, element: ParserRule | InfixRule | AbstractElement): Rule {
     const name = getRuleName(ctx, element);
     const rule = ctx.parser.getRule(name);
     if (!rule) throw new Error(`Rule "${name}" not found."`);
     return rule;
 }
 
-function getRuleName(ctx: ParserContext, element: ParserRule | AbstractElement): string {
-    if (isParserRule(element)) {
+function getRuleName(ctx: ParserContext, element: ParserRule | InfixRule | AbstractElement): string {
+    if (isParserRule(element) || isInfixRule(element)) {
         return element.name;
     } else if (ctx.ruleNames.has(element)) {
         return ctx.ruleNames.get(element)!;

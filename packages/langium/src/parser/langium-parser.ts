@@ -5,17 +5,18 @@
  ******************************************************************************/
 
 /* eslint-disable @typescript-eslint/no-explicit-any */
-import type { DSLMethodOpts, ILexingError, IOrAlt, IParserErrorMessageProvider, IRecognitionException, IRuleConfig, IToken, TokenType, TokenVocabulary } from 'chevrotain';
-import type { AbstractElement, Action, Assignment, ParserRule } from '../languages/generated/ast.js';
+import type { DSLMethodOpts, ILexingError, IOrAlt, IParserErrorMessageProvider, IRecognitionException, IToken, TokenType, TokenVocabulary } from 'chevrotain';
+import type { AbstractElement, Action, Assignment, InfixRule, ParserRule } from '../languages/generated/ast.js';
+import { isInfixRule } from '../languages/generated/ast.js';
 import type { Linker } from '../references/linker.js';
 import type { LangiumCoreServices } from '../services.js';
-import type { AstNode, AstReflection, CompositeCstNode, CstNode } from '../syntax-tree.js';
+import type { AstNode, AstReflection, CompositeCstNode, CstNode, Mutable } from '../syntax-tree.js';
 import type { Lexer, LexerResult } from './lexer.js';
 import type { IParserConfig } from './parser-config.js';
 import type { ValueConverter } from './value-converter.js';
 import { defaultParserErrorProvider, EmbeddedActionsParser, LLkLookaheadStrategy } from 'chevrotain';
 import { LLStarLookaheadStrategy } from 'chevrotain-allstar';
-import { isAssignment, isCrossReference, isKeyword } from '../languages/generated/ast.js';
+import { isAssignment, isCrossReference, isKeyword, isParserRule } from '../languages/generated/ast.js';
 import { getExplicitRuleType, isDataTypeRule } from '../utils/grammar-utils.js';
 import { assignMandatoryProperties, getContainerOfType, linkContentToContainer } from '../utils/ast-utils.js';
 import { CstNodeBuilder } from './cst-node-builder.js';
@@ -36,6 +37,13 @@ interface DataTypeNode {
     $type: symbol
     /** Used as a storage for all parsed terminals, keywords and sub-datatype rules */
     value: string
+}
+
+interface InfixElement {
+    $type: string;
+    $cstNode: CompositeCstNode;
+    parts: AstNode[];
+    operators: string[];
 }
 
 function isDataTypeNode(node: { $type: string | symbol | undefined }): node is DataTypeNode {
@@ -63,7 +71,7 @@ export interface BaseParser {
     /**
      * Adds a new parser rule to the parser
      */
-    rule(rule: ParserRule, impl: RuleImpl): RuleResult;
+    rule(rule: ParserRule | InfixRule, impl: RuleImpl): RuleResult;
     /**
      * Returns the executable rule function for the specified rule name
      */
@@ -155,7 +163,7 @@ export abstract class AbstractLangiumParser implements BaseParser {
         this.wrapper.wrapAtLeastOne(idx, callback);
     }
 
-    abstract rule(rule: ParserRule, impl: RuleImpl): RuleResult;
+    abstract rule(rule: ParserRule | InfixRule, impl: RuleImpl): RuleResult;
     abstract consume(idx: number, tokenType: TokenType, feature: AbstractElement): void;
     abstract subrule(idx: number, rule: RuleResult, fragment: boolean, feature: AbstractElement, args: Args): void;
     abstract action($type: string, action: Action): void;
@@ -193,6 +201,7 @@ export class LangiumParser extends AbstractLangiumParser {
     private lexerResult?: LexerResult;
     private stack: any[] = [];
     private assignmentMap = new Map<AbstractElement, AssignmentElement | undefined>();
+    private operatorPrecedence = new Map<string, Map<string, number>>();
 
     private get current(): any {
         return this.stack[this.stack.length - 1];
@@ -205,18 +214,36 @@ export class LangiumParser extends AbstractLangiumParser {
         this.astReflection = services.shared.AstReflection;
     }
 
-    rule(rule: ParserRule, impl: RuleImpl): RuleResult {
+    rule(rule: ParserRule | InfixRule, impl: RuleImpl): RuleResult {
         const type = this.computeRuleType(rule);
-        const ruleMethod = this.wrapper.DEFINE_RULE(withRuleSuffix(rule.name), this.startImplementation(type, impl).bind(this));
+        const isInfix = isInfixRule(rule);
+        if (isInfix) {
+            this.registerPrecedenceMap(rule);
+        }
+        const ruleMethod = this.wrapper.DEFINE_RULE(withRuleSuffix(rule.name), this.startImplementation(type, isInfix, impl).bind(this));
         this.allRules.set(rule.name, ruleMethod);
-        if (rule.entry) {
+        if (isParserRule(rule) && rule.entry) {
             this.mainRule = ruleMethod;
         }
         return ruleMethod;
     }
 
-    private computeRuleType(rule: ParserRule): string | symbol | undefined {
-        if (rule.fragment) {
+    private registerPrecedenceMap(rule: InfixRule): void {
+        const name = rule.name;
+        const map = new Map<string, number>();
+        for (let i = 0; i < rule.operators.precedences.length; i++) {
+            const precedence = rule.operators.precedences[i];
+            for (const keyword of precedence.operators) {
+                map.set(keyword.value, i);
+            }
+        }
+        this.operatorPrecedence.set(name, map);
+    }
+
+    private computeRuleType(rule: ParserRule | InfixRule): string | symbol | undefined {
+        if (isInfixRule(rule)) {
+            return rule.name;
+        } else if (rule.fragment) {
             return undefined;
         } else if (isDataTypeRule(rule)) {
             return DatatypeSymbol;
@@ -238,6 +265,7 @@ export class LangiumParser extends AbstractLangiumParser {
         this.nodeBuilder.addHiddenNodes(lexerResult.hidden);
         this.unorderedGroups.clear();
         this.lexerResult = undefined;
+        linkContentToContainer(result, true);
         return {
             value: result,
             lexerErrors: lexerResult.errors,
@@ -262,7 +290,7 @@ export class LangiumParser extends AbstractLangiumParser {
         return result;
     }
 
-    private startImplementation($type: string | symbol | undefined, implementation: RuleImpl): RuleImpl {
+    private startImplementation($type: string | symbol | undefined, infix: boolean, implementation: RuleImpl): RuleImpl {
         return (args) => {
             // Only create a new AST node in case the calling rule is not a fragment rule
             const createNode = !this.isRecording() && $type !== undefined;
@@ -271,6 +299,8 @@ export class LangiumParser extends AbstractLangiumParser {
                 this.stack.push(node);
                 if ($type === DatatypeSymbol) {
                     node.value = '';
+                } else if (infix) {
+                    node.$infix = true;
                 }
             }
             // Execute the actual rule implementation
@@ -406,16 +436,63 @@ export class LangiumParser extends AbstractLangiumParser {
         if (this.isRecording()) {
             return undefined;
         }
-        const obj = this.current;
-        linkContentToContainer(obj);
+        const obj = this.stack.pop();
         this.nodeBuilder.construct(obj);
-        this.stack.pop();
-        if (isDataTypeNode(obj)) {
+        if ('$infix' in obj) {
+            return this.constructInfix(obj, this.operatorPrecedence.get(obj.$type)!);
+        } else if (isDataTypeNode(obj)) {
             return this.converter.convert(obj.value, obj.$cstNode);
         } else {
             assignMandatoryProperties(this.astReflection, obj);
         }
         return obj;
+    }
+
+    private constructInfix(obj: InfixElement, precedence: Map<string, number>): any {
+        if (obj.parts.length === 1) {
+            // Captured just a single, non-binary expression
+            // Simply return the expression as is.
+            return obj.parts[0];
+        }
+        let expression = {
+            $type: obj.$type,
+            left: obj.parts[0],
+            operator: obj.operators[0],
+            right: obj.parts[1]
+        };
+        let lastPrecedence = precedence.get(expression.operator) ?? 0;
+        for (let i = 1; i < obj.operators.length; i++) {
+            const op = obj.operators[i];
+            const next = obj.parts[i + 1];
+            const currentPrecedence = precedence.get(op) ?? 0;
+            if (currentPrecedence <= lastPrecedence) {
+                // If the current precendence is higher (i.e. the rank is lower)
+                // We simply create a new node and append the previous expression to the left
+                expression = {
+                    $type: obj.$type,
+                    left: expression,
+                    operator: op,
+                    right: next
+                };
+            } else {
+                // If the precedence is lower, we need to rewrite the previous node
+                // For that, we move the previous right node to the left side of the new node
+                const rewrite = {
+                    $type: obj.$type,
+                    left: expression.right,
+                    operator: op,
+                    right: next
+                };
+                // This new node now becomes the right side of the previous node
+                expression.right = rewrite;
+            }
+            lastPrecedence = currentPrecedence;
+        }
+        // In theory, we could rebuild the CST for the infix expression
+        // However, there is no real benefit for it, and it might be costly (performance-wise)
+        // We might want to revisit this decision in the future.
+        (expression as Mutable<AstNode>).$cstNode = obj.$cstNode;
+        return expression;
     }
 
     private getAssignment(feature: AbstractElement): AssignmentElement {

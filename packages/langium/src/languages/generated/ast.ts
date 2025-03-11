@@ -58,8 +58,10 @@ export type LangiumGrammarKeywordNames =
     | "import"
     | "infer"
     | "infers"
+    | "infix"
     | "interface"
     | "number"
+    | "on"
     | "returns"
     | "string"
     | "terminal"
@@ -72,7 +74,7 @@ export type LangiumGrammarKeywordNames =
 
 export type LangiumGrammarTokenNames = LangiumGrammarTerminalNames | LangiumGrammarKeywordNames;
 
-export type AbstractRule = ParserRule | TerminalRule;
+export type AbstractRule = InfixRule | ParserRule | TerminalRule;
 
 export const AbstractRule = 'AbstractRule';
 
@@ -80,7 +82,7 @@ export function isAbstractRule(item: unknown): item is AbstractRule {
     return reflection.isInstance(item, AbstractRule);
 }
 
-export type AbstractType = InferredType | Interface | ParserRule | Type;
+export type AbstractType = InferredType | InfixRule | Interface | ParserRule | Type;
 
 export const AbstractType = 'AbstractType';
 
@@ -241,6 +243,45 @@ export function isInferredType(item: unknown): item is InferredType {
     return reflection.isInstance(item, InferredType);
 }
 
+export interface InfixRule extends langium.AstNode {
+    readonly $container: Grammar;
+    readonly $type: 'InfixRule';
+    call: RuleCall;
+    name: string;
+    operators: InfixRuleOperators;
+    parameters: Array<Parameter>;
+}
+
+export const InfixRule = 'InfixRule';
+
+export function isInfixRule(item: unknown): item is InfixRule {
+    return reflection.isInstance(item, InfixRule);
+}
+
+export interface InfixRuleOperatorList extends langium.AstNode {
+    readonly $container: InfixRuleOperators;
+    readonly $type: 'InfixRuleOperatorList';
+    operators: Array<Keyword>;
+}
+
+export const InfixRuleOperatorList = 'InfixRuleOperatorList';
+
+export function isInfixRuleOperatorList(item: unknown): item is InfixRuleOperatorList {
+    return reflection.isInstance(item, InfixRuleOperatorList);
+}
+
+export interface InfixRuleOperators extends langium.AstNode {
+    readonly $container: InfixRule;
+    readonly $type: 'InfixRuleOperators';
+    precedences: Array<InfixRuleOperatorList>;
+}
+
+export const InfixRuleOperators = 'InfixRuleOperators';
+
+export function isInfixRuleOperators(item: unknown): item is InfixRuleOperators {
+    return reflection.isInstance(item, InfixRuleOperators);
+}
+
 export interface Interface extends langium.AstNode {
     readonly $container: Grammar;
     readonly $type: 'Interface';
@@ -294,7 +335,7 @@ export function isNumberLiteral(item: unknown): item is NumberLiteral {
 }
 
 export interface Parameter extends langium.AstNode {
-    readonly $container: ParserRule;
+    readonly $container: InfixRule | ParserRule;
     readonly $type: 'Parameter';
     name: string;
 }
@@ -531,7 +572,7 @@ export function isGroup(item: unknown): item is Group {
 }
 
 export interface Keyword extends AbstractElement {
-    readonly $container: CharacterRange;
+    readonly $container: CharacterRange | InfixRuleOperatorList;
     readonly $type: 'Keyword';
     value: string;
 }
@@ -565,6 +606,7 @@ export function isRegexToken(item: unknown): item is RegexToken {
 }
 
 export interface RuleCall extends AbstractElement {
+    readonly $container: InfixRule;
     readonly $type: 'RuleCall';
     arguments: Array<NamedArgument>;
     rule: langium.Reference<AbstractRule>;
@@ -661,6 +703,9 @@ export type LangiumGrammarAstType = {
     GrammarImport: GrammarImport
     Group: Group
     InferredType: InferredType
+    InfixRule: InfixRule
+    InfixRuleOperatorList: InfixRuleOperatorList
+    InfixRuleOperators: InfixRuleOperators
     Interface: Interface
     Keyword: Keyword
     NamedArgument: NamedArgument
@@ -693,7 +738,7 @@ export type LangiumGrammarAstType = {
 export class LangiumGrammarAstReflection extends langium.AbstractAstReflection {
 
     getAllTypes(): string[] {
-        return [AbstractElement, AbstractRule, AbstractType, Action, Alternatives, ArrayLiteral, ArrayType, Assignment, BooleanLiteral, CharacterRange, Condition, Conjunction, CrossReference, Disjunction, EndOfFile, Grammar, GrammarImport, Group, InferredType, Interface, Keyword, NamedArgument, NegatedToken, Negation, NumberLiteral, Parameter, ParameterReference, ParserRule, ReferenceType, RegexToken, ReturnType, RuleCall, SimpleType, StringLiteral, TerminalAlternatives, TerminalGroup, TerminalRule, TerminalRuleCall, Type, TypeAttribute, TypeDefinition, UnionType, UnorderedGroup, UntilToken, ValueLiteral, Wildcard];
+        return [AbstractElement, AbstractRule, AbstractType, Action, Alternatives, ArrayLiteral, ArrayType, Assignment, BooleanLiteral, CharacterRange, Condition, Conjunction, CrossReference, Disjunction, EndOfFile, Grammar, GrammarImport, Group, InferredType, InfixRule, InfixRuleOperatorList, InfixRuleOperators, Interface, Keyword, NamedArgument, NegatedToken, Negation, NumberLiteral, Parameter, ParameterReference, ParserRule, ReferenceType, RegexToken, ReturnType, RuleCall, SimpleType, StringLiteral, TerminalAlternatives, TerminalGroup, TerminalRule, TerminalRuleCall, Type, TypeAttribute, TypeDefinition, UnionType, UnorderedGroup, UntilToken, ValueLiteral, Wildcard];
     }
 
     protected override computeIsSubtype(subtype: string, supertype: string): boolean {
@@ -742,6 +787,7 @@ export class LangiumGrammarAstReflection extends langium.AbstractAstReflection {
             case Type: {
                 return this.isSubtype(AbstractType, supertype);
             }
+            case InfixRule:
             case ParserRule: {
                 return this.isSubtype(AbstractRule, supertype) || this.isSubtype(AbstractType, supertype);
             }
@@ -867,6 +913,33 @@ export class LangiumGrammarAstReflection extends langium.AbstractAstReflection {
                     name: InferredType,
                     properties: [
                         { name: 'name' }
+                    ]
+                };
+            }
+            case InfixRule: {
+                return {
+                    name: InfixRule,
+                    properties: [
+                        { name: 'call' },
+                        { name: 'name' },
+                        { name: 'operators' },
+                        { name: 'parameters', defaultValue: [] }
+                    ]
+                };
+            }
+            case InfixRuleOperatorList: {
+                return {
+                    name: InfixRuleOperatorList,
+                    properties: [
+                        { name: 'operators', defaultValue: [] }
+                    ]
+                };
+            }
+            case InfixRuleOperators: {
+                return {
+                    name: InfixRuleOperators,
+                    properties: [
+                        { name: 'precedences', defaultValue: [] }
                     ]
                 };
             }

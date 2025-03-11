@@ -56,13 +56,13 @@ SimpleType infers TypeDefinition:
 PrimitiveType returns string:
     'string' | 'number' | 'boolean' | 'Date' | 'bigint';
 
-type AbstractType = Interface | Type | ParserRule | InferredType;
+type AbstractType = Interface | Type | ParserRule | InfixRule | InferredType;
 
 Type:
     'type' name=ID '=' type=TypeDefinition ';'?;
 
 AbstractRule:
-    ParserRule | TerminalRule;
+    ParserRule | TerminalRule | InfixRule;
 
 GrammarImport:
     'import' path=STRING ';'?;
@@ -73,6 +73,12 @@ ParserRule:
     (wildcard?='*' | ('returns' (returnType=[AbstractType:ID] | dataType=PrimitiveType)) | inferredType=InferredType<false>)?
     (definesHiddenTokens?='hidden' '(' (hiddenTokens+=[AbstractRule:ID] (',' hiddenTokens+=[AbstractRule:ID])*)? ')')? ':'
     definition=Alternatives ';';
+
+InfixRule: 'infix' RuleNameAndParams 'on' call=RuleCall ':' operators=InfixRuleOperators ';';
+
+InfixRuleOperators: precedences+=InfixRuleOperatorList ('>' precedences+=InfixRuleOperatorList)*;
+
+InfixRuleOperatorList: operators+=Keyword ('|' operators+=Keyword)*;
 
 InferredType<imperative>:
     (<imperative> 'infer' | <!imperative> 'infers') name=ID;

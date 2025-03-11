@@ -994,7 +994,7 @@ describe('Handling hidden nodes', () => {
         const doc = await parser("Test returns string: /** comment 1 */ 'A' | /** comment 2 */  'B' | /** comment 3 */ 'C';");
         expect(doc).toBeDefined();
         const value = doc.parseResult.value as Grammar;
-        const ruleDef = value.rules[0].definition as GrammarAST.Alternatives;
+        const ruleDef = (value.rules[0] as GrammarAST.ParserRule).definition as GrammarAST.Alternatives;
         const a = ruleDef.elements[0];
         const commentNode = CstUtils.findCommentNode(a.$cstNode, ['ML_COMMENT']);
         expect(commentNode).toBeDefined();
@@ -1143,6 +1143,33 @@ describe('Parsing with lookbehind tokens', () => {
         expect(invalidResult.lexerErrors).toHaveLength(1);
         expect(invalidResult.parserErrors).toHaveLength(1);
     }
+});
+
+describe('Parsing infix expressions', async () => {
+
+    const parser = await parserFromGrammar(`
+        grammar test
+        entry Main: Expression;
+        infix Expression on Number: '%' > '*' | '/' > '+' | '-';
+        Primary: Number | '(' Expression ')';
+        Number: value=NUM;
+        terminal NUM: /[0-9]+/;
+        hidden terminal WS: /\\s+/;
+        `
+    );
+
+    test('Simple binary expression structure', async () => {
+        const validResult = parser.parse('4 * 5 + 6') as ParseResult<GenericAstNode>;
+        expect(validResult.value).toBeDefined();
+        expect(validResult.value.operator).toBe('*');
+        const left = validResult.value.left as GenericAstNode;
+        expect(left.value).toBe('4');
+        const right = validResult.value.right as GenericAstNode;
+        expect(right.operator).toBe('+');
+        expect((right.left as GenericAstNode).value).toBe('5');
+        expect((right.right as GenericAstNode).value).toBe('6');
+    });
+
 });
 
 async function parserFromGrammar(grammar: string): Promise<LangiumParser> {

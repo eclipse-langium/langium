@@ -16,7 +16,7 @@ import { inRange } from './cst-utils.js';
  * Link the `$container` and other related properties of every AST node that is directly contained
  * in the given `node`.
  */
-export function linkContentToContainer(node: AstNode): void {
+export function linkContentToContainer(node: AstNode, deep = false): void {
     for (const [name, value] of Object.entries(node)) {
         if (!name.startsWith('$')) {
             if (Array.isArray(value)) {
@@ -25,11 +25,17 @@ export function linkContentToContainer(node: AstNode): void {
                         (item as Mutable<AstNode>).$container = node;
                         (item as Mutable<AstNode>).$containerProperty = name;
                         (item as Mutable<AstNode>).$containerIndex = index;
+                        if (deep) {
+                            linkContentToContainer(item, deep);
+                        }
                     }
                 });
             } else if (isAstNode(value)) {
                 (value as Mutable<AstNode>).$container = node;
                 (value as Mutable<AstNode>).$containerProperty = name;
+                if (deep) {
+                    linkContentToContainer(value, deep);
+                }
             }
         }
     }
@@ -298,7 +304,7 @@ export function copyAstNode<T extends AstNode = AstNode>(node: T, buildReference
         }
     }
 
-    linkContentToContainer(copy);
+    linkContentToContainer(copy, true);
     return copy as unknown as T;
 }
 

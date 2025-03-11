@@ -13,7 +13,7 @@
         },
         {
             "name": "keyword.control.langium",
-            "match": "\\b(current|entry|extends|fragment|grammar|hidden|import|infer|infers|interface|returns|terminal|type|with)\\b"
+            "match": "\\b(current|entry|extends|fragment|grammar|hidden|import|infer|infers|infix|interface|returns|terminal|type|with|on)\\b"
         },
         {
             "name": "constant.language.langium",

@@ -30,7 +30,7 @@ export const ArithmeticsGrammar = (): Grammar => loadedArithmeticsGrammar ?? (lo
             "terminal": {
               "$type": "RuleCall",
               "rule": {
-                "$ref": "#/rules@12"
+                "$ref": "#/rules@9"
               },
               "arguments": []
             }
@@ -102,7 +102,7 @@ export const ArithmeticsGrammar = (): Grammar => loadedArithmeticsGrammar ?? (lo
             "terminal": {
               "$type": "RuleCall",
               "rule": {
-                "$ref": "#/rules@12"
+                "$ref": "#/rules@9"
               },
               "arguments": []
             }
@@ -194,7 +194,7 @@ export const ArithmeticsGrammar = (): Grammar => loadedArithmeticsGrammar ?? (lo
         "terminal": {
           "$type": "RuleCall",
           "rule": {
-            "$ref": "#/rules@12"
+            "$ref": "#/rules@9"
           },
           "arguments": []
         }
@@ -255,270 +255,65 @@ export const ArithmeticsGrammar = (): Grammar => loadedArithmeticsGrammar ?? (lo
       "wildcard": false
     },
     {
-      "$type": "ParserRule",
-      "name": "Addition",
-      "inferredType": {
-        "$type": "InferredType",
-        "name": "Expression"
+      "$type": "InfixRule",
+      "name": "BinaryExpression",
+      "call": {
+        "$type": "RuleCall",
+        "rule": {
+          "$ref": "#/rules@7"
+        },
+        "arguments": []
       },
-      "definition": {
-        "$type": "Group",
-        "elements": [
+      "operators": {
+        "$type": "InfixRuleOperators",
+        "precedences": [
           {
-            "$type": "RuleCall",
-            "rule": {
-              "$ref": "#/rules@7"
-            },
-            "arguments": []
+            "$type": "InfixRuleOperatorList",
+            "operators": [
+              {
+                "$type": "Keyword",
+                "value": "%"
+              }
+            ]
           },
           {
-            "$type": "Group",
-            "elements": [
+            "$type": "InfixRuleOperatorList",
+            "operators": [
               {
-                "$type": "Action",
-                "inferredType": {
-                  "$type": "InferredType",
-                  "name": "BinaryExpression"
-                },
-                "feature": "left",
-                "operator": "="
-              },
-              {
-                "$type": "Assignment",
-                "feature": "operator",
-                "operator": "=",
-                "terminal": {
-                  "$type": "Alternatives",
-                  "elements": [
-                    {
-                      "$type": "Keyword",
-                      "value": "+"
-                    },
-                    {
-                      "$type": "Keyword",
-                      "value": "-"
-                    }
-                  ]
-                }
-              },
-              {
-                "$type": "Assignment",
-                "feature": "right",
-                "operator": "=",
-                "terminal": {
-                  "$type": "RuleCall",
-                  "rule": {
-                    "$ref": "#/rules@7"
-                  },
-                  "arguments": []
-                }
+                "$type": "Keyword",
+                "value": "^"
               }
-            ],
-            "cardinality": "*"
+            ]
+          },
+          {
+            "$type": "InfixRuleOperatorList",
+            "operators": [
+              {
+                "$type": "Keyword",
+                "value": "*"
+              },
+              {
+                "$type": "Keyword",
+                "value": "/"
+              }
+            ]
+          },
+          {
+            "$type": "InfixRuleOperatorList",
+            "operators": [
+              {
+                "$type": "Keyword",
+                "value": "+"
+              },
+              {
+                "$type": "Keyword",
+                "value": "-"
+              }
+            ]
           }
         ]
       },
-      "definesHiddenTokens": false,
-      "entry": false,
-      "fragment": false,
-      "hiddenTokens": [],
-      "parameters": [],
-      "wildcard": false
-    },
-    {
-      "$type": "ParserRule",
-      "name": "Multiplication",
-      "inferredType": {
-        "$type": "InferredType",
-        "name": "Expression"
-      },
-      "definition": {
-        "$type": "Group",
-        "elements": [
-          {
-            "$type": "RuleCall",
-            "rule": {
-              "$ref": "#/rules@8"
-            },
-            "arguments": []
-          },
-          {
-            "$type": "Group",
-            "elements": [
-              {
-                "$type": "Action",
-                "inferredType": {
-                  "$type": "InferredType",
-                  "name": "BinaryExpression"
-                },
-                "feature": "left",
-                "operator": "="
-              },
-              {
-                "$type": "Assignment",
-                "feature": "operator",
-                "operator": "=",
-                "terminal": {
-                  "$type": "Alternatives",
-                  "elements": [
-                    {
-                      "$type": "Keyword",
-                      "value": "*"
-                    },
-                    {
-                      "$type": "Keyword",
-                      "value": "/"
-                    }
-                  ]
-                }
-              },
-              {
-                "$type": "Assignment",
-                "feature": "right",
-                "operator": "=",
-                "terminal": {
-                  "$type": "RuleCall",
-                  "rule": {
-                    "$ref": "#/rules@8"
-                  },
-                  "arguments": []
-                }
-              }
-            ],
-            "cardinality": "*"
-          }
-        ]
-      },
-      "definesHiddenTokens": false,
-      "entry": false,
-      "fragment": false,
-      "hiddenTokens": [],
-      "parameters": [],
-      "wildcard": false
-    },
-    {
-      "$type": "ParserRule",
-      "name": "Exponentiation",
-      "inferredType": {
-        "$type": "InferredType",
-        "name": "Expression"
-      },
-      "definition": {
-        "$type": "Group",
-        "elements": [
-          {
-            "$type": "RuleCall",
-            "rule": {
-              "$ref": "#/rules@9"
-            },
-            "arguments": []
-          },
-          {
-            "$type": "Group",
-            "elements": [
-              {
-                "$type": "Action",
-                "inferredType": {
-                  "$type": "InferredType",
-                  "name": "BinaryExpression"
-                },
-                "feature": "left",
-                "operator": "="
-              },
-              {
-                "$type": "Assignment",
-                "feature": "operator",
-                "operator": "=",
-                "terminal": {
-                  "$type": "Keyword",
-                  "value": "^"
-                }
-              },
-              {
-                "$type": "Assignment",
-                "feature": "right",
-                "operator": "=",
-                "terminal": {
-                  "$type": "RuleCall",
-                  "rule": {
-                    "$ref": "#/rules@9"
-                  },
-                  "arguments": []
-                }
-              }
-            ],
-            "cardinality": "*"
-          }
-        ]
-      },
-      "definesHiddenTokens": false,
-      "entry": false,
-      "fragment": false,
-      "hiddenTokens": [],
-      "parameters": [],
-      "wildcard": false
-    },
-    {
-      "$type": "ParserRule",
-      "name": "Modulo",
-      "inferredType": {
-        "$type": "InferredType",
-        "name": "Expression"
-      },
-      "definition": {
-        "$type": "Group",
-        "elements": [
-          {
-            "$type": "RuleCall",
-            "rule": {
-              "$ref": "#/rules@10"
-            },
-            "arguments": []
-          },
-          {
-            "$type": "Group",
-            "elements": [
-              {
-                "$type": "Action",
-                "inferredType": {
-                  "$type": "InferredType",
-                  "name": "BinaryExpression"
-                },
-                "feature": "left",
-                "operator": "="
-              },
-              {
-                "$type": "Assignment",
-                "feature": "operator",
-                "operator": "=",
-                "terminal": {
-                  "$type": "Keyword",
-                  "value": "%"
-                }
-              },
-              {
-                "$type": "Assignment",
-                "feature": "right",
-                "operator": "=",
-                "terminal": {
-                  "$type": "RuleCall",
-                  "rule": {
-                    "$ref": "#/rules@10"
-                  },
-                  "arguments": []
-                }
-              }
-            ],
-            "cardinality": "*"
-          }
-        ]
-      },
-      "definesHiddenTokens": false,
-      "entry": false,
-      "fragment": false,
-      "hiddenTokens": [],
-      "parameters": [],
-      "wildcard": false
+      "parameters": []
     },
     {
       "$type": "ParserRule",
@@ -567,7 +362,7 @@ export const ArithmeticsGrammar = (): Grammar => loadedArithmeticsGrammar ?? (lo
                 "terminal": {
                   "$type": "RuleCall",
                   "rule": {
-                    "$ref": "#/rules@13"
+                    "$ref": "#/rules@10"
                   },
                   "arguments": []
                 }
