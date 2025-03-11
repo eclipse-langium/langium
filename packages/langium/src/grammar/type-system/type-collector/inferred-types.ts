@@ -6,6 +6,7 @@
 
 import type { ParserRule, Action, AbstractElement, Assignment, RuleCall } from '../../../languages/generated/ast.js';
 import type { PlainAstTypes, PlainInterface, PlainProperty, PlainPropertyType, PlainUnion } from './plain-types.js';
+import type { CommentProvider } from '../../../documentation/comment-provider.js';
 import { isNamed } from '../../../references/name-provider.js';
 import { MultiMap } from '../../../utils/collections.js';
 import { isAlternatives, isKeyword, isParserRule, isAction, isGroup, isUnorderedGroup, isAssignment, isRuleCall, isCrossReference, isTerminalRule } from '../../../languages/generated/ast.js';
@@ -28,6 +29,7 @@ type TypeAlternative = {
     super: string[]
     properties: PlainProperty[]
     ruleCalls: string[]
+    comment?: string
 }
 
 type TypeCollection = {
@@ -42,6 +44,7 @@ interface TypeCollectionContext {
 interface TypePath {
     alt: TypeAlternative
     current: TypePart
+    comment?: string
     next: TypePart[]
 }
 
@@ -120,7 +123,8 @@ class TypeGraph {
                 paths.push({
                     alt: copyTypeAlternative(split),
                     current: part,
-                    next: []
+                    next: [],
+                    comment: split.comment,
                 });
             }
             if (part.name !== undefined && part.name !== split.name) {
@@ -142,7 +146,8 @@ class TypeGraph {
             const path: TypePath = {
                 alt: split,
                 current: part,
-                next: part.children
+                next: part.children,
+                comment: split.comment
             };
             path.alt.super = path.alt.super.filter(e => e !== path.alt.name);
             paths.push(path);
@@ -237,7 +242,8 @@ function copyTypeAlternative(value: TypeAlternative): TypeAlternative {
         name: value.name,
         super: value.super,
         ruleCalls: value.ruleCalls.slice(),
-        properties: value.properties.map(e => copyProperty(e))
+        properties: value.properties.map(e => copyProperty(e)),
+        comment: value.comment,
     };
 }
 
@@ -247,17 +253,19 @@ function copyProperty(value: PlainProperty): PlainProperty {
         optional: value.optional,
         type: value.type,
         astNodes: value.astNodes,
+        comment: value.comment,
     };
 }
 
-export function collectInferredTypes(parserRules: ParserRule[], datatypeRules: ParserRule[], declared: PlainAstTypes): PlainAstTypes {
+export function collectInferredTypes(parserRules: ParserRule[], datatypeRules: ParserRule[], declared: PlainAstTypes, commentProvider?: CommentProvider): PlainAstTypes {
     // extract interfaces and types from parser rules
     const allTypes: TypePath[] = [];
     const context: TypeCollectionContext = {
         fragments: new Map()
     };
     for (const rule of parserRules) {
-        allTypes.push(...getRuleTypes(context, rule));
+        const comment = commentProvider?.getComment(rule);
+        allTypes.push(...getRuleTypes(context, rule, commentProvider).map(typePath => ({...typePath, comment})));
     }
     const interfaces = calculateInterfaces(allTypes);
     const unions = buildSuperUnions(interfaces);
@@ -273,6 +281,7 @@ export function collectInferredTypes(parserRules: ParserRule[], datatypeRules: P
             subTypes: new Set(),
             superTypes: new Set(),
             dataType: rule.dataType,
+            comment: commentProvider?.getComment(rule),
         });
     }
     return astTypes;
@@ -347,11 +356,11 @@ function buildDataRuleType(element: AbstractElement, cancel: () => PlainProperty
     return cancel();
 }
 
-function getRuleTypes(context: TypeCollectionContext, rule: ParserRule): TypePath[] {
+function getRuleTypes(context: TypeCollectionContext, rule: ParserRule, commentProvider?: CommentProvider): TypePath[] {
     const type = newTypePart(rule);
     const graph = new TypeGraph(context, type);
     if (rule.definition) {
-        type.end = collectElement(graph, graph.root, rule.definition);
+        type.end = collectElement(graph, graph.root, rule.definition, commentProvider);
     }
     return flattenTypes(graph.getTypes(), type.end ?? newTypePart());
 }
@@ -373,7 +382,7 @@ function newTypePart(element?: ParserRule | Action | string): TypePart {
  * @param type Element that collects a current type branch for the given element.
  * @param element The given AST element, from which it's necessary to extract the type.
  */
-function collectElement(graph: TypeGraph, current: TypePart, element: AbstractElement): TypePart {
+function collectElement(graph: TypeGraph, current: TypePart, element: AbstractElement, commentProvider?: CommentProvider): TypePart {
     const optional = isOptionalCardinality(element.cardinality, element);
     if (isAlternatives(element)) {
         const children: TypePart[] = [];
@@ -383,7 +392,7 @@ function collectElement(graph: TypeGraph, current: TypePart, element: AbstractEl
         }
         for (const alt of element.elements) {
             const altType = graph.connect(current, newTypePart());
-            children.push(collectElement(graph, altType, alt));
+            children.push(collectElement(graph, altType, alt, commentProvider));
         }
         const mergeNode = graph.merge(...children);
         current.end = mergeNode;
@@ -395,7 +404,7 @@ function collectElement(graph: TypeGraph, current: TypePart, element: AbstractEl
             skipNode = graph.connect(current, newTypePart());
         }
         for (const item of element.elements) {
-            groupNode = collectElement(graph, groupNode, item);
+            groupNode = collectElement(graph, groupNode, item, commentProvider);
         }
         if (skipNode) {
             const mergeNode = graph.merge(skipNode, groupNode);
@@ -405,16 +414,16 @@ function collectElement(graph: TypeGraph, current: TypePart, element: AbstractEl
             return groupNode;
         }
     } else if (isAction(element)) {
-        return addAction(graph, current, element);
+        return addAction(graph, current, element, commentProvider);
     } else if (isAssignment(element)) {
-        addAssignment(current, element);
+        addAssignment(current, element, commentProvider);
     } else if (isRuleCall(element)) {
-        addRuleCall(graph, current, element);
+        addRuleCall(graph, current, element, commentProvider);
     }
     return current;
 }
 
-function addAction(graph: TypeGraph, parent: TypePart, action: Action): TypePart {
+function addAction(graph: TypeGraph, parent: TypePart, action: Action, commentProvider?: CommentProvider): TypePart {
 
     // We create a copy of the current type part
     // This is essentially a leaf node of the current type
@@ -445,13 +454,14 @@ function addAction(graph: TypeGraph, parent: TypePart, action: Action): TypePart
                 action.operator === '+=',
                 false,
                 graph.root.ruleCalls.length !== 0 ? graph.root.ruleCalls : graph.getSuperTypes(typeNode)),
-            astNodes: new Set([action])
+            astNodes: new Set([action]),
+            comment: commentProvider?.getComment(action),
         });
     }
     return typeNode;
 }
 
-function addAssignment(current: TypePart, assignment: Assignment): void {
+function addAssignment(current: TypePart, assignment: Assignment, commentProvider?: CommentProvider): void {
     const typeItems: TypeCollection = { types: new Set(), reference: false };
     findTypes(assignment.terminal, typeItems);
 
@@ -465,7 +475,8 @@ function addAssignment(current: TypePart, assignment: Assignment): void {
         name: assignment.feature,
         optional: isOptionalCardinality(assignment.cardinality),
         type,
-        astNodes: new Set([assignment])
+        astNodes: new Set([assignment]),
+        comment: commentProvider?.getComment(assignment),
     });
 }
 
@@ -487,11 +498,11 @@ function findTypes(terminal: AbstractElement, types: TypeCollection): void {
     }
 }
 
-function addRuleCall(graph: TypeGraph, current: TypePart, ruleCall: RuleCall): void {
+function addRuleCall(graph: TypeGraph, current: TypePart, ruleCall: RuleCall, commentProvider?: CommentProvider): void {
     const rule = ruleCall.rule.ref;
     // Add all properties of fragments to the current type
     if (isParserRule(rule) && rule.fragment) {
-        const properties = getFragmentProperties(rule, graph.context);
+        const properties = getFragmentProperties(rule, graph.context, commentProvider);
         if (isOptionalCardinality(ruleCall.cardinality)) {
             current.properties.push(...properties.map(e => ({
                 ...e,
@@ -505,7 +516,7 @@ function addRuleCall(graph: TypeGraph, current: TypePart, ruleCall: RuleCall): v
     }
 }
 
-function getFragmentProperties(fragment: ParserRule, context: TypeCollectionContext): PlainProperty[] {
+function getFragmentProperties(fragment: ParserRule, context: TypeCollectionContext, commentProvider?: CommentProvider): PlainProperty[] {
     const existing = context.fragments.get(fragment);
     if (existing) {
         return existing;
@@ -513,7 +524,7 @@ function getFragmentProperties(fragment: ParserRule, context: TypeCollectionCont
     const properties: PlainProperty[] = [];
     context.fragments.set(fragment, properties);
     const fragmentName = getTypeNameWithoutError(fragment);
-    const typeAlternatives = getRuleTypes(context, fragment).filter(e => e.alt.name === fragmentName);
+    const typeAlternatives = getRuleTypes(context, fragment, commentProvider).filter(e => e.alt.name === fragmentName);
     properties.push(...typeAlternatives.flatMap(e => e.alt.properties));
     return properties;
 }
@@ -538,7 +549,8 @@ function calculateInterfaces(alternatives: TypePath[]): PlainInterface[] {
             superTypes: new Set(flat.super),
             subTypes: new Set(),
             declared: false,
-            abstract: false
+            abstract: false,
+            comment: flat.comment,
         };
         interfaces.set(interfaceType.name, interfaceType);
         if (flat.ruleCalls.length > 0) {
@@ -576,6 +588,8 @@ function flattenTypes(alternatives: TypePath[], part: TypePart): TypePath[] {
         const type: TypePath = { alt: { name, properties, ruleCalls: [], super: [] }, next: [], current: part };
         for (const path of namedAlternatives) {
             const alt = path.alt;
+            type.comment ??= path.comment;
+            type.alt.comment ??= path.comment;
             type.alt.super.push(...alt.super);
             type.next.push(...path.next);
             const altProperties = alt.properties;
@@ -674,7 +688,8 @@ function extractUnions(interfaces: PlainInterface[], unions: PlainUnion[], decla
                         declared: false,
                         subTypes: interfaceSubTypes,
                         superTypes: interfaceType.superTypes,
-                        type: interfaceTypeValue
+                        type: interfaceTypeValue,
+                        comment: interfaceType.comment,
                     };
                     astTypes.unions.push(unionType);
                     unionTypes.set(interfaceType.name, unionType);

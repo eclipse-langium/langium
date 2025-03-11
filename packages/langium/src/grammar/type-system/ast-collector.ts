@@ -6,6 +6,7 @@
 
 import type { Grammar } from '../../languages/generated/ast.js';
 import type { LangiumDocuments } from '../../workspace/documents.js';
+import type { CommentProvider } from '../../documentation/comment-provider.js';
 import type { AstTypes, InterfaceType, PropertyType, TypeOption, UnionType } from './type-collector/types.js';
 import type { ValidationAstTypes } from './type-collector/all-types.js';
 import type { PlainAstTypes, PlainInterface, PlainUnion } from './type-collector/plain-types.js';
@@ -19,9 +20,10 @@ import { plainToTypes } from './type-collector/plain-types.js';
  *
  * @param grammars All grammars involved in the type generation process
  * @param documents Additional documents so that imports can be resolved as necessary
+ * @param commentProvider The comment provider service to pass along JSDoc comments to the generated AST
  */
-export function collectAst(grammars: Grammar | Grammar[], documents?: LangiumDocuments): AstTypes {
-    const { inferred, declared } = collectTypeResources(grammars, documents);
+export function collectAst(grammars: Grammar | Grammar[], documents?: LangiumDocuments, commentProvider?: CommentProvider): AstTypes {
+    const { inferred, declared } = collectTypeResources(grammars, documents, commentProvider);
     return createAstTypes(inferred, declared);
 }
 
@@ -31,9 +33,10 @@ export function collectAst(grammars: Grammar | Grammar[], documents?: LangiumDoc
  *
  * @param grammars All grammars involved in the validation process
  * @param documents Additional documents so that imports can be resolved as necessary
+ * @param commentProvider The comment provider service to pass along JSDoc comments to the generated AST
  */
-export function collectValidationAst(grammars: Grammar | Grammar[], documents?: LangiumDocuments): ValidationAstTypes {
-    const { inferred, declared, astResources } = collectTypeResources(grammars, documents);
+export function collectValidationAst(grammars: Grammar | Grammar[], documents?: LangiumDocuments, commentProvider?: CommentProvider): ValidationAstTypes {
+    const { inferred, declared, astResources } = collectTypeResources(grammars, documents, commentProvider);
 
     return {
         astResources,

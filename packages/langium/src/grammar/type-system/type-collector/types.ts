@@ -15,6 +15,7 @@ export interface Property {
     type: PropertyType;
     defaultValue?: PropertyDefaultValue;
     astNodes: Set<Assignment | Action | TypeAttribute>;
+    comment?: string;
 }
 
 export type PropertyDefaultValue = string | number | boolean | PropertyDefaultValue[];
@@ -111,20 +112,24 @@ export class UnionType {
     typeNames = new Set<string>();
     declared: boolean;
     dataType?: string;
+    comment?: string;
 
     constructor(name: string, options?: {
         declared: boolean,
-        dataType?: string
+        dataType?: string,
+        comment?: string,
     }) {
         this.name = name;
         this.declared = options?.declared ?? false;
         this.dataType = options?.dataType;
+        this.comment = options?.comment;
     }
 
     toAstTypesString(reflectionInfo: boolean): string {
-        const unionNode = expandToNode`
-            export type ${this.name} = ${propertyTypeToString(this.type, 'AstType')};
-        `.appendNewLine();
+        const unionNode = expandToNode`${this.comment}`
+            .appendNewLineIfNotEmpty()
+            .append(`export type ${this.name} = ${propertyTypeToString(this.type, 'AstType')};`)
+            .appendNewLine();
 
         if (reflectionInfo) {
             unionNode.appendNewLine()
@@ -148,6 +153,7 @@ export class UnionType {
 
 export class InterfaceType {
     name: string;
+    comment?: string;
     superTypes = new Set<TypeOption>();
     subTypes = new Set<TypeOption>();
     containerTypes = new Set<TypeOption>();
@@ -212,18 +218,20 @@ export class InterfaceType {
         return Array.from(this.superTypes).filter((e): e is InterfaceType => e instanceof InterfaceType);
     }
 
-    constructor(name: string, declared: boolean, abstract: boolean) {
+    constructor(name: string, declared: boolean, abstract: boolean, comment?: string) {
         this.name = name;
         this.declared = declared;
         this.abstract = abstract;
+        this.comment = comment;
     }
 
     toAstTypesString(reflectionInfo: boolean): string {
         const interfaceSuperTypes = this.interfaceSuperTypes.map(e => e.name);
         const superTypes = interfaceSuperTypes.length > 0 ? distinctAndSorted([...interfaceSuperTypes]) : ['langium.AstNode'];
-        const interfaceNode = expandToNode`
-            export interface ${this.name} extends ${superTypes.join(', ')} {
-        `.appendNewLine();
+        const interfaceNode = expandToNode`${this.comment}`
+            .appendNewLineIfNotEmpty()
+            .append(`export interface ${this.name} extends ${superTypes.join(', ')} {`)
+            .appendNewLine();
 
         interfaceNode.indent(body => {
             if (this.containerTypes.size > 0) {
@@ -411,16 +419,18 @@ function pushProperties(
     reserved = new Set<string>()
 ): Generated {
 
-    function propertyToString(property: Property): string {
+    function propertyToNode(property: Property): Generated {
         const name = mode === 'AstType' ? property.name : escapeReservedWords(property.name, reserved);
         const optional = property.optional && !isMandatoryPropertyType(property.type);
         const propType = propertyTypeToString(property.type, mode);
-        return `${name}${optional ? '?' : ''}: ${propType};`;
+        return expandToNode`${property.comment}`
+            .appendNewLineIfNotEmpty()
+            .append(`${name}${optional ? '?' : ''}: ${propType};`);
     }
 
     return joinToNode(
         distinctAndSorted(properties, (a, b) => a.name.localeCompare(b.name)),
-        propertyToString,
+        propertyToNode,
         { appendNewLineIfNotEmpty: true }
     );
 }

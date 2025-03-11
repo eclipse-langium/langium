@@ -15,6 +15,7 @@ import { getDocument } from '../../../utils/ast-utils.js';
 import { isParserRule } from '../../../languages/generated/ast.js';
 import { resolveImport } from '../../internal-grammar-util.js';
 import { isDataTypeRule } from '../../../utils/grammar-utils.js';
+import type { CommentProvider } from '../../../documentation/comment-provider.js';
 
 export interface AstResources {
     parserRules: ParserRule[]
@@ -35,10 +36,10 @@ export interface ValidationAstTypes {
     astResources: AstResources
 }
 
-export function collectTypeResources(grammars: Grammar | Grammar[], documents?: LangiumDocuments): TypeResources {
-    const astResources = collectAllAstResources(grammars, documents);
-    const declared = collectDeclaredTypes(astResources.interfaces, astResources.types);
-    const inferred = collectInferredTypes(astResources.parserRules, astResources.datatypeRules, declared);
+export function collectTypeResources(grammars: Grammar | Grammar[], documents?: LangiumDocuments, commentProvider?: CommentProvider): TypeResources {
+    const astResources = collectAllAstResources(grammars, documents, undefined, undefined, commentProvider);
+    const declared = collectDeclaredTypes(astResources.interfaces, astResources.types, commentProvider);
+    const inferred = collectInferredTypes(astResources.parserRules, astResources.datatypeRules, declared, commentProvider);
 
     return {
         astResources,
@@ -50,7 +51,7 @@ export function collectTypeResources(grammars: Grammar | Grammar[], documents?: 
 ///////////////////////////////////////////////////////////////////////////////
 
 export function collectAllAstResources(grammars: Grammar | Grammar[], documents?: LangiumDocuments, visited: Set<URI> = new Set(),
-    astResources: AstResources = { parserRules: [], datatypeRules: [], interfaces: [], types: [] }): AstResources {
+    astResources: AstResources = { parserRules: [], datatypeRules: [], interfaces: [], types: [] }, commentProvider?: CommentProvider): AstResources {
 
     if (!Array.isArray(grammars)) grammars = [grammars];
     for (const grammar of grammars) {
@@ -73,7 +74,7 @@ export function collectAllAstResources(grammars: Grammar | Grammar[], documents?
 
         if (documents) {
             const importedGrammars = grammar.imports.map(e => resolveImport(documents, e)).filter((e): e is Grammar => e !== undefined);
-            collectAllAstResources(importedGrammars, documents, visited, astResources);
+            collectAllAstResources(importedGrammars, documents, visited, astResources, commentProvider);
         }
     }
     return astResources;

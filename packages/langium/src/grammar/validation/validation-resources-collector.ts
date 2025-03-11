@@ -6,6 +6,7 @@
 
 import type { LangiumDocuments } from '../../workspace/documents.js';
 import type { AbstractElement, Action, Grammar, Interface, ParserRule, Type } from '../../languages/generated/ast.js';
+import type { CommentProvider } from '../../documentation/comment-provider.js';
 import type { AstResources, ValidationAstTypes } from '../type-system/type-collector/all-types.js';
 import type { TypeToValidationInfo, ValidationResources } from '../workspace/documents.js';
 import type { LangiumGrammarServices } from '../langium-grammar-module.js';
@@ -19,14 +20,16 @@ import { getActionType, getRuleTypeName } from '../../utils/grammar-utils.js';
 
 export class LangiumGrammarValidationResourcesCollector {
     private readonly documents: LangiumDocuments;
+    private readonly commentProvider: CommentProvider;
 
     constructor(services: LangiumGrammarServices) {
         this.documents = services.shared.workspace.LangiumDocuments;
+        this.commentProvider = services.documentation.CommentProvider;
     }
 
     collectValidationResources(grammar: Grammar): ValidationResources {
         try {
-            const typeResources = collectValidationAst(grammar, this.documents);
+            const typeResources = collectValidationAst(grammar, this.documents, this.commentProvider);
             return {
                 typeToValidationInfo: this.collectValidationInfo(typeResources),
                 typeToSuperProperties: this.collectSuperProperties(typeResources),

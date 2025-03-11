@@ -9,7 +9,7 @@ import { collectAst, LangiumGrammarGrammar } from 'langium/grammar';
 import { collectKeywords } from './langium-util.js';
 
 export function generateTypesFile(services: LangiumCoreServices, grammars: Grammar[]): string {
-    const { unions, interfaces } = collectAst(grammars, services.shared.workspace.LangiumDocuments);
+    const { unions, interfaces } = collectAst(grammars, services.shared.workspace.LangiumDocuments, services.documentation.CommentProvider);
     const reservedWords = new Set(collectKeywords(LangiumGrammarGrammar()));
 
     const fileNode = joinToNode([
