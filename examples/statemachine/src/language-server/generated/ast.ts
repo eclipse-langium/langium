@@ -4,8 +4,7 @@
  ******************************************************************************/
 
 /* eslint-disable */
-import type { AstNode, Reference, ReferenceInfo, TypeMetaData } from 'langium';
-import { AbstractAstReflection } from 'langium';
+import * as langium from 'langium';
 
 export const StatemachineTerminals = {
     WS: /\s+/,
@@ -30,7 +29,7 @@ export type StatemachineKeywordNames =
 
 export type StatemachineTokenNames = StatemachineTerminalNames | StatemachineKeywordNames;
 
-export interface Command extends AstNode {
+export interface Command extends langium.AstNode {
     readonly $container: Statemachine;
     readonly $type: 'Command';
     name: string;
@@ -42,7 +41,7 @@ export function isCommand(item: unknown): item is Command {
     return reflection.isInstance(item, Command);
 }
 
-export interface Event extends AstNode {
+export interface Event extends langium.AstNode {
     readonly $container: Statemachine;
     readonly $type: 'Event';
     name: string;
@@ -54,10 +53,10 @@ export function isEvent(item: unknown): item is Event {
     return reflection.isInstance(item, Event);
 }
 
-export interface State extends AstNode {
+export interface State extends langium.AstNode {
     readonly $container: Statemachine;
     readonly $type: 'State';
-    actions: Array<Reference<Command>>;
+    actions: Array<langium.Reference<Command>>;
     name: string;
     transitions: Array<Transition>;
 }
@@ -68,11 +67,11 @@ export function isState(item: unknown): item is State {
     return reflection.isInstance(item, State);
 }
 
-export interface Statemachine extends AstNode {
+export interface Statemachine extends langium.AstNode {
     readonly $type: 'Statemachine';
     commands: Array<Command>;
     events: Array<Event>;
-    init: Reference<State>;
+    init: langium.Reference<State>;
     name: string;
     states: Array<State>;
 }
@@ -83,11 +82,11 @@ export function isStatemachine(item: unknown): item is Statemachine {
     return reflection.isInstance(item, Statemachine);
 }
 
-export interface Transition extends AstNode {
+export interface Transition extends langium.AstNode {
     readonly $container: State;
     readonly $type: 'Transition';
-    event: Reference<Event>;
-    state: Reference<State>;
+    event: langium.Reference<Event>;
+    state: langium.Reference<State>;
 }
 
 export const Transition = 'Transition';
@@ -104,7 +103,7 @@ export type StatemachineAstType = {
     Transition: Transition
 }
 
-export class StatemachineAstReflection extends AbstractAstReflection {
+export class StatemachineAstReflection extends langium.AbstractAstReflection {
 
     getAllTypes(): string[] {
         return [Command, Event, State, Statemachine, Transition];
@@ -118,7 +117,7 @@ export class StatemachineAstReflection extends AbstractAstReflection {
         }
     }
 
-    getReferenceType(refInfo: ReferenceInfo): string {
+    getReferenceType(refInfo: langium.ReferenceInfo): string {
         const referenceId = `${refInfo.container.$type}:${refInfo.property}`;
         switch (referenceId) {
             case 'State:actions': {
@@ -137,7 +136,7 @@ export class StatemachineAstReflection extends AbstractAstReflection {
         }
     }
 
-    getTypeMetaData(type: string): TypeMetaData {
+    getTypeMetaData(type: string): langium.TypeMetaData {
         switch (type) {
             case Command: {
                 return {

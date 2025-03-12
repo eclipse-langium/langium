@@ -4,8 +4,7 @@
  ******************************************************************************/
 
 /* eslint-disable */
-import type { AstNode, Reference, ReferenceInfo, TypeMetaData } from 'langium';
-import { AbstractAstReflection } from 'langium';
+import * as langium from 'langium';
 
 export const DomainModelTerminals = {
     WS: /\s+/,
@@ -51,7 +50,7 @@ export function isType(item: unknown): item is Type {
     return reflection.isInstance(item, Type);
 }
 
-export interface DataType extends AstNode {
+export interface DataType extends langium.AstNode {
     readonly $container: Domainmodel | PackageDeclaration;
     readonly $type: 'DataType';
     name: string;
@@ -63,7 +62,7 @@ export function isDataType(item: unknown): item is DataType {
     return reflection.isInstance(item, DataType);
 }
 
-export interface Domainmodel extends AstNode {
+export interface Domainmodel extends langium.AstNode {
     readonly $type: 'Domainmodel';
     elements: Array<AbstractElement>;
 }
@@ -74,12 +73,12 @@ export function isDomainmodel(item: unknown): item is Domainmodel {
     return reflection.isInstance(item, Domainmodel);
 }
 
-export interface Entity extends AstNode {
+export interface Entity extends langium.AstNode {
     readonly $container: Domainmodel | PackageDeclaration;
     readonly $type: 'Entity';
     features: Array<Feature>;
     name: string;
-    superType?: Reference<Entity>;
+    superType?: langium.Reference<Entity>;
 }
 
 export const Entity = 'Entity';
@@ -88,12 +87,12 @@ export function isEntity(item: unknown): item is Entity {
     return reflection.isInstance(item, Entity);
 }
 
-export interface Feature extends AstNode {
+export interface Feature extends langium.AstNode {
     readonly $container: Entity;
     readonly $type: 'Feature';
     many: boolean;
     name: string;
-    type: Reference<Type>;
+    type: langium.Reference<Type>;
 }
 
 export const Feature = 'Feature';
@@ -102,7 +101,7 @@ export function isFeature(item: unknown): item is Feature {
     return reflection.isInstance(item, Feature);
 }
 
-export interface PackageDeclaration extends AstNode {
+export interface PackageDeclaration extends langium.AstNode {
     readonly $container: Domainmodel | PackageDeclaration;
     readonly $type: 'PackageDeclaration';
     elements: Array<AbstractElement>;
@@ -125,7 +124,7 @@ export type DomainModelAstType = {
     Type: Type
 }
 
-export class DomainModelAstReflection extends AbstractAstReflection {
+export class DomainModelAstReflection extends langium.AbstractAstReflection {
 
     getAllTypes(): string[] {
         return [AbstractElement, DataType, Domainmodel, Entity, Feature, PackageDeclaration, Type];
@@ -147,7 +146,7 @@ export class DomainModelAstReflection extends AbstractAstReflection {
         }
     }
 
-    getReferenceType(refInfo: ReferenceInfo): string {
+    getReferenceType(refInfo: langium.ReferenceInfo): string {
         const referenceId = `${refInfo.container.$type}:${refInfo.property}`;
         switch (referenceId) {
             case 'Entity:superType': {
@@ -162,7 +161,7 @@ export class DomainModelAstReflection extends AbstractAstReflection {
         }
     }
 
-    getTypeMetaData(type: string): TypeMetaData {
+    getTypeMetaData(type: string): langium.TypeMetaData {
         switch (type) {
             case DataType: {
                 return {
