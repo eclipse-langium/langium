@@ -13,10 +13,10 @@ import type { AstNode } from '../syntax-tree.js';
 import type { MaybePromise } from '../utils/promise-utils.js';
 import type { LangiumDocument } from '../workspace/documents.js';
 import type { DocumentationProvider } from '../documentation/documentation-provider.js';
-import { findDeclarationNodeAtOffset } from '../utils/cst-utils.js';
+import { findCommentNode, findDeclarationNodeAtOffset } from '../utils/cst-utils.js';
+import type { Keyword } from '../languages/generated/ast.js';
 import { isKeyword } from '../languages/generated/ast.js';
-import { createLangiumGrammarServices } from '../grammar/langium-grammar-module.js';
-import { EmptyFileSystem } from '../workspace/file-system-provider.js';
+import { isJSDoc, parseJSDoc } from '../documentation/jsdoc.js';
 
 /**
  * Language-specific service for handling hover requests.
@@ -35,12 +35,10 @@ export abstract class AstNodeHoverProvider implements HoverProvider {
 
     protected readonly references: References;
     protected readonly grammarConfig: GrammarConfig;
-    protected readonly grammarDocumentationProvider: DocumentationProvider;
 
     constructor(services: LangiumServices) {
         this.references = services.references.References;
         this.grammarConfig = services.parser.GrammarConfig;
-        this.grammarDocumentationProvider = createLangiumGrammarServices(EmptyFileSystem).grammar.documentation.DocumentationProvider;
     }
 
     getHoverContent(document: LangiumDocument, params: HoverParams): MaybePromise<Hover | undefined> {
@@ -56,7 +54,7 @@ export abstract class AstNodeHoverProvider implements HoverProvider {
 
                 // Add support for documentation on keywords
                 if (isKeyword(cstNode.grammarSource)) {
-                    return this.getGrammarAstNodeHoverContent(cstNode.grammarSource);
+                    return this.getKeywordHoverContent(cstNode.grammarSource);
                 }
             }
         }
@@ -65,16 +63,18 @@ export abstract class AstNodeHoverProvider implements HoverProvider {
 
     protected abstract getAstNodeHoverContent(node: AstNode): MaybePromise<Hover | undefined>;
 
-    protected  getGrammarAstNodeHoverContent(node: AstNode): MaybePromise<Hover | undefined> {
-        const content = this.grammarDocumentationProvider.getDocumentation(node);
-
-        if (content) {
-            return {
-                contents: {
-                    kind: 'markdown',
-                    value: content
-                }
-            };
+    protected getKeywordHoverContent(node: Keyword): MaybePromise<Hover | undefined> {
+        const comment = findCommentNode(node.$cstNode, ['ML_COMMENT'])?.text;
+        if (comment && isJSDoc(comment)) {
+            const content = parseJSDoc(comment).toMarkdown();
+            if (content) {
+                return {
+                    contents: {
+                        kind: 'markdown',
+                        value: content
+                    }
+                };
+            }
         }
         return undefined;
     }
