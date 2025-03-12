@@ -174,7 +174,7 @@ describe('Ast generator', () => {
 
         hidden terminal WS: /\\s+/;
     `, expandToString`
-        export interface Test extends AstNode {
+        export interface Test extends langium.AstNode {
             readonly $type: 'Test';
             value: '\\\'test\\\'';
         }
@@ -216,7 +216,7 @@ describe('Ast generator', () => {
             return typeof item === 'number';
         }
 
-        export interface Node extends AstNode {
+        export interface Node extends langium.AstNode {
             readonly $type: 'Node';
             num: A;
         }
@@ -243,7 +243,7 @@ describe('Ast generator', () => {
             return typeof item === 'number';
         }
 
-        export interface Node extends AstNode {
+        export interface Node extends langium.AstNode {
             readonly $type: 'Node';
             num: Array<A>;
         }
@@ -376,7 +376,7 @@ describe('Ast generator', () => {
         hidden terminal WS: /\\s+/;
         terminal ID: /[_a-zA-Z][\\w_]*/;
     `, expandToString`
-        getTypeMetaData(type: string): TypeMetaData {
+        getTypeMetaData(type: string): langium.TypeMetaData {
                 switch (type) {
                     case IAmArray: {
                         return {
@@ -418,7 +418,7 @@ describe('Ast generator', () => {
         hidden terminal WS: /\\s+/;
         terminal ID: /[_a-zA-Z][\\w_]*/;
     `, expandToString`
-        getTypeMetaData(type: string): TypeMetaData {
+        getTypeMetaData(type: string): langium.TypeMetaData {
                 switch (type) {
                     case Test: {
                         return {
