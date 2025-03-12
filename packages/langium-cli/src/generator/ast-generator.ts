@@ -7,22 +7,20 @@ import type { Grammar, LangiumCoreServices } from 'langium';
 import { EOL, type Generated, expandToNode, joinToNode, toString } from 'langium/generate';
 import type { AstTypes, Property, PropertyDefaultValue } from 'langium/grammar';
 import type { LangiumConfig } from '../package-types.js';
-import { AstUtils, MultiMap, GrammarAST } from 'langium';
+import { MultiMap } from 'langium';
 import { collectAst, collectTypeHierarchy, findReferenceTypes, isAstType, mergeTypesAndInterfaces, escapeQuotes } from 'langium/grammar';
 import { generatedHeader } from './node-util.js';
 import { collectKeywords, collectTerminalRegexps } from './langium-util.js';
 
 export function generateAst(services: LangiumCoreServices, grammars: Grammar[], config: LangiumConfig): string {
     const astTypes = collectAst(grammars, services.shared.workspace.LangiumDocuments);
-    const crossRef = grammars.some(grammar => hasCrossReferences(grammar));
     const importFrom = config.langiumInternal ? `../../syntax-tree${config.importExtension}` : 'langium';
     /* eslint-disable @typescript-eslint/indent */
     const fileNode = expandToNode`
         ${generatedHeader}
 
         /* eslint-disable */
-        import type { AstNode${crossRef ? ', Reference' : ''}, ReferenceInfo, TypeMetaData } from '${importFrom}';
-        import { AbstractAstReflection } from '${importFrom}';
+        import * as langium from '${importFrom}';
 
         ${generateTerminalConstants(grammars, config)}
 
@@ -37,10 +35,6 @@ export function generateAst(services: LangiumCoreServices, grammars: Grammar[], 
     /* eslint-enable @typescript-eslint/indent */
 }
 
-function hasCrossReferences(grammar: Grammar): boolean {
-    return Boolean(AstUtils.streamAllContents(grammar).find(GrammarAST.isCrossReference));
-}
-
 function generateAstReflection(config: LangiumConfig, astTypes: AstTypes): Generated {
     const typeNames: string[] = astTypes.interfaces.map(t => t.name)
         .concat(astTypes.unions.map(t => t.name))
@@ -51,7 +45,7 @@ function generateAstReflection(config: LangiumConfig, astTypes: AstTypes): Gener
             ${joinToNode(typeNames, name => name + ': ' + name, { appendNewLineIfNotEmpty: true })}
         }
 
-        export class ${config.projectName}AstReflection extends AbstractAstReflection {
+        export class ${config.projectName}AstReflection extends langium.AbstractAstReflection {
 
             getAllTypes(): string[] {
                 return [${typeNames.join(', ')}];
@@ -61,11 +55,11 @@ function generateAstReflection(config: LangiumConfig, astTypes: AstTypes): Gener
                 ${buildIsSubtypeMethod(astTypes)}
             }
 
-            getReferenceType(refInfo: ReferenceInfo): string {
+            getReferenceType(refInfo: langium.ReferenceInfo): string {
                 ${buildReferenceTypeMethod(crossReferenceTypes)}
             }
 
-            getTypeMetaData(type: string): TypeMetaData {
+            getTypeMetaData(type: string): langium.TypeMetaData {
                 ${buildTypeMetaDataMethod(astTypes)}
             }
         }
