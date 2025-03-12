@@ -417,7 +417,7 @@ describe('DefaultDocumentBuilder', () => {
         await builder.build([document], { validation: true });
     });
 
-    test.only('`waitUntil` will correctly resolve if the document is already in the target state.', async () => {
+    test('`waitUntil` will correctly resolve if the document is already in the target state.', async () => {
         const services = await createServices();
         const documentFactory = services.shared.workspace.LangiumDocumentFactory;
         const documents = services.shared.workspace.LangiumDocuments;
