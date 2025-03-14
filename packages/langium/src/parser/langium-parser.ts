@@ -12,11 +12,11 @@ import type { LangiumCoreServices } from '../services.js';
 import type { AstNode, AstReflection, CompositeCstNode, CstNode } from '../syntax-tree.js';
 import type { Lexer, LexerResult } from './lexer.js';
 import type { IParserConfig } from './parser-config.js';
-import type { ValueConverter } from './value-converter.js';
+import type { ValueConverter, ValueType } from './value-converter.js';
 import { defaultParserErrorProvider, EmbeddedActionsParser, LLkLookaheadStrategy } from 'chevrotain';
 import { LLStarLookaheadStrategy } from 'chevrotain-allstar';
-import { isAssignment, isCrossReference, isKeyword } from '../languages/generated/ast.js';
-import { getExplicitRuleType, isDataTypeRule } from '../utils/grammar-utils.js';
+import { isAssignment, isCrossReference, isKeyword, isRuleCall } from '../languages/generated/ast.js';
+import { getCrossReferenceTerminal, getExplicitRuleType, getRuleType, isDataTypeRule } from '../utils/grammar-utils.js';
 import { assignMandatoryProperties, getContainerOfType, linkContentToContainer } from '../utils/ast-utils.js';
 import { CstNodeBuilder } from './cst-node-builder.js';
 import type { LexingReport } from './token-builder.js';
@@ -292,25 +292,52 @@ export class LangiumParser extends AbstractLangiumParser {
 
     consume(idx: number, tokenType: TokenType, feature: AbstractElement): void {
         const token = this.wrapper.wrapConsume(idx, tokenType);
-        if (!this.isRecording() && this.isValidToken(token)) {
-            const hiddenTokens = this.extractHiddenTokens(token);
-            this.nodeBuilder.addHiddenNodes(hiddenTokens);
-            const leafNode = this.nodeBuilder.buildLeafNode(token, feature);
-            const { assignment, isCrossRef } = this.getAssignment(feature);
-            const current = this.current;
-            if (assignment) {
-                const convertedValue = isKeyword(feature) ? token.image : this.converter.convert(token.image, leafNode);
-                this.assign(assignment.operator, assignment.feature, convertedValue, leafNode, isCrossRef);
-            } else if (isDataTypeNode(current)) {
-                let text = token.image;
-                if (!isKeyword(feature)) {
-                    text = this.converter.convert(text, leafNode).toString();
+        if (!this.isRecording()) {
+            if (this.isValidToken(token)) {
+                const hiddenTokens = this.extractHiddenTokens(token);
+                this.nodeBuilder.addHiddenNodes(hiddenTokens);
+                const leafNode = this.nodeBuilder.buildLeafNode(token, feature);
+                const { assignment, isCrossRef } = this.getAssignment(feature);
+                const current = this.current;
+                if (assignment) {
+                    const convertedValue = isKeyword(feature) ? token.image : this.converter.convert(token.image, leafNode);
+                    this.assign(assignment.operator, assignment.feature, convertedValue, leafNode, isCrossRef);
+                } else if (isDataTypeNode(current)) {
+                    let text = token.image;
+                    if (!isKeyword(feature)) {
+                        text = this.converter.convert(text, leafNode).toString();
+                    }
+                    current.value += text;
                 }
-                current.value += text;
+            }
+            else {
+                // in case of an assignment, initialize the AST with a default value
+                const { assignment, isCrossRef } = this.getAssignment(feature);
+                if (assignment) {
+                    const convertedValue = isKeyword(feature) ? token.image : this.defaultValue(feature);
+                    this.assign(assignment.operator, assignment.feature, convertedValue, undefined, isCrossRef);
+                }
             }
         }
     }
-
+    private defaultValue(feature: AbstractElement | undefined): ValueType {
+        if (isCrossReference(feature)) {
+            feature = getCrossReferenceTerminal(feature);
+        }
+        if (isRuleCall(feature)) {
+            const rule = feature.rule.ref;
+            if (!rule) {
+                throw new Error('This cst node was not parsed by a rule.');
+            }
+            switch (getRuleType(rule)?.toLowerCase()) {
+                case 'number': return NaN;
+                case 'boolean': return false;
+                case 'bigint': return BigInt(0);
+                case 'date': return new Date();
+            }
+        }
+        return '';
+    }
     /**
      * Most consumed parser tokens are valid. However there are two cases in which they are not valid:
      *
@@ -402,7 +429,7 @@ export class LangiumParser extends AbstractLangiumParser {
         return this.assignmentMap.get(feature)!;
     }
 
-    private assign(operator: string, feature: string, value: unknown, cstNode: CstNode, isCrossRef: boolean): void {
+    private assign(operator: string, feature: string, value: unknown, cstNode: CstNode | undefined, isCrossRef: boolean): void {
         const obj = this.current;
         let item: unknown;
         if (isCrossRef && typeof value === 'string') {
