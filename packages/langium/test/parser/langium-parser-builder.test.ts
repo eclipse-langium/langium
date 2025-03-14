@@ -8,7 +8,7 @@
 
 import type { TokenType, TokenVocabulary } from 'chevrotain';
 import type { AstNode, CstNode, GenericAstNode, Grammar, GrammarAST, LangiumParser, ParseResult, ReferenceInfo, Scope, TokenBuilderOptions } from 'langium';
-import { EmptyFileSystem, DefaultTokenBuilder, GrammarUtils, CstUtils, DefaultScopeProvider, URI } from 'langium';
+import { EmptyFileSystem, DefaultTokenBuilder, GrammarUtils, CstUtils, DefaultScopeProvider, URI, isReference } from 'langium';
 import { describe, expect, test, onTestFailed, beforeAll } from 'vitest';
 import { createLangiumGrammarServices, createServicesForGrammar } from 'langium/grammar';
 import { expandToString } from 'langium/generate';
@@ -1149,3 +1149,34 @@ describe('Parsing with lookbehind tokens', () => {
 async function parserFromGrammar(grammar: string): Promise<LangiumParser> {
     return (await createServicesForGrammar({ grammar })).parser.LangiumParser;
 }
+
+describe('Parsing with recovery', () => {
+    const content = `
+    grammar TestRecovery
+    entry Model: (persons+=Person | greetings+=Greeting)*;
+    Person: 'person' name=ID;
+    Greeting: 'Hello' person=[Person:ID] '!';
+    hidden terminal WS: /\\s+/;
+    terminal ID: /[_a-zA-Z][\\w_]*/;
+    `;
+
+    let parser: LangiumParser;
+
+    beforeAll(async () => {
+        parser = await parserFromGrammar(content);
+    });
+
+    test('Attributes with recovery token should be initialized.', () => {
+        const result = parser.parse(`
+            person 
+            Hello !
+            `);
+        expect(result.parserErrors.length).toBe(2);
+
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        const value = result.value as any;
+
+        expect(value.persons[0]?.name).toEqual('');
+        expect(isReference(value.greetings[0]?.person)).toEqual(true);
+    });
+});
