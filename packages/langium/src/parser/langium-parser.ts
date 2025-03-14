@@ -5,7 +5,7 @@
  ******************************************************************************/
 
 /* eslint-disable @typescript-eslint/no-explicit-any */
-import type { DSLMethodOpts, ILexingError, IOrAlt, IParserErrorMessageProvider, IRecognitionException, IToken, TokenType, TokenVocabulary } from 'chevrotain';
+import type { DSLMethodOpts, ILexingError, IOrAlt, IParserErrorMessageProvider, IRecognitionException, IToken, ParserMethod, SubruleMethodOpts, TokenType, TokenVocabulary } from 'chevrotain';
 import type { AbstractElement, Action, Assignment, ParserRule } from '../languages/generated/ast.js';
 import type { Linker } from '../references/linker.js';
 import type { LangiumCoreServices } from '../services.js';
@@ -136,11 +136,18 @@ export abstract class AbstractLangiumParser implements BaseParser {
         this.lexer = services.parser.Lexer;
         const tokens = this.lexer.definition;
         const production = services.LanguageMetaData.mode === 'production';
-        this.wrapper = new ChevrotainWrapper(tokens, {
-            ...services.parser.ParserConfig,
-            skipValidations: production,
-            errorMessageProvider: services.parser.ParserErrorMessageProvider
-        });
+        if (production)
+            this.wrapper = new ChevrotainWrapper(tokens, {
+                ...services.parser.ParserConfig,
+                skipValidations: production,
+                errorMessageProvider: services.parser.ParserErrorMessageProvider
+            });
+        else
+            this.wrapper = new Profiler(tokens, {
+                ...services.parser.ParserConfig,
+                skipValidations: production,
+                errorMessageProvider: services.parser.ParserErrorMessageProvider
+            });
     }
 
     alternatives(idx: number, choices: Array<IOrAlt<any>>): void {
@@ -239,7 +246,7 @@ export class LangiumParser extends AbstractLangiumParser {
         if (!ruleMethod) {
             throw new Error(options.rule ? `No rule found with name '${options.rule}'` : 'No main rule available.');
         }
-        const result = ruleMethod.call(this.wrapper, {});
+        const result = this.wrapper.execute(ruleMethod);
         this.nodeBuilder.addHiddenNodes(lexerResult.hidden);
         this.unorderedGroups.clear();
         this.lexerResult = undefined;
@@ -705,5 +712,72 @@ class ChevrotainWrapper extends EmbeddedActionsParser {
 
     wrapAtLeastOne(idx: number, callback: DSLMethodOpts<unknown>): void {
         this.atLeastOne(idx, callback);
+    }
+    execute(rule: RuleResult): any {
+        return rule.call(this, {});
+    }
+}
+interface ProfilingInformation {
+
+    // the duration in ms of the rule
+    time: number
+    // the number of execution of the rule
+    count: number
+}
+class Profiler extends ChevrotainWrapper {
+
+    private readonly datas: Map<string, ProfilingInformation> = new Map<string, ProfilingInformation>();
+    private stack: number[] = [];
+    override execute(rule: RuleResult): any {
+        this.datas.clear();
+        this.stack = [];
+        const start = this.startProfiling();
+
+        try {
+            return super.execute(rule);
+        }
+        finally {
+            const total = this.endProfiling(rule, start);
+
+            const SortedData = new Map([...this.datas.entries()].sort((a, b) => b[1].time - a[1].time));
+
+            console.table(Array.from(SortedData, ([element, info]) => ({
+                Rule: element,
+                Count: info.count,
+                'Total %': (100 * info.time / total).toFixed(2),
+                'Time (ms)': info.time.toFixed(2)
+            })));
+        }
+    }
+    private endProfiling(rule: any, start: number): number {
+        const elapsed = performance.now() - start;
+        const self = elapsed - this.stack.pop()!;
+
+        if (this.stack.at(-1) !== undefined) {
+            this.stack[this.stack.length - 1] += elapsed;
+        }
+        const name = rule.ruleName as string;
+        const info = this.datas.get(name);
+        if (info) {
+            info.count++;
+            info.time += self;
+        }
+        else {
+            this.datas.set(name, { count: 1, time: self });
+        }
+        return elapsed;
+    }
+    private startProfiling(): number {
+        this.stack.push(0);
+        return performance.now();
+    }
+    protected override subrule<ARGS extends unknown[], R>(idx: number, ruleToCall: ParserMethod<ARGS, R>, options?: SubruleMethodOpts<ARGS>): R {
+        const start = this.startProfiling();
+        try {
+            return super.subrule<ARGS, R>(idx, ruleToCall, options);
+        }
+        finally {
+            this.endProfiling(ruleToCall, start);
+        }
     }
 }
