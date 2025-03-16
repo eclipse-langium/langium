@@ -42,6 +42,7 @@ export function isCommand(item: unknown): item is Command {
     return reflection.isInstance(item, Command);
 }
 
+/** An event is the trigger for a transition */
 export interface Event extends AstNode {
     readonly $container: Statemachine;
     readonly $type: 'Event';
@@ -54,11 +55,13 @@ export function isEvent(item: unknown): item is Event {
     return reflection.isInstance(item, Event);
 }
 
+/** A description of the status of a system */
 export interface State extends AstNode {
     readonly $container: Statemachine;
     readonly $type: 'State';
     actions: Array<Reference<Command>>;
     name: string;
+    /** The transitions to other states that can take place from the current one */
     transitions: Array<Transition>;
 }
 
@@ -68,12 +71,18 @@ export function isState(item: unknown): item is State {
     return reflection.isInstance(item, State);
 }
 
+/** A textual represntation of a state machine */
 export interface Statemachine extends AstNode {
     readonly $type: 'Statemachine';
     commands: Array<Command>;
+    /** The list of recognized event names */
+    /* A block comment that is not documentation */
     events: Array<Event>;
+    /** The starting state for the machine */
     init: Reference<State>;
+    /** The name of the machine */
     name: string;
+    /** Definitions of available states */
     states: Array<State>;
 }
 
@@ -83,10 +92,13 @@ export function isStatemachine(item: unknown): item is Statemachine {
     return reflection.isInstance(item, Statemachine);
 }
 
+/** A change from one state to another */
 export interface Transition extends AstNode {
     readonly $container: State;
     readonly $type: 'Transition';
+    /** The event triggering the transition */
     event: Reference<Event>;
+    /** The target state */
     state: Reference<State>;
 }
 

@@ -21,7 +21,8 @@ export const StatemachineGrammar = (): Grammar => loadedStatemachineGrammar ?? (
         "elements": [
           {
             "$type": "Keyword",
-            "value": "statemachine"
+            "value": "statemachine",
+            "$comment": "/** The name of the machine */"
           },
           {
             "$type": "Assignment",
@@ -33,14 +34,16 @@ export const StatemachineGrammar = (): Grammar => loadedStatemachineGrammar ?? (
                 "$ref": "#/rules@6"
               },
               "arguments": []
-            }
+            },
+            "$comment": "/** The name of the machine */"
           },
           {
             "$type": "Group",
             "elements": [
               {
                 "$type": "Keyword",
-                "value": "events"
+                "value": "events",
+                "$comment": "/** The list of recognized event names */"
               },
               {
                 "$type": "Assignment",
@@ -53,10 +56,12 @@ export const StatemachineGrammar = (): Grammar => loadedStatemachineGrammar ?? (
                   },
                   "arguments": []
                 },
-                "cardinality": "+"
+                "cardinality": "+",
+                "$comment": "/* A block comment that is not documentation */"
               }
             ],
-            "cardinality": "?"
+            "cardinality": "?",
+            "$comment": "/** The list of recognized event names */"
           },
           {
             "$type": "Group",
@@ -83,7 +88,8 @@ export const StatemachineGrammar = (): Grammar => loadedStatemachineGrammar ?? (
           },
           {
             "$type": "Keyword",
-            "value": "initialState"
+            "value": "initialState",
+            "$comment": "/** The starting state for the machine */"
           },
           {
             "$type": "Assignment",
@@ -95,7 +101,8 @@ export const StatemachineGrammar = (): Grammar => loadedStatemachineGrammar ?? (
                 "$ref": "#/rules@3"
               },
               "deprecatedSyntax": false
-            }
+            },
+            "$comment": "/** The starting state for the machine */"
           },
           {
             "$type": "Assignment",
@@ -108,15 +115,18 @@ export const StatemachineGrammar = (): Grammar => loadedStatemachineGrammar ?? (
               },
               "arguments": []
             },
-            "cardinality": "*"
+            "cardinality": "*",
+            "$comment": "/** Definitions of available states */"
           }
-        ]
+        ],
+        "$comment": "/** The name of the machine */"
       },
       "definesHiddenTokens": false,
       "fragment": false,
       "hiddenTokens": [],
       "parameters": [],
-      "wildcard": false
+      "wildcard": false,
+      "$comment": "/** A textual represntation of a state machine */"
     },
     {
       "$type": "ParserRule",
@@ -138,7 +148,8 @@ export const StatemachineGrammar = (): Grammar => loadedStatemachineGrammar ?? (
       "fragment": false,
       "hiddenTokens": [],
       "parameters": [],
-      "wildcard": false
+      "wildcard": false,
+      "$comment": "/** An event is the trigger for a transition */"
     },
     {
       "$type": "ParserRule",
@@ -226,7 +237,8 @@ export const StatemachineGrammar = (): Grammar => loadedStatemachineGrammar ?? (
               },
               "arguments": []
             },
-            "cardinality": "*"
+            "cardinality": "*",
+            "$comment": "/** The transitions to other states that can take place from the current one */"
           },
           {
             "$type": "Keyword",
@@ -239,7 +251,8 @@ export const StatemachineGrammar = (): Grammar => loadedStatemachineGrammar ?? (
       "fragment": false,
       "hiddenTokens": [],
       "parameters": [],
-      "wildcard": false
+      "wildcard": false,
+      "$comment": "/** A description of the status of a system */"
     },
     {
       "$type": "ParserRule",
@@ -257,7 +270,8 @@ export const StatemachineGrammar = (): Grammar => loadedStatemachineGrammar ?? (
                 "$ref": "#/rules@1"
               },
               "deprecatedSyntax": false
-            }
+            },
+            "$comment": "/** The event triggering the transition */"
           },
           {
             "$type": "Keyword",
@@ -273,16 +287,19 @@ export const StatemachineGrammar = (): Grammar => loadedStatemachineGrammar ?? (
                 "$ref": "#/rules@3"
               },
               "deprecatedSyntax": false
-            }
+            },
+            "$comment": "/** The target state */"
           }
-        ]
+        ],
+        "$comment": "/** The event triggering the transition */"
       },
       "definesHiddenTokens": false,
       "entry": false,
       "fragment": false,
       "hiddenTokens": [],
       "parameters": [],
-      "wildcard": false
+      "wildcard": false,
+      "$comment": "/** A change from one state to another */"
     },
     {
       "$type": "TerminalRule",

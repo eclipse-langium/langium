@@ -1,26 +1,41 @@
 grammar Statemachine
 
+/** A textual represntation of a state machine */
 entry Statemachine:
+    /** The name of the machine */
     'statemachine' name=ID
-    ('events' events+=Event+)?
-    ('commands'    commands+=Command+)?
+    /** The list of recognized event names */
+    ('events'
+    /* A block comment that is not documentation */
+    events+=Event+)?
+    ('commands' commands+=Command+)?
+    /** The starting state for the machine */
     'initialState' init=[State]
+    /** Definitions of available states */
     states+=State*;
 
+/** An event is the trigger for a transition */
 Event:
-    name=ID;
+    name=ID; // no comment should be generated for this property
 
+// The preceding comment should not be associated with this rule
 Command:
     name=ID;
 
+/** A description of the status of a system */
 State:
     'state' name=ID
         ('actions' '{' actions+=[Command]+ '}')?
+        /** The transitions to other states that can take place from the current one */
         transitions+=Transition*
     'end';
 
+/** A change from one state to another */
 Transition:
-    event=[Event] '=>' state=[State];
+    /** The event triggering the transition */
+    event=[Event] '=>'
+    /** The target state */
+    state=[State];
 
 hidden terminal WS: /\s+/;
 terminal ID: /[_a-zA-Z][\w_]*/;
