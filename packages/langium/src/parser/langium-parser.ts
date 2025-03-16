@@ -195,7 +195,6 @@ export class LangiumParser extends AbstractLangiumParser {
     private readonly converter: ValueConverter;
     private readonly astReflection: AstReflection;
     private readonly nodeBuilder = new CstNodeBuilder();
-    private lexerResult?: LexerResult;
     private stack: any[] = [];
     private assignmentMap = new Map<AbstractElement, AssignmentElement | undefined>();
 
@@ -231,18 +230,33 @@ export class LangiumParser extends AbstractLangiumParser {
         }
     }
 
+    private preprocessTokens(lexerResult: LexerResult) { // O(n) where n is the number of tokens
+        const { tokens, hidden } = lexerResult;
+        for (let i = 0, j = 0, first = true, prev = <Array<IToken>>[]; i < tokens.length; ) {
+            if (j == hidden.length || tokens[i].startOffset < hidden[j].startOffset) {
+                tokens[i++].payload = [prev, first];
+                first = false;
+                continue;
+            }
+            if (!first) {
+                prev = [];      // create new array instead of resizing it
+                first = true;   // next token will be the first to receive previous hidden tokens
+            }
+            prev.push(hidden[j++]);
+        }
+    }
+
     parse<T extends AstNode = AstNode>(input: string, options: ParserOptions = {}): ParseResult<T> {
         this.nodeBuilder.buildRootNode(input);
-        const lexerResult = this.lexerResult = this.lexer.tokenize(input);
+        const lexerResult = this.lexer.tokenize(input);
         this.wrapper.input = lexerResult.tokens;
         const ruleMethod = options.rule ? this.allRules.get(options.rule) : this.mainRule;
         if (!ruleMethod) {
             throw new Error(options.rule ? `No rule found with name '${options.rule}'` : 'No main rule available.');
         }
+        this.preprocessTokens(lexerResult);
         const result = ruleMethod.call(this.wrapper, {});
-        this.nodeBuilder.addHiddenNodes(lexerResult.hidden);
         this.unorderedGroups.clear();
-        this.lexerResult = undefined;
         return {
             value: result,
             lexerErrors: lexerResult.errors,
@@ -275,26 +289,11 @@ export class LangiumParser extends AbstractLangiumParser {
         };
     }
 
-    private extractHiddenTokens(token: IToken): IToken[] {
-        const hiddenTokens = this.lexerResult!.hidden;
-        if (!hiddenTokens.length) {
-            return [];
-        }
-        const offset = token.startOffset;
-        for (let i = 0; i < hiddenTokens.length; i++) {
-            const token = hiddenTokens[i];
-            if (token.startOffset > offset) {
-                return hiddenTokens.splice(0, i);
-            }
-        }
-        return hiddenTokens.splice(0, hiddenTokens.length);
-    }
-
     consume(idx: number, tokenType: TokenType, feature: AbstractElement): void {
         const token = this.wrapper.wrapConsume(idx, tokenType);
         if (!this.isRecording() && this.isValidToken(token)) {
-            const hiddenTokens = this.extractHiddenTokens(token);
-            this.nodeBuilder.addHiddenNodes(hiddenTokens);
+            const [hiddenTokens, first] = <[Array<IToken>, boolean]>token.payload;
+            this.nodeBuilder.addHiddenNodes(first ? hiddenTokens : []);
             const leafNode = this.nodeBuilder.buildLeafNode(token, feature);
             const { assignment, isCrossRef } = this.getAssignment(feature);
             const current = this.current;
