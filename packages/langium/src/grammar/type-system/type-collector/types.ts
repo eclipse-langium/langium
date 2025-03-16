@@ -126,9 +126,10 @@ export class UnionType {
     }
 
     toAstTypesString(reflectionInfo: boolean, commentProvider?: CommentProvider): string {
-        const comment = commentProvider?.getCommentByOffset(this.offset);
-        const unionNode = expandToNode`${comment ?? ''}`
-            .appendNewLineIfNotEmpty()
+        const unionNode = expandToNode``;
+        const comments = commentProvider?.getComments(this.offset) ?? [];
+        comments.forEach((comment) => unionNode.append(comment).appendNewLine());
+        unionNode
             .append(`export type ${this.name} = ${propertyTypeToString(this.type, 'AstType')};`)
             .appendNewLine();
 
@@ -146,12 +147,13 @@ export class UnionType {
     }
 
     toDeclaredTypesString(reservedWords: Set<string>, commentProvider?: CommentProvider): string {
-        const comment = commentProvider?.getCommentByOffset(this.offset);
-        return toString(expandToNode`${comment ?? ''}`
-            .appendNewLineIfNotEmpty()
+        const unionNode = expandToNode``;
+        const comments = commentProvider?.getComments(this.offset) ?? [];
+        comments.forEach((comment) => unionNode.append(comment).appendNewLine());
+        unionNode
             .append(`type ${escapeReservedWords(this.name, reservedWords)} = ${propertyTypeToString(this.type, 'DeclaredType')};`)
-            .appendNewLine()
-        );
+            .appendNewLine();
+        return toString(unionNode);
     }
 }
 
@@ -232,9 +234,10 @@ export class InterfaceType {
     toAstTypesString(reflectionInfo: boolean, commentProvider?: CommentProvider): string {
         const interfaceSuperTypes = this.interfaceSuperTypes.map(e => e.name);
         const superTypes = interfaceSuperTypes.length > 0 ? distinctAndSorted([...interfaceSuperTypes]) : ['AstNode'];
-        const comment = commentProvider?.getCommentByOffset(this.offset);
-        const interfaceNode = expandToNode`${comment ?? ''}`
-            .appendNewLineIfNotEmpty()
+        const interfaceNode = expandToNode``;
+        const comments = commentProvider?.getComments(this.offset) ?? [];
+        comments.forEach((comment) => interfaceNode.append(comment).appendNewLine());
+        interfaceNode
             .append(`export interface ${this.name} extends ${superTypes.join(', ')} {`)
             .appendNewLine();
 
@@ -429,10 +432,10 @@ function pushProperties(
         const name = mode === 'AstType' ? property.name : escapeReservedWords(property.name, reserved);
         const optional = property.optional && !isMandatoryPropertyType(property.type);
         const propType = propertyTypeToString(property.type, mode);
-        const comment = commentProvider?.getCommentByOffset(property.offset);
-        return expandToNode`${comment ?? ''}`
-            .appendNewLineIfNotEmpty()
-            .append(`${name}${optional ? '?' : ''}: ${propType};`);
+        const propertyNode = expandToNode``;
+        const comments = commentProvider?.getComments(property.offset) ?? [];
+        comments.forEach((comment) => propertyNode.append(comment).appendNewLine());
+        return propertyNode.append(`${name}${optional ? '?' : ''}: ${propType};`);
     }
 
     return joinToNode(

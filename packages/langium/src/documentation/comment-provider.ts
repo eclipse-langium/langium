@@ -22,22 +22,22 @@ export interface CommentProvider {
     getComment(node: AstNode): string | undefined;
 
     /**
-     * Returns the comment associated with the specified offset.
-     * @param node The AST node to get the comment for.
-     * @returns The comment associated with the specified offset or `undefined` if there is no comment.
+     * Returns the comments associated with the specified offset.
+     * @param offset The source offset get the comment for.
+     * @returns The comments associated with the specified offset or `undefined` if there is no comment.
      */
-    getCommentByOffset(offset?: number): string | undefined;
+    getComments(offset?: number): ReadonlyArray<string> | undefined;
 
     /**
-     * Registers the documentation comment of a token.
+     * Registers the comments of a token.
      * @param token The token
      */
-    registerComment(token: IToken): void;
+    registerComments(token: IToken): void;
 }
 
 export class DefaultCommentProvider implements CommentProvider {
     protected readonly grammarConfig: () => GrammarConfig;
-    protected readonly offsetToComment: Map<number, string> = new Map();
+    protected readonly commentsByOffset: Map<number, Array<string>> = new Map();
     constructor(services: LangiumCoreServices) {
         this.grammarConfig = () => services.parser.GrammarConfig;
     }
@@ -45,18 +45,19 @@ export class DefaultCommentProvider implements CommentProvider {
         if(isAstNodeWithComment(node)) {
             return node.$comment;
         }
-        return this.getCommentByOffset(node.$cstNode?.offset);
+        return this.getComments(node.$cstNode?.offset)?.at(-1);
     }
-    getCommentByOffset(offset: number = -1): string | undefined {
-        return this.offsetToComment.get(offset);
+    getComments(offset: number = -1): ReadonlyArray<string> | undefined {
+        return this.commentsByOffset.get(offset);
     }
-    registerComment(token: IToken) {
-        const [hiddenTokens] = <[Array<IToken>, boolean]>token.payload;
-        const hiddenToken = hiddenTokens.findLast((hiddenToken) =>
-            this.grammarConfig().multilineCommentRules.includes(hiddenToken.tokenType.name)
-        );
-        if (hiddenToken) {
-            this.offsetToComment.set(token.startOffset, hiddenToken.image);
+    registerComments(token: IToken) {
+        const { multilineCommentRules } = this.grammarConfig();
+        const [, hiddenTokens] = <[Array<IToken>, Array<IToken>]>token.payload;
+        const comments = hiddenTokens.filter((hiddenToken) =>
+            multilineCommentRules.includes(hiddenToken.tokenType.name)
+        ).map((commentToken) => commentToken.image);
+        if (comments.length) {
+            this.commentsByOffset.set(token.startOffset, comments);
         }
     }
 }

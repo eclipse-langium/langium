@@ -235,19 +235,23 @@ export class LangiumParser extends AbstractLangiumParser {
 
     private preprocessTokens(lexerResult: LexerResult) { // O(n) where n is the number of tokens
         const { tokens, hidden } = lexerResult;
-        for (let i = 0, j = 0, first = true, prev = <Array<IToken>>[]; i < tokens.length; ) {
+        let prevOld = <Array<IToken>>[]; // for backwards compatibility
+        let prevNew = <Array<IToken>>[]; // for the revised behavior
+        for (let i = 0, j = 0; i < tokens.length; ) {
             if (j == hidden.length || tokens[i].startOffset < hidden[j].startOffset) {
-                tokens[i++].payload = [prev, first];
-                first = false;
+                const token = tokens[i++];
+                token.payload = [prevOld, prevNew];
+                prevOld = []; // reset because subsequent tokens are not immediately following
+                if (prevNew.length && token.tokenType.name === 'ID') {
+                    prevNew = []; // reset to prevent subsequent tokens from inheriting the same hidden tokens
+                }
+                this.commentProvider.registerComments(token); // register the comments for this token
                 continue;
             }
-            if (!first) {
-                prev = [];      // create new array instead of resizing it
-                first = true;   // next token will be the first to receive previous hidden tokens
-            }
-            prev.push(hidden[j++]);
+            const token = hidden[j++];
+            prevOld.push(token);
+            prevNew.push(token);
         }
-        tokens.forEach((token) => this.commentProvider.registerComment(token));
     }
 
     parse<T extends AstNode = AstNode>(input: string, options: ParserOptions = {}): ParseResult<T> {
@@ -296,8 +300,8 @@ export class LangiumParser extends AbstractLangiumParser {
     consume(idx: number, tokenType: TokenType, feature: AbstractElement): void {
         const token = this.wrapper.wrapConsume(idx, tokenType);
         if (!this.isRecording() && this.isValidToken(token)) {
-            const [hiddenTokens, first] = <[Array<IToken>, boolean]>token.payload;
-            this.nodeBuilder.addHiddenNodes(first ? hiddenTokens : []);
+            const [hiddenTokens] = <[Array<IToken>, Array<IToken>]>token.payload;
+            this.nodeBuilder.addHiddenNodes(hiddenTokens);
             const leafNode = this.nodeBuilder.buildLeafNode(token, feature);
             const { assignment, isCrossRef } = this.getAssignment(feature);
             const current = this.current;
