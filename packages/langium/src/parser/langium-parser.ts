@@ -20,6 +20,7 @@ import { getExplicitRuleType, isDataTypeRule } from '../utils/grammar-utils.js';
 import { assignMandatoryProperties, getContainerOfType, linkContentToContainer } from '../utils/ast-utils.js';
 import { CstNodeBuilder } from './cst-node-builder.js';
 import type { LexingReport } from './token-builder.js';
+import type { CommentProvider } from '../documentation/comment-provider.js';
 
 export type ParseResult<T = AstNode> = {
     value: T,
@@ -195,6 +196,7 @@ export class LangiumParser extends AbstractLangiumParser {
     private readonly converter: ValueConverter;
     private readonly astReflection: AstReflection;
     private readonly nodeBuilder = new CstNodeBuilder();
+    private readonly commentProvider: CommentProvider;
     private stack: any[] = [];
     private assignmentMap = new Map<AbstractElement, AssignmentElement | undefined>();
 
@@ -207,6 +209,7 @@ export class LangiumParser extends AbstractLangiumParser {
         this.linker = services.references.Linker;
         this.converter = services.parser.ValueConverter;
         this.astReflection = services.shared.AstReflection;
+        this.commentProvider = services.documentation.CommentProvider;
     }
 
     rule(rule: ParserRule, impl: RuleImpl): RuleResult {
@@ -244,6 +247,7 @@ export class LangiumParser extends AbstractLangiumParser {
             }
             prev.push(hidden[j++]);
         }
+        tokens.forEach((token) => this.commentProvider.registerComment(token));
     }
 
     parse<T extends AstNode = AstNode>(input: string, options: ParserOptions = {}): ParseResult<T> {
