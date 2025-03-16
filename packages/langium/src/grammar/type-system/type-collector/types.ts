@@ -4,10 +4,11 @@
  * terms of the MIT License, which is available in the project root.
  ******************************************************************************/
 
-import { expandToNode, expandToStringWithNL, joinToNode, toString, type Generated } from '../../../generate/index.js';
+import { expandToNode, joinToNode, toString, type Generated } from '../../../generate/index.js';
 import type { CstNode } from '../../../syntax-tree.js';
 import type { Action, Assignment, TypeAttribute } from '../../../languages/generated/ast.js';
 import { distinctAndSorted, escapeQuotes } from '../types-util.js';
+import { CommentProvider } from '../../../documentation/comment-provider.js';
 
 export interface Property {
     name: string;
@@ -15,6 +16,7 @@ export interface Property {
     type: PropertyType;
     defaultValue?: PropertyDefaultValue;
     astNodes: Set<Assignment | Action | TypeAttribute>;
+    offset?: number; // used as identifier
 }
 
 export type PropertyDefaultValue = string | number | boolean | PropertyDefaultValue[];
@@ -111,20 +113,24 @@ export class UnionType {
     typeNames = new Set<string>();
     declared: boolean;
     dataType?: string;
+    offset?: number; // used as identifier
 
     constructor(name: string, options?: {
         declared: boolean,
         dataType?: string
-    }) {
+    }, offset?: number) {
         this.name = name;
         this.declared = options?.declared ?? false;
         this.dataType = options?.dataType;
+        this.offset = offset;
     }
 
-    toAstTypesString(reflectionInfo: boolean): string {
-        const unionNode = expandToNode`
-            export type ${this.name} = ${propertyTypeToString(this.type, 'AstType')};
-        `.appendNewLine();
+    toAstTypesString(reflectionInfo: boolean, commentProvider?: CommentProvider): string {
+        const comment = commentProvider?.getCommentByOffset(this.offset);
+        const unionNode = expandToNode`${comment ?? ''}`
+            .appendNewLineIfNotEmpty()
+            .append(`export type ${this.name} = ${propertyTypeToString(this.type, 'AstType')};`)
+            .appendNewLine();
 
         if (reflectionInfo) {
             unionNode.appendNewLine()
@@ -139,10 +145,13 @@ export class UnionType {
         return toString(unionNode);
     }
 
-    toDeclaredTypesString(reservedWords: Set<string>): string {
-        return expandToStringWithNL`
-            type ${escapeReservedWords(this.name, reservedWords)} = ${propertyTypeToString(this.type, 'DeclaredType')};
-        `;
+    toDeclaredTypesString(reservedWords: Set<string>, commentProvider?: CommentProvider): string {
+        const comment = commentProvider?.getCommentByOffset(this.offset);
+        return toString(expandToNode`${comment ?? ''}`
+            .appendNewLineIfNotEmpty()
+            .append(`type ${escapeReservedWords(this.name, reservedWords)} = ${propertyTypeToString(this.type, 'DeclaredType')};`)
+            .appendNewLine()
+        );
     }
 }
 
@@ -154,6 +163,7 @@ export class InterfaceType {
     typeNames = new Set<string>();
     declared = false;
     abstract = false;
+    offset?: number; // used as identifier
 
     properties: Property[] = [];
 
@@ -212,18 +222,21 @@ export class InterfaceType {
         return Array.from(this.superTypes).filter((e): e is InterfaceType => e instanceof InterfaceType);
     }
 
-    constructor(name: string, declared: boolean, abstract: boolean) {
+    constructor(name: string, declared: boolean, abstract: boolean, offset?: number) {
         this.name = name;
         this.declared = declared;
         this.abstract = abstract;
+        this.offset = offset;
     }
 
-    toAstTypesString(reflectionInfo: boolean): string {
+    toAstTypesString(reflectionInfo: boolean, commentProvider?: CommentProvider): string {
         const interfaceSuperTypes = this.interfaceSuperTypes.map(e => e.name);
         const superTypes = interfaceSuperTypes.length > 0 ? distinctAndSorted([...interfaceSuperTypes]) : ['AstNode'];
-        const interfaceNode = expandToNode`
-            export interface ${this.name} extends ${superTypes.join(', ')} {
-        `.appendNewLine();
+        const comment = commentProvider?.getCommentByOffset(this.offset);
+        const interfaceNode = expandToNode`${comment ?? ''}`
+            .appendNewLineIfNotEmpty()
+            .append(`export interface ${this.name} extends ${superTypes.join(', ')} {`)
+            .appendNewLine();
 
         interfaceNode.indent(body => {
             if (this.containerTypes.size > 0) {
@@ -233,7 +246,7 @@ export class InterfaceType {
                 body.append(`readonly $type: ${distinctAndSorted([...this.typeNames]).map(e => `'${e}'`).join(' | ')};`).appendNewLine();
             }
             body.append(
-                pushProperties(this.properties, 'AstType')
+                pushProperties(this.properties, 'AstType', commentProvider)
             );
         });
         interfaceNode.append('}').appendNewLine();
@@ -247,13 +260,13 @@ export class InterfaceType {
         return toString(interfaceNode);
     }
 
-    toDeclaredTypesString(reservedWords: Set<string>): string {
+    toDeclaredTypesString(reservedWords: Set<string>, commentProvider?: CommentProvider): string {
         const name = escapeReservedWords(this.name, reservedWords);
         const superTypes = distinctAndSorted(this.interfaceSuperTypes.map(e => e.name)).join(', ');
         return toString(
             expandToNode`
                 interface ${name}${superTypes.length > 0 ? ` extends ${superTypes}` : ''} {
-                    ${pushProperties(this.properties, 'DeclaredType', reservedWords)}
+                    ${pushProperties(this.properties, 'DeclaredType', commentProvider, reservedWords)}
                 }
             `.appendNewLine()
         );
@@ -408,19 +421,23 @@ function typeParenthesis(type: PropertyType, name: string): string {
 function pushProperties(
     properties: Property[],
     mode: 'AstType' | 'DeclaredType',
+    commentProvider?: CommentProvider,
     reserved = new Set<string>()
 ): Generated {
 
-    function propertyToString(property: Property): string {
+    function propertyToNode(property: Property): Generated {
         const name = mode === 'AstType' ? property.name : escapeReservedWords(property.name, reserved);
         const optional = property.optional && !isMandatoryPropertyType(property.type);
         const propType = propertyTypeToString(property.type, mode);
-        return `${name}${optional ? '?' : ''}: ${propType};`;
+        const comment = commentProvider?.getCommentByOffset(property.offset);
+        return expandToNode`${comment ?? ''}`
+            .appendNewLineIfNotEmpty()
+            .append(`${name}${optional ? '?' : ''}: ${propType};`);
     }
 
     return joinToNode(
         distinctAndSorted(properties, (a, b) => a.name.localeCompare(b.name)),
-        propertyToString,
+        propertyToNode,
         { appendNewLineIfNotEmpty: true }
     );
 }

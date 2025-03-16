@@ -13,6 +13,7 @@ import { generatedHeader } from './node-util.js';
 import { collectKeywords, collectTerminalRegexps } from './langium-util.js';
 
 export function generateAst(services: LangiumCoreServices, grammars: Grammar[], config: LangiumConfig): string {
+    const commentProvider = services.documentation.CommentProvider;
     const astTypes = collectAst(grammars, services.shared.workspace.LangiumDocuments);
     const crossRef = grammars.some(grammar => hasCrossReferences(grammar));
     const importFrom = config.langiumInternal ? `../../syntax-tree${config.importExtension}` : 'langium';
@@ -26,8 +27,8 @@ export function generateAst(services: LangiumCoreServices, grammars: Grammar[], 
 
         ${generateTerminalConstants(grammars, config)}
 
-        ${joinToNode(astTypes.unions, union => union.toAstTypesString(isAstType(union.type)), { appendNewLineIfNotEmpty: true })}
-        ${joinToNode(astTypes.interfaces, iFace => iFace.toAstTypesString(true), { appendNewLineIfNotEmpty: true })}
+        ${joinToNode(astTypes.unions, union => union.toAstTypesString(isAstType(union.type), commentProvider), { appendNewLineIfNotEmpty: true })}
+        ${joinToNode(astTypes.interfaces, iFace => iFace.toAstTypesString(true, commentProvider), { appendNewLineIfNotEmpty: true })}
         ${
             astTypes.unions = astTypes.unions.filter(e => isAstType(e.type)),
             generateAstReflection(config, astTypes)

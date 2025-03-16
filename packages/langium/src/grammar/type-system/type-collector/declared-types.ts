@@ -22,7 +22,8 @@ export function collectDeclaredTypes(interfaces: Interface[], unions: Type[]): P
                 name: attribute.name,
                 optional: attribute.isOptional,
                 astNodes: new Set([attribute]),
-                type: typeDefinitionToPropertyType(attribute.type)
+                type: typeDefinitionToPropertyType(attribute.type),
+                offset: attribute.$cstNode?.offset,
             };
             if (attribute.defaultValue) {
                 property.defaultValue = toPropertyDefaultValue(attribute.defaultValue);
@@ -41,7 +42,8 @@ export function collectDeclaredTypes(interfaces: Interface[], unions: Type[]): P
             abstract: false,
             properties: properties,
             superTypes: superTypes,
-            subTypes: new Set()
+            subTypes: new Set(),
+            offset: type.$cstNode?.offset,
         };
         declaredTypes.interfaces.push(interfaceType);
     }
@@ -53,7 +55,8 @@ export function collectDeclaredTypes(interfaces: Interface[], unions: Type[]): P
             declared: true,
             type: typeDefinitionToPropertyType(union.type),
             superTypes: new Set(),
-            subTypes: new Set()
+            subTypes: new Set(),
+            offset: union.$cstNode?.offset
         };
         declaredTypes.unions.push(unionType);
     }

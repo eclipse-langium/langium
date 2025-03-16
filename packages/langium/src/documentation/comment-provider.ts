@@ -22,6 +22,13 @@ export interface CommentProvider {
     getComment(node: AstNode): string | undefined;
 
     /**
+     * Returns the comment associated with the specified offset.
+     * @param node The AST node to get the comment for.
+     * @returns The comment associated with the specified offset or `undefined` if there is no comment.
+     */
+    getCommentByOffset(offset?: number): string | undefined;
+
+    /**
      * Registers the documentation comment of a token.
      * @param token The token
      */
@@ -38,7 +45,10 @@ export class DefaultCommentProvider implements CommentProvider {
         if(isAstNodeWithComment(node)) {
             return node.$comment;
         }
-        return this.offsetToComment.get(node.$cstNode?.offset ?? -1);
+        return this.getCommentByOffset(node.$cstNode?.offset);
+    }
+    getCommentByOffset(offset: number = -1): string | undefined {
+        return this.offsetToComment.get(offset);
     }
     registerComment(token: IToken) {
         const [hiddenTokens] = <[Array<IToken>, boolean]>token.payload;

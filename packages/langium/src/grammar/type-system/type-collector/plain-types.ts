@@ -23,6 +23,7 @@ export interface PlainInterface {
     properties: PlainProperty[];
     declared: boolean;
     abstract: boolean;
+    offset?: number; // used as identifier
 }
 
 export function isPlainInterface(type: PlainType): type is PlainInterface {
@@ -36,6 +37,7 @@ export interface PlainUnion {
     type: PlainPropertyType;
     declared: boolean;
     dataType?: string;
+    offset?: number; // used as identifier
 }
 
 export function isPlainUnion(type: PlainType): type is PlainUnion {
@@ -48,6 +50,7 @@ export interface PlainProperty {
     astNodes: Set<Assignment | Action | TypeAttribute>;
     type: PlainPropertyType;
     defaultValue?: PlainPropertyDefaultValue;
+    offset?: number; // used as identifier
 }
 
 export type PlainPropertyDefaultValue = string | number | boolean | PlainPropertyDefaultValue[];
@@ -113,14 +116,14 @@ export function plainToTypes(plain: PlainAstTypes): AstTypes {
     const interfaceTypes = new Map<string, InterfaceType>();
     const unionTypes = new Map<string, UnionType>();
     for (const interfaceValue of plain.interfaces) {
-        const type = new InterfaceType(interfaceValue.name, interfaceValue.declared, interfaceValue.abstract);
+        const type = new InterfaceType(interfaceValue.name, interfaceValue.declared, interfaceValue.abstract, interfaceValue.offset);
         interfaceTypes.set(interfaceValue.name, type);
     }
     for (const unionValue of plain.unions) {
         const type = new UnionType(unionValue.name, {
             declared: unionValue.declared,
             dataType: unionValue.dataType
-        });
+        }, unionValue.offset);
         unionTypes.set(unionValue.name, type);
     }
     for (const interfaceValue of plain.interfaces) {
@@ -157,7 +160,8 @@ function plainToProperty(property: PlainProperty, interfaces: Map<string, Interf
         name: property.name,
         optional: property.optional,
         astNodes: property.astNodes,
-        type: plainToPropertyType(property.type, undefined, interfaces, unions)
+        type: plainToPropertyType(property.type, undefined, interfaces, unions),
+        offset: property.offset,
     };
     if (property.defaultValue !== undefined) {
         prop.defaultValue = property.defaultValue;

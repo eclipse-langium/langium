@@ -21,6 +21,7 @@ interface TypePart {
     children: TypePart[]
     end?: TypePart
     actionWithAssignment: boolean
+    offset?: number // used as identifier
 }
 
 type TypeAlternative = {
@@ -28,6 +29,7 @@ type TypeAlternative = {
     super: string[]
     properties: PlainProperty[]
     ruleCalls: string[]
+    offset?: number // used as identifier
 }
 
 type TypeCollection = {
@@ -60,7 +62,8 @@ class TypeGraph {
                 name: this.root.name!,
                 properties: this.root.properties,
                 ruleCalls: this.root.ruleCalls,
-                super: []
+                super: [],
+                offset: this.root.offset,
             },
             current: this.root,
             next: this.root.children
@@ -229,6 +232,7 @@ function copyTypePart(value: TypePart): TypePart {
         actionWithAssignment: value.actionWithAssignment,
         ruleCalls: value.ruleCalls.slice(),
         properties: value.properties.map(copyProperty),
+        offset: value.offset,
     };
 }
 
@@ -237,7 +241,8 @@ function copyTypeAlternative(value: TypeAlternative): TypeAlternative {
         name: value.name,
         super: value.super,
         ruleCalls: value.ruleCalls.slice(),
-        properties: value.properties.map(e => copyProperty(e))
+        properties: value.properties.map(e => copyProperty(e)),
+        offset: value.offset,
     };
 }
 
@@ -247,6 +252,7 @@ function copyProperty(value: PlainProperty): PlainProperty {
         optional: value.optional,
         type: value.type,
         astNodes: value.astNodes,
+        offset: value.offset,
     };
 }
 
@@ -273,6 +279,7 @@ export function collectInferredTypes(parserRules: ParserRule[], datatypeRules: P
             subTypes: new Set(),
             superTypes: new Set(),
             dataType: rule.dataType,
+            offset: rule.$cstNode?.offset,
         });
     }
     return astTypes;
@@ -363,7 +370,8 @@ function newTypePart(element?: ParserRule | Action | string): TypePart {
         ruleCalls: [],
         children: [],
         parents: [],
-        actionWithAssignment: false
+        actionWithAssignment: false,
+        offset: isParserRule(element) || isAction(element) ? element.$cstNode?.offset : undefined,
     };
 }
 
@@ -445,7 +453,8 @@ function addAction(graph: TypeGraph, parent: TypePart, action: Action): TypePart
                 action.operator === '+=',
                 false,
                 graph.root.ruleCalls.length !== 0 ? graph.root.ruleCalls : graph.getSuperTypes(typeNode)),
-            astNodes: new Set([action])
+            astNodes: new Set([action]),
+            offset: action.$cstNode?.offset,
         });
     }
     return typeNode;
@@ -465,7 +474,8 @@ function addAssignment(current: TypePart, assignment: Assignment): void {
         name: assignment.feature,
         optional: isOptionalCardinality(assignment.cardinality),
         type,
-        astNodes: new Set([assignment])
+        astNodes: new Set([assignment]),
+        offset: assignment.$cstNode?.offset,
     });
 }
 
@@ -538,7 +548,8 @@ function calculateInterfaces(alternatives: TypePath[]): PlainInterface[] {
             superTypes: new Set(flat.super),
             subTypes: new Set(),
             declared: false,
-            abstract: false
+            abstract: false,
+            offset: flat.offset,
         };
         interfaces.set(interfaceType.name, interfaceType);
         if (flat.ruleCalls.length > 0) {
@@ -604,6 +615,7 @@ function flattenTypes(alternatives: TypePath[], part: TypePart): TypePath[] {
             }
         }
         type.alt.ruleCalls = Array.from(ruleCalls);
+        type.alt.offset = namedAlternatives[0]?.alt.offset;
         types.push(type);
     }
 
@@ -613,10 +625,10 @@ function flattenTypes(alternatives: TypePath[], part: TypePart): TypePath[] {
 function buildSuperUnions(interfaces: PlainInterface[]): PlainUnion[] {
     const interfaceMap = new Map(interfaces.map(e => [e.name, e]));
     const unions: PlainUnion[] = [];
-    const allSupertypes = new MultiMap<string, string>();
+    const allSupertypes = new MultiMap<string, [string, number?]>();
     for (const interfaceType of interfaces) {
         for (const superType of interfaceType.superTypes) {
-            allSupertypes.add(superType, interfaceType.name);
+            allSupertypes.add(superType, [interfaceType.name, interfaceType.offset]);
         }
     }
     for (const [superType, types] of allSupertypes.entriesGroupedByKey()) {
@@ -626,7 +638,8 @@ function buildSuperUnions(interfaces: PlainInterface[]): PlainUnion[] {
                 name: superType,
                 subTypes: new Set(),
                 superTypes: new Set(),
-                type: toPropertyType(false, false, types)
+                type: toPropertyType(false, false, types.map(([name]) => name)),
+                offset: types[0][1], // FIXME: this looks ugly
             };
             unions.push(union);
         }
@@ -674,7 +687,8 @@ function extractUnions(interfaces: PlainInterface[], unions: PlainUnion[], decla
                         declared: false,
                         subTypes: interfaceSubTypes,
                         superTypes: interfaceType.superTypes,
-                        type: interfaceTypeValue
+                        type: interfaceTypeValue,
+                        offset: interfaceType.offset,
                     };
                     astTypes.unions.push(unionType);
                     unionTypes.set(interfaceType.name, unionType);
