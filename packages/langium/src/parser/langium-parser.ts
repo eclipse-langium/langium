@@ -241,11 +241,15 @@ export class LangiumParser extends AbstractLangiumParser {
             if (j == hidden.length || tokens[i].startOffset < hidden[j].startOffset) {
                 const token = tokens[i++];
                 token.payload = [prevOld, prevNew];
-                prevOld = []; // reset because subsequent tokens are not immediately following
-                if (prevNew.length && token.tokenType.name === 'ID') {
+                let register = !!prevOld.length; // avoid registering comments for all tokens, to keep the complexity linear
+                prevOld = []; // reset because subsequent tokens are not immediately following the comment
+                if (['entry', 'ID'].includes(token.tokenType.name)) {
+                    register ||= !!prevNew.length;
                     prevNew = []; // reset to prevent subsequent tokens from inheriting the same hidden tokens
                 }
-                this.commentProvider.registerComments(token); // register the comments for this token
+                if (register) {
+                    this.commentProvider.registerComments(token); // register the comments for this token
+                }
                 continue;
             }
             const token = hidden[j++];

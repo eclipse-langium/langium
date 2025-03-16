@@ -42,8 +42,7 @@ export const StatemachineGrammar = (): Grammar => loadedStatemachineGrammar ?? (
             "elements": [
               {
                 "$type": "Keyword",
-                "value": "events",
-                "$comment": "/** The list of recognized event names */"
+                "value": "events"
               },
               {
                 "$type": "Assignment",
