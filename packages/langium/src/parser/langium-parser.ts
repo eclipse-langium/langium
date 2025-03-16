@@ -235,6 +235,7 @@ export class LangiumParser extends AbstractLangiumParser {
 
     private preprocessTokens(lexerResult: LexerResult) { // O(n) where n is the number of tokens
         const { tokens, hidden } = lexerResult;
+        this.commentProvider.clearComments();
         for (let i = 0, j = 0, last = 0, prev = <Array<IToken>>[]; i < tokens.length; ) {
             if (j == hidden.length || tokens[i].startOffset < hidden[j].startOffset) {
                 const token = tokens[i++];

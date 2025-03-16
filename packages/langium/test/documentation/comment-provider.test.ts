@@ -30,4 +30,38 @@ describe('Comment provider', () => {
             expect(comment).toBe(`/** ${rule.name} */`);
         });
     });
+    
+    test('Should clear comments before parsing', async () => {
+        let ast = (await parse(`
+            grammar Test
+            /** Rule */
+            entry Rule: 'rule' num=INT;
+            /** INT */
+            terminal INT: /\\d+/;
+        `)).parseResult.value;
+
+        expect(ast).toBeDefined();
+        let grammarComment = services.documentation.CommentProvider.getComment(ast);
+        expect(grammarComment).toBeUndefined();
+        AstUtils.streamAst(ast).filter(GrammarAST.isAbstractRule).forEach(rule => {
+            const comments = services.documentation.CommentProvider.getComments(rule.$cstNode?.offset);
+            expect(comments).toEqual([`/** ${rule.name} */`]);
+        });
+
+        ast = (await parse(`
+            grammar Test
+            //  Rule //
+            entry Rule: 'rule' num=INT;
+            //  INT //
+            terminal INT: /\\d+/;
+        `)).parseResult.value;
+
+        expect(ast).toBeDefined();
+        grammarComment = services.documentation.CommentProvider.getComment(ast);
+        expect(grammarComment).toBeUndefined();
+        AstUtils.streamAst(ast).filter(GrammarAST.isAbstractRule).forEach(rule => {
+            const comments = services.documentation.CommentProvider.getComments(rule.$cstNode?.offset);
+            expect(comments).toBeUndefined();
+        });
+    });
 });

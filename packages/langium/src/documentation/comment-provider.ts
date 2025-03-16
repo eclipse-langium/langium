@@ -34,6 +34,11 @@ export interface CommentProvider {
      * @param hidden The hidden tokens
      */
     registerComments(token: IToken, hidden: Array<IToken>): void;
+
+    /**
+     * Clears the comments.
+     */
+    clearComments(): void;
 }
 
 export class DefaultCommentProvider implements CommentProvider {
@@ -59,5 +64,8 @@ export class DefaultCommentProvider implements CommentProvider {
         if (comments.length) {
             this.commentsByOffset.set(token.startOffset, comments);
         }
+    }
+    clearComments() {
+        this.commentsByOffset.clear();
     }
 }
