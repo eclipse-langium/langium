@@ -76,7 +76,8 @@ export interface Statemachine extends AstNode {
     readonly $type: 'Statemachine';
     commands: Array<Command>;
     /** The list of recognized event names */
-    /* A block comment that is not documentation */
+    /* A block comment associated with a group */
+    /* A block comment associated with an assignment */
     events: Array<Event>;
     /** The starting state for the machine */
     init: Reference<State>;

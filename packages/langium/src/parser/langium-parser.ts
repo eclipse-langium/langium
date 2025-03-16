@@ -235,26 +235,19 @@ export class LangiumParser extends AbstractLangiumParser {
 
     private preprocessTokens(lexerResult: LexerResult) { // O(n) where n is the number of tokens
         const { tokens, hidden } = lexerResult;
-        let prevOld = <Array<IToken>>[]; // for backwards compatibility
-        let prevNew = <Array<IToken>>[]; // for the revised behavior
-        for (let i = 0, j = 0; i < tokens.length; ) {
+        for (let i = 0, j = 0, last = 0, prev = <Array<IToken>>[]; i < tokens.length; ) {
             if (j == hidden.length || tokens[i].startOffset < hidden[j].startOffset) {
                 const token = tokens[i++];
-                token.payload = [prevOld, prevNew];
-                let register = !!prevOld.length; // avoid registering comments for all tokens, to keep the complexity linear
-                prevOld = []; // reset because subsequent tokens are not immediately following the comment
+                let payload = token.payload = prev.slice(last);
+                last = prev.length; // save index for immediate comments
                 if (['entry', 'ID'].includes(token.tokenType.name)) {
-                    register ||= !!prevNew.length;
-                    prevNew = []; // reset to prevent subsequent tokens from inheriting the same hidden tokens
+                    payload = prev; // use non-immediate comments as well for this token
+                    prev = []; // prevent subsequent tokens from inheriting the same comments
                 }
-                if (register) {
-                    this.commentProvider.registerComments(token); // register the comments for this token
-                }
+                this.commentProvider.registerComments(token, payload);
                 continue;
             }
-            const token = hidden[j++];
-            prevOld.push(token);
-            prevNew.push(token);
+            prev.push(hidden[j++]);
         }
     }
 
@@ -304,7 +297,7 @@ export class LangiumParser extends AbstractLangiumParser {
     consume(idx: number, tokenType: TokenType, feature: AbstractElement): void {
         const token = this.wrapper.wrapConsume(idx, tokenType);
         if (!this.isRecording() && this.isValidToken(token)) {
-            const [hiddenTokens] = <[Array<IToken>, Array<IToken>]>token.payload;
+            const hiddenTokens = <Array<IToken>>token.payload;
             this.nodeBuilder.addHiddenNodes(hiddenTokens);
             const leafNode = this.nodeBuilder.buildLeafNode(token, feature);
             const { assignment, isCrossRef } = this.getAssignment(feature);

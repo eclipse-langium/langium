@@ -56,11 +56,11 @@ export const StatemachineGrammar = (): Grammar => loadedStatemachineGrammar ?? (
                   "arguments": []
                 },
                 "cardinality": "+",
-                "$comment": "/* A block comment that is not documentation */"
+                "$comment": "/* A block comment associated with an assignment */"
               }
             ],
             "cardinality": "?",
-            "$comment": "/** The list of recognized event names */"
+            "$comment": "/* A block comment associated with a group */"
           },
           {
             "$type": "Group",

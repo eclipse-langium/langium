@@ -31,8 +31,9 @@ export interface CommentProvider {
     /**
      * Registers the comments of a token.
      * @param token The token
+     * @param hidden The hidden tokens
      */
-    registerComments(token: IToken): void;
+    registerComments(token: IToken, hidden: Array<IToken>): void;
 }
 
 export class DefaultCommentProvider implements CommentProvider {
@@ -50,10 +51,9 @@ export class DefaultCommentProvider implements CommentProvider {
     getComments(offset: number = -1): ReadonlyArray<string> | undefined {
         return this.commentsByOffset.get(offset);
     }
-    registerComments(token: IToken) {
+    registerComments(token: IToken, hidden: Array<IToken>) {
         const { multilineCommentRules } = this.grammarConfig();
-        const [, hiddenTokens] = <[Array<IToken>, Array<IToken>]>token.payload;
-        const comments = hiddenTokens.filter((hiddenToken) =>
+        const comments = hidden.filter((hiddenToken) =>
             multilineCommentRules.includes(hiddenToken.tokenType.name)
         ).map((commentToken) => commentToken.image);
         if (comments.length) {

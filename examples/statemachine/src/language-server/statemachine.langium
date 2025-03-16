@@ -5,8 +5,9 @@ entry Statemachine:
     /** The name of the machine */
     'statemachine' name=ID
     /** The list of recognized event names */
+    /* A block comment associated with a group */
     ('events'
-    /* A block comment that is not documentation */
+    /* A block comment associated with an assignment */
     events+=Event+)?
     ('commands' commands+=Command+)?
     /** The starting state for the machine */
