@@ -14,9 +14,9 @@ import type { MaybePromise } from '../utils/promise-utils.js';
 import type { LangiumDocument } from '../workspace/documents.js';
 import type { DocumentationProvider } from '../documentation/documentation-provider.js';
 import { findCommentNode, findDeclarationNodeAtOffset } from '../utils/cst-utils.js';
-import type { Keyword } from '../languages/generated/ast.js';
 import { isKeyword } from '../languages/generated/ast.js';
 import { isJSDoc, parseJSDoc } from '../documentation/jsdoc.js';
+import { isAstNodeWithComment } from '../serializer/json-serializer.js';
 
 /**
  * Language-specific service for handling hover requests.
@@ -63,8 +63,11 @@ export abstract class AstNodeHoverProvider implements HoverProvider {
 
     protected abstract getAstNodeHoverContent(node: AstNode): MaybePromise<Hover | undefined>;
 
-    protected getKeywordHoverContent(node: Keyword): MaybePromise<Hover | undefined> {
-        const comment = findCommentNode(node.$cstNode, ['ML_COMMENT'])?.text;
+    protected getKeywordHoverContent(node: AstNode): MaybePromise<Hover | undefined> {
+        let comment = isAstNodeWithComment(node) ? node.$comment : undefined;
+        if (!comment) {
+            comment = findCommentNode(node.$cstNode, ['ML_COMMENT'])?.text;
+        }
         if (comment && isJSDoc(comment)) {
             const content = parseJSDoc(comment).toMarkdown();
             if (content) {
