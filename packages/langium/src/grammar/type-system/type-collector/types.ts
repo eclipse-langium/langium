@@ -220,7 +220,7 @@ export class InterfaceType {
 
     toAstTypesString(reflectionInfo: boolean): string {
         const interfaceSuperTypes = this.interfaceSuperTypes.map(e => e.name);
-        const superTypes = interfaceSuperTypes.length > 0 ? distinctAndSorted([...interfaceSuperTypes]) : ['AstNode'];
+        const superTypes = interfaceSuperTypes.length > 0 ? distinctAndSorted([...interfaceSuperTypes]) : ['langium.AstNode'];
         const interfaceNode = expandToNode`
             export interface ${this.name} extends ${superTypes.join(', ')} {
         `.appendNewLine();
@@ -379,7 +379,7 @@ export function propertyTypeToString(type?: PropertyType, mode: 'AstType' | 'Dec
     }
     if (isReferenceType(type)) {
         const refType = propertyTypeToString(type.referenceType, mode);
-        return mode === 'AstType' ? `Reference<${refType}>` : `@${typeParenthesis(type.referenceType, refType)}`;
+        return mode === 'AstType' ? `langium.Reference<${refType}>` : `@${typeParenthesis(type.referenceType, refType)}`;
     } else if (isArrayType(type)) {
         const arrayType = propertyTypeToString(type.elementType, mode);
         return mode === 'AstType' ? `Array<${arrayType}>` : `${type.elementType ? typeParenthesis(type.elementType, arrayType) : 'unknown'}[]`;

@@ -4,8 +4,7 @@
  ******************************************************************************/
 
 /* eslint-disable */
-import type { AstNode, Reference, ReferenceInfo, TypeMetaData } from 'langium';
-import { AbstractAstReflection } from 'langium';
+import * as langium from 'langium';
 
 export const ArithmeticsTerminals = {
     WS: /\s+/,
@@ -58,7 +57,7 @@ export function isStatement(item: unknown): item is Statement {
     return reflection.isInstance(item, Statement);
 }
 
-export interface BinaryExpression extends AstNode {
+export interface BinaryExpression extends langium.AstNode {
     readonly $container: BinaryExpression | Definition | Evaluation | FunctionCall;
     readonly $type: 'BinaryExpression';
     left: Expression;
@@ -72,7 +71,7 @@ export function isBinaryExpression(item: unknown): item is BinaryExpression {
     return reflection.isInstance(item, BinaryExpression);
 }
 
-export interface DeclaredParameter extends AstNode {
+export interface DeclaredParameter extends langium.AstNode {
     readonly $container: Definition;
     readonly $type: 'DeclaredParameter';
     name: string;
@@ -84,7 +83,7 @@ export function isDeclaredParameter(item: unknown): item is DeclaredParameter {
     return reflection.isInstance(item, DeclaredParameter);
 }
 
-export interface Definition extends AstNode {
+export interface Definition extends langium.AstNode {
     readonly $container: Module;
     readonly $type: 'Definition';
     args: Array<DeclaredParameter>;
@@ -98,7 +97,7 @@ export function isDefinition(item: unknown): item is Definition {
     return reflection.isInstance(item, Definition);
 }
 
-export interface Evaluation extends AstNode {
+export interface Evaluation extends langium.AstNode {
     readonly $container: Module;
     readonly $type: 'Evaluation';
     expression: Expression;
@@ -110,11 +109,11 @@ export function isEvaluation(item: unknown): item is Evaluation {
     return reflection.isInstance(item, Evaluation);
 }
 
-export interface FunctionCall extends AstNode {
+export interface FunctionCall extends langium.AstNode {
     readonly $container: BinaryExpression | Definition | Evaluation | FunctionCall;
     readonly $type: 'FunctionCall';
     args: Array<Expression>;
-    func: Reference<AbstractDefinition>;
+    func: langium.Reference<AbstractDefinition>;
 }
 
 export const FunctionCall = 'FunctionCall';
@@ -123,7 +122,7 @@ export function isFunctionCall(item: unknown): item is FunctionCall {
     return reflection.isInstance(item, FunctionCall);
 }
 
-export interface Module extends AstNode {
+export interface Module extends langium.AstNode {
     readonly $type: 'Module';
     name: string;
     statements: Array<Statement>;
@@ -135,7 +134,7 @@ export function isModule(item: unknown): item is Module {
     return reflection.isInstance(item, Module);
 }
 
-export interface NumberLiteral extends AstNode {
+export interface NumberLiteral extends langium.AstNode {
     readonly $container: BinaryExpression | Definition | Evaluation | FunctionCall;
     readonly $type: 'NumberLiteral';
     value: number;
@@ -160,7 +159,7 @@ export type ArithmeticsAstType = {
     Statement: Statement
 }
 
-export class ArithmeticsAstReflection extends AbstractAstReflection {
+export class ArithmeticsAstReflection extends langium.AbstractAstReflection {
 
     getAllTypes(): string[] {
         return [AbstractDefinition, BinaryExpression, DeclaredParameter, Definition, Evaluation, Expression, FunctionCall, Module, NumberLiteral, Statement];
@@ -188,7 +187,7 @@ export class ArithmeticsAstReflection extends AbstractAstReflection {
         }
     }
 
-    getReferenceType(refInfo: ReferenceInfo): string {
+    getReferenceType(refInfo: langium.ReferenceInfo): string {
         const referenceId = `${refInfo.container.$type}:${refInfo.property}`;
         switch (referenceId) {
             case 'FunctionCall:func': {
@@ -200,7 +199,7 @@ export class ArithmeticsAstReflection extends AbstractAstReflection {
         }
     }
 
-    getTypeMetaData(type: string): TypeMetaData {
+    getTypeMetaData(type: string): langium.TypeMetaData {
         switch (type) {
             case BinaryExpression: {
                 return {

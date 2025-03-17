@@ -4,8 +4,7 @@
  ******************************************************************************/
 
 /* eslint-disable */
-import type { AstNode, Reference, ReferenceInfo, TypeMetaData } from '../../syntax-tree.js';
-import { AbstractAstReflection } from '../../syntax-tree.js';
+import * as langium from '../../syntax-tree.js';
 
 export const LangiumGrammarTerminals = {
     ID: /\^?[_a-zA-Z][\w_]*/,
@@ -125,7 +124,7 @@ export function isValueLiteral(item: unknown): item is ValueLiteral {
     return reflection.isInstance(item, ValueLiteral);
 }
 
-export interface AbstractElement extends AstNode {
+export interface AbstractElement extends langium.AstNode {
     readonly $type: 'AbstractElement' | 'Action' | 'Alternatives' | 'Assignment' | 'CharacterRange' | 'CrossReference' | 'EndOfFile' | 'Group' | 'Keyword' | 'NegatedToken' | 'RegexToken' | 'RuleCall' | 'TerminalAlternatives' | 'TerminalGroup' | 'TerminalRuleCall' | 'UnorderedGroup' | 'UntilToken' | 'Wildcard';
     cardinality?: '*' | '+' | '?';
     lookahead?: '?!' | '?<!' | '?<=' | '?=';
@@ -137,7 +136,7 @@ export function isAbstractElement(item: unknown): item is AbstractElement {
     return reflection.isInstance(item, AbstractElement);
 }
 
-export interface ArrayLiteral extends AstNode {
+export interface ArrayLiteral extends langium.AstNode {
     readonly $container: ArrayLiteral | TypeAttribute;
     readonly $type: 'ArrayLiteral';
     elements: Array<ValueLiteral>;
@@ -149,7 +148,7 @@ export function isArrayLiteral(item: unknown): item is ArrayLiteral {
     return reflection.isInstance(item, ArrayLiteral);
 }
 
-export interface ArrayType extends AstNode {
+export interface ArrayType extends langium.AstNode {
     readonly $container: ArrayType | ReferenceType | Type | TypeAttribute | UnionType;
     readonly $type: 'ArrayType';
     elementType: TypeDefinition;
@@ -161,7 +160,7 @@ export function isArrayType(item: unknown): item is ArrayType {
     return reflection.isInstance(item, ArrayType);
 }
 
-export interface BooleanLiteral extends AstNode {
+export interface BooleanLiteral extends langium.AstNode {
     readonly $container: ArrayLiteral | Conjunction | Disjunction | Group | NamedArgument | Negation | TypeAttribute;
     readonly $type: 'BooleanLiteral';
     true: boolean;
@@ -173,7 +172,7 @@ export function isBooleanLiteral(item: unknown): item is BooleanLiteral {
     return reflection.isInstance(item, BooleanLiteral);
 }
 
-export interface Conjunction extends AstNode {
+export interface Conjunction extends langium.AstNode {
     readonly $container: Conjunction | Disjunction | Group | NamedArgument | Negation;
     readonly $type: 'Conjunction';
     left: Condition;
@@ -186,7 +185,7 @@ export function isConjunction(item: unknown): item is Conjunction {
     return reflection.isInstance(item, Conjunction);
 }
 
-export interface Disjunction extends AstNode {
+export interface Disjunction extends langium.AstNode {
     readonly $container: Conjunction | Disjunction | Group | NamedArgument | Negation;
     readonly $type: 'Disjunction';
     left: Condition;
@@ -199,17 +198,17 @@ export function isDisjunction(item: unknown): item is Disjunction {
     return reflection.isInstance(item, Disjunction);
 }
 
-export interface Grammar extends AstNode {
+export interface Grammar extends langium.AstNode {
     readonly $type: 'Grammar';
     definesHiddenTokens: boolean;
-    hiddenTokens: Array<Reference<AbstractRule>>;
+    hiddenTokens: Array<langium.Reference<AbstractRule>>;
     imports: Array<GrammarImport>;
     interfaces: Array<Interface>;
     isDeclared: boolean;
     name?: string;
     rules: Array<AbstractRule>;
     types: Array<Type>;
-    usedGrammars: Array<Reference<Grammar>>;
+    usedGrammars: Array<langium.Reference<Grammar>>;
 }
 
 export const Grammar = 'Grammar';
@@ -218,7 +217,7 @@ export function isGrammar(item: unknown): item is Grammar {
     return reflection.isInstance(item, Grammar);
 }
 
-export interface GrammarImport extends AstNode {
+export interface GrammarImport extends langium.AstNode {
     readonly $container: Grammar;
     readonly $type: 'GrammarImport';
     path: string;
@@ -230,7 +229,7 @@ export function isGrammarImport(item: unknown): item is GrammarImport {
     return reflection.isInstance(item, GrammarImport);
 }
 
-export interface InferredType extends AstNode {
+export interface InferredType extends langium.AstNode {
     readonly $container: Action | ParserRule;
     readonly $type: 'InferredType';
     name: string;
@@ -242,12 +241,12 @@ export function isInferredType(item: unknown): item is InferredType {
     return reflection.isInstance(item, InferredType);
 }
 
-export interface Interface extends AstNode {
+export interface Interface extends langium.AstNode {
     readonly $container: Grammar;
     readonly $type: 'Interface';
     attributes: Array<TypeAttribute>;
     name: string;
-    superTypes: Array<Reference<AbstractType>>;
+    superTypes: Array<langium.Reference<AbstractType>>;
 }
 
 export const Interface = 'Interface';
@@ -256,11 +255,11 @@ export function isInterface(item: unknown): item is Interface {
     return reflection.isInstance(item, Interface);
 }
 
-export interface NamedArgument extends AstNode {
+export interface NamedArgument extends langium.AstNode {
     readonly $container: RuleCall;
     readonly $type: 'NamedArgument';
     calledByName: boolean;
-    parameter?: Reference<Parameter>;
+    parameter?: langium.Reference<Parameter>;
     value: Condition;
 }
 
@@ -270,7 +269,7 @@ export function isNamedArgument(item: unknown): item is NamedArgument {
     return reflection.isInstance(item, NamedArgument);
 }
 
-export interface Negation extends AstNode {
+export interface Negation extends langium.AstNode {
     readonly $container: Conjunction | Disjunction | Group | NamedArgument | Negation;
     readonly $type: 'Negation';
     value: Condition;
@@ -282,7 +281,7 @@ export function isNegation(item: unknown): item is Negation {
     return reflection.isInstance(item, Negation);
 }
 
-export interface NumberLiteral extends AstNode {
+export interface NumberLiteral extends langium.AstNode {
     readonly $container: ArrayLiteral | TypeAttribute;
     readonly $type: 'NumberLiteral';
     value: number;
@@ -294,7 +293,7 @@ export function isNumberLiteral(item: unknown): item is NumberLiteral {
     return reflection.isInstance(item, NumberLiteral);
 }
 
-export interface Parameter extends AstNode {
+export interface Parameter extends langium.AstNode {
     readonly $container: ParserRule;
     readonly $type: 'Parameter';
     name: string;
@@ -306,10 +305,10 @@ export function isParameter(item: unknown): item is Parameter {
     return reflection.isInstance(item, Parameter);
 }
 
-export interface ParameterReference extends AstNode {
+export interface ParameterReference extends langium.AstNode {
     readonly $container: Conjunction | Disjunction | Group | NamedArgument | Negation;
     readonly $type: 'ParameterReference';
-    parameter: Reference<Parameter>;
+    parameter: langium.Reference<Parameter>;
 }
 
 export const ParameterReference = 'ParameterReference';
@@ -318,7 +317,7 @@ export function isParameterReference(item: unknown): item is ParameterReference 
     return reflection.isInstance(item, ParameterReference);
 }
 
-export interface ParserRule extends AstNode {
+export interface ParserRule extends langium.AstNode {
     readonly $container: Grammar;
     readonly $type: 'ParserRule';
     dataType?: PrimitiveType;
@@ -326,11 +325,11 @@ export interface ParserRule extends AstNode {
     definition: AbstractElement;
     entry: boolean;
     fragment: boolean;
-    hiddenTokens: Array<Reference<AbstractRule>>;
+    hiddenTokens: Array<langium.Reference<AbstractRule>>;
     inferredType?: InferredType;
     name: string;
     parameters: Array<Parameter>;
-    returnType?: Reference<AbstractType>;
+    returnType?: langium.Reference<AbstractType>;
     wildcard: boolean;
 }
 
@@ -340,7 +339,7 @@ export function isParserRule(item: unknown): item is ParserRule {
     return reflection.isInstance(item, ParserRule);
 }
 
-export interface ReferenceType extends AstNode {
+export interface ReferenceType extends langium.AstNode {
     readonly $container: ArrayType | ReferenceType | Type | TypeAttribute | UnionType;
     readonly $type: 'ReferenceType';
     referenceType: TypeDefinition;
@@ -352,7 +351,7 @@ export function isReferenceType(item: unknown): item is ReferenceType {
     return reflection.isInstance(item, ReferenceType);
 }
 
-export interface ReturnType extends AstNode {
+export interface ReturnType extends langium.AstNode {
     readonly $container: TerminalRule;
     readonly $type: 'ReturnType';
     name: PrimitiveType | string;
@@ -364,12 +363,12 @@ export function isReturnType(item: unknown): item is ReturnType {
     return reflection.isInstance(item, ReturnType);
 }
 
-export interface SimpleType extends AstNode {
+export interface SimpleType extends langium.AstNode {
     readonly $container: ArrayType | ReferenceType | Type | TypeAttribute | UnionType;
     readonly $type: 'SimpleType';
     primitiveType?: PrimitiveType;
     stringType?: string;
-    typeRef?: Reference<AbstractType>;
+    typeRef?: langium.Reference<AbstractType>;
 }
 
 export const SimpleType = 'SimpleType';
@@ -378,7 +377,7 @@ export function isSimpleType(item: unknown): item is SimpleType {
     return reflection.isInstance(item, SimpleType);
 }
 
-export interface StringLiteral extends AstNode {
+export interface StringLiteral extends langium.AstNode {
     readonly $container: ArrayLiteral | TypeAttribute;
     readonly $type: 'StringLiteral';
     value: string;
@@ -390,7 +389,7 @@ export function isStringLiteral(item: unknown): item is StringLiteral {
     return reflection.isInstance(item, StringLiteral);
 }
 
-export interface TerminalRule extends AstNode {
+export interface TerminalRule extends langium.AstNode {
     readonly $container: Grammar;
     readonly $type: 'TerminalRule';
     definition: AbstractElement;
@@ -406,7 +405,7 @@ export function isTerminalRule(item: unknown): item is TerminalRule {
     return reflection.isInstance(item, TerminalRule);
 }
 
-export interface Type extends AstNode {
+export interface Type extends langium.AstNode {
     readonly $container: Grammar;
     readonly $type: 'Type';
     name: string;
@@ -419,7 +418,7 @@ export function isType(item: unknown): item is Type {
     return reflection.isInstance(item, Type);
 }
 
-export interface TypeAttribute extends AstNode {
+export interface TypeAttribute extends langium.AstNode {
     readonly $container: Interface;
     readonly $type: 'TypeAttribute';
     defaultValue?: ValueLiteral;
@@ -434,7 +433,7 @@ export function isTypeAttribute(item: unknown): item is TypeAttribute {
     return reflection.isInstance(item, TypeAttribute);
 }
 
-export interface UnionType extends AstNode {
+export interface UnionType extends langium.AstNode {
     readonly $container: ArrayType | ReferenceType | Type | TypeAttribute | UnionType;
     readonly $type: 'UnionType';
     types: Array<TypeDefinition>;
@@ -451,7 +450,7 @@ export interface Action extends AbstractElement {
     feature?: FeatureName;
     inferredType?: InferredType;
     operator?: '+=' | '=';
-    type?: Reference<AbstractType>;
+    type?: langium.Reference<AbstractType>;
 }
 
 export const Action = 'Action';
@@ -500,7 +499,7 @@ export interface CrossReference extends AbstractElement {
     readonly $type: 'CrossReference';
     deprecatedSyntax: boolean;
     terminal?: AbstractElement;
-    type: Reference<AbstractType>;
+    type: langium.Reference<AbstractType>;
 }
 
 export const CrossReference = 'CrossReference';
@@ -568,7 +567,7 @@ export function isRegexToken(item: unknown): item is RegexToken {
 export interface RuleCall extends AbstractElement {
     readonly $type: 'RuleCall';
     arguments: Array<NamedArgument>;
-    rule: Reference<AbstractRule>;
+    rule: langium.Reference<AbstractRule>;
 }
 
 export const RuleCall = 'RuleCall';
@@ -601,7 +600,7 @@ export function isTerminalGroup(item: unknown): item is TerminalGroup {
 
 export interface TerminalRuleCall extends AbstractElement {
     readonly $type: 'TerminalRuleCall';
-    rule: Reference<TerminalRule>;
+    rule: langium.Reference<TerminalRule>;
 }
 
 export const TerminalRuleCall = 'TerminalRuleCall';
@@ -691,7 +690,7 @@ export type LangiumGrammarAstType = {
     Wildcard: Wildcard
 }
 
-export class LangiumGrammarAstReflection extends AbstractAstReflection {
+export class LangiumGrammarAstReflection extends langium.AbstractAstReflection {
 
     getAllTypes(): string[] {
         return [AbstractElement, AbstractRule, AbstractType, Action, Alternatives, ArrayLiteral, ArrayType, Assignment, BooleanLiteral, CharacterRange, Condition, Conjunction, CrossReference, Disjunction, EndOfFile, Grammar, GrammarImport, Group, InferredType, Interface, Keyword, NamedArgument, NegatedToken, Negation, NumberLiteral, Parameter, ParameterReference, ParserRule, ReferenceType, RegexToken, ReturnType, RuleCall, SimpleType, StringLiteral, TerminalAlternatives, TerminalGroup, TerminalRule, TerminalRuleCall, Type, TypeAttribute, TypeDefinition, UnionType, UnorderedGroup, UntilToken, ValueLiteral, Wildcard];
@@ -755,7 +754,7 @@ export class LangiumGrammarAstReflection extends AbstractAstReflection {
         }
     }
 
-    getReferenceType(refInfo: ReferenceInfo): string {
+    getReferenceType(refInfo: langium.ReferenceInfo): string {
         const referenceId = `${refInfo.container.$type}:${refInfo.property}`;
         switch (referenceId) {
             case 'Action:type':
@@ -786,7 +785,7 @@ export class LangiumGrammarAstReflection extends AbstractAstReflection {
         }
     }
 
-    getTypeMetaData(type: string): TypeMetaData {
+    getTypeMetaData(type: string): langium.TypeMetaData {
         switch (type) {
             case AbstractElement: {
                 return {
