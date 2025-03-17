@@ -233,10 +233,11 @@ export class LangiumParser extends AbstractLangiumParser {
         }
     }
 
-    private preprocessTokens(lexerResult: LexerResult) { // O(n) where n is the number of tokens
+    private processHiddenTokens(lexerResult: LexerResult): Array<IToken> { // O(n) where n is the number of tokens
         const { tokens, hidden } = lexerResult;
         this.commentProvider.clearComments();
-        for (let i = 0, j = 0, last = 0, prev = <Array<IToken>>[]; i < tokens.length; ) {
+        let j = 0;
+        for (let i = 0, last = 0, prev = <Array<IToken>>[]; i < tokens.length; ) {
             if (j == hidden.length || tokens[i].startOffset < hidden[j].startOffset) {
                 const token = tokens[i++];
                 let payload = token.payload = prev.slice(last);
@@ -250,6 +251,7 @@ export class LangiumParser extends AbstractLangiumParser {
             }
             prev.push(hidden[j++]);
         }
+        return hidden.slice(j); // the remaining comments, if any
     }
 
     parse<T extends AstNode = AstNode>(input: string, options: ParserOptions = {}): ParseResult<T> {
@@ -260,8 +262,9 @@ export class LangiumParser extends AbstractLangiumParser {
         if (!ruleMethod) {
             throw new Error(options.rule ? `No rule found with name '${options.rule}'` : 'No main rule available.');
         }
-        this.preprocessTokens(lexerResult);
+        const remaining = this.processHiddenTokens(lexerResult);
         const result = ruleMethod.call(this.wrapper, {});
+        this.nodeBuilder.addHiddenNodes(remaining);
         this.unorderedGroups.clear();
         return {
             value: result,

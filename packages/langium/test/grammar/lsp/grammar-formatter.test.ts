@@ -110,6 +110,9 @@ describe('Grammar Formatter', () => {
                 /** This is a documentation comment */
                 a: string
                 }
+                    // This is line comment
+                    /* This is a block comment */
+                    /** This is a documentation comment */
             `,
             after: expandToString`
                 interface Test {
@@ -118,6 +121,9 @@ describe('Grammar Formatter', () => {
                     /** This is a documentation comment */
                     a: string
                 }
+                // This is line comment
+                /* This is a block comment */
+                /** This is a documentation comment */
             `
         });
     });

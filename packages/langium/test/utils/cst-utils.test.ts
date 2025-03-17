@@ -4,7 +4,7 @@
  * terms of the MIT License, which is available in the project root.
  ******************************************************************************/
 
-import type { Grammar, LeafCstNode } from 'langium';
+import type { CompositeCstNode, Grammar, LeafCstNode } from 'langium';
 import { CstUtils, EmptyFileSystem } from 'langium';
 import { expandToString } from 'langium/generate';
 import { createLangiumGrammarServices } from 'langium/grammar';
@@ -92,6 +92,20 @@ describe('findCommentNode', () => {
         const grammar = await parser(text);
         const comment = CstUtils.findCommentNode(grammar.parseResult.value.$cstNode, ['ML_COMMENT']);
         expect(comment?.text).toBe('/** C */');
+    });
+    
+    test('Does not find comment at the end of the file', async () => {
+        const text = expandToString`
+        grammar test
+        /** A */
+        /** B */
+        /** C */
+        `;
+        const grammar = await parser(text);
+        const node = grammar.parseResult.value.$cstNode as CompositeCstNode;
+        expect(node.content.at(-1)?.text).toBe('/** C */');
+        const comment = CstUtils.findCommentNode(node, ['ML_COMMENT']);
+        expect(comment?.text).toBeUndefined();
     });
 });
 
