@@ -10,7 +10,7 @@ import type { AbstractElement, Action, Assignment, InfixRule, ParserRule } from 
 import { isInfixRule } from '../languages/generated/ast.js';
 import type { Linker } from '../references/linker.js';
 import type { LangiumCoreServices } from '../services.js';
-import type { AstNode, AstReflection, CompositeCstNode, CstNode, Mutable } from '../syntax-tree.js';
+import type { AstNode, AstReflection, CompositeCstNode, CstNode } from '../syntax-tree.js';
 import type { Lexer, LexerResult } from './lexer.js';
 import type { IParserConfig } from './parser-config.js';
 import type { ValueConverter } from './value-converter.js';
@@ -454,45 +454,55 @@ export class LangiumParser extends AbstractLangiumParser {
             // Simply return the expression as is.
             return obj.parts[0];
         }
-        let expression = {
-            $type: obj.$type,
-            left: obj.parts[0],
-            operator: obj.operators[0],
-            right: obj.parts[1]
-        };
-        let lastPrecedence = precedence.get(expression.operator) ?? 0;
-        for (let i = 1; i < obj.operators.length; i++) {
-            const op = obj.operators[i];
-            const next = obj.parts[i + 1];
-            const currentPrecedence = precedence.get(op) ?? 0;
-            if (currentPrecedence <= lastPrecedence) {
-                // If the current precendence is higher (i.e. the rank is lower)
-                // We simply create a new node and append the previous expression to the left
-                expression = {
-                    $type: obj.$type,
-                    left: expression,
-                    operator: op,
-                    right: next
-                };
-            } else {
-                // If the precedence is lower, we need to rewrite the previous node
-                // For that, we move the previous right node to the left side of the new node
-                const rewrite = {
-                    $type: obj.$type,
-                    left: expression.right,
-                    operator: op,
-                    right: next
-                };
-                // This new node now becomes the right side of the previous node
-                expression.right = rewrite;
+        // Find the operator with the lowest precedence (highest value in precedence map)
+        let lowestPrecedenceIdx = 0;
+        let lowestPrecedenceValue = -1;
+
+        for (let i = 0; i < obj.operators.length; i++) {
+            const operator = obj.operators[i];
+            const precedenceValue = precedence.get(operator) ?? Infinity;
+
+            // If we find an operator with lower precedence or equal precedence
+            // (for left-to-right evaluation), update our tracking
+            if (precedenceValue > lowestPrecedenceValue) {
+                lowestPrecedenceValue = precedenceValue;
+                lowestPrecedenceIdx = i;
             }
-            lastPrecedence = currentPrecedence;
         }
-        // In theory, we could rebuild the CST for the infix expression
-        // However, there is no real benefit for it, and it might be costly (performance-wise)
-        // We might want to revisit this decision in the future.
-        (expression as Mutable<AstNode>).$cstNode = obj.$cstNode;
-        return expression;
+
+        // Split the expression at the lowest precedence operator
+        const leftOperators = obj.operators.slice(0, lowestPrecedenceIdx);
+        const rightOperators = obj.operators.slice(lowestPrecedenceIdx + 1);
+
+        const leftParts = obj.parts.slice(0, lowestPrecedenceIdx + 1);
+        const rightParts = obj.parts.slice(lowestPrecedenceIdx + 1);
+
+        // Create sub-expressions
+        const leftInfix: InfixElement = {
+            $type: obj.$type,
+            $cstNode: obj.$cstNode,
+            parts: leftParts,
+            operators: leftOperators
+        };
+        const rightInfix: InfixElement = {
+            $type: obj.$type,
+            $cstNode: obj.$cstNode,
+            parts: rightParts,
+            operators: rightOperators
+        };
+
+        // Recursively build the left and right subtrees
+        const leftTree = this.constructInfix(leftInfix, precedence);
+        const rightTree = this.constructInfix(rightInfix, precedence);
+
+        // Create the final binary expression
+        return {
+            $type: obj.$type,
+            $cstNode: obj.$cstNode,
+            left: leftTree,
+            operator: obj.operators[lowestPrecedenceIdx],
+            right: rightTree
+        };
     }
 
     private getAssignment(feature: AbstractElement): AssignmentElement {
