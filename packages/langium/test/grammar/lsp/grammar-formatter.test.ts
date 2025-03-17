@@ -100,4 +100,25 @@ describe('Grammar Formatter', () => {
             `
         });
     });
+    
+    test('Formats multiple consecutive comments', async () => {
+        await formatting({
+            before: expandToString`
+                interface Test {
+                // This is line comment
+                /* This is a block comment */
+                /** This is a documentation comment */
+                a: string
+                }
+            `,
+            after: expandToString`
+                interface Test {
+                    // This is line comment
+                    /* This is a block comment */
+                    /** This is a documentation comment */
+                    a: string
+                }
+            `
+        });
+    });
 });
