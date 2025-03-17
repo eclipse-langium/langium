@@ -237,19 +237,19 @@ export class LangiumParser extends AbstractLangiumParser {
         const { tokens, hidden } = lexerResult;
         this.commentProvider.clearComments();
         let j = 0;
-        for (let i = 0, last = 0, prev = <Array<IToken>>[]; i < tokens.length; ) {
+        for (let i = 0, last = 0, lastId = 0; i < tokens.length; ) {
             if (j == hidden.length || tokens[i].startOffset < hidden[j].startOffset) {
                 const token = tokens[i++];
-                let payload = token.payload = prev.slice(last);
-                last = prev.length; // save index for immediate comments
+                let payload = token.payload = hidden.slice(last, j);
+                last = j; // save index for immediate comments
                 if (['entry', 'ID'].includes(token.tokenType.name)) {
-                    payload = prev; // use non-immediate comments as well for this token
-                    prev = []; // prevent subsequent tokens from inheriting the same comments
+                    payload = hidden.slice(lastId, j); // use non-immediate comments as well for this token
+                    lastId = j; // prevent subsequent tokens from inheriting the same comments
                 }
                 this.commentProvider.registerComments(token, payload);
                 continue;
             }
-            prev.push(hidden[j++]);
+            j++;
         }
         return hidden.slice(j); // the remaining comments, if any
     }
