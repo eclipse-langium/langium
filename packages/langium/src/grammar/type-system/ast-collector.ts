@@ -5,8 +5,7 @@
  ******************************************************************************/
 
 import type { Grammar } from '../../languages/generated/ast.js';
-import type { LangiumDocuments } from '../../workspace/documents.js';
-import type { CommentProvider } from '../../documentation/comment-provider.js';
+import type { LangiumCoreServices } from '../../index.js';
 import type { AstTypes, InterfaceType, PropertyType, TypeOption, UnionType } from './type-collector/types.js';
 import type { ValidationAstTypes } from './type-collector/all-types.js';
 import type { PlainAstTypes, PlainInterface, PlainUnion } from './type-collector/plain-types.js';
@@ -19,11 +18,10 @@ import { plainToTypes } from './type-collector/plain-types.js';
  * Collects all types for the generated AST. The types collector entry point.
  *
  * @param grammars All grammars involved in the type generation process
- * @param documents Additional documents so that imports can be resolved as necessary
- * @param commentProvider The comment provider service to pass along JSDoc comments to the generated AST
+ * @param services Langium core services to resolve imports as needed, and to pass along JSDoc comments to the generated AST
  */
-export function collectAst(grammars: Grammar | Grammar[], documents?: LangiumDocuments, commentProvider?: CommentProvider): AstTypes {
-    const { inferred, declared } = collectTypeResources(grammars, documents, commentProvider);
+export function collectAst(grammars: Grammar | Grammar[], services?: LangiumCoreServices): AstTypes {
+    const { inferred, declared } = collectTypeResources(grammars, services);
     return createAstTypes(inferred, declared);
 }
 
@@ -32,11 +30,10 @@ export function collectAst(grammars: Grammar | Grammar[], documents?: LangiumDoc
  * The validation process requires us to compare our inferred types with our declared types.
  *
  * @param grammars All grammars involved in the validation process
- * @param documents Additional documents so that imports can be resolved as necessary
- * @param commentProvider The comment provider service to pass along JSDoc comments to the generated AST
+ * @param services Langium core services to resolve imports as needed, and to pass along JSDoc comments to the generated AST
  */
-export function collectValidationAst(grammars: Grammar | Grammar[], documents?: LangiumDocuments, commentProvider?: CommentProvider): ValidationAstTypes {
-    const { inferred, declared, astResources } = collectTypeResources(grammars, documents, commentProvider);
+export function collectValidationAst(grammars: Grammar | Grammar[], services?: LangiumCoreServices): ValidationAstTypes {
+    const { inferred, declared, astResources } = collectTypeResources(grammars, services);
 
     return {
         astResources,

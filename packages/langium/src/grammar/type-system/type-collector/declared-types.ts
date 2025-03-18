@@ -5,14 +5,15 @@
  ******************************************************************************/
 
 import type { Interface, Type, TypeDefinition, ValueLiteral } from '../../../languages/generated/ast.js';
-import type { CommentProvider } from '../../../documentation/comment-provider.js';
+import type { LangiumCoreServices } from '../../../index.js';
 import { isArrayLiteral, isBooleanLiteral } from '../../../languages/generated/ast.js';
 import type { PlainAstTypes, PlainInterface, PlainProperty, PlainPropertyDefaultValue, PlainPropertyType, PlainUnion } from './plain-types.js';
 import { isArrayType, isReferenceType, isUnionType, isSimpleType } from '../../../languages/generated/ast.js';
 import { getTypeNameWithoutError, isPrimitiveGrammarType } from '../../internal-grammar-util.js';
 import { getTypeName } from '../../../utils/grammar-utils.js';
 
-export function collectDeclaredTypes(interfaces: Interface[], unions: Type[], commentProvider?: CommentProvider): PlainAstTypes {
+export function collectDeclaredTypes(interfaces: Interface[], unions: Type[], services?: LangiumCoreServices): PlainAstTypes {
+    const commentProvider = services?.documentation.CommentProvider;
     const declaredTypes: PlainAstTypes = { unions: [], interfaces: [] };
 
     // add interfaces

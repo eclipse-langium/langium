@@ -6,7 +6,7 @@
 
 import type { ParserRule, Interface, Type, Grammar } from '../../../languages/generated/ast.js';
 import type { URI } from '../../../utils/uri-utils.js';
-import type { LangiumDocuments } from '../../../workspace/documents.js';
+import type { LangiumCoreServices } from '../../../index.js';
 import type { PlainAstTypes } from './plain-types.js';
 import type { AstTypes } from './types.js';
 import { collectInferredTypes } from './inferred-types.js';
@@ -15,7 +15,6 @@ import { getDocument } from '../../../utils/ast-utils.js';
 import { isParserRule } from '../../../languages/generated/ast.js';
 import { resolveImport } from '../../internal-grammar-util.js';
 import { isDataTypeRule } from '../../../utils/grammar-utils.js';
-import type { CommentProvider } from '../../../documentation/comment-provider.js';
 
 export interface AstResources {
     parserRules: ParserRule[]
@@ -36,10 +35,10 @@ export interface ValidationAstTypes {
     astResources: AstResources
 }
 
-export function collectTypeResources(grammars: Grammar | Grammar[], documents?: LangiumDocuments, commentProvider?: CommentProvider): TypeResources {
-    const astResources = collectAllAstResources(grammars, documents, undefined, undefined, commentProvider);
-    const declared = collectDeclaredTypes(astResources.interfaces, astResources.types, commentProvider);
-    const inferred = collectInferredTypes(astResources.parserRules, astResources.datatypeRules, declared, commentProvider);
+export function collectTypeResources(grammars: Grammar | Grammar[], services?: LangiumCoreServices): TypeResources {
+    const astResources = collectAllAstResources(grammars, undefined, undefined, services);
+    const declared = collectDeclaredTypes(astResources.interfaces, astResources.types, services);
+    const inferred = collectInferredTypes(astResources.parserRules, astResources.datatypeRules, declared, services);
 
     return {
         astResources,
@@ -50,8 +49,8 @@ export function collectTypeResources(grammars: Grammar | Grammar[], documents?: 
 
 ///////////////////////////////////////////////////////////////////////////////
 
-export function collectAllAstResources(grammars: Grammar | Grammar[], documents?: LangiumDocuments, visited: Set<URI> = new Set(),
-    astResources: AstResources = { parserRules: [], datatypeRules: [], interfaces: [], types: [] }, commentProvider?: CommentProvider): AstResources {
+export function collectAllAstResources(grammars: Grammar | Grammar[], visited: Set<URI> = new Set(),
+    astResources: AstResources = { parserRules: [], datatypeRules: [], interfaces: [], types: [] }, services?: LangiumCoreServices): AstResources {
 
     if (!Array.isArray(grammars)) grammars = [grammars];
     for (const grammar of grammars) {
@@ -72,9 +71,10 @@ export function collectAllAstResources(grammars: Grammar | Grammar[], documents?
         grammar.interfaces.forEach(e => astResources.interfaces.push(e));
         grammar.types.forEach(e => astResources.types.push(e));
 
+        const documents = services?.shared.workspace.LangiumDocuments;
         if (documents) {
             const importedGrammars = grammar.imports.map(e => resolveImport(documents, e)).filter((e): e is Grammar => e !== undefined);
-            collectAllAstResources(importedGrammars, documents, visited, astResources, commentProvider);
+            collectAllAstResources(importedGrammars, visited, astResources, services);
         }
     }
     return astResources;

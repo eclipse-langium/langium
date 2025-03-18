@@ -6,7 +6,7 @@
 
 import type { ParserRule, Action, AbstractElement, Assignment, RuleCall } from '../../../languages/generated/ast.js';
 import type { PlainAstTypes, PlainInterface, PlainProperty, PlainPropertyType, PlainUnion } from './plain-types.js';
-import type { CommentProvider } from '../../../documentation/comment-provider.js';
+import type { LangiumCoreServices } from '../../../index.js';
 import { isNamed } from '../../../references/name-provider.js';
 import { MultiMap } from '../../../utils/collections.js';
 import { isAlternatives, isKeyword, isParserRule, isAction, isGroup, isUnorderedGroup, isAssignment, isRuleCall, isCrossReference, isTerminalRule } from '../../../languages/generated/ast.js';
@@ -257,7 +257,9 @@ function copyProperty(value: PlainProperty): PlainProperty {
     };
 }
 
-export function collectInferredTypes(parserRules: ParserRule[], datatypeRules: ParserRule[], declared: PlainAstTypes, commentProvider?: CommentProvider): PlainAstTypes {
+export function collectInferredTypes(parserRules: ParserRule[], datatypeRules: ParserRule[], declared: PlainAstTypes, services?: LangiumCoreServices): PlainAstTypes {
+    const commentProvider = services?.documentation.CommentProvider;
+
     // extract interfaces and types from parser rules
     const allTypes: TypePath[] = [];
     const context: TypeCollectionContext = {
@@ -265,7 +267,7 @@ export function collectInferredTypes(parserRules: ParserRule[], datatypeRules: P
     };
     for (const rule of parserRules) {
         const comment = commentProvider?.getComment(rule);
-        allTypes.push(...getRuleTypes(context, rule, commentProvider).map(typePath => ({...typePath, comment})));
+        allTypes.push(...getRuleTypes(context, rule, services).map(typePath => ({...typePath, comment})));
     }
     const interfaces = calculateInterfaces(allTypes);
     const unions = buildSuperUnions(interfaces);
@@ -356,11 +358,11 @@ function buildDataRuleType(element: AbstractElement, cancel: () => PlainProperty
     return cancel();
 }
 
-function getRuleTypes(context: TypeCollectionContext, rule: ParserRule, commentProvider?: CommentProvider): TypePath[] {
+function getRuleTypes(context: TypeCollectionContext, rule: ParserRule, services?: LangiumCoreServices): TypePath[] {
     const type = newTypePart(rule);
     const graph = new TypeGraph(context, type);
     if (rule.definition) {
-        type.end = collectElement(graph, graph.root, rule.definition, commentProvider);
+        type.end = collectElement(graph, graph.root, rule.definition, services);
     }
     return flattenTypes(graph.getTypes(), type.end ?? newTypePart());
 }
@@ -382,7 +384,7 @@ function newTypePart(element?: ParserRule | Action | string): TypePart {
  * @param type Element that collects a current type branch for the given element.
  * @param element The given AST element, from which it's necessary to extract the type.
  */
-function collectElement(graph: TypeGraph, current: TypePart, element: AbstractElement, commentProvider?: CommentProvider): TypePart {
+function collectElement(graph: TypeGraph, current: TypePart, element: AbstractElement, services?: LangiumCoreServices): TypePart {
     const optional = isOptionalCardinality(element.cardinality, element);
     if (isAlternatives(element)) {
         const children: TypePart[] = [];
@@ -392,7 +394,7 @@ function collectElement(graph: TypeGraph, current: TypePart, element: AbstractEl
         }
         for (const alt of element.elements) {
             const altType = graph.connect(current, newTypePart());
-            children.push(collectElement(graph, altType, alt, commentProvider));
+            children.push(collectElement(graph, altType, alt, services));
         }
         const mergeNode = graph.merge(...children);
         current.end = mergeNode;
@@ -404,7 +406,7 @@ function collectElement(graph: TypeGraph, current: TypePart, element: AbstractEl
             skipNode = graph.connect(current, newTypePart());
         }
         for (const item of element.elements) {
-            groupNode = collectElement(graph, groupNode, item, commentProvider);
+            groupNode = collectElement(graph, groupNode, item, services);
         }
         if (skipNode) {
             const mergeNode = graph.merge(skipNode, groupNode);
@@ -414,16 +416,17 @@ function collectElement(graph: TypeGraph, current: TypePart, element: AbstractEl
             return groupNode;
         }
     } else if (isAction(element)) {
-        return addAction(graph, current, element, commentProvider);
+        return addAction(graph, current, element, services);
     } else if (isAssignment(element)) {
-        addAssignment(current, element, commentProvider);
+        addAssignment(current, element, services);
     } else if (isRuleCall(element)) {
-        addRuleCall(graph, current, element, commentProvider);
+        addRuleCall(graph, current, element, services);
     }
     return current;
 }
 
-function addAction(graph: TypeGraph, parent: TypePart, action: Action, commentProvider?: CommentProvider): TypePart {
+function addAction(graph: TypeGraph, parent: TypePart, action: Action, services?: LangiumCoreServices): TypePart {
+    const commentProvider = services?.documentation.CommentProvider;
 
     // We create a copy of the current type part
     // This is essentially a leaf node of the current type
@@ -461,7 +464,8 @@ function addAction(graph: TypeGraph, parent: TypePart, action: Action, commentPr
     return typeNode;
 }
 
-function addAssignment(current: TypePart, assignment: Assignment, commentProvider?: CommentProvider): void {
+function addAssignment(current: TypePart, assignment: Assignment, services?: LangiumCoreServices): void {
+    const commentProvider = services?.documentation.CommentProvider;
     const typeItems: TypeCollection = { types: new Set(), reference: false };
     findTypes(assignment.terminal, typeItems);
 
@@ -498,11 +502,11 @@ function findTypes(terminal: AbstractElement, types: TypeCollection): void {
     }
 }
 
-function addRuleCall(graph: TypeGraph, current: TypePart, ruleCall: RuleCall, commentProvider?: CommentProvider): void {
+function addRuleCall(graph: TypeGraph, current: TypePart, ruleCall: RuleCall, services?: LangiumCoreServices): void {
     const rule = ruleCall.rule.ref;
     // Add all properties of fragments to the current type
     if (isParserRule(rule) && rule.fragment) {
-        const properties = getFragmentProperties(rule, graph.context, commentProvider);
+        const properties = getFragmentProperties(rule, graph.context, services);
         if (isOptionalCardinality(ruleCall.cardinality)) {
             current.properties.push(...properties.map(e => ({
                 ...e,
@@ -516,7 +520,7 @@ function addRuleCall(graph: TypeGraph, current: TypePart, ruleCall: RuleCall, co
     }
 }
 
-function getFragmentProperties(fragment: ParserRule, context: TypeCollectionContext, commentProvider?: CommentProvider): PlainProperty[] {
+function getFragmentProperties(fragment: ParserRule, context: TypeCollectionContext, services?: LangiumCoreServices): PlainProperty[] {
     const existing = context.fragments.get(fragment);
     if (existing) {
         return existing;
@@ -524,7 +528,7 @@ function getFragmentProperties(fragment: ParserRule, context: TypeCollectionCont
     const properties: PlainProperty[] = [];
     context.fragments.set(fragment, properties);
     const fragmentName = getTypeNameWithoutError(fragment);
-    const typeAlternatives = getRuleTypes(context, fragment, commentProvider).filter(e => e.alt.name === fragmentName);
+    const typeAlternatives = getRuleTypes(context, fragment, services).filter(e => e.alt.name === fragmentName);
     properties.push(...typeAlternatives.flatMap(e => e.alt.properties));
     return properties;
 }
