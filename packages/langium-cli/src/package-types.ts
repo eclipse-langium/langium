@@ -67,4 +67,9 @@ export interface LangiumLanguageConfig {
     }
     /** Configure the chevrotain parser for a single language */
     chevrotainParserConfig?: IParserConfig
+    /** Enable GBNF file generation */
+    bnf?: {
+        /** Output path for GBNF file */
+        out: string
+    }
 }

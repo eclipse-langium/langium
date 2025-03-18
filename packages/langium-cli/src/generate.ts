@@ -5,7 +5,7 @@
  ******************************************************************************/
 
 import type { AstNode, Grammar, LangiumDocument, Mutable } from 'langium';
-import type { LangiumConfig, LangiumLanguageConfig} from './package-types.js';
+import type { LangiumConfig, LangiumLanguageConfig } from './package-types.js';
 import { URI } from 'langium';
 import { loadConfig } from './package.js';
 import { AstUtils, GrammarAST } from 'langium';
@@ -14,6 +14,7 @@ import { NodeFileSystem } from 'langium/node';
 import { generateAst } from './generator/ast-generator.js';
 import { serializeGrammar } from './generator/grammar-serializer.js';
 import { generateModule } from './generator/module-generator.js';
+import { generateBnf } from './generator/bnf-generator.js';
 import { generateTextMate } from './generator/highlighting/textmate-generator.js';
 import { generateMonarch } from './generator/highlighting/monarch-generator.js';
 import { generatePrismHighlighting } from './generator/highlighting/prism-generator.js';
@@ -389,6 +390,11 @@ export async function runGenerator(config: LangiumConfig, options: GenerateOptio
                     await writeWithFail(`${filePath}.svg`, diagram, options);
                 }
             }
+        }
+        if (languageConfig?.bnf) {
+            const genBnf = generateBnf([grammar]);
+            const bnfPath = path.resolve(relPath, languageConfig.bnf.out ?? `${grammar.name ?? 'grammar'}.gbnf`);
+            await writeWithFail(bnfPath, genBnf, options);
         }
     }
 
