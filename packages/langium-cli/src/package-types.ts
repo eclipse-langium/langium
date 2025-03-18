@@ -30,6 +30,8 @@ export interface LangiumConfig {
     chevrotainParserConfig?: IParserConfig,
     /** The following option is meant to be used only by Langium itself */
     langiumInternal?: boolean
+    /** Use optional properties in generated ast (except for boolean and arrays properties) */
+    optionalProperties?: boolean
 }
 
 export interface LangiumLanguageConfig {

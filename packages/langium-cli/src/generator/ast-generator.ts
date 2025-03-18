@@ -16,6 +16,7 @@ export function generateAst(services: LangiumCoreServices, grammars: Grammar[], 
     const astTypes = collectAst(grammars, services.shared.workspace.LangiumDocuments);
     const crossRef = grammars.some(grammar => hasCrossReferences(grammar));
     const importFrom = config.langiumInternal ? `../../syntax-tree${config.importExtension}` : 'langium';
+
     /* eslint-disable @typescript-eslint/indent */
     const fileNode = expandToNode`
         ${generatedHeader}
@@ -27,7 +28,7 @@ export function generateAst(services: LangiumCoreServices, grammars: Grammar[], 
         ${generateTerminalConstants(grammars, config)}
 
         ${joinToNode(astTypes.unions, union => union.toAstTypesString(isAstType(union.type)), { appendNewLineIfNotEmpty: true })}
-        ${joinToNode(astTypes.interfaces, iFace => iFace.toAstTypesString(true), { appendNewLineIfNotEmpty: true })}
+        ${joinToNode(astTypes.interfaces, iFace => iFace.toAstTypesString(true, config.optionalProperties), { appendNewLineIfNotEmpty: true })}
         ${
             astTypes.unions = astTypes.unions.filter(e => isAstType(e.type)),
             generateAstReflection(config, astTypes)
