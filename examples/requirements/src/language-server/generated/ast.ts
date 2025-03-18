@@ -16,7 +16,7 @@ export const RequirementsAndTestsTerminals = {
 
 export type RequirementsAndTestsTerminalNames = keyof typeof RequirementsAndTestsTerminals;
 
-export type RequirementsAndTestsKeywordNames = 
+export type RequirementsAndTestsKeywordNames =
     | ","
     | ":"
     | "="
