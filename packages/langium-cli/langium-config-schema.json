@@ -171,6 +171,10 @@
         "langiumInternal": {
             "description": "A flag to determine whether langium uses itself to bootstrap",
             "type": "boolean"
+        },
+        "optionalProperties": {
+            "description": "Use optional properties in generated ast (except for boolean and arrays properties)",
+            "type": "boolean"
         }
     },
     "required": [
