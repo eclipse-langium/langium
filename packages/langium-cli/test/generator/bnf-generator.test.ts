@@ -83,7 +83,7 @@ describe('BNF generator', () => {
     });
 
     test('GBNF - No hidden rules', async () => {
-        const grammarContent = `
+        const grammarContent = expandToStringWithNL`
         grammar RootLang
         entry Root:
             'root' name=ID;

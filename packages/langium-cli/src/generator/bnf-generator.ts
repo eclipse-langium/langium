@@ -5,6 +5,7 @@
  ******************************************************************************/
 
 import { CstUtils, type Grammar } from 'langium';
+import { EOL } from 'langium/generate';
 import * as _ from 'lodash';
 import type { AbstractElement, AbstractRule, TerminalRule } from '../../../langium/lib/languages/generated/ast.js';
 import {
@@ -27,7 +28,7 @@ export function generateBnf(grammars: Grammar[], options: { dialect: BnfDialect 
     grammarsWithName.forEach(grammar => {
         grammar.rules.forEach(rule => {
             result += processRule(rule, ctx);
-            result += '\n\n';
+            result += EOL + EOL;
             if (ctx.hasHiddenRules && isTerminalRule(rule) && rule.hidden) {
                 hiddenRules.push(rule);
             }
@@ -35,7 +36,7 @@ export function generateBnf(grammars: Grammar[], options: { dialect: BnfDialect 
     });
 
     if (hiddenRules.length > 0) {
-        result += `${processName('HIDDEN', ctx)} ::= ( ${hiddenRules.map(rule => processName(rule.name, ctx)).join(' | ')} )\n`;
+        result += `${processName('HIDDEN', ctx)} ::= ( ${hiddenRules.map(rule => processName(rule.name, ctx)).join(' | ')} )${EOL}`;
     }
     return result;
 }
@@ -109,10 +110,10 @@ function processComment(rule: AbstractRule, ctx: GeneratorContext) {
         ?.replace(/\s*\*\/$/, '');  // Remove trailing `*/`
     if (comment) {
         if (ctx.dialect === 'GBNF') {
-            return `# ${comment}\n`;
+            return `# ${comment}${EOL}`;
         } else {
             // TODO  (*  *) is not supported in some of EBNF parsers but /* */.
-            return `(* ${comment} *)\n`;
+            return `(* ${comment} *)${EOL}`;
         }
     }
     return '';
