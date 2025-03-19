@@ -417,6 +417,25 @@ describe('DefaultDocumentBuilder', () => {
         await builder.build([document], { validation: true });
     });
 
+    test('`waitUntil` will correctly resolve if the document is already in the target state.', async () => {
+        const services = await createServices();
+        const documentFactory = services.shared.workspace.LangiumDocumentFactory;
+        const documents = services.shared.workspace.LangiumDocuments;
+        const builder = services.shared.workspace.DocumentBuilder;
+        const documentUri = URI.parse('file:///test1.txt');
+        const document = documentFactory.fromString('', documentUri);
+        documents.addDocument(document);
+        await builder.build([document], { validation: true });
+        expect(document.state).toBe(DocumentState.Validated);
+        // Should instantly resolve, since the document is already validated.
+        await expect(
+            Promise.race([
+                builder.waitUntil(DocumentState.Validated, documentUri),
+                new Promise((_, rej) => setTimeout(rej))
+            ])
+        ).resolves.toEqual(documentUri);
+    });
+
     test('`onDocumentPhase` always triggers before the respective `onBuildPhase`', async () => {
         const services = await createServices();
         const documentFactory = services.shared.workspace.LangiumDocumentFactory;
