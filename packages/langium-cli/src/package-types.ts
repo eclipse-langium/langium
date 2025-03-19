@@ -70,6 +70,8 @@ export interface LangiumLanguageConfig {
     /** Enable GBNF file generation */
     bnf?: {
         /** Output path for GBNF file */
-        out: string
+        out: string,
+        /** Dialect of the generated BNF file. GBNF is the default. In EBNF RegEx terminals are not supported. */
+        dialect?: 'GBNF' | 'EBNF'
     }
 }
