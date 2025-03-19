@@ -56,23 +56,23 @@ describe('BNF generator', () => {
         const result = (await parseHelper<Grammar>(grammar)(GRAMMAR_WITH_FRAGMENT)).parseResult;
         const typesFileContent = generateBnf([result.value], { dialect: 'EBNF' });
         const expected = expandToStringWithNL`
-        /* * This is a root rule */
+        (* * This is a root rule *)
         <Domainmodel> ::= <PackageDeclaration>*
 
-        /* * This is a package declaration * Using parser rule fragment */
+        (* * This is a package declaration * Using parser rule fragment *)
         <PackageDeclaration> ::= <HIDDEN>* "package" <NamedElement> <HIDDEN>* "{" <HIDDEN>* "}"
 
         <NamedElement> ::= <QualifiedName>
 
         <QualifiedName> ::= <ID> ( <HIDDEN>* "." <ID> )*
 
-        /* * Terminal fragment */
+        (* * Terminal fragment *)
         <NUMBER> ::= <HIDDEN>* [0-9]+
 
-        /* * Terminal using fragment */
+        (* * Terminal using fragment *)
         <SIGNED_NUMBER> ::= <HIDDEN>* [+-] <NUMBER>+
 
-        /* Terminal rule */
+        (* Terminal rule *)
         <ID> ::= <HIDDEN>* [A-z]*
 
         <WS> ::= \\s+
