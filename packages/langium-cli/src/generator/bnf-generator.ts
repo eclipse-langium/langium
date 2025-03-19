@@ -111,7 +111,8 @@ function processComment(rule: AbstractRule, ctx: GeneratorContext) {
         if (ctx.dialect === 'GBNF') {
             return `# ${comment}\n`;
         } else {
-            return `/* ${comment} */\n`;
+            // TODO  (*  *) is not supported in some of EBNF parsers but /* */.
+            return `(* ${comment} *)\n`;
         }
     }
     return '';
