@@ -186,6 +186,51 @@ describe('Ast generator', () => {
         }
     `);
 
+    testGeneratedInterface('optionalProperties option shall generate properties as optional in interfaces', `
+        grammar TestGrammar
+            
+        interface A {
+            str: string
+            strOpt?: string
+            strArray: string[]
+            bool: boolean
+            boolOpt?: boolean
+            boolArray: bool[]
+            ref: @A
+            refOpt?: @A
+            refArray: @A[]
+            ctn: A
+            ctnOpt?: A
+            ctnArray: A[]
+        }
+
+        hidden terminal WS: /\\s+/;
+        terminal ID: /[_a-zA-Z][\\w_]*/;
+    `, expandToString`
+        export interface A extends langium.AstNode {
+            readonly $container: A;
+            readonly $type: 'A';
+            bool: boolean;
+            boolArray: Array<unknown>;
+            boolOpt: boolean;
+            ctn?: A;
+            ctnArray: Array<A>;
+            ctnOpt?: A;
+            ref?: langium.Reference<A>;
+            refArray: Array<langium.Reference<A>>;
+            refOpt?: langium.Reference<A>;
+            str?: string;
+            strArray: Array<string>;
+            strOpt?: string;
+        }
+
+        export const A = 'A';
+
+        export function isA(item: unknown): item is A {
+            return reflection.isInstance(item, A);
+        }
+    `, true);
+
     testGeneratedAst('should generate checker functions for datatype rules of type number', `
         grammar TestGrammar
 
@@ -504,8 +549,8 @@ async function testTerminalConstants(grammar: string, expected: string) {
     expect(relevantPart).toEqual(expectedPart);
 }
 
-function testGeneratedInterface(name: string, grammar: string, expected: string): void {
-    testGenerated(name, grammar, expected, 'export interface', 'export type testAstType');
+function testGeneratedInterface(name: string, grammar: string, expected: string, optionalProperties = false): void {
+    testGenerated(name, grammar, expected, 'export interface', 'export type testAstType', 0, optionalProperties);
 }
 
 function testGeneratedAst(name: string, grammar: string, expected: string): void {
@@ -519,13 +564,14 @@ function testTypeMetaData(name: string, grammar: string, expected: string): void
 function testReferenceType(name: string, grammar: string, expected: string): void {
     testGenerated(name, grammar, expected, 'getReferenceType', 'getTypeMetaData');
 }
-function testGenerated(name: string, grammar: string, expected: string, start: string, end: string, startCount = 0): void {
+function testGenerated(name: string, grammar: string, expected: string, start: string, end: string, startCount = 0, optionalProperties = false): void {
     test(name, async () => {
         const result = (await parse(grammar)).parseResult;
         const config: LangiumConfig = {
             [RelativePath]: './',
             projectName: 'test',
-            languages: []
+            languages: [],
+            optionalProperties: optionalProperties
         };
         const expectedPart = normalizeEOL(expected).trim();
         const typesFileContent = generateAst(services.grammar, [result.value], config);
