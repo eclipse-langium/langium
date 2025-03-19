@@ -176,16 +176,20 @@ function buildCrossReferenceTypes(astTypes: AstTypes): CrossReferenceType[] {
                 });
             }
         }
-        // Since the types are topologically sorted we can assume
-        // that all super type properties have already been processed
+    }
+
+    for (const typeInterface of astTypes.interfaces) {
+        const superFeatures = new Set<string>();
         for (const superType of typeInterface.interfaceSuperTypes) {
-            const superTypeCrossReferences = crossReferences.get(superType.name).map(e => ({
-                ...e,
-                type: typeInterface.name
-            }));
-            crossReferences.addAll(typeInterface.name, superTypeCrossReferences);
+            for (const superTypeCrossReference of crossReferences.get(superType.name)) {
+                if (!superFeatures.has(superTypeCrossReference.feature)) {
+                    crossReferences.add(typeInterface.name, { ...superTypeCrossReference, type: typeInterface.name });
+                    superFeatures.add(superTypeCrossReference.feature);
+                }
+            }
         }
     }
+
     return Array.from(crossReferences.values()).sort((a, b) => a.type.localeCompare(b.type));
 }
 
