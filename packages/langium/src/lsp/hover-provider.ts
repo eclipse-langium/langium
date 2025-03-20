@@ -13,7 +13,10 @@ import type { AstNode } from '../syntax-tree.js';
 import type { MaybePromise } from '../utils/promise-utils.js';
 import type { LangiumDocument } from '../workspace/documents.js';
 import type { DocumentationProvider } from '../documentation/documentation-provider.js';
-import { findDeclarationNodeAtOffset } from '../utils/cst-utils.js';
+import { findCommentNode, findDeclarationNodeAtOffset } from '../utils/cst-utils.js';
+import { isKeyword } from '../languages/generated/ast.js';
+import { isJSDoc, parseJSDoc } from '../documentation/jsdoc.js';
+import { isAstNodeWithComment } from '../serializer/json-serializer.js';
 
 /**
  * Language-specific service for handling hover requests.
@@ -48,6 +51,11 @@ export abstract class AstNodeHoverProvider implements HoverProvider {
                 if (targetNode) {
                     return this.getAstNodeHoverContent(targetNode);
                 }
+
+                // Add support for documentation on keywords
+                if (isKeyword(cstNode.grammarSource)) {
+                    return this.getKeywordHoverContent(cstNode.grammarSource);
+                }
             }
         }
         return undefined;
@@ -55,6 +63,24 @@ export abstract class AstNodeHoverProvider implements HoverProvider {
 
     protected abstract getAstNodeHoverContent(node: AstNode): MaybePromise<Hover | undefined>;
 
+    protected getKeywordHoverContent(node: AstNode): MaybePromise<Hover | undefined> {
+        let comment = isAstNodeWithComment(node) ? node.$comment : undefined;
+        if (!comment) {
+            comment = findCommentNode(node.$cstNode, ['ML_COMMENT'])?.text;
+        }
+        if (comment && isJSDoc(comment)) {
+            const content = parseJSDoc(comment).toMarkdown();
+            if (content) {
+                return {
+                    contents: {
+                        kind: 'markdown',
+                        value: content
+                    }
+                };
+            }
+        }
+        return undefined;
+    }
 }
 
 export class MultilineCommentHoverProvider extends AstNodeHoverProvider {
