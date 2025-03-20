@@ -13,7 +13,7 @@ import { generatedHeader } from './node-util.js';
 import { collectKeywords, collectTerminalRegexps } from './langium-util.js';
 
 export function generateAst(services: LangiumCoreServices, grammars: Grammar[], config: LangiumConfig): string {
-    const astTypes = collectAst(grammars, services.shared.workspace.LangiumDocuments);
+    const astTypes = collectAst(grammars, services);
     const importFrom = config.langiumInternal ? `../../syntax-tree${config.importExtension}` : 'langium';
     /* eslint-disable @typescript-eslint/indent */
     const fileNode = expandToNode`
