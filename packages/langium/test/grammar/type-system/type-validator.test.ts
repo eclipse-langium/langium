@@ -39,7 +39,22 @@ describe('validate params in types', () => {
         expect(d.range.start).toEqual({ character: 8, line: 4 });
         expect(d.range.end).toEqual({ character: 10, line: 4 });
     });
-
+    // verifies that properties with default value are not required
+    test('verify property with default value not required, for single rule', async () => {
+        const prog = `
+        interface B {
+            name:string=''
+            count?:string
+        }
+        X2 returns B: count=ID;
+        terminal ID: /[a-zA-Z_][\\w_]*/;
+        `.trim();
+        // verify we don't have error on 'name' property
+        const document = await parseDocument(grammarServices, prog);
+        let diagnostics: Diagnostic[] = await grammarServices.validation.DocumentValidator.validateDocument(document);
+        diagnostics = diagnostics.filter(d => d.severity === DiagnosticSeverity.Error);
+        expect(diagnostics).toHaveLength(0);
+    });
     // verifies that missing required params use the right msg & position
     test('verify missing required param error is present for the correct rule', async () => {
         const prog = `
