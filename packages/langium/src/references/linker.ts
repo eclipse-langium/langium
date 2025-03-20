@@ -14,6 +14,7 @@ import { isAstNode, isAstNodeDescription, isLinkingError } from '../syntax-tree.
 import { findRootNode, streamAst, streamReferences } from '../utils/ast-utils.js';
 import { interruptAndCheck } from '../utils/promise-utils.js';
 import { DocumentState } from '../workspace/documents.js';
+import type { LangiumProfiler } from '../workspace/profiler.js';
 
 /**
  * Language-specific service for resolving cross-references in the AST.
@@ -95,18 +96,44 @@ export class DefaultLinker implements Linker {
     protected readonly scopeProvider: ScopeProvider;
     protected readonly astNodeLocator: AstNodeLocator;
     protected readonly langiumDocuments: () => LangiumDocuments;
+    protected readonly profiler: LangiumProfiler;
+    protected readonly languageId: string;
 
     constructor(services: LangiumCoreServices) {
         this.reflection = services.shared.AstReflection;
         this.langiumDocuments = () => services.shared.workspace.LangiumDocuments;
         this.scopeProvider = services.references.ScopeProvider;
         this.astNodeLocator = services.workspace.AstNodeLocator;
+        this.profiler = services.shared.workspace.LangiumProfiler;
+        this.languageId = services.LanguageMetaData.languageId;
     }
 
     async link(document: LangiumDocument, cancelToken = CancellationToken.None): Promise<void> {
-        for (const node of streamAst(document.parseResult.value)) {
-            await interruptAndCheck(cancelToken);
-            streamReferences(node).forEach(ref => this.doLink(ref, document));
+        if (this.profiler.isActive('linking')) {
+            const task = this.profiler.createTask('linking', this.languageId);
+            task.start();
+            try {
+                for (const node of streamAst(document.parseResult.value)) {
+                    await interruptAndCheck(cancelToken);
+                    streamReferences(node).forEach(ref => {
+                        const name = `${node.$type}:${ref.property}`;
+                        task.startSubTask(name);
+                        try {
+                            this.doLink(ref, document);
+                        } finally {
+                            task.stopSubTask(name);
+                        }
+                    });
+                }
+            } finally {
+                task.stop();
+            }
+        }
+        else {
+            for (const node of streamAst(document.parseResult.value)) {
+                await interruptAndCheck(cancelToken);
+                streamReferences(node).forEach(ref => this.doLink(ref, document));
+            }
         }
     }
 

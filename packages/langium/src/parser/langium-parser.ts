@@ -5,8 +5,8 @@
  ******************************************************************************/
 
 /* eslint-disable @typescript-eslint/no-explicit-any */
-import type { AbstractElement, Action, Assignment, InfixRule, ParserRule } from '../languages/generated/ast.js';
 import { isInfixRule } from '../languages/generated/ast.js';
+import type { AbstractElement, Action, Assignment, InfixRule, ParserRule } from '../languages/generated/ast.js';
 import type { DSLMethodOpts, ILexingError, IOrAlt, IParserErrorMessageProvider, IRecognitionException, IToken, ParserMethod, SubruleMethodOpts, TokenType, TokenVocabulary, IRuleConfig } from 'chevrotain';
 import type { Linker } from '../references/linker.js';
 import type { LangiumCoreServices } from '../services.js';
@@ -278,7 +278,7 @@ export class LangiumParser extends AbstractLangiumParser {
         if (!ruleMethod) {
             throw new Error(options.rule ? `No rule found with name '${options.rule}'` : 'No main rule available.');
         }
-        const result = this.wrapper.rule(ruleMethod);
+        const result = this.doParse(ruleMethod);
         this.nodeBuilder.addHiddenNodes(lexerResult.hidden);
         this.unorderedGroups.clear();
         this.lexerResult = undefined;
@@ -292,7 +292,7 @@ export class LangiumParser extends AbstractLangiumParser {
     }
 
     private doParse(rule: RuleResult): any {
-        let result = rule.call(this.wrapper, {});
+        let result = this.wrapper.rule(rule);
         if (this.stack.length > 0) {
             // In case the parser throws on the entry rule, `construct` is not called
             // We need to call it manually here
