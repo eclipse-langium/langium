@@ -48,29 +48,32 @@ export class LangiumProfiler {
             this.activeCategories.delete(categories);
         }
     }
-    createTask(category: string, taskId?: string): ProfilingTask {
+    createTask(category: string, taskId: string): ProfilingTask {
         if (!this.isActive(category)) {
             throw new Error(`Category "${category}" is not active.`);
         }
-
-        taskId ??= `task-${Date.now()}`;
-
+        console.log(`Creating profiling task for '${category}.${taskId}'.`);
         return new ProfilingTask((record: ProfilingRecord) => this.records.add(category, this.dumpRecord(category, record)), taskId);
     }
 
     private dumpRecord(category: string, record: ProfilingRecord): ProfilingRecord {
         console.info(`Task ${category}.${record.identifier} executed in ${record.duration.toFixed(2)}ms and ended at ${record.date.toISOString()}`);
 
-        const result: Array<{ name: string, count: number, duration: number, ratio: number }> = [];
+        const result: Array<{ name: string, count: number, duration: number }> = [];
         for (const key of record.entries.keys()) {
             const values = record.entries.get(key);
             const duration = values.reduce((p, c) => p + c);
-            const ratio = 100 * duration / record.duration;
-            result.push({ name: key, count: values.length, duration: Math.round(100 * duration) / 100, ratio: Math.round(100 * ratio) / 100 });
+            result.push({ name: `${record.identifier}.${key}`, count: values.length, duration: duration });
         }
-        result.sort((a, b) => b.duration - a.duration);
 
-        console.table(result);
+        // sum all duration
+        const taskInternalDuration = record.duration - result.map(r => r.duration).reduce((a, b) => a + b, 0);
+
+        result.push({ name: record.identifier, count: 1, duration: taskInternalDuration });
+
+        result.sort((a, b) => b.duration - a.duration);
+        function Round(value: number) { return Math.round(100 * value) / 100; }
+        console.table(result.map(e => { return { Element: e.name, Count: e.count, 'Self %': Round(100 * e.duration / record.duration), 'Time (ms)': Round(e.duration) }; }));
         return record;
     }
     getRecords(categories?: string | string[]): Stream<ProfilingRecord> {
@@ -110,7 +113,6 @@ export class ProfilingTask {
     constructor(addRecord: (record: ProfilingRecord) => void, identifier: string) {
         this.addRecord = addRecord;
         this.identifier = identifier;
-
     }
 
     start(): void {
