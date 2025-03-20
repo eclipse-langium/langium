@@ -174,7 +174,7 @@ describe('Ast generator', () => {
 
         hidden terminal WS: /\\s+/;
     `, expandToString`
-        export interface Test extends AstNode {
+        export interface Test extends langium.AstNode {
             readonly $type: 'Test';
             value: '\\\'test\\\'';
         }
@@ -261,7 +261,7 @@ describe('Ast generator', () => {
             return typeof item === 'number';
         }
 
-        export interface Node extends AstNode {
+        export interface Node extends langium.AstNode {
             readonly $type: 'Node';
             num: A;
         }
@@ -288,7 +288,7 @@ describe('Ast generator', () => {
             return typeof item === 'number';
         }
 
-        export interface Node extends AstNode {
+        export interface Node extends langium.AstNode {
             readonly $type: 'Node';
             num: Array<A>;
         }
@@ -421,7 +421,7 @@ describe('Ast generator', () => {
         hidden terminal WS: /\\s+/;
         terminal ID: /[_a-zA-Z][\\w_]*/;
     `, expandToString`
-        getTypeMetaData(type: string): TypeMetaData {
+        getTypeMetaData(type: string): langium.TypeMetaData {
                 switch (type) {
                     case IAmArray: {
                         return {
@@ -463,7 +463,7 @@ describe('Ast generator', () => {
         hidden terminal WS: /\\s+/;
         terminal ID: /[_a-zA-Z][\\w_]*/;
     `, expandToString`
-        getTypeMetaData(type: string): TypeMetaData {
+        getTypeMetaData(type: string): langium.TypeMetaData {
                 switch (type) {
                     case Test: {
                         return {
@@ -482,6 +482,54 @@ describe('Ast generator', () => {
                 }
             }
         }`
+    );
+
+    testReferenceType('check all referenceIds are properly generated', `
+        grammar TestGrammar
+             
+        interface A {
+            refA1: @A
+            refB1: @B
+        }
+        interface B extends A {
+            refB2: @B
+        }
+        interface C extends A, B {
+            refC1: @C
+        }
+        interface D extends A, B {
+            refD1: @D
+        }
+    `, expandToString`
+        getReferenceType(refInfo: langium.ReferenceInfo): string {
+                const referenceId = \`\${refInfo.container.$type}:\${refInfo.property}\`;
+                switch (referenceId) {
+                    case 'A:refA1':
+                    case 'B:refA1':
+                    case 'C:refA1':
+                    case 'D:refA1': {
+                        return A;
+                    }
+                    case 'A:refB1':
+                    case 'B:refB2':
+                    case 'B:refB1':
+                    case 'C:refB1':
+                    case 'C:refB2':
+                    case 'D:refB1':
+                    case 'D:refB2': {
+                        return B;
+                    }
+                    case 'C:refC1': {
+                        return C;
+                    }
+                    case 'D:refD1': {
+                        return D;
+                    }
+                    default: {
+                        throw new Error(\`\${referenceId} is not a valid reference id.\`);
+                    }
+                }
+            }`
     );
 });
 
@@ -513,6 +561,9 @@ function testTypeMetaData(name: string, grammar: string, expected: string): void
     testGenerated(name, grammar, expected, 'getTypeMetaData', 'export const reflection');
 }
 
+function testReferenceType(name: string, grammar: string, expected: string): void {
+    testGenerated(name, grammar, expected, 'getReferenceType', 'getTypeMetaData');
+}
 function testGenerated(name: string, grammar: string, expected: string, start: string, end: string, startCount = 0, optionalProperties = false): void {
     test(name, async () => {
         const result = (await parse(grammar)).parseResult;

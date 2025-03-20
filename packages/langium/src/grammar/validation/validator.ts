@@ -1168,7 +1168,8 @@ const reservedNames = new Set([
     'Date',
     'Intl',
     'eval',
-    'undefined'
+    'undefined',
+    'langium'
 ]);
 
 function checkTypeUnionContainsOnlyParseRules(type: ast.UnionType): string[] {

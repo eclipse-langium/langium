@@ -24,19 +24,19 @@ describe('Inferred types', () => {
             terminal ID returns string: /string/;
             terminal NUMBER returns number: /number/;
         `, expandToString`
-            export interface A extends AstNode {
+            export interface A extends langium.AstNode {
                 readonly $type: 'A';
                 name: string;
                 value?: number;
             }
-            export interface B extends AstNode {
+            export interface B extends langium.AstNode {
                 readonly $type: 'B';
                 name: FQN;
                 values: Array<number>;
             }
-            export interface C extends AstNode {
+            export interface C extends langium.AstNode {
                 readonly $type: 'C';
-                ref: Reference<A>;
+                ref: langium.Reference<A>;
             }
             export type FQN = string;
         `);
@@ -53,11 +53,11 @@ describe('Inferred types', () => {
             terminal ID returns string: /string/;
             terminal NUMBER returns number: /number/;
         `, expandToString`
-            export interface D extends AstNode {
+            export interface D extends langium.AstNode {
                 readonly $type: 'A' | 'B' | 'D';
                 name: string;
             }
-            export interface E extends AstNode {
+            export interface E extends langium.AstNode {
                 readonly $type: 'E';
                 name?: string;
                 value?: number;
@@ -79,7 +79,7 @@ describe('Inferred types', () => {
             A<G>: a=ID (<G> b=ID);
             terminal ID returns string: /string/;
         `, expandToString`
-            export interface A extends AstNode {
+            export interface A extends langium.AstNode {
                 readonly $type: 'A';
                 a: string;
                 b?: string;
@@ -92,7 +92,7 @@ describe('Inferred types', () => {
             A: a=ID ({infer B} b=ID ({infer C} c=ID)?)? d=ID;
             terminal ID returns string: /string/;
         `, expandToString`
-            export interface A extends AstNode {
+            export interface A extends langium.AstNode {
                 readonly $type: 'A' | 'B' | 'C';
                 a: string;
                 d: string;
@@ -116,7 +116,7 @@ describe('Inferred types', () => {
             B: a=ID;
             terminal ID returns string: /string/;
         `, expandToString`
-            export interface B extends AstNode {
+            export interface B extends langium.AstNode {
                 readonly $container: B;
                 readonly $type: 'B';
                 a?: string;
@@ -132,7 +132,7 @@ describe('Inferred types', () => {
             A: value=ID ({infer A.item=current} value=ID)*;
             terminal ID returns string: /string/;
         `, expandToString`
-            export interface A extends AstNode {
+            export interface A extends langium.AstNode {
                 readonly $container: A;
                 readonly $type: 'A';
                 item?: A;
@@ -146,22 +146,22 @@ describe('Inferred types', () => {
             A: ({infer X} x=ID | {infer Y} y=ID | {infer Z} z=ID) {infer B.front=current} back=ID;
             terminal ID returns string: /string/;
         `, expandToString`
-            export interface B extends AstNode {
+            export interface B extends langium.AstNode {
                 readonly $type: 'B';
                 back: string;
                 front: X | Y | Z;
             }
-            export interface X extends AstNode {
+            export interface X extends langium.AstNode {
                 readonly $container: B;
                 readonly $type: 'X';
                 x: string;
             }
-            export interface Y extends AstNode {
+            export interface Y extends langium.AstNode {
                 readonly $container: B;
                 readonly $type: 'Y';
                 y: string;
             }
-            export interface Z extends AstNode {
+            export interface Z extends langium.AstNode {
                 readonly $container: B;
                 readonly $type: 'Z';
                 z: string;
@@ -176,7 +176,7 @@ describe('Inferred types', () => {
             B infers A: A {infer B} b=ID;
             terminal ID returns string: /string/;
         `, expandToString`
-            export interface A extends AstNode {
+            export interface A extends langium.AstNode {
                 readonly $type: 'A' | 'B';
                 a: string;
             }
@@ -211,27 +211,27 @@ describe('Inferred types', () => {
         
             terminal ID returns string: /string/;
         `, expandToString`
-            export interface Access extends AstNode {
+            export interface Access extends langium.AstNode {
                 readonly $type: 'Access';
                 member: string;
                 receiver?: Ref;
             }
-            export interface FirstBranch extends AstNode {
+            export interface FirstBranch extends langium.AstNode {
                 readonly $type: 'FirstBranch';
                 first: string;
                 value: IdRule;
             }
-            export interface IdRule extends AstNode {
+            export interface IdRule extends langium.AstNode {
                 readonly $container: FirstBranch | SecondBranch;
                 readonly $type: 'IdRule';
                 name: string;
             }
-            export interface Ref extends AstNode {
+            export interface Ref extends langium.AstNode {
                 readonly $container: Access;
                 readonly $type: 'Ref';
                 ref: string;
             }
-            export interface SecondBranch extends AstNode {
+            export interface SecondBranch extends langium.AstNode {
                 readonly $type: 'SecondBranch';
                 second: string;
                 value: IdRule;
@@ -250,7 +250,7 @@ describe('Inferred types', () => {
 
             terminal ID returns string: /string/;
         `, expandToString`
-            export interface X extends AstNode {
+            export interface X extends langium.AstNode {
                 readonly $type: 'X';
                 a: string;
                 b?: string;
@@ -269,15 +269,15 @@ describe('Inferred types', () => {
 
             terminal ID returns string: /string/;
         `, expandToString`
-            export interface A extends AstNode {
+            export interface A extends langium.AstNode {
                 readonly $type: 'A';
                 a: string;
             }
-            export interface B extends AstNode {
+            export interface B extends langium.AstNode {
                 readonly $type: 'B';
                 b: string;
             }
-            export interface C extends AstNode {
+            export interface C extends langium.AstNode {
                 readonly $container: C;
                 readonly $type: 'C' | 'Y';
                 item: Y;
@@ -328,7 +328,7 @@ describe('Inferred types', () => {
             entry X: id=ID ({infer Y} 'a' | {infer Z} 'b');
             terminal ID: /[a-zA-Z_][a-zA-Z0-9_]*/;
         `, expandToString`
-            export interface X extends AstNode {
+            export interface X extends langium.AstNode {
                 readonly $type: 'X' | 'Y' | 'Z';
                 id: string;
             }
@@ -346,11 +346,11 @@ describe('Inferred types', () => {
             entry X: {infer Y} value='Y' | Z;
             Z: value='Z';
         `, expandToString`
-            export interface Y extends AstNode {
+            export interface Y extends langium.AstNode {
                 readonly $type: 'Y';
                 value: 'Y';
             }
-            export interface Z extends AstNode {
+            export interface Z extends langium.AstNode {
                 readonly $type: 'Z';
                 value: 'Z';
             }
@@ -366,10 +366,10 @@ describe('inferred types that are used by the grammar', () => {
             hidden terminal WS: /\\s+/;
             terminal ID: /[a-zA-Z_][a-zA-Z0-9_]*/;
         `, expandToString`
-            export interface B extends AstNode {
+            export interface B extends langium.AstNode {
                 readonly $type: 'B';
                 name: string;
-                otherA?: Reference<B>;
+                otherA?: langium.Reference<B>;
             }
         `);
     });
@@ -384,7 +384,7 @@ describe('inferred and declared types', () => {
         
             interface X { }
         `, expandToString`
-            export interface X extends AstNode {
+            export interface X extends langium.AstNode {
                 readonly $type: 'X' | 'Y' | 'Z';
             }
             export interface Y extends X {
@@ -463,17 +463,17 @@ describe('expression rules with inferred and declared interfaces', () => {
     // we should fix the issue another way
     async function checkTypes(grammar: string): Promise<void> {
         await expectTypes(grammar, expandToString`
-            export interface BooleanLiteral extends AstNode {
+            export interface BooleanLiteral extends langium.AstNode {
                 readonly $container: MemberAccess;
                 readonly $type: 'BooleanLiteral';
                 value: boolean;
             }
-            export interface MemberAccess extends AstNode {
+            export interface MemberAccess extends langium.AstNode {
                 readonly $type: 'MemberAccess' | 'SuperMemberAccess';
-                member: Reference<Symbol>;
+                member: langium.Reference<Symbol>;
                 receiver: PrimaryExpression;
             }
-            export interface Symbol extends AstNode {
+            export interface Symbol extends langium.AstNode {
                 readonly $type: 'Symbol';
             }
             export interface SuperMemberAccess extends MemberAccess {
@@ -497,19 +497,19 @@ describe('types of `$container` and `$type` are correct', () => {
             interface D { a: A }
             interface E { b: B }
         `, expandToString`
-            export interface A extends AstNode {
+            export interface A extends langium.AstNode {
                 readonly $type: 'A' | 'C';
                 strA: string;
             }
-            export interface B extends AstNode {
+            export interface B extends langium.AstNode {
                 readonly $type: 'B' | 'C';
                 strB: string;
             }
-            export interface D extends AstNode {
+            export interface D extends langium.AstNode {
                 readonly $type: 'D';
                 a: A;
             }
-            export interface E extends AstNode {
+            export interface E extends langium.AstNode {
                 readonly $type: 'E';
                 b: B;
             }
@@ -530,19 +530,19 @@ describe('types of `$container` and `$type` are correct', () => {
             D: a=A;
             E: b=B;
         `, expandToString`
-            export interface A extends AstNode {
+            export interface A extends langium.AstNode {
                 readonly $type: 'A' | 'C';
                 strA: string;
             }
-            export interface B extends AstNode {
+            export interface B extends langium.AstNode {
                 readonly $type: 'B' | 'C';
                 strB: string;
             }
-            export interface D extends AstNode {
+            export interface D extends langium.AstNode {
                 readonly $type: 'D';
                 a: A;
             }
-            export interface E extends AstNode {
+            export interface E extends langium.AstNode {
                 readonly $type: 'E';
                 b: B;
             }
@@ -562,16 +562,16 @@ describe('types of `$container` and `$type` are correct', () => {
             D: 'D' a=A;
             E: 'E' b=B;
         `, expandToString`
-            export interface C extends AstNode {
+            export interface C extends langium.AstNode {
                 readonly $container: D | E;
                 readonly $type: 'C';
                 strC: string;
             }
-            export interface D extends AstNode {
+            export interface D extends langium.AstNode {
                 readonly $type: 'D';
                 a: A;
             }
-            export interface E extends AstNode {
+            export interface E extends langium.AstNode {
                 readonly $type: 'E';
                 b: B;
             }
@@ -591,29 +591,29 @@ describe('types of `$container` and `$type` are correct', () => {
             interface G { a: A }
             interface H { b: B }
         `, expandToString`
-            export interface A extends AstNode {
+            export interface A extends langium.AstNode {
                 readonly $container: E | F | G;
                 readonly $type: 'A' | 'C' | 'D';
                 strA: string;
             }
-            export interface B extends AstNode {
+            export interface B extends langium.AstNode {
                 readonly $container: E | F | H;
                 readonly $type: 'B' | 'C' | 'D';
                 strB: string;
             }
-            export interface E extends AstNode {
+            export interface E extends langium.AstNode {
                 readonly $type: 'E';
                 c: C;
             }
-            export interface F extends AstNode {
+            export interface F extends langium.AstNode {
                 readonly $type: 'F';
                 d: D;
             }
-            export interface G extends AstNode {
+            export interface G extends langium.AstNode {
                 readonly $type: 'G';
                 a: A;
             }
-            export interface H extends AstNode {
+            export interface H extends langium.AstNode {
                 readonly $type: 'H';
                 b: B;
             }
@@ -644,27 +644,27 @@ describe('types of `$container` and `$type` are correct', () => {
             interface G { a: A }
             interface H { b: B }
         `, expandToString`
-            export interface A extends AstNode {
+            export interface A extends langium.AstNode {
                 readonly $type: 'A' | 'C' | 'D' | 'X';
                 strA: string;
             }
-            export interface B extends AstNode {
+            export interface B extends langium.AstNode {
                 readonly $type: 'B' | 'C' | 'D' | 'X';
                 strB: string;
             }
-            export interface E extends AstNode {
+            export interface E extends langium.AstNode {
                 readonly $type: 'E';
                 c: C;
             }
-            export interface F extends AstNode {
+            export interface F extends langium.AstNode {
                 readonly $type: 'F';
                 d: D;
             }
-            export interface G extends AstNode {
+            export interface G extends langium.AstNode {
                 readonly $type: 'G';
                 a: A;
             }
-            export interface H extends AstNode {
+            export interface H extends langium.AstNode {
                 readonly $type: 'H';
                 b: B;
             }
@@ -697,19 +697,19 @@ describe('types of `$container` and `$type` are correct', () => {
             E: 'E' b=B;
             terminal ID: /[a-zA-Z_][a-zA-Z0-9_]*/;
         `, expandToString`
-            export interface A extends AstNode {
+            export interface A extends langium.AstNode {
                 readonly $type: 'A' | 'C';
                 strA: string;
             }
-            export interface B extends AstNode {
+            export interface B extends langium.AstNode {
                 readonly $type: 'B' | 'C';
                 strB: string;
             }
-            export interface D extends AstNode {
+            export interface D extends langium.AstNode {
                 readonly $type: 'D';
                 a: A;
             }
-            export interface E extends AstNode {
+            export interface E extends langium.AstNode {
                 readonly $type: 'E';
                 b: B;
             }
@@ -725,7 +725,7 @@ describe('types of `$container` and `$type` are correct', () => {
             interface A {}
             interface B extends A {}
         `, expandToString`
-            export interface A extends AstNode {
+            export interface A extends langium.AstNode {
                 readonly $type: 'A' | 'B';
             }
             export interface B extends A {
@@ -742,7 +742,7 @@ describe('types of `$container` and `$type` are correct', () => {
             interface X extends B {}
             interface Y extends B {}
         `, expandToString`
-            export interface A extends AstNode {
+            export interface A extends langium.AstNode {
                 readonly $type: 'A' | 'B' | 'C' | 'X' | 'Y';
             }
             export interface B extends A {
@@ -766,10 +766,10 @@ describe('types of `$container` and `$type` are correct', () => {
             interface B {}
             interface C extends B, A {}
         `, expandToString`
-            export interface A extends AstNode {
+            export interface A extends langium.AstNode {
                 readonly $type: 'A' | 'C';
             }
-            export interface B extends AstNode {
+            export interface B extends langium.AstNode {
                 readonly $type: 'B' | 'C';
             }
             export interface C extends A, B {
@@ -789,7 +789,7 @@ describe('types of `$container` and `$type` are correct', () => {
             interface G extends D {}
             interface H extends A {}
         `, expandToString`
-            export interface A extends AstNode {
+            export interface A extends langium.AstNode {
                 readonly $type: 'A' | 'B' | 'C' | 'D' | 'E' | 'F' | 'G' | 'H';
             }
             export interface B extends A {
@@ -818,7 +818,7 @@ describe('types of `$container` and `$type` are correct', () => {
 
     test('Should merge types of array properties', async () => {
         const expected = expandToString`
-            export interface A extends AstNode {
+            export interface A extends langium.AstNode {
                 readonly $type: 'A';
                 values: Array<number | string>;
             }
