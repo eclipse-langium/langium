@@ -20,6 +20,7 @@ import { getExplicitRuleType, isDataTypeRule } from '../utils/grammar-utils.js';
 import { assignMandatoryProperties, getContainerOfType, linkContentToContainer } from '../utils/ast-utils.js';
 import { CstNodeBuilder } from './cst-node-builder.js';
 import type { LexingReport } from './token-builder.js';
+import type { ProfilingTask } from '../workspace/profiler.js';
 
 export type ParseResult<T = AstNode> = {
     value: T,
@@ -136,14 +137,15 @@ export abstract class AbstractLangiumParser implements BaseParser {
         this.lexer = services.parser.Lexer;
         const tokens = this.lexer.definition;
         const production = services.LanguageMetaData.mode === 'production';
-        if (production)
-            this.wrapper = new ChevrotainWrapper(tokens, {
+        if (services.shared.workspace.LangiumProfiler.isActive('parsing'))
+
+            this.wrapper = new ProfilerWrapper(tokens, {
                 ...services.parser.ParserConfig,
                 skipValidations: production,
                 errorMessageProvider: services.parser.ParserErrorMessageProvider
-            });
+            }, services.shared.workspace.LangiumProfiler.createTask('parsing', services.LanguageMetaData.languageId));
         else
-            this.wrapper = new Profiler(tokens, {
+            this.wrapper = new ChevrotainWrapper(tokens, {
                 ...services.parser.ParserConfig,
                 skipValidations: production,
                 errorMessageProvider: services.parser.ParserErrorMessageProvider
@@ -246,7 +248,7 @@ export class LangiumParser extends AbstractLangiumParser {
         if (!ruleMethod) {
             throw new Error(options.rule ? `No rule found with name '${options.rule}'` : 'No main rule available.');
         }
-        const result = this.wrapper.execute(ruleMethod);
+        const result = this.wrapper.rule(ruleMethod);
         this.nodeBuilder.addHiddenNodes(lexerResult.hidden);
         this.unorderedGroups.clear();
         this.lexerResult = undefined;
@@ -713,71 +715,40 @@ class ChevrotainWrapper extends EmbeddedActionsParser {
     wrapAtLeastOne(idx: number, callback: DSLMethodOpts<unknown>): void {
         this.atLeastOne(idx, callback);
     }
-    execute(rule: RuleResult): any {
+    rule(rule: RuleResult): any {
         return rule.call(this, {});
     }
 }
-interface ProfilingInformation {
 
-    // the duration in ms of the rule
-    time: number
-    // the number of execution of the rule
-    count: number
-}
-class Profiler extends ChevrotainWrapper {
+class ProfilerWrapper extends ChevrotainWrapper {
+    private readonly task: ProfilingTask;
+    constructor(tokens: TokenVocabulary, config: IParserConfig, task: ProfilingTask) {
+        super(tokens, config);
+        this.task = task;
+    }
 
-    private readonly datas: Map<string, ProfilingInformation> = new Map<string, ProfilingInformation>();
-    private stack: number[] = [];
-    override execute(rule: RuleResult): any {
-        this.datas.clear();
-        this.stack = [];
-        const start = this.startProfiling();
-
+    override rule(rule: RuleResult): any {
+        this.task.start();
+        this.task.startSubTask(this.ruleName(rule));
         try {
-            return super.execute(rule);
+            return super.rule(rule);
         }
         finally {
-            const total = this.endProfiling(rule, start);
-
-            const SortedData = new Map([...this.datas.entries()].sort((a, b) => b[1].time - a[1].time));
-
-            console.table(Array.from(SortedData, ([element, info]) => ({
-                Rule: element,
-                Count: info.count,
-                'Total %': (100 * info.time / total).toFixed(2),
-                'Time (ms)': info.time.toFixed(2)
-            })));
+            this.task.stopSubTask(this.ruleName(rule));
+            this.task.stop();
         }
     }
-    private endProfiling(rule: any, start: number): number {
-        const elapsed = performance.now() - start;
-        const self = elapsed - this.stack.pop()!;
 
-        if (this.stack.at(-1) !== undefined) {
-            this.stack[this.stack.length - 1] += elapsed;
-        }
-        const name = rule.ruleName as string;
-        const info = this.datas.get(name);
-        if (info) {
-            info.count++;
-            info.time += self;
-        }
-        else {
-            this.datas.set(name, { count: 1, time: self });
-        }
-        return elapsed;
-    }
-    private startProfiling(): number {
-        this.stack.push(0);
-        return performance.now();
+    private ruleName(rule: any): string {
+        return rule.ruleName as string;
     }
     protected override subrule<ARGS extends unknown[], R>(idx: number, ruleToCall: ParserMethod<ARGS, R>, options?: SubruleMethodOpts<ARGS>): R {
-        const start = this.startProfiling();
+        this.task.startSubTask(this.ruleName(ruleToCall));
         try {
             return super.subrule<ARGS, R>(idx, ruleToCall, options);
         }
         finally {
-            this.endProfiling(ruleToCall, start);
+            this.task.stopSubTask(this.ruleName(ruleToCall));
         }
     }
 }
