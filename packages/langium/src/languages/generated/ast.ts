@@ -18,7 +18,7 @@ export const LangiumGrammarTerminals = {
 
 export type LangiumGrammarTerminalNames = keyof typeof LangiumGrammarTerminals;
 
-export type LangiumGrammarKeywordNames = 
+export type LangiumGrammarKeywordNames =
     | "!"
     | "&"
     | "("

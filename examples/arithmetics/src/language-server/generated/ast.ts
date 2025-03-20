@@ -16,7 +16,7 @@ export const ArithmeticsTerminals = {
 
 export type ArithmeticsTerminalNames = keyof typeof ArithmeticsTerminals;
 
-export type ArithmeticsKeywordNames = 
+export type ArithmeticsKeywordNames =
     | "%"
     | "("
     | ")"

@@ -15,7 +15,7 @@ export const StatemachineTerminals = {
 
 export type StatemachineTerminalNames = keyof typeof StatemachineTerminals;
 
-export type StatemachineKeywordNames = 
+export type StatemachineKeywordNames =
     | "=>"
     | "actions"
     | "commands"

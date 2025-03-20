@@ -15,7 +15,7 @@ export const DomainModelTerminals = {
 
 export type DomainModelTerminalNames = keyof typeof DomainModelTerminals;
 
-export type DomainModelKeywordNames = 
+export type DomainModelKeywordNames =
     | "."
     | ":"
     | "datatype"

@@ -247,7 +247,7 @@ function generateTerminalConstants(grammars: Grammar[], config: LangiumConfig): 
 
         export type ${config.projectName}TerminalNames = keyof typeof ${config.projectName}Terminals;
 
-        export type ${config.projectName}KeywordNames = ${keywordStrings.length > 0 ? keywordStrings.map(keyword => `${EOL}    | ${keyword}`).join('') : 'never'};
+        export type ${config.projectName}KeywordNames =${keywordStrings.length > 0 ? keywordStrings.map(keyword => `${EOL}    | ${keyword}`).join('') : ' never'};
 
         export type ${config.projectName}TokenNames = ${config.projectName}TerminalNames | ${config.projectName}KeywordNames;
     `.appendNewLine();
