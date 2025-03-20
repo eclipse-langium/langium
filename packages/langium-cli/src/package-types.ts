@@ -67,4 +67,11 @@ export interface LangiumLanguageConfig {
     }
     /** Configure the chevrotain parser for a single language */
     chevrotainParserConfig?: IParserConfig
+    /** Enable BNF file generation */
+    bnf?: {
+        /** Output path for the BNF file */
+        out: string,
+        /** Dialect of the generated BNF file. GBNF is the default. In EBNF RegEx terminals are not supported. */
+        dialect?: 'GBNF' | 'EBNF'
+    }
 }
