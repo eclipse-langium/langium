@@ -218,7 +218,7 @@ export class InterfaceType {
         this.abstract = abstract;
     }
 
-    toAstTypesString(reflectionInfo: boolean): string {
+    toAstTypesString(reflectionInfo: boolean, optionalProperties?: boolean): string {
         const interfaceSuperTypes = this.interfaceSuperTypes.map(e => e.name);
         const superTypes = interfaceSuperTypes.length > 0 ? distinctAndSorted([...interfaceSuperTypes]) : ['langium.AstNode'];
         const interfaceNode = expandToNode`
@@ -233,7 +233,7 @@ export class InterfaceType {
                 body.append(`readonly $type: ${distinctAndSorted([...this.typeNames]).map(e => `'${e}'`).join(' | ')};`).appendNewLine();
             }
             body.append(
-                pushProperties(this.properties, 'AstType')
+                pushProperties(this.properties, 'AstType', optionalProperties)
             );
         });
         interfaceNode.append('}').appendNewLine();
@@ -253,7 +253,7 @@ export class InterfaceType {
         return toString(
             expandToNode`
                 interface ${name}${superTypes.length > 0 ? ` extends ${superTypes}` : ''} {
-                    ${pushProperties(this.properties, 'DeclaredType', reservedWords)}
+                    ${pushProperties(this.properties, 'DeclaredType', undefined, reservedWords)}
                 }
             `.appendNewLine()
         );
@@ -408,12 +408,13 @@ function typeParenthesis(type: PropertyType, name: string): string {
 function pushProperties(
     properties: Property[],
     mode: 'AstType' | 'DeclaredType',
+    optionalProperties?: boolean,
     reserved = new Set<string>()
 ): Generated {
 
     function propertyToString(property: Property): string {
         const name = mode === 'AstType' ? property.name : escapeReservedWords(property.name, reserved);
-        const optional = property.optional && !isMandatoryPropertyType(property.type);
+        const optional = !isMandatoryPropertyType(property.type) && (property.optional || optionalProperties);
         const propType = propertyTypeToString(property.type, mode);
         return `${name}${optional ? '?' : ''}: ${propType};`;
     }
