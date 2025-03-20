@@ -98,6 +98,8 @@ export type ValidationChecks<T> = {
 }
 
 /**
+ * There are 3 pre-defined categories: `fast`, `slow` and `built-in`.
+ *
  * `fast` checks can be executed after every document change (i.e. as the user is typing). If a check
  * is too slow it can delay the response to document changes, yielding bad user experience. By marking
  * it as `slow`, it will be skipped for normal as-you-type validation. Then it's up to you when to
@@ -106,8 +108,13 @@ export type ValidationChecks<T> = {
  *
  * `built-in` checks are errors produced by the lexer, the parser, or the linker. They cannot be used
  * for custom validation checks.
+ *
+ * You can also provide user-defined categories. These check will be skipped by default. Then it's up
+ * to you to schedule these checks: after the fast checks are done, or after saving a document,
+ * or with an explicit command, etc.
  */
-export type ValidationCategory = 'fast' | 'slow' | 'built-in'
+// eslint-disable-next-line @typescript-eslint/ban-types
+export type ValidationCategory = 'fast' | 'slow' | 'built-in' | (string & {});
 
 export namespace ValidationCategory {
     export const all: readonly ValidationCategory[] = ['fast', 'slow', 'built-in'];
