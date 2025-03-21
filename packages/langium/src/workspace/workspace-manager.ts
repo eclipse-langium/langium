@@ -15,6 +15,8 @@ import type { BuildOptions, DocumentBuilder } from './document-builder.js';
 import type { LangiumDocument, LangiumDocuments } from './documents.js';
 import type { FileSystemNode, FileSystemProvider } from './file-system-provider.js';
 import type { WorkspaceLock } from './workspace-lock.js';
+import { CstParserMode } from '../parser/langium-parser.js';
+import type { Environment } from './environment.js';
 
 // export type WorkspaceFolder from 'vscode-languageserver-types' for convenience,
 //  is supposed to avoid confusion as 'WorkspaceFolder' might accidentally be imported via 'vscode-languageclient'
@@ -75,6 +77,7 @@ export class DefaultWorkspaceManager implements WorkspaceManager {
     protected readonly langiumDocuments: LangiumDocuments;
     protected readonly documentBuilder: DocumentBuilder;
     protected readonly fileSystemProvider: FileSystemProvider;
+    protected readonly environment: Environment;
     protected readonly mutex: WorkspaceLock;
     protected readonly _ready = new Deferred<void>();
     protected folders?: WorkspaceFolder[];
@@ -85,6 +88,7 @@ export class DefaultWorkspaceManager implements WorkspaceManager {
         this.documentBuilder = services.workspace.DocumentBuilder;
         this.fileSystemProvider = services.workspace.FileSystemProvider;
         this.mutex = services.workspace.WorkspaceLock;
+        this.environment = services.workspace.Environment;
     }
 
     get ready(): Promise<void> {
@@ -167,11 +171,17 @@ export class DefaultWorkspaceManager implements WorkspaceManager {
                 if (entry.isDirectory) {
                     await this.traverseFolder(workspaceFolder, entry.uri, fileExtensions, collector);
                 } else if (entry.isFile) {
-                    const document = await this.langiumDocuments.getOrCreateDocument(entry.uri);
+                    const document = await this.langiumDocuments.getOrCreateDocument(entry.uri, {
+                        cst: this.getCstParserMode(entry.uri)
+                    });
                     collector(document);
                 }
             }
         }));
+    }
+
+    protected getCstParserMode(_uri: URI): CstParserMode {
+        return this.environment.isLanguageServer ? CstParserMode.Discard : CstParserMode.Retain;
     }
 
     /**

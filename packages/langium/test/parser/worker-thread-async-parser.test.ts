@@ -32,7 +32,7 @@ describe('WorkerThreadAsyncParser', () => {
         asyncParser.setThreadCount(4);
         const promises: Array<Promise<ParseResult<Grammar>>> = [];
         for (let i = 0; i < 16; i++) {
-            promises.push(asyncParser.parse<Grammar>(file, CancellationToken.None));
+            promises.push(asyncParser.parse<Grammar>(file, undefined, CancellationToken.None));
         }
         const result = await Promise.all(promises);
         for (const parseResult of result) {
@@ -50,7 +50,7 @@ describe('WorkerThreadAsyncParser', () => {
         setTimeout(() => cancellationTokenSource.cancel(), 50);
         const start = performance.now();
         try {
-            await asyncParser.parse<Grammar>(file, cancellationTokenSource.token);
+            await asyncParser.parse<Grammar>(file, undefined, cancellationTokenSource.token);
             fail('Parsing should have been cancelled');
         } catch (err) {
             expect(isOperationCancelled(err)).toBe(true);
@@ -68,20 +68,20 @@ describe('WorkerThreadAsyncParser', () => {
         const cancellationTokenSource = startCancelableOperation();
         setTimeout(() => cancellationTokenSource.cancel(), 50);
         try {
-            await asyncParser.parse<Grammar>(file, cancellationTokenSource.token);
+            await asyncParser.parse<Grammar>(file, undefined, cancellationTokenSource.token);
             fail('Parsing should have been cancelled');
         } catch (err) {
             expect(isOperationCancelled(err)).toBe(true);
         }
         // Calling this method should recreate the worker and parse the file correctly
-        const result = await asyncParser.parse<Grammar>(createLargeFile(10), CancellationToken.None);
+        const result = await asyncParser.parse<Grammar>(createLargeFile(10), undefined, CancellationToken.None);
         expect(result.value.name).toBe('Test');
     });
 
     test('async parsing yields correct CST', async () => {
         const services = getServices();
         const file = createLargeFile(10);
-        const result = await services.parser.AsyncParser.parse<Grammar>(file, CancellationToken.None);
+        const result = await services.parser.AsyncParser.parse<Grammar>(file, undefined, CancellationToken.None);
         const index = file.indexOf('TestRule');
         // Assert that the CST can be found at all from the root node
         // This indicates that the CST is correctly linked to itself
@@ -104,7 +104,7 @@ describe('WorkerThreadAsyncParser', () => {
     test('parser errors are correctly transmitted', async () => {
         const services = getServices();
         const file = 'grammar Test Rule: name="Hello" // missing semicolon';
-        const result = await services.parser.AsyncParser.parse<Grammar>(file, CancellationToken.None);
+        const result = await services.parser.AsyncParser.parse<Grammar>(file, undefined, CancellationToken.None);
         expect(result.parserErrors).toHaveLength(1);
         expect(result.parserErrors[0].name).toBe('MismatchedTokenException');
         expect(result.parserErrors[0]).toHaveProperty('previousToken');

@@ -10,7 +10,7 @@ import type { GrammarConfig } from '../languages/grammar-config.js';
 import type { NameProvider } from '../references/name-provider.js';
 import type { References } from '../references/references.js';
 import type { LangiumServices } from './lsp-services.js';
-import type { CstNode } from '../syntax-tree.js';
+import type { AstNode, CstNode } from '../syntax-tree.js';
 import type { MaybePromise } from '../utils/promise-utils.js';
 import type { LangiumDocument } from '../workspace/documents.js';
 import { LocationLink } from 'vscode-languageserver';
@@ -37,7 +37,7 @@ export interface DefinitionProvider {
 
 export interface GoToLink {
     source: CstNode
-    target: CstNode
+    target: AstNode
     targetDocument: LangiumDocument
 }
 
@@ -67,21 +67,25 @@ export class DefaultDefinitionProvider implements DefinitionProvider {
 
     protected collectLocationLinks(sourceCstNode: CstNode, _params: DefinitionParams): MaybePromise<LocationLink[] | undefined> {
         const goToLink = this.findLink(sourceCstNode);
-        if (goToLink) {
-            return [LocationLink.create(
-                goToLink.targetDocument.textDocument.uri,
-                (goToLink.target.astNode.$cstNode ?? goToLink.target).range,
-                goToLink.target.range,
-                goToLink.source.range
-            )];
+        if (goToLink && goToLink.target.$segments) {
+            const name = this.nameProvider.getNameProperty(goToLink.target);
+            if (name) {
+                const nameSegment = goToLink.target.$segments.properties.get(name);
+                return nameSegment.map(segment => LocationLink.create(
+                    goToLink.targetDocument.textDocument.uri,
+                    goToLink.target.$segments!.full.range,
+                    segment.range,
+                    goToLink.source.range
+                ));
+            }
         }
         return undefined;
     }
 
     protected findLink(source: CstNode): GoToLink | undefined {
-        const target = this.references.findDeclarationNode(source);
-        if (target?.astNode) {
-            const targetDocument = getDocument(target.astNode);
+        const target = this.references.findDeclaration(source);
+        if (target) {
+            const targetDocument = getDocument(target);
             if (target && targetDocument) {
                 return { source, target, targetDocument };
             }

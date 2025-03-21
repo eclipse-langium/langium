@@ -198,6 +198,7 @@ export class DefaultLanguageServer implements LanguageServer {
     }
 
     protected fireInitializeOnDefaultServices(params: InitializeParams): void {
+        this.services.workspace.Environment.initialize(params);
         this.services.workspace.ConfigurationProvider.initialize(params);
         this.services.workspace.WorkspaceManager.initialize(params);
     }

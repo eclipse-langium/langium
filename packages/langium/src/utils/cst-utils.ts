@@ -6,11 +6,12 @@
 
 import type { IToken } from '@chevrotain/types';
 import type { Range } from 'vscode-languageserver-types';
-import type { CstNode, CompositeCstNode, LeafCstNode } from '../syntax-tree.js';
+import type { CstNode, CompositeCstNode, LeafCstNode, AstNode, Mutable, Reference } from '../syntax-tree.js';
 import type { DocumentSegment } from '../workspace/documents.js';
 import type { Stream, TreeStream } from './stream.js';
 import { isCompositeCstNode, isLeafCstNode, isRootCstNode } from '../syntax-tree.js';
 import { TreeStreamImpl } from './stream.js';
+import { streamAst, streamReferences } from './ast-utils.js';
 
 /**
  * Create a stream of all CST nodes that are directly and indirectly contained in the given root node,
@@ -338,4 +339,13 @@ function getParentChain(node: CstNode): ParentLink[] {
 interface ParentLink {
     parent: CompositeCstNode
     index: number
+}
+
+export function discardCst(node: AstNode): void {
+    streamAst(node).forEach(n => {
+        (n as Mutable<AstNode>).$cstNode = undefined;
+        streamReferences(n).forEach(r => {
+            (r.reference as Mutable<Reference<AstNode>>).$refNode = undefined;
+        });
+    });
 }

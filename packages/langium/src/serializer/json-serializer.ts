@@ -109,7 +109,7 @@ function isIntermediateReference(obj: unknown): obj is IntermediateReference {
 export class DefaultJsonSerializer implements JsonSerializer {
 
     /** The set of AstNode properties to be ignored by the serializer. */
-    ignoreProperties = new Set(['$container', '$containerProperty', '$containerIndex', '$document', '$cstNode']);
+    ignoreProperties = new Set(['$container', '$containerProperty', '$containerIndex', '$document', '$cstNode', '$segments']);
 
     /** The document that is currently processed by the serializer; this is used by the replacer function.  */
     protected currentDocument: LangiumDocument | undefined;
