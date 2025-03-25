@@ -92,28 +92,18 @@ export class DefaultDocumentUpdateHandler implements DocumentUpdateHandler {
     }
 
     protected registerFileWatcher(services: LangiumSharedServices): void {
-        const fileExtensions = stream(services.ServiceRegistry.all)
-            .flatMap(language => language.LanguageMetaData.fileExtensions)
-            .map(ext => ext.startsWith('.') ? ext.substring(1) : ext)
-            .distinct()
-            .toArray();
-        if (fileExtensions.length > 0) {
-            const connection = services.lsp.Connection;
-            const options: DidChangeWatchedFilesRegistrationOptions = {
-                watchers: [{
-                    globPattern: fileExtensions.length === 1
-                        ? `**/*.${fileExtensions[0]}`
-                        : `**/*.{${fileExtensions.join(',')}}`
-                }]
-            };
-            connection?.client.register(DidChangeWatchedFilesNotification.type, options);
-        }
+        const connection = services.lsp.Connection;
+        const options: DidChangeWatchedFilesRegistrationOptions = {
+            watchers: [{
+                // We need to watch all file changes in the workspace
+                // Otherwise we miss changes to directories
+                globPattern: '**/*'
+            }]
+        };
+        connection?.client.register(DidChangeWatchedFilesNotification.type, options);
     }
 
     protected fireDocumentUpdate(changed: URI[], deleted: URI[]): void {
-        // Filter out URIs that do not have a service in the registry
-        // Running the document builder update will fail for those URIs
-        changed = changed.filter(uri => this.serviceRegistry.hasServices(uri));
         // Only fire the document update when the workspace manager is ready
         // Otherwise, we might miss the initial indexing of the workspace
         this.workspaceManager.ready.then(() => {

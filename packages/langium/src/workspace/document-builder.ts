@@ -20,6 +20,8 @@ import { stream } from '../utils/stream.js';
 import type { URI } from '../utils/uri-utils.js';
 import { ValidationCategory } from '../validation/validation-registry.js';
 import { DocumentState } from './documents.js';
+import type { FileSystemProvider } from './file-system-provider.js';
+import type { WorkspaceManager } from './workspace-manager.js';
 
 export interface BuildOptions {
     /**
@@ -132,6 +134,8 @@ export class DefaultDocumentBuilder implements DocumentBuilder {
     protected readonly textDocuments: TextDocumentProvider | undefined;
     protected readonly indexManager: IndexManager;
     protected readonly serviceRegistry: ServiceRegistry;
+    protected readonly fileSystemProvider: FileSystemProvider;
+    protected readonly workspaceManager: () => WorkspaceManager;
     protected readonly updateListeners: DocumentUpdateListener[] = [];
     protected readonly buildPhaseListeners = new MultiMap<DocumentState, DocumentBuildListener>();
     protected readonly documentPhaseListeners = new MultiMap<DocumentState, DocumentPhaseListener>();
@@ -144,6 +148,8 @@ export class DefaultDocumentBuilder implements DocumentBuilder {
         this.langiumDocumentFactory = services.workspace.LangiumDocumentFactory;
         this.textDocuments = services.workspace.TextDocuments;
         this.indexManager = services.workspace.IndexManager;
+        this.fileSystemProvider = services.workspace.FileSystemProvider;
+        this.workspaceManager = () => services.workspace.WorkspaceManager;
         this.serviceRegistry = services.ServiceRegistry;
     }
 
@@ -192,13 +198,20 @@ export class DefaultDocumentBuilder implements DocumentBuilder {
     async update(changed: URI[], deleted: URI[], cancelToken = CancellationToken.None): Promise<void> {
         this.currentState = DocumentState.Changed;
         // Remove all metadata of documents that are reported as deleted
+        const deletedUris: URI[] = [];
         for (const deletedUri of deleted) {
-            this.langiumDocuments.deleteDocument(deletedUri);
-            this.buildState.delete(deletedUri.toString());
-            this.indexManager.remove(deletedUri);
+            // Since the deleted URI might point to a directory, we delete all documents within
+            const deletedDocs = this.langiumDocuments.deleteDocuments(deletedUri);
+            for (const doc of deletedDocs) {
+                deletedUris.push(doc.uri);
+                this.buildState.delete(doc.uri.toString());
+                this.indexManager.remove(doc.uri);
+            }
         }
+        // Since the changed URI might point to a directory, we need to check all (nested) documents in that directory
+        const changedUris = (await Promise.all(changed.map(uri => this.findChangedUris(uri)))).flat();
         // Set the state of all changed documents to `Changed` so they are completely rebuilt
-        for (const changedUri of changed) {
+        for (const changedUri of changedUris) {
             const invalidated = this.langiumDocuments.invalidateDocument(changedUri);
             if (!invalidated) {
                 // We create an unparsed, invalid document.
@@ -211,7 +224,7 @@ export class DefaultDocumentBuilder implements DocumentBuilder {
             this.buildState.delete(changedUri.toString());
         }
         // Set the state of all documents that should be relinked to `ComputedScopes` (if not already lower)
-        const allChangedUris = stream(changed).concat(deleted).map(uri => uri.toString()).toSet();
+        const allChangedUris = stream(changedUris).concat(deletedUris).map(uri => uri.toString()).toSet();
         this.langiumDocuments.all
             .filter(doc => !allChangedUris.has(doc.uri.toString()) && this.shouldRelink(doc, allChangedUris))
             .forEach(doc => {
@@ -221,7 +234,7 @@ export class DefaultDocumentBuilder implements DocumentBuilder {
                 doc.diagnostics = undefined;
             });
         // Notify listeners of the update
-        await this.emitUpdate(changed, deleted);
+        await this.emitUpdate(changedUris, deletedUris);
         // Only allow interrupting the execution after all state changes are done
         await interruptAndCheck(cancelToken);
 
@@ -237,6 +250,29 @@ export class DefaultDocumentBuilder implements DocumentBuilder {
                 .toArray()
         );
         await this.buildDocuments(rebuildDocuments, this.updateBuildOptions, cancelToken);
+    }
+
+    protected async findChangedUris(changed: URI): Promise<URI[]> {
+        // Most common case is that the document/textDocument at the specified URI has changed
+        const document = this.langiumDocuments.getDocument(changed) ?? this.textDocuments?.get(changed);
+        if (document) {
+            return [changed];
+        }
+        // If the document doesn't exist yet, we need to check what kind of file has changed
+        try {
+            const stat = await this.fileSystemProvider.stat(changed);
+            if (stat.isDirectory) {
+                // If a directory has changed, we need to check all documents in that directory
+                const uris = await this.workspaceManager().searchDirectory(changed);
+                return uris;
+            } else if (this.workspaceManager().includeEntry(stat)) {
+                // Return the changed URI if it's a file that we can handle
+                return [changed];
+            }
+        } catch {
+            // If we can't determine the file type, we discard the change
+        }
+        return [];
     }
 
     protected async emitUpdate(changed: URI[], deleted: URI[]): Promise<void> {

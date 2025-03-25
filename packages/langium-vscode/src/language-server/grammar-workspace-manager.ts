@@ -52,14 +52,15 @@ export class LangiumGrammarWorkspaceManager extends DefaultWorkspaceManager {
         return super.initializeWorkspace(folders, cancelToken);
     }
 
-    protected override includeEntry(workspaceFolder: WorkspaceFolder, entry: FileSystemNode, fileExtensions: string[]): boolean {
-        if (this.matcher) {
+    override includeEntry(entry: FileSystemNode): boolean {
+        const workspaceFolder = this.workspaceFolders?.find(folder => UriUtils.contains(folder.uri, entry.uri));
+        if (this.matcher && workspaceFolder) {
             // create path relative to workspace folder root: /user/foo/workspace/entry.txt -> entry.txt
             const relPath = path.relative(URI.parse(workspaceFolder.uri).path, entry.uri.path);
             const ignored = this.matcher.ignores(relPath);
-            return !ignored && (entry.isDirectory || (entry.isFile && fileExtensions.includes(UriUtils.extname(entry.uri))));
+            return !ignored && (entry.isDirectory || (entry.isFile && this.serviceRegistry.hasServices(entry.uri)));
         }
-        return super.includeEntry(workspaceFolder, entry, fileExtensions);
+        return super.includeEntry(entry);
     }
 
 }

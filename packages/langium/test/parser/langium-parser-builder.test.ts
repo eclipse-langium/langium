@@ -760,7 +760,7 @@ describe('Fragment rules', () => {
                     }
                 }
             });
-            const document = services.shared.workspace.LangiumDocumentFactory.fromString('def a def b a[].b', URI.parse('file:///test'));
+            const document = services.shared.workspace.LangiumDocumentFactory.fromString('def a def b a[].b', URI.parse('file:///test.txt'));
             await services.shared.workspace.DocumentBuilder.build([document]);
             expect(document.parseResult.lexerErrors).toHaveLength(0);
             expect(document.parseResult.parserErrors).toHaveLength(0);

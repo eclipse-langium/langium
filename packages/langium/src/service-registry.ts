@@ -41,7 +41,6 @@ export interface ServiceRegistry {
  */
 export class DefaultServiceRegistry implements ServiceRegistry {
 
-    protected singleton?: LangiumCoreServices;
     protected readonly languageIdMap = new Map<string, LangiumCoreServices>();
     protected readonly fileExtensionMap = new Map<string, LangiumCoreServices>();
 
@@ -67,17 +66,9 @@ export class DefaultServiceRegistry implements ServiceRegistry {
             this.fileExtensionMap.set(ext, language);
         }
         this.languageIdMap.set(data.languageId, language);
-        if (this.languageIdMap.size === 1) {
-            this.singleton = language;
-        } else {
-            this.singleton = undefined;
-        }
     }
 
     getServices(uri: URI): LangiumCoreServices {
-        if (this.singleton !== undefined) {
-            return this.singleton;
-        }
         if (this.languageIdMap.size === 0) {
             throw new Error('The service registry is empty. Use `register` to register the services of a language.');
         }

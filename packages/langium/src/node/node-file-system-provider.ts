@@ -15,6 +15,24 @@ export class NodeFileSystemProvider implements FileSystemProvider {
 
     encoding: NodeTextEncoding = 'utf-8';
 
+    async stat(uri: URI): Promise<FileSystemNode> {
+        const stat = await fs.promises.stat(uri.fsPath);
+        return {
+            isFile: stat.isFile(),
+            isDirectory: stat.isDirectory(),
+            uri
+        };
+    }
+
+    statSync(uri: URI): FileSystemNode {
+        const stat = fs.statSync(uri.fsPath);
+        return {
+            isFile: stat.isFile(),
+            isDirectory: stat.isDirectory(),
+            uri
+        };
+    }
+
     readFile(uri: URI): Promise<string> {
         return fs.promises.readFile(uri.fsPath, this.encoding);
     }
