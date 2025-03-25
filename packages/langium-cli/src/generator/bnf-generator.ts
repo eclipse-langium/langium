@@ -71,7 +71,7 @@ function processElement(element: AbstractElement, ctx: GeneratorContext): string
         return processRecursively(element.terminal) + processCardinality(element);
     } else if (isRuleCall(element) || isTerminalRuleCall(element)) {
         return processName(element.rule.ref?.name ?? element.rule.$refText, ctx) + processCardinality(element);
-    } else if (isAlternatives(element)) {
+    } else if (isAlternatives(element) || isTerminalAlternatives(element)) {
         return '(' + element.elements.map(processRecursively).filter(notEmpty).join(' | ') + ')' + processCardinality(element);
     } else if (isRegexToken(element)) {
         // First remove trailing and leading slashes. Replace escaped slashes `\/` with unescaped slashes `/`.
@@ -80,8 +80,6 @@ function processElement(element: AbstractElement, ctx: GeneratorContext): string
         return (element.terminal ? processRecursively(element.terminal) : 'ID') + processCardinality(element);
     } else if (isAction(element)) {
         return '';
-    } else if (isTerminalAlternatives(element)) {
-        return '(' + element.elements.map(processRecursively).filter(notEmpty).join(' | ') + ')';
     }
     console.error(`Not handled AbstractElement type: ${element?.$type}`);
     return `not-handled-(${element?.$type})`;
