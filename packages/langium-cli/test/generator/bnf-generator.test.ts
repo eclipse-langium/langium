@@ -17,14 +17,14 @@ const { grammar } = createLangiumGrammarServices(EmptyFileSystem);
 describe('BNF generator', () => {
 
     test('GBNF - Simple grammar', async () => {
-        const result = (await parseHelper<Grammar>(grammar)(TEST_GRAMMAR)).parseResult;
-        const typesFileContent = generateBnf([result.value]);
-        expect(typesFileContent).toBe(EXPECTED_BNF);
+        const result = await parseGrammar(TEST_GRAMMAR);
+        const generated = generateBnf([result.value]);
+        expect(generated).toBe(EXPECTED_BNF);
     });
 
     test('GBNF - Fragment, comment generation', async () => {
-        const result = (await parseHelper<Grammar>(grammar)(GRAMMAR_WITH_FRAGMENT)).parseResult;
-        const typesFileContent = generateBnf([result.value]);
+        const result = await parseGrammar(GRAMMAR_WITH_FRAGMENT);
+        const generated = generateBnf([result.value]);
         const expected = expandToStringWithNL`
         # * This is a root rule
         root ::= package-declaration*
@@ -49,12 +49,12 @@ describe('BNF generator', () => {
 
         hidden ::= ( ws )
         `;
-        expect(typesFileContent).toBe(expected);
+        expect(generated).toBe(expected);
     });
 
     test('EBNF - Fragment, comment generation', async () => {
-        const result = (await parseHelper<Grammar>(grammar)(GRAMMAR_WITH_FRAGMENT)).parseResult;
-        const typesFileContent = generateBnf([result.value], { dialect: 'EBNF' });
+        const result = await parseGrammar(GRAMMAR_WITH_FRAGMENT);
+        const generated = generateBnf([result.value], { dialect: 'EBNF' });
         const expected = expandToStringWithNL`
         (* * This is a root rule *)
         <Domainmodel> ::= <PackageDeclaration>*
@@ -79,7 +79,7 @@ describe('BNF generator', () => {
 
         <HIDDEN> ::= ( <WS> )
         `;
-        expect(typesFileContent).toBe(expected);
+        expect(generated).toBe(expected);
     });
 
     test('GBNF - No hidden rules', async () => {
@@ -90,17 +90,88 @@ describe('BNF generator', () => {
         terminal ID: /[_a-zA-Z][\\w_]*/;
         `;
 
-        const result = (await parseHelper<Grammar>(grammar)(grammarContent)).parseResult;
-        const typesFileContent = generateBnf([result.value]);
+        const result = await parseGrammar(grammarContent);
+        const generated = generateBnf([result.value]);
         const expected = expandToStringWithNL`
         root ::= "root" id
 
         id ::= [_a-zA-Z][\\w_]*
 
         `;
-        expect(typesFileContent).toBe(expected);
+        expect(generated).toBe(expected);
+    });
+    test('GBNF - No hidden rules', async () => {
+        const grammarContent = expandToStringWithNL`
+        grammar RootLang
+        entry Root:
+            'root' name=ID;
+        terminal ID: /[_a-zA-Z][\\w_]*/;
+        `;
+
+        const result = await parseGrammar(grammarContent);
+        const generated = generateBnf([result.value]);
+        const expected = expandToStringWithNL`
+        root ::= "root" id
+
+        id ::= [_a-zA-Z][\\w_]*
+
+        `;
+        expect(generated).toBe(expected);
     });
 
+    test('EBNF - Slash comments', async () => {
+        const grammarContent = expandToStringWithNL`
+        grammar RootLang
+        /* This is a root rule */
+        entry Root: 'root' name=ID;
+        
+        /* This is a terminal rule */
+        terminal ID: /[_a-zA-Z][\\w_]*/;
+        `;
+
+        const result = await parseGrammar(grammarContent);
+        const generated = generateBnf([result.value], { dialect: 'EBNF', commentStyle: 'slash' });
+        const expected = expandToStringWithNL`
+        /* This is a root rule */
+        <Root> ::= "root" <ID>
+
+        /* This is a terminal rule */
+        <ID> ::= [_a-zA-Z][\\w_]*
+
+        `;
+        expect(generated).toBe(expected);
+    });
+
+    test('Check RegEx Terminal rule escape', async () => {
+        const grammarContent = expandToStringWithNL`
+        grammar RootLang
+        entry Root: 'root' name=ID;
+
+        terminal ID: /[_a-zA-Z][\\w_]*/;
+        
+        terminal NUMBER: /[0-9]+/ | /[0-9]+(\\.[0-9]*)/;
+        
+        hidden terminal ML_COMMENT: /\\/\\*[\\s\\S]*?\\*\\//;
+        hidden terminal SL_COMMENT: /\\/\\/[^\\n\\r]*/;
+        `;
+
+        const result = await parseGrammar(grammarContent);
+        const generated = generateBnf([result.value]);
+        const expected = expandToStringWithNL`
+        root ::= hidden* "root" id
+
+        id ::= hidden* [_a-zA-Z][\\w_]*
+
+        number ::= hidden* ([0-9]+ | [0-9]+(\\.[0-9]*))
+
+        ml-comment ::= /\\*[\\s\\S]*?\\*/
+
+        sl-comment ::= //[^\\n\\r]*
+
+        hidden ::= ( ml-comment | sl-comment )
+        `;
+        expect(generated).toBe(expected);
+    });
 });
 
 const EXPECTED_BNF = expandToStringWithNL`
@@ -209,3 +280,11 @@ const GRAMMAR_WITH_FRAGMENT = expandToStringWithNL`
     terminal ID: /[A-z]*/;
     hidden terminal WS: /\\s+/;
 `;
+
+async function parseGrammar(grammarContent: string) {
+    const result = (await parseHelper<Grammar>(grammar)(grammarContent)).parseResult;
+    expect(result.lexerErrors.length, `Grammar contains ${result.lexerErrors.length} lexer error/-s: ${result.lexerErrors[0]?.message}`)
+        .toBe(0);
+    return result;
+}
+

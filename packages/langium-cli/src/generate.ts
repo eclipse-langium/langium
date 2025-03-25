@@ -391,8 +391,12 @@ export async function runGenerator(config: LangiumConfig, options: GenerateOptio
                 }
             }
         }
+
         if (languageConfig?.bnf) {
-            const genBnf = generateBnf([grammar], { dialect: languageConfig.bnf.dialect ?? 'GBNF' });
+            const genBnf = generateBnf([grammar], {
+                dialect: languageConfig.bnf.dialect ?? 'GBNF',
+                commentStyle: languageConfig.bnf.comment
+            });
             const bnfPath = path.resolve(relPath, languageConfig.bnf.out ?? `${grammar.name ?? 'grammar'}.gbnf`);
             await writeWithFail(bnfPath, genBnf, options);
         }

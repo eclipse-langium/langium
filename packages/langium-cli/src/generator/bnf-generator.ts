@@ -10,16 +10,17 @@ import * as _ from 'lodash';
 import type { AbstractElement, AbstractRule, TerminalRule } from '../../../langium/lib/languages/generated/ast.js';
 import {
     isAction, isAlternatives, isAssignment, isCrossReference, isGroup, isKeyword, isParserRule, isRegexToken,
-    isRuleCall, isTerminalGroup, isTerminalRule, isTerminalRuleCall
+    isRuleCall, isTerminalAlternatives, isTerminalGroup, isTerminalRule, isTerminalRuleCall
 } from '../../../langium/lib/languages/generated/ast.js';
 
-export function generateBnf(grammars: Grammar[], options: { dialect: BnfDialect } = { dialect: 'GBNF' }): string {
+export function generateBnf(grammars: Grammar[], options: GeneratorOptions = { dialect: 'GBNF' }): string {
     const grammarsWithName = grammars.filter(grammar => !!grammar.name);
 
     const ctx: GeneratorContext = {
         rootAssigned: options.dialect === 'EBNF',
         hasHiddenRules: grammarsWithName.some(grammar => grammar.rules.some(rule => isTerminalRule(rule) && rule.hidden)),
-        ...options
+        dialect: options.dialect,
+        commentStyle: options.commentStyle ?? (options.dialect === 'GBNF' ? 'hash' : 'parentheses')
     };
 
     const hiddenRules: TerminalRule[] = [];
@@ -54,10 +55,6 @@ function processRule(rule: AbstractRule, ctx: GeneratorContext): string {
     return `${ruleComment}${ruleName} ::= ${hiddenPrefix}${processElement(rule.definition, ctx)}`;
 }
 
-/*
-* TODO list:
-* 1. ???
-*/
 function processElement(element: AbstractElement, ctx: GeneratorContext): string {
     const processRecursively = (element: AbstractElement) => {
         return processElement(element, ctx);
@@ -78,13 +75,16 @@ function processElement(element: AbstractElement, ctx: GeneratorContext): string
         return '(' + element.elements.map(processRecursively).filter(notEmpty).join(' | ') + ')' + processCardinality(element);
     } else if (isRegexToken(element)) {
         // First remove trailing and leading slashes. Replace escaped slashes `\/` with unescaped slashes `/`.
-        return element.regex.replace(/(?<!\\)\//g, '').replace(/\\\//g, '/');
+        return element.regex.replace(/(^|[^\\])\//g, (_, p1) => p1 + '').replace(/\\\//g, '/');
     } else if (isCrossReference(element)) {
         return (element.terminal ? processRecursively(element.terminal) : 'ID') + processCardinality(element);
     } else if (isAction(element)) {
         return '';
+    } else if (isTerminalAlternatives(element)) {
+        return '(' + element.elements.map(processRecursively).filter(notEmpty).join(' | ') + ')';
     }
-    return `not-handled-(${element.$type})`;
+    console.error(`Not handled AbstractElement type: ${element?.$type}`);
+    return `not-handled-(${element?.$type})`;
 }
 
 function processCardinality(element: AbstractElement): string {
@@ -108,12 +108,16 @@ function processComment(rule: AbstractRule, ctx: GeneratorContext) {
         ?.replace(/\r?\n|\r/g, ' ') // Replace line breaks
         ?.replace(/^\/\*\s*/, '')   // Remove leading `/*`
         ?.replace(/\s*\*\/$/, '');  // Remove trailing `*/`
-    if (comment) {
-        if (ctx.dialect === 'GBNF') {
-            return `# ${comment}${EOL}`;
-        } else {
-            // TODO  (*  *) is not supported in some of EBNF parsers but /* */.
-            return `(* ${comment} *)${EOL}`;
+    if (comment && comment.trim().length > 0) {
+        switch (ctx.commentStyle) {
+            case 'skip':
+                return ' ';
+            case 'parentheses':
+                return `(* ${comment} *)${EOL}`;
+            case 'slash':
+                return `/* ${comment} */${EOL}`;
+            case 'hash':
+                return `# ${comment}${EOL}`;
         }
     }
     return '';
@@ -138,8 +142,21 @@ function notEmpty(text: string): boolean {
  */
 export type BnfDialect = 'GBNF' | 'EBNF';
 
-type GeneratorContext = {
+/**
+ * By default, comments are generated according to the dialect.
+ * Use this option to force a specific comment style.
+ * Use `parentheses` for `(* comment *)`, `slash` for `/* comment *\/`, `hash` for `# comment`
+ * and `skip` to disable comment generation.
+ */
+export type CommentStyle = 'skip' | 'parentheses' | 'slash' | 'hash';
+
+export type GeneratorOptions = {
+    dialect: BnfDialect;
+    commentStyle?: CommentStyle;
+};
+
+type GeneratorContext = GeneratorOptions & {
     rootAssigned: boolean;
     hasHiddenRules: boolean;
-    dialect: string;
+    commentStyle: CommentStyle;
 };
