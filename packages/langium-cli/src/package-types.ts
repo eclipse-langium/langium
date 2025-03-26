@@ -67,4 +67,17 @@ export interface LangiumLanguageConfig {
     }
     /** Configure the chevrotain parser for a single language */
     chevrotainParserConfig?: IParserConfig
+    /** Enable BNF file generation */
+    bnf?: {
+        /** Output path for the BNF file */
+        out: string,
+        /** Dialect of the generated BNF file. GBNF is the default. In EBNF RegEx terminals are not supported. */
+        dialect?: 'GBNF' | 'EBNF',
+        /**
+         * By default, comments are generated according to the dialect. GBNF uses `#`, EBNF uses `(* *)`.
+         * Use this option to force a specific comment style. Use `parentheses` for `(* comment *)`, `slash` for `/* comment *\/`,
+         * `hash` for `# comment` and `skip` to disable comment generation.
+         */
+        comment?: 'skip' | 'parentheses' | 'slash' | 'hash'
+    }
 }
