@@ -413,7 +413,7 @@ function validatePropertiesConsistency(
     const missingProps = new Set<string>();
     for (const [name, expectedProperties] of declaredProps.entries()) {
         const foundProperty = allInferredProps.get(name);
-        if (!foundProperty && !isOptionalProperty(expectedProperties)) {
+        if (!foundProperty && !isOptionalProperty(expectedProperties) && expectedProperties.defaultValue === undefined) {
             missingProps.add(name);
         }
     }
