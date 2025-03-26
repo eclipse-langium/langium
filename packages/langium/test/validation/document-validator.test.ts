@@ -8,7 +8,7 @@ import { AstUtils } from 'langium';
 import type { AstNode, ValidationAcceptor, ValidationChecks } from 'langium';
 import { createServicesForGrammar } from 'langium/grammar';
 import type { LangiumServices } from 'langium/lsp';
-import type { ValidationResult } from 'langium/test';
+import type { ValidationHelperOptions, ValidationResult } from 'langium/test';
 import { validationHelper } from 'langium/test';
 import { beforeAll, describe, expect, test } from 'vitest';
 import { Position, Range } from 'vscode-languageserver';
@@ -256,6 +256,84 @@ describe('Register Before/AfterDocument logic for validations with state', () =>
             const validationResult = await validate('A { A{ A{} } }');
             const diagnostics = validationResult.diagnostics;
             expect(diagnostics).toHaveLength(0);
+        });
+    });
+
+    describe('Custom validation categories', () => {
+
+        const grammar = `grammar Test
+    
+        entry Model:
+            'model' name=ID;
+
+        hidden terminal WS: /\\s+/;
+        terminal ID: /[_a-zA-Z][\\w_]*/;
+        `;
+
+        let validate: (input: string, options?: ValidationHelperOptions) => Promise<ValidationResult<AstNode>>;
+
+        beforeAll(async () => {
+            const services = await createServicesForGrammar({
+                grammar
+            });
+            const validationChecksUser: ValidationChecks<object> = {
+                AstNode: [
+                    (node, accept) => {
+                        accept('error', 'TEST', { node });
+                    }
+                ]
+            };
+            services.validation.ValidationRegistry.register(validationChecksUser, services.validation.ValidationRegistry, 'user');
+            const validationChecksFast: ValidationChecks<object> = {
+                AstNode: [
+                    (node, accept) => {
+                        accept('warning', 'TEST', { node });
+                    }
+                ]
+            };
+            services.validation.ValidationRegistry.register(validationChecksFast);
+
+            validate = validationHelper(services);
+        });
+
+        test('empty categories', async () => {
+            const validationResult = await validate('model test', {validation:{categories:[]}});
+            const diagnostics = validationResult.diagnostics;
+            expect(diagnostics).toHaveLength(0);
+            expect(diagnostics.filter(d => d.severity === 1)).toHaveLength(0); // 0 error
+            expect(diagnostics.filter(d => d.severity === 2)).toHaveLength(0); // 0 warning
+        });
+
+        test('fast category', async () => {
+            const validationResult = await validate('model test', {validation:{categories:['fast']}});
+            const diagnostics = validationResult.diagnostics;
+            expect(diagnostics).toHaveLength(1);
+            expect(diagnostics.filter(d => d.severity === 1)).toHaveLength(0); // 0 error
+            expect(diagnostics.filter(d => d.severity === 2)).toHaveLength(1); // 1 warning
+        });
+
+        test('user category', async () => {
+            const validationResult = await validate('model test', {validation:{categories:['user']}});
+            const diagnostics = validationResult.diagnostics;
+            expect(diagnostics).toHaveLength(1);
+            expect(diagnostics.filter(d => d.severity === 1)).toHaveLength(1); // 1 error
+            expect(diagnostics.filter(d => d.severity === 2)).toHaveLength(0); // 0 warning
+        });
+
+        test('user&fast categories', async () => {
+            const validationResult = await validate('model test', {validation:{categories:['user', 'fast']}});
+            const diagnostics = validationResult.diagnostics;
+            expect(diagnostics).toHaveLength(2);
+            expect(diagnostics.filter(d => d.severity === 1)).toHaveLength(1); // 1 error
+            expect(diagnostics.filter(d => d.severity === 2)).toHaveLength(1); // 1 warning
+        });
+
+        test('default categories', async () => {
+            const validationResult = await validate('model test');
+            const diagnostics = validationResult.diagnostics;
+            expect(diagnostics).toHaveLength(2);
+            expect(diagnostics.filter(d => d.severity === 1)).toHaveLength(1); // 1 error
+            expect(diagnostics.filter(d => d.severity === 2)).toHaveLength(1); // 1 warning
         });
     });
 
