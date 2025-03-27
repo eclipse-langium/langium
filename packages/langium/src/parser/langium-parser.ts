@@ -5,7 +5,7 @@
  ******************************************************************************/
 
 /* eslint-disable @typescript-eslint/no-explicit-any */
-import type { DSLMethodOpts, ILexingError, IOrAlt, IParserErrorMessageProvider, IRecognitionException, IToken, TokenType, TokenVocabulary } from 'chevrotain';
+import type { DSLMethodOpts, ILexingError, IOrAlt, IParserErrorMessageProvider, IRecognitionException, IRuleConfig, IToken, TokenType, TokenVocabulary } from 'chevrotain';
 import type { AbstractElement, Action, Assignment, ParserRule } from '../languages/generated/ast.js';
 import type { Linker } from '../references/linker.js';
 import type { LangiumCoreServices } from '../services.js';
@@ -100,10 +100,6 @@ export interface BaseParser {
      */
     action($type: string, action: Action): void;
     /**
-     * Finishes construction of the current AST node. Only used by the AST parser.
-     */
-    construct(): unknown;
-    /**
      * Whether the parser is currently actually in use or in "recording mode".
      * Recording mode is activated once when the parser is analyzing itself.
      * During this phase, no input exists and therefore no AST should be constructed
@@ -163,7 +159,6 @@ export abstract class AbstractLangiumParser implements BaseParser {
     abstract consume(idx: number, tokenType: TokenType, feature: AbstractElement): void;
     abstract subrule(idx: number, rule: RuleResult, fragment: boolean, feature: AbstractElement, args: Args): void;
     abstract action($type: string, action: Action): void;
-    abstract construct(): unknown;
 
     getRule(name: string): RuleResult | undefined {
         return this.allRules.get(name);
@@ -239,7 +234,7 @@ export class LangiumParser extends AbstractLangiumParser {
         if (!ruleMethod) {
             throw new Error(options.rule ? `No rule found with name '${options.rule}'` : 'No main rule available.');
         }
-        const result = ruleMethod.call(this.wrapper, {});
+        const result = this.doParse(ruleMethod);
         this.nodeBuilder.addHiddenNodes(lexerResult.hidden);
         this.unorderedGroups.clear();
         this.lexerResult = undefined;
@@ -249,6 +244,22 @@ export class LangiumParser extends AbstractLangiumParser {
             lexerReport: lexerResult.report,
             parserErrors: this.wrapper.errors
         };
+    }
+
+    private doParse(rule: RuleResult): any {
+        let result = rule.call(this.wrapper, {});
+        if (this.stack.length > 0) {
+            // In case the parser throws on the entry rule, `construct` is not called
+            // We need to call it manually here
+            result = this.construct();
+        }
+        // Perform some sanity checking
+        if (result === undefined) {
+            throw new Error('No result from parser');
+        } else if (this.stack.length > 0) {
+            throw new Error('Parser stack is not empty after parsing');
+        }
+        return result;
     }
 
     private startImplementation($type: string | symbol | undefined, implementation: RuleImpl): RuleImpl {
@@ -262,16 +273,12 @@ export class LangiumParser extends AbstractLangiumParser {
                     node.value = '';
                 }
             }
-            let result: unknown;
-            try {
-                result = implementation(args);
-            } catch (err) {
-                result = undefined;
-            }
-            if (result === undefined && createNode) {
-                result = this.construct();
-            }
-            return result;
+            // Execute the actual rule implementation
+            // The `implementation` never returns anything and only manipulates the parser state.
+            implementation(args);
+            // Once the rule implementation is done, we need to construct the AST node
+            // If the implementation throws (likely a recognition error), we relay the construction to the `subrule` method
+            return createNode ? this.construct() : undefined;
         };
     }
 
@@ -293,6 +300,10 @@ export class LangiumParser extends AbstractLangiumParser {
     consume(idx: number, tokenType: TokenType, feature: AbstractElement): void {
         const token = this.wrapper.wrapConsume(idx, tokenType);
         if (!this.isRecording() && this.isValidToken(token)) {
+            // Before inserting the current token into the CST, we want add the hidden tokens (i.e. comments)
+            // These are located directly before the current token, but are not part of the token stream.
+            // Adding the hidden tokens to the CST requires searching through the CST and finding the correct position.
+            // Performing this work here is more efficient than doing it later on.
             const hiddenTokens = this.extractHiddenTokens(token);
             this.nodeBuilder.addHiddenNodes(hiddenTokens);
             const leafNode = this.nodeBuilder.buildLeafNode(token, feature);
@@ -330,9 +341,25 @@ export class LangiumParser extends AbstractLangiumParser {
             // This is intended, as fragment rules only enrich the current AST node
             cstNode = this.nodeBuilder.buildCompositeNode(feature);
         }
-        const subruleResult = this.wrapper.wrapSubrule(idx, rule, args) as any;
-        if (!this.isRecording() && cstNode && cstNode.length > 0) {
-            this.performSubruleAssignment(subruleResult, feature, cstNode);
+        let result: any;
+        try {
+            result = this.wrapper.wrapSubrule(idx, rule, args);
+        } finally {
+            if (!this.isRecording()) {
+                // Calling `subrule` on chevrotain parsers can result in a recognition error
+                // This likely means that we encounter a syntax error in the input.
+                // In this case, the result of the subrule is `undefined` and we need to call `construct` manually.
+                if (result === undefined && !fragment) {
+                    result = this.construct();
+                }
+                // We want to perform the subrule assignment regardless of the recognition error
+                // But only if the subrule call actually consumed any tokens
+                if (result !== undefined && cstNode && cstNode.length > 0) {
+                    this.performSubruleAssignment(result, feature, cstNode);
+                }
+            }
+            // We don't have a catch block in here because we want to propagate the recognition error to the caller
+            // This results in much better error recovery and error messages from chevrotain
         }
     }
 
@@ -375,7 +402,7 @@ export class LangiumParser extends AbstractLangiumParser {
         }
     }
 
-    construct(): unknown {
+    private construct(): unknown {
         if (this.isRecording()) {
             return undefined;
         }
@@ -673,8 +700,8 @@ class ChevrotainWrapper extends EmbeddedActionsParser {
         return this.RECORDING_PHASE;
     }
 
-    DEFINE_RULE(name: string, impl: RuleImpl): RuleResult {
-        return this.RULE(name, impl);
+    DEFINE_RULE(name: string, impl: RuleImpl, config?: IRuleConfig<any>): RuleResult {
+        return this.RULE(name, impl, config);
     }
 
     wrapSelfAnalysis(): void {
@@ -682,7 +709,7 @@ class ChevrotainWrapper extends EmbeddedActionsParser {
     }
 
     wrapConsume(idx: number, tokenType: TokenType): IToken {
-        return this.consume(idx, tokenType);
+        return this.consume(idx, tokenType, undefined);
     }
 
     wrapSubrule(idx: number, rule: RuleResult, args: Args): unknown {
