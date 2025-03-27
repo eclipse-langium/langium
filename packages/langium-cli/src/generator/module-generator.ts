@@ -48,6 +48,7 @@ export function generateModule(grammars: Grammar[], config: LangiumConfig, gramm
                     export const ${ grammar.name }LanguageMetaData = {
                         languageId: '${config.id}',
                         fileExtensions: [${config.fileExtensions && joinToNode(config.fileExtensions, e => appendQuotesAndDot(e), { separator: ', ' })}],
+                        ${config.fileNames ? `fileNames: [${config.fileNames.map(name => `'${name}'`).join(', ')}],` : undefined}
                         caseInsensitive: ${Boolean(config.caseInsensitive)},
                         mode: '${modeValue}'
                     } as const satisfies LanguageMetaData;
