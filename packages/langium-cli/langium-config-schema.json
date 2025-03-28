@@ -56,6 +56,15 @@
                         }
                     ]
                 },
+                "fileNames": {
+                    "description": "The file names used by the DSL",
+                    "type": "array",
+                    "items": [
+                        {
+                            "type": "string"
+                        }
+                    ]
+                },
                 "caseInsensitive": {
                     "description": "Enable case-insensitive keywords parsing",
                     "type": "boolean"

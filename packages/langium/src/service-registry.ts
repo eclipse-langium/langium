@@ -44,6 +44,7 @@ export class DefaultServiceRegistry implements ServiceRegistry {
     protected singleton?: LangiumCoreServices;
     protected readonly languageIdMap = new Map<string, LangiumCoreServices>();
     protected readonly fileExtensionMap = new Map<string, LangiumCoreServices>();
+    protected readonly fileNameMap = new Map<string, LangiumCoreServices>();
 
     /**
      * @deprecated Use the new `fileExtensionMap` (or `languageIdMap`) property instead.
@@ -65,6 +66,14 @@ export class DefaultServiceRegistry implements ServiceRegistry {
                 console.warn(`The file extension ${ext} is used by multiple languages. It is now assigned to '${data.languageId}'.`);
             }
             this.fileExtensionMap.set(ext, language);
+        }
+        if (data.fileNames) {
+            for (const name of data.fileNames) {
+                if (this.fileNameMap.has(name)) {
+                    console.warn(`The file name ${name} is used by multiple languages. It is now assigned to '${data.languageId}'.`);
+                }
+                this.fileNameMap.set(name, language);
+            }
         }
         this.languageIdMap.set(data.languageId, language);
         if (this.languageIdMap.size === 1) {
@@ -89,7 +98,9 @@ export class DefaultServiceRegistry implements ServiceRegistry {
             }
         }
         const ext = UriUtils.extname(uri);
-        const services = this.fileExtensionMap.get(ext);
+        const name = UriUtils.basename(uri);
+        const services = this.fileNameMap.get(name) ?? this.fileExtensionMap.get(ext);
+
         if (!services) {
             if (languageId) {
                 throw new Error(`The service registry contains no services for the extension '${ext}' for language '${languageId}'.`);

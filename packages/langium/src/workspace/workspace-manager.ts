@@ -66,6 +66,15 @@ export interface WorkspaceManager {
     initializeWorkspace(folders: WorkspaceFolder[], cancelToken?: CancellationToken): Promise<void>;
 
 }
+/**
+ * The FileSelector provides file names and extensions used by this extension.
+ */
+export interface FileSelector {
+    /** Allowed file extensions (e.g., ["ts", "js"]). */
+    fileExtensions: string[];
+    /** Allowed file names (e.g., ["config", "settings"]). */
+    fileNames: string[];
+}
 
 export class DefaultWorkspaceManager implements WorkspaceManager {
 
@@ -119,6 +128,7 @@ export class DefaultWorkspaceManager implements WorkspaceManager {
      */
     protected async performStartup(folders: WorkspaceFolder[]): Promise<LangiumDocument[]> {
         const fileExtensions = this.serviceRegistry.all.flatMap(e => e.LanguageMetaData.fileExtensions);
+        const fileNames = this.serviceRegistry.all.flatMap(e => e.LanguageMetaData.fileNames ?? []);
         const documents: LangiumDocument[] = [];
         const collector = (document: LangiumDocument) => {
             documents.push(document);
@@ -132,7 +142,7 @@ export class DefaultWorkspaceManager implements WorkspaceManager {
         await this.loadAdditionalDocuments(folders, collector);
         await Promise.all(
             folders.map(wf => [wf, this.getRootFolder(wf)] as [WorkspaceFolder, URI])
-                .map(async entry => this.traverseFolder(...entry, fileExtensions, collector))
+                .map(async entry => this.traverseFolder(...entry, {fileExtensions, fileNames}, collector))
         );
         this._ready.resolve();
         return documents;
@@ -160,12 +170,12 @@ export class DefaultWorkspaceManager implements WorkspaceManager {
      * Traverse the file system folder identified by the given URI and its subfolders. All
      * contained files that match the file extensions are added to the collector.
      */
-    protected async traverseFolder(workspaceFolder: WorkspaceFolder, folderPath: URI, fileExtensions: string[], collector: (document: LangiumDocument) => void): Promise<void> {
+    protected async traverseFolder(workspaceFolder: WorkspaceFolder, folderPath: URI, selector: FileSelector, collector: (document: LangiumDocument) => void): Promise<void> {
         const content = await this.fileSystemProvider.readDirectory(folderPath);
         await Promise.all(content.map(async entry => {
-            if (this.includeEntry(workspaceFolder, entry, fileExtensions)) {
+            if (this.includeEntry(workspaceFolder, entry, selector)) {
                 if (entry.isDirectory) {
-                    await this.traverseFolder(workspaceFolder, entry.uri, fileExtensions, collector);
+                    await this.traverseFolder(workspaceFolder, entry.uri, selector, collector);
                 } else if (entry.isFile) {
                     const document = await this.langiumDocuments.getOrCreateDocument(entry.uri);
                     collector(document);
@@ -177,7 +187,7 @@ export class DefaultWorkspaceManager implements WorkspaceManager {
     /**
      * Determine whether the given folder entry shall be included while indexing the workspace.
      */
-    protected includeEntry(_workspaceFolder: WorkspaceFolder, entry: FileSystemNode, fileExtensions: string[]): boolean {
+    protected includeEntry(_workspaceFolder: WorkspaceFolder, entry: FileSystemNode, selector: FileSelector): boolean {
         const name = UriUtils.basename(entry.uri);
         if (name.startsWith('.')) {
             return false;
@@ -185,8 +195,8 @@ export class DefaultWorkspaceManager implements WorkspaceManager {
         if (entry.isDirectory) {
             return name !== 'node_modules' && name !== 'out';
         } else if (entry.isFile) {
-            const extname = UriUtils.extname(entry.uri);
-            return fileExtensions.includes(extname);
+            return selector.fileExtensions.includes(UriUtils.extname(entry.uri)) ||
+                selector.fileNames.includes(UriUtils.basename(entry.uri));
         }
         return false;
     }
