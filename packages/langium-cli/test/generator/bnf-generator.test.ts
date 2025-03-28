@@ -172,6 +172,42 @@ describe('BNF generator', () => {
         `;
         expect(generated).toBe(expected);
     });
+
+    test('Parser Rule parameter', async () => {
+        const grammarContent = expandToStringWithNL`
+        grammar Test
+        entry Model:
+            element1=Element<false, false>
+            element2=Element<false, true>
+            element3=Element<true, false>
+            element4=Element<true, true>
+        ;
+        Element<a,b>:
+            (<a> "a")
+            (<!a> "!a")
+            (<a&b> "ab")
+            (<a|b> "a_b")
+            (<!(a&b)> '!ab')
+            (<a> "a" | <b> "b")
+            name="name"
+            elements+=Element<false | a, b & true>*
+        ';';
+        `;
+
+        const result = await parseGrammar(grammarContent);
+        const generated = generateBnf([result.value]);
+        const expected = expandToStringWithNL`
+        root ::= element element-b element-a element-ab
+
+        element ::= "!a" "!ab" "name" element* ";"
+        element-a ::= "a" "a_b" "!ab" ("a") "name" element-a* ";"
+        element-b ::= "!a" "a_b" "!ab" ("b") "name" element-b* ";"
+        element-ab ::= "a" "ab" "a_b" ("a" | "b") "name" element-ab* ";"
+
+        `;
+        expect(generated).toBe(expected);
+    });
+
 });
 
 const EXPECTED_BNF = expandToStringWithNL`
