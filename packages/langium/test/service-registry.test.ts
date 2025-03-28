@@ -41,7 +41,7 @@ describe('DefaultServiceRegistry', () => {
         expect(registry.getServices(URI.parse('file:/test.y'))).toBe(language2);
         expect(registry.all).toHaveLength(2);
     });
-    test('a file name has a highest priority than an extension', () => {
+    test('a file name has a higher priority than an extension', () => {
         const language1: LangiumCoreServices = { LanguageMetaData: { fileExtensions: [], fileNames: ['test.x'], languageId: 'foo' } } as any;
         const language2: LangiumCoreServices = { LanguageMetaData: { fileExtensions: ['.x'], languageId: 'bar' } } as any;
         const registry = new DefaultServiceRegistry(createSharedCoreServices());

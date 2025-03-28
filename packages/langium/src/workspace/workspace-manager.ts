@@ -66,8 +66,13 @@ export interface WorkspaceManager {
     initializeWorkspace(folders: WorkspaceFolder[], cancelToken?: CancellationToken): Promise<void>;
 
 }
+/**
+ * The FileSelector provides file names and extensions used by this extension.
+ */
 export interface FileSelector {
+    /** Allowed file extensions (e.g., ["ts", "js"]). */
     fileExtensions: string[];
+    /** Allowed file names (e.g., ["config", "settings"]). */
     fileNames: string[];
 }
 

@@ -103,9 +103,9 @@ export class DefaultServiceRegistry implements ServiceRegistry {
 
         if (!services) {
             if (languageId) {
-                throw new Error(`The service registry contains no services for the file '${name}' for language '${languageId}'.`);
+                throw new Error(`The service registry contains no services for the extension '${ext}' for language '${languageId}'.`);
             } else {
-                throw new Error(`The service registry contains no services for the file '${name}'.`);
+                throw new Error(`The service registry contains no services for the extension '${ext}'.`);
             }
         }
         return services;
