@@ -8,7 +8,6 @@ import { describe, expect, test } from 'vitest';
 import type { AstNode, Reference } from 'langium';
 import { AstUtils, EmptyFileSystem, GrammarAST } from 'langium';
 import { createLangiumGrammarServices } from 'langium/grammar';
-import { expectType } from 'ts-expect';
 
 interface TestNode extends AstNode {
     readonly $type: 'MyType';
@@ -59,6 +58,7 @@ interface PartialTestNode extends AstNode {
     optCtn?: PartialTestNode;
     optCtnArr?: PartialTestNode[];
 }
+export const expectType = <Type>(_: Type): void => void 0;
 
 describe('AST Utils', () => {
 
