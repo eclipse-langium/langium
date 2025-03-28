@@ -7,9 +7,11 @@
 import { CstUtils, type Grammar } from 'langium';
 import { EOL } from 'langium/generate';
 import * as _ from 'lodash';
-import type { AbstractElement, AbstractRule, TerminalRule } from '../../../langium/lib/languages/generated/ast.js';
+import type { AbstractElement, AbstractRule, Condition, NamedArgument, Parameter, TerminalRule } from '../../../langium/lib/languages/generated/ast.js';
 import {
-    isAction, isAlternatives, isAssignment, isCrossReference, isGroup, isKeyword, isParserRule, isRegexToken,
+    isAction, isAlternatives, isAssignment,
+    isCrossReference, isGroup, isKeyword,
+    isParserRule, isRegexToken,
     isRuleCall, isTerminalAlternatives, isTerminalGroup, isTerminalRule, isTerminalRuleCall
 } from '../../../langium/lib/languages/generated/ast.js';
 
@@ -49,10 +51,24 @@ function processRule(rule: AbstractRule, ctx: GeneratorContext): string {
     }
 
     // GBNF expects 'root' as the root rule name, Lark e.g. expects 'start'.
-    const ruleName = processName(markRoot ? 'root' : rule.name, ctx);
     const ruleComment = processComment(rule, ctx);
     const hiddenPrefix = (isTerminalRule(rule) && !rule.hidden) ? hiddenRuleCall(ctx) : '';
-    return `${ruleComment}${ruleName} ::= ${hiddenPrefix}${processElement(rule.definition, ctx)}`;
+    const ruleName = markRoot ? 'root' : rule.name;
+    if (isParserRule(rule) && rule.parameters.length > 0) {
+        // parser rule with parameters
+        const variations: Array<Record<string, boolean>> = parserRuleVariations(rule.parameters);
+        let content = '';
+        variations.forEach((variation, idx) => {
+            ctx.parserRuleVariation = variation;
+            content += `${ruleComment}${processName(ruleName, ctx, variation)} ::= ${hiddenPrefix}${processElement(rule.definition, ctx)}`;
+            if (idx < variations.length - 1) {
+                content += EOL;
+            }
+        });
+        ctx.parserRuleVariation = undefined;
+        return content;
+    }
+    return `${ruleComment}${processName(ruleName, ctx)} ::= ${hiddenPrefix}${processElement(rule.definition, ctx)}`;
 }
 
 function processElement(element: AbstractElement, ctx: GeneratorContext): string {
@@ -62,17 +78,27 @@ function processElement(element: AbstractElement, ctx: GeneratorContext): string
     if (isKeyword(element)) {
         return `${hiddenRuleCall(ctx)}"${element.value}"`;
     } else if (isGroup(element) || isTerminalGroup(element)) {
-        if (element.cardinality) {
-            return `( ${element.elements.map(processRecursively).filter(notEmpty).join(' ')} )${processCardinality(element)}`;
-        } else {
-            return element.elements.map(processRecursively).filter(notEmpty).join(' ');
+        if (isGroup(element) && element.guardCondition && !evaluateCondition(element.guardCondition, ctx)) {
+            // Skip group if guard condition is false
+            return ' ';
         }
+        const content = element.elements.map(processRecursively).filter(notEmpty).join(' ');
+        if (element.cardinality && notEmpty(content)) {
+            return `( ${content} )${processCardinality(element)}`;
+        }
+        return content;
     } else if (isAssignment(element)) {
         return processRecursively(element.terminal) + processCardinality(element);
     } else if (isRuleCall(element) || isTerminalRuleCall(element)) {
-        return processName(element.rule.ref?.name ?? element.rule.$refText, ctx) + processCardinality(element);
+        const variation = isRuleCall(element) ? collectArguments(element.rule.ref, element.arguments, ctx) : undefined;
+        const ruleName = element.rule.ref?.name ?? element.rule.$refText;
+        return processName(ruleName, ctx, variation) + processCardinality(element);
     } else if (isAlternatives(element) || isTerminalAlternatives(element)) {
-        return '(' + element.elements.map(processRecursively).filter(notEmpty).join(' | ') + ')' + processCardinality(element);
+        const content = element.elements.map(processRecursively).filter(notEmpty).join(' | ');
+        if (notEmpty(content)) {
+            return '(' + content + ')' + processCardinality(element);
+        }
+        return '';
     } else if (isRegexToken(element)) {
         // First remove trailing and leading slashes. Replace escaped slashes `\/` with unescaped slashes `/`.
         return element.regex.replace(/(^|[^\\])\//g, (_, p1) => p1 + '').replace(/\\\//g, '/');
@@ -89,7 +115,12 @@ function processCardinality(element: AbstractElement): string {
     return element.cardinality ?? '';
 }
 
-function processName(name: string, ctx: GeneratorContext): string {
+function processName(ruleName: string, ctx: GeneratorContext, parserRuleVariation?: Record<string, boolean>): string {
+    const name = parserRuleVariation
+        ? `${ruleName}${Object.entries(parserRuleVariation)
+            .filter(entry => entry[1]).map(entry => entry[0].charAt(0).toUpperCase() + entry[0].slice(1))
+            .join('')}`
+        : ruleName;
     switch (ctx.dialect) {
         case 'GBNF':
             // convert camel case to Kebab Case for GBNF (GGML AI)
@@ -135,6 +166,57 @@ function notEmpty(text: string): boolean {
 }
 
 /**
+ * @param params parserRule parameters
+ * @returns all possible combination of guards for the parserRule - 2^params.length
+ */
+function parserRuleVariations(params: Parameter[]): Array<Record<string, boolean>> {
+    const variationsCount = Math.pow(2, params.length);
+    const variations: Array<Record<string, boolean>> = [];
+    for (let i = 0; i < variationsCount; i++) {
+        const variation: Record<string, boolean> = {};
+        params.map((param, index) => {
+            // eslint-disable-next-line no-bitwise
+            const isTrue = (i & (1 << index)) !== 0;
+            return variation[param.name] = isTrue;
+        });
+        variations.push(variation);
+    }
+    return variations;
+}
+
+function collectArguments(rule: AbstractRule | undefined, namedArgs: NamedArgument[], ctx: GeneratorContext): Record<string, boolean> | undefined {
+    if (isParserRule(rule) && namedArgs.length > 0 && rule.parameters.length === namedArgs.length) {
+        const variation: Record<string, boolean> = {};
+        namedArgs.forEach((arg, idx) => {
+            variation[rule.parameters[idx].name] = evaluateCondition(arg.value, ctx);
+        });
+        return variation;
+    }
+    return undefined;
+}
+
+function evaluateCondition(condition: Condition, ctx: GeneratorContext): boolean {
+    switch (condition.$type) {
+        case 'BooleanLiteral':
+            return condition.true;
+        case 'Conjunction':
+            return evaluateCondition(condition.left, ctx) && evaluateCondition(condition.right, ctx);
+        case 'Disjunction':
+            return evaluateCondition(condition.left, ctx) || evaluateCondition(condition.right, ctx);
+        case 'Negation':
+            return !evaluateCondition(condition.value, ctx);
+        case 'ParameterReference': {
+            if (!ctx.parserRuleVariation) {
+                return false;
+            }
+            return ctx.parserRuleVariation[condition.parameter.ref?.name ?? condition.parameter.$refText];
+        }
+        default:
+            throw new Error(`Unhandled Condition type: ${(condition as Condition).$type}`);
+    }
+}
+
+/**
  * Default: GBNF
  * EBNF doesn't support RegEx terminal rules.
  */
@@ -157,4 +239,6 @@ type GeneratorContext = GeneratorOptions & {
     rootAssigned: boolean;
     hasHiddenRules: boolean;
     commentStyle: CommentStyle;
+    parserRuleVariation?: Record<string, boolean>;
 };
+

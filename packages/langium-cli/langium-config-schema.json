@@ -126,6 +126,35 @@
                 },
                 "chevrotainParserConfig": {
                     "$ref": "#/$defs/chevrotainParserConfig"
+                },
+                "bnf": {
+                    "description": "An object to describe bnf generator properties.",
+                    "type": "object",
+                    "properties": {
+                        "out": {
+                            "description": "The output path for the BNF file.",
+                            "type": "string"
+                        },
+                        "comment": {
+                            "description": "By default, comments are generated according to the dialect. GBNF uses `#`, EBNF uses `(* *)`. Use this option to force a specific comment style. Use `parentheses` for `(* comment *)`, `slash` for `/* comment *\/`, `hash` for `# comment` and `skip` to disable comment generation.",
+                            "type": {
+                                "enum": [
+                                    "skip", "parentheses", "slash", "hash"
+                                ]
+                            }
+                        },
+                        "dialect": {
+                            "description": "Dialect of the generated BNF file. GBNF is the default. In EBNF RegEx terminals are not supported.",
+                            "type": {
+                                "enum": [
+                                    "GBNF", "EBNF"
+                                ]
+                            }
+                        }
+                    },
+                    "required": [
+                        "out"
+                    ]
                 }
             },
             "required": [
