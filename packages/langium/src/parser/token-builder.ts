@@ -11,7 +11,7 @@ import { Lexer } from 'chevrotain';
 import { isKeyword, isParserRule, isTerminalRule } from '../languages/generated/ast.js';
 import { streamAllContents } from '../utils/ast-utils.js';
 import { getAllReachableRules, terminalRegex } from '../utils/grammar-utils.js';
-import { getCaseInsensitivePattern, isWhitespace, partialMatches } from '../utils/regexp-utils.js';
+import { escapeRegExp, isWhitespace, partialMatches } from '../utils/regexp-utils.js';
 import { stream } from '../utils/stream.js';
 
 export interface TokenBuilderOptions {
@@ -53,14 +53,10 @@ export class DefaultTokenBuilder implements TokenBuilder {
         const terminalTokens: TokenType[] = this.buildTerminalTokens(reachableRules);
         const tokens: TokenType[] = this.buildKeywordTokens(reachableRules, terminalTokens, options);
 
-        terminalTokens.forEach(terminalToken => {
-            const pattern = terminalToken.PATTERN;
-            if (typeof pattern === 'object' && pattern && 'test' in pattern && isWhitespace(pattern)) {
-                tokens.unshift(terminalToken);
-            } else {
-                tokens.push(terminalToken);
-            }
-        });
+        // Add all terminals tokens to the end in the order they were defined
+        // Chevrotain documentation recommends to add Whitespace-like tokens at the start
+        // However, assuming the lexer is able to optimize the tokens, it should not matter
+        tokens.push(...terminalTokens);
         // We don't need to add the EOF token explicitly.
         // It is automatically available at the end of the token stream.
         return tokens;
@@ -148,7 +144,7 @@ export class DefaultTokenBuilder implements TokenBuilder {
 
     protected buildKeywordPattern(keyword: Keyword, caseInsensitive: boolean): TokenPattern {
         return caseInsensitive ?
-            new RegExp(getCaseInsensitivePattern(keyword.value)) :
+            new RegExp(escapeRegExp(keyword.value), 'i') :
             keyword.value;
     }
 
