@@ -30,6 +30,8 @@ export interface LangiumConfig {
     chevrotainParserConfig?: IParserConfig,
     /** The following option is meant to be used only by Langium itself */
     langiumInternal?: boolean
+    /** Generate a partial AST with optional properties (usefull to access the parsed AST with an incomplete document) */
+    generatePartialAst?: boolean
 }
 
 export interface LangiumLanguageConfig {
