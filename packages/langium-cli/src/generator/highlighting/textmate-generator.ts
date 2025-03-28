@@ -128,14 +128,14 @@ function getRepository(grammar: Grammar, config: LangiumLanguageConfig): Reposit
 function getControlKeywords(grammar: Grammar, pack: LangiumLanguageConfig): Pattern {
     const regex = /[A-Za-z]/;
     const controlKeywords = collectKeywords(grammar).filter(kw => regex.test(kw));
-    const groups = groupKeywords(controlKeywords, pack.caseInsensitive);
+    const groups = groupKeywords(controlKeywords);
     return {
         'name': `keyword.control.${pack.id}`,
-        'match': groups.join('|')
+        'match': `${pack.caseInsensitive ? '(?i)' : ''}${groups.join('|')}`
     };
 }
 
-function groupKeywords(keywords: string[], caseInsensitive: boolean | undefined): string[] {
+function groupKeywords(keywords: string[]): string[] {
     const groups: {
         letter: string[],
         leftSpecial: string[],
@@ -144,7 +144,7 @@ function groupKeywords(keywords: string[], caseInsensitive: boolean | undefined)
     } = { letter: [], leftSpecial: [], rightSpecial: [], special: [] };
 
     keywords.forEach(keyword => {
-        const keywordPattern = caseInsensitive ? RegExpUtils.getCaseInsensitivePattern(keyword) : RegExpUtils.escapeRegExp(keyword);
+        const keywordPattern = RegExpUtils.escapeRegExp(keyword);
         if (/\w/.test(keyword[0])) {
             if (/\w/.test(keyword[keyword.length - 1])) {
                 groups.letter.push(keywordPattern);

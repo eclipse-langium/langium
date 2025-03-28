@@ -140,23 +140,23 @@ describe('tokenBuilder#caseInsensitivePattern', () => {
     });
 
     test('should create from keyword with special symbols', () => {
-        expect(implementPattern).toEqual(/@[iI][mM][pP][lL][eE][mM][eE][nN][tT]/);
+        expect(implementPattern).toEqual(/@implement/i);
     });
 
     test('should create from keyword with special escape symbols', () => {
-        expect(strangePattern).toEqual(/\\[sS][tT][rR][aA][nN][gG][eE]\\/);
+        expect(strangePattern).toEqual(/\\strange\\/i);
     });
 
     test('should create from mixed-case word', () => {
-        expect(abcPattern).toEqual(/[aA][bB][cC]/);
+        expect(abcPattern).toEqual(/AbC/i);
     });
 
     test('should create from lower-case word', () => {
-        expect(abPattern).toEqual(/[aA][bB]/);
+        expect(abPattern).toEqual(/ab/i);
     });
 
     test('should create from upper-case word', () => {
-        expect(aPattern).toEqual(/[aA]/);
+        expect(aPattern).toEqual(/A/i);
     });
 
     test('should ignore terminals', () => {
