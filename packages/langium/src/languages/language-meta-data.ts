@@ -10,6 +10,7 @@
 export interface LanguageMetaData {
     languageId: string;
     fileExtensions: readonly string[];
+    fileNames?: readonly string[];
     caseInsensitive: boolean;
     /**
      * Mode used to optimize code for development or production environments.

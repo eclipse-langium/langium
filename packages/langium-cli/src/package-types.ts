@@ -39,6 +39,8 @@ export interface LangiumLanguageConfig {
     grammar: string
     /** File extensions with leading `.` */
     fileExtensions?: string[]
+    /** File names */
+    fileNames?: string[]
     /** Enable case-insensitive keywords parsing */
     caseInsensitive?: boolean
     /** Enable generating a TextMate syntax highlighting file */

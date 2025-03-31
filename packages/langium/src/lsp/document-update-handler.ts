@@ -4,7 +4,7 @@
  * terms of the MIT License, which is available in the project root.
  ******************************************************************************/
 
-import type { TextDocumentWillSaveEvent, DidChangeWatchedFilesParams, DidChangeWatchedFilesRegistrationOptions, TextDocumentChangeEvent, TextEdit } from 'vscode-languageserver';
+import type { TextDocumentWillSaveEvent, DidChangeWatchedFilesParams, DidChangeWatchedFilesRegistrationOptions, TextDocumentChangeEvent, TextEdit, FileSystemWatcher } from 'vscode-languageserver';
 import { DidChangeWatchedFilesNotification, FileChangeType } from 'vscode-languageserver';
 import { stream } from '../utils/stream.js';
 import { URI } from '../utils/uri-utils.js';
@@ -92,20 +92,35 @@ export class DefaultDocumentUpdateHandler implements DocumentUpdateHandler {
     }
 
     protected registerFileWatcher(services: LangiumSharedServices): void {
+        const watchers: FileSystemWatcher[] = [];
+        // extensions
         const fileExtensions = stream(services.ServiceRegistry.all)
             .flatMap(language => language.LanguageMetaData.fileExtensions)
             .map(ext => ext.startsWith('.') ? ext.substring(1) : ext)
             .distinct()
             .toArray();
         if (fileExtensions.length > 0) {
+            watchers.push({
+                globPattern: fileExtensions.length === 1
+                    ? `**/*.${fileExtensions[0]}`
+                    : `**/*.{${fileExtensions.join(',')}}`
+            });
+        }
+        // filenames
+        const fileNames = stream(services.ServiceRegistry.all)
+            .flatMap(language => language.LanguageMetaData.fileNames ?? [])
+            .distinct()
+            .toArray();
+        if (fileNames.length > 0) {
+            watchers.push({
+                globPattern: fileNames.length === 1
+                    ? `**/${fileNames[0]}`
+                    : `**/{${fileNames.join(',')}}`
+            });
+        }
+        if (watchers.length > 0) {
             const connection = services.lsp.Connection;
-            const options: DidChangeWatchedFilesRegistrationOptions = {
-                watchers: [{
-                    globPattern: fileExtensions.length === 1
-                        ? `**/*.${fileExtensions[0]}`
-                        : `**/*.{${fileExtensions.join(',')}}`
-                }]
-            };
+            const options: DidChangeWatchedFilesRegistrationOptions = { watchers };
             connection?.client.register(DidChangeWatchedFilesNotification.type, options);
         }
     }
