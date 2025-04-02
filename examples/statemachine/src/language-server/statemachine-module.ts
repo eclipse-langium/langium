@@ -9,11 +9,17 @@ import type { LangiumServices, LangiumSharedServices, PartialLangiumServices } f
 import { createDefaultModule, createDefaultSharedModule, type DefaultSharedModuleContext } from 'langium/lsp';
 import { StatemachineGeneratedModule, StatemachineGeneratedSharedModule } from './generated/module.js';
 import { StatemachineValidator, registerValidationChecks } from './statemachine-validator.js';
+import { StatemachineCodeActionProvider } from './statemachine-code-actions.js';
+import { StatemachineFormatter } from './statemachine-formatter.js';
 
 /**
  * Declaration of custom services - add your own service classes here.
  */
 export type StatemachineAddedServices = {
+    lsp: {
+        CodeActionProvider: StatemachineCodeActionProvider;
+        Formatter:  StatemachineFormatter;
+    },
     validation: {
         StatemachineValidator: StatemachineValidator
     }
@@ -31,6 +37,10 @@ export type StatemachineServices = LangiumServices & StatemachineAddedServices
  * selected services, while the custom services must be fully specified.
  */
 export const StatemachineModule: Module<StatemachineServices, PartialLangiumServices & StatemachineAddedServices> = {
+    lsp: {
+        CodeActionProvider: () => new StatemachineCodeActionProvider(),
+        Formatter: () => new StatemachineFormatter(),
+    },
     validation: {
         StatemachineValidator: () => new StatemachineValidator()
     }
