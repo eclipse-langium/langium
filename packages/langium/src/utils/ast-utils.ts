@@ -301,3 +301,30 @@ export function copyAstNode<T extends AstNode = AstNode>(node: T, buildReference
     linkContentToContainer(copy);
     return copy as unknown as T;
 }
+
+/**
+ * Recursively makes all properties of an AstNode optional, except for those
+ * that start with a dollar sign ($) or are of type boolean or are of type array.
+ * If the type is a Reference or an Array, it applies the transformation recursively
+ * to the inner type.
+ * Otherwise the type is returned as is.
+ *
+ * @template T - The type to be transformed.
+*/
+export type DeepPartialAstNode<T> =
+    // if T is a Reference<U> transform it to Reference<DeepPartialAstNode<U>>
+    T extends Reference<infer U extends AstNode> ? Reference<DeepPartialAstNode<U>> :
+        // if T is an AstNode
+        T extends AstNode ? {
+            // transform the type of each property starting with '$' or with a boolean or array type
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
+            [K in keyof T as K extends `$${string}` | (T[K] extends (boolean | any[]) ? K : never) ? K : never]: DeepPartialAstNode<T[K]>;
+        } & {
+            // force the property as optional and transform its type for each property not starting with '$' or with a type different from boolean or array type
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
+            [K in keyof T as K extends `$${string}` ? never: T[K] extends (boolean | any[]) ? never : K]?: DeepPartialAstNode<T[K]>;
+        } :
+            // if T is an Array<U> convert to Array<DeepPartialAstNode<U>>
+            T extends Array<infer U> ? Array<DeepPartialAstNode<U>> :
+                // otherwise keep T as is
+                T;
