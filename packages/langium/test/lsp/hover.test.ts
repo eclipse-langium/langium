@@ -4,12 +4,15 @@
  * terms of the MIT License, which is available in the project root.
  ******************************************************************************/
 
-import { describe, test } from 'vitest';
+import { beforeAll, describe, test } from 'vitest';
+import type { AsyncDisposable} from 'langium';
 import { EmptyFileSystem } from 'langium';
-import { createLangiumGrammarServices } from 'langium/grammar';
+import { createLangiumGrammarServices, createServicesForGrammar } from 'langium/grammar';
+import type { ExpectedHover} from 'langium/test';
 import { expectHover } from 'langium/test';
 
-const text = `
+describe('Hover', () => {
+    const text = `
   /**
    * I am a grammar file comment
    */
@@ -27,12 +30,10 @@ const text = `
    * Hi I reference Rule {@linkcode X}
    */
   <|>Y: value=<|>X;
-  `;
+    `;
 
-const grammarServices = createLangiumGrammarServices(EmptyFileSystem).grammar;
-const hover = expectHover(grammarServices);
-
-describe('Hover', () => {
+    const grammarServices = createLangiumGrammarServices(EmptyFileSystem).grammar;
+    const hover = expectHover(grammarServices);
 
     test('Hovering over whitespace should not provide a hover', async () => {
         await hover({
@@ -71,6 +72,61 @@ describe('Hover', () => {
             text,
             index: 3,
             hover: /Hi I reference Rule \[`X`\]\(file:\/\/\/\w*\.langium#L14%2C3\)/
+        });
+    });
+});
+
+describe('Hover on keywords', () => {
+
+    const grammar = `grammar HoverOnKeywords
+
+    entry Model:
+        /** root keyword */ 'root' name=ID
+        elements+=Tag*;
+
+    Tag: /** opening tag */ 'tag' name=ID /** closing tag */ 'tag';
+
+    hidden terminal WS: /\\s+/;
+    terminal ID: /[_a-zA-Z][\\w_]*/;
+    hidden terminal ML_COMMENT: /#\\*[\\s\\S]*?\\*#/;
+    hidden terminal SL_COMMENT: /##[^\\n\\r]*/;
+    `;
+
+    const text = `
+    ## SL_COMMENT
+    <|>root name
+    #* ML_COMMENT *#
+    <|>tag first <|>tag
+      `;
+
+    let hover: (expectedHover: ExpectedHover) => Promise<AsyncDisposable>;
+
+    beforeAll(async () => {
+        const services = await createServicesForGrammar({
+            grammar
+        });
+        hover = expectHover(services);
+    });
+    test('Hovering over root keyword', async () => {
+        await hover({
+            text,
+            index: 0,
+            hover: 'root keyword'
+        });
+    });
+    test('Hovering over opening tag keyword', async () => {
+
+        await hover({
+            text,
+            index: 1,
+            hover: 'opening tag'
+        });
+    });
+    test('Hovering over closing tag keyword', async () => {
+        await hover({
+            text,
+            index: 2,
+            hover: 'closing tag'
         });
     });
 });
