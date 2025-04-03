@@ -40,7 +40,7 @@ yo langium
 
 You can find the Langium documentation on [the website](https://langium.org/).
 
-If you're new to building programming language, take a look at [our overview to see what Langium offers](https://langium.org/docs/features/). 
+If you're new to building programming languages, take a look at [our overview to see what Langium offers](https://langium.org/docs/features/). 
 
 The documentation is divided into several sections:
 
