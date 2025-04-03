@@ -12,9 +12,10 @@ import { collectAst, collectTypeHierarchy, findReferenceTypes, isAstType, mergeT
 import { generatedHeader } from './node-util.js';
 import { collectKeywords, collectTerminalRegexps } from './langium-util.js';
 
-export function generateAst(services: LangiumCoreServices, grammars: Grammar[], config: LangiumConfig): string {
+export function generateAst(services: LangiumCoreServices, grammars: Grammar[], config: LangiumConfig,): string {
     const astTypes = collectAst(grammars, services.shared.workspace.LangiumDocuments);
     const importFrom = config.langiumInternal ? `../../syntax-tree${config.importExtension}` : 'langium';
+
     /* eslint-disable @typescript-eslint/indent */
     const fileNode = expandToNode`
         ${generatedHeader}
@@ -25,10 +26,34 @@ export function generateAst(services: LangiumCoreServices, grammars: Grammar[], 
         ${generateTerminalConstants(grammars, config)}
 
         ${joinToNode(astTypes.unions, union => union.toAstTypesString(isAstType(union.type)), { appendNewLineIfNotEmpty: true })}
-        ${joinToNode(astTypes.interfaces, iFace => iFace.toAstTypesString(true), { appendNewLineIfNotEmpty: true })}
+        ${joinToNode(astTypes.interfaces, iFace => iFace.toAstTypesString(true, false), { appendNewLineIfNotEmpty: true })}
         ${
             astTypes.unions = astTypes.unions.filter(e => isAstType(e.type)),
             generateAstReflection(config, astTypes)
+        }
+    `;
+    return toString(fileNode);
+    /* eslint-enable @typescript-eslint/indent */
+}
+export function generateAstPartial(services: LangiumCoreServices, grammars: Grammar[], config: LangiumConfig,): string {
+    const astTypes = collectAst(grammars, services.shared.workspace.LangiumDocuments);
+    const importFrom = config.langiumInternal ? `../../syntax-tree${config.importExtension}` : 'langium';
+
+    /* eslint-disable @typescript-eslint/indent */
+    const fileNode = expandToNode`
+        ${generatedHeader}
+
+        /* eslint-disable */
+        import * as langium from '${importFrom}';
+        import * as ast from './ast.js';
+
+        ${generateTerminalConstantsPartial(grammars, config)}
+
+        ${joinToNode(astTypes.unions, union => union.toAstTypesString(isAstType(union.type), true), { appendNewLineIfNotEmpty: true })}
+        ${joinToNode(astTypes.interfaces, iFace => iFace.toAstTypesString(true, true), { appendNewLineIfNotEmpty: true })}
+        ${
+            astTypes.unions = astTypes.unions.filter(e => isAstType(e.type)),
+            generateAstReflectionPartial(config, astTypes)
         }
     `;
     return toString(fileNode);
@@ -68,6 +93,14 @@ function generateAstReflection(config: LangiumConfig, astTypes: AstTypes): Gener
     `.appendNewLine();
 }
 
+function generateAstReflectionPartial(config: LangiumConfig, _astTypes: AstTypes): Generated {
+
+    return expandToNode`
+
+        export type { ${config.projectName}AstType, ${config.projectName}AstReflection } from './ast.js';
+        export const reflection = ast.reflection;
+    `.appendNewLine();
+}
 function buildTypeMetaDataMethod(astTypes: AstTypes): Generated {
     /* eslint-disable @typescript-eslint/indent */
     return expandToNode`
@@ -250,5 +283,11 @@ function generateTerminalConstants(grammars: Grammar[], config: LangiumConfig): 
         export type ${config.projectName}KeywordNames =${keywordStrings.length > 0 ? keywordStrings.map(keyword => `${EOL}    | ${keyword}`).join('') : ' never'};
 
         export type ${config.projectName}TokenNames = ${config.projectName}TerminalNames | ${config.projectName}KeywordNames;
+    `.appendNewLine();
+}
+
+function generateTerminalConstantsPartial(grammars: Grammar[], config: LangiumConfig): Generated {
+    return expandToNode`
+        export { ${config.projectName}Terminals, type ${config.projectName}TerminalNames, type ${config.projectName}KeywordNames, type ${config.projectName}TokenNames } from './ast.js';
     `.appendNewLine();
 }

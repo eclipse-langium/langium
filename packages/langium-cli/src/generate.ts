@@ -11,7 +11,7 @@ import { loadConfig } from './package.js';
 import { AstUtils, GrammarAST } from 'langium';
 import { createLangiumGrammarServices, resolveImport, resolveImportUri, resolveTransitiveImports } from 'langium/grammar';
 import { NodeFileSystem } from 'langium/node';
-import { generateAst } from './generator/ast-generator.js';
+import { generateAst, generateAstPartial } from './generator/ast-generator.js';
 import { serializeGrammar } from './generator/grammar-serializer.js';
 import { generateModule } from './generator/module-generator.js';
 import { generateBnf } from './generator/bnf-generator.js';
@@ -327,7 +327,7 @@ export async function runGenerator(config: LangiumConfig, options: GenerateOptio
     const output = path.resolve(relPath, config.out ?? 'src/generated');
     log('log', options, `Writing generated files to ${chalk.white.bold(output)}`);
 
-    if (await rmdirWithFail(output, ['ast.ts', 'grammar.ts', 'module.ts'], options)) {
+    if (await rmdirWithFail(output, ['ast.ts', 'ast-partial.ts', 'grammar.ts', 'module.ts'], options)) {
         return buildResult(false);
     }
     if (await mkdirWithFail(output, options)) {
@@ -336,7 +336,10 @@ export async function runGenerator(config: LangiumConfig, options: GenerateOptio
 
     const genAst = generateAst(grammarServices, embeddedGrammars, config);
     await writeWithFail(path.resolve(updateLangiumInternalAstPath(output, config), 'ast.ts'), genAst, options);
-
+    if(config.generatePartialAst) {
+        const genAstPartial = generateAstPartial(grammarServices, embeddedGrammars, config);
+        await writeWithFail(path.resolve(updateLangiumInternalAstPath(output, config), 'ast-partial.ts'), genAstPartial, options);
+    }
     const serializedGrammar = serializeGrammar(grammarServices, embeddedGrammars, config);
     await writeWithFail(path.resolve(output, 'grammar.ts'), serializedGrammar, options);
 

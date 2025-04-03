@@ -121,14 +121,14 @@ export class UnionType {
         this.dataType = options?.dataType;
     }
 
-    toAstTypesString(reflectionInfo: boolean): string {
+    toAstTypesString(reflectionInfo: boolean, isPartial?: boolean): string {
         const unionNode = expandToNode`
             export type ${this.name} = ${propertyTypeToString(this.type, 'AstType')};
         `.appendNewLine();
 
         if (reflectionInfo) {
             unionNode.appendNewLine()
-                .append(addReflectionInfo(this.name));
+                .append(addReflectionInfo(this.name, isPartial));
         }
 
         if (this.dataType) {
@@ -218,7 +218,7 @@ export class InterfaceType {
         this.abstract = abstract;
     }
 
-    toAstTypesString(reflectionInfo: boolean): string {
+    toAstTypesString(reflectionInfo: boolean, isPartial?: boolean): string {
         const interfaceSuperTypes = this.interfaceSuperTypes.map(e => e.name);
         const superTypes = interfaceSuperTypes.length > 0 ? distinctAndSorted([...interfaceSuperTypes]) : ['langium.AstNode'];
         const interfaceNode = expandToNode`
@@ -233,7 +233,7 @@ export class InterfaceType {
                 body.append(`readonly $type: ${distinctAndSorted([...this.typeNames]).map(e => `'${e}'`).join(' | ')};`).appendNewLine();
             }
             body.append(
-                pushProperties(this.properties, 'AstType')
+                pushProperties(this.properties, 'AstType', isPartial)
             );
         });
         interfaceNode.append('}').appendNewLine();
@@ -241,7 +241,7 @@ export class InterfaceType {
         if (reflectionInfo) {
             interfaceNode
                 .appendNewLine()
-                .append(addReflectionInfo(this.name));
+                .append(addReflectionInfo(this.name, isPartial));
         }
 
         return toString(interfaceNode);
@@ -253,7 +253,7 @@ export class InterfaceType {
         return toString(
             expandToNode`
                 interface ${name}${superTypes.length > 0 ? ` extends ${superTypes}` : ''} {
-                    ${pushProperties(this.properties, 'DeclaredType', reservedWords)}
+                    ${pushProperties(this.properties, 'DeclaredType', false, reservedWords)}
                 }
             `.appendNewLine()
         );
@@ -408,12 +408,13 @@ function typeParenthesis(type: PropertyType, name: string): string {
 function pushProperties(
     properties: Property[],
     mode: 'AstType' | 'DeclaredType',
+    isPartial?: boolean,
     reserved = new Set<string>()
 ): Generated {
 
     function propertyToString(property: Property): string {
         const name = mode === 'AstType' ? property.name : escapeReservedWords(property.name, reserved);
-        const optional = property.optional && !isMandatoryPropertyType(property.type);
+        const optional = !isMandatoryPropertyType(property.type) && property.defaultValue === undefined && (property.optional || isPartial);
         const propType = propertyTypeToString(property.type, mode);
         return `${name}${optional ? '?' : ''}: ${propType};`;
     }
@@ -440,14 +441,21 @@ export function isMandatoryPropertyType(propertyType: PropertyType): boolean {
     }
 }
 
-function addReflectionInfo(name: string): Generated {
-    return expandToNode`
+function addReflectionInfo(name: string, isPartial?: boolean): Generated {
+    return (isPartial ?
+        expandToNode`
+        export const ${name} = ast.${name};
+
+        export function is${name}(item: unknown): item is ${name} {
+            return reflection.isInstance(item, ${name});
+        }
+    `: expandToNode`
         export const ${name} = '${name}';
 
         export function is${name}(item: unknown): item is ${name} {
             return reflection.isInstance(item, ${name});
         }
-    `.appendNewLine();
+    `).appendNewLine();
 }
 
 function addDataTypeReflectionInfo(union: UnionType): Generated {
