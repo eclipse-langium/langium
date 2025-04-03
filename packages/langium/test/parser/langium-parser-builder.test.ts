@@ -231,7 +231,7 @@ describe('Handle unordered group', () => {
             description "New description"
             author "foo"
             `);
-        expect(parsed.parserErrors.length).toBe(2);
+        expect(parsed.parserErrors).toHaveLength(1);
     });
 
     test('Should parse multiple instances', () => {
@@ -250,8 +250,7 @@ describe('Handle unordered group', () => {
             description "Cool book2"
             author "foo2"
 
-            `, parser) as { parserErrors?: string | string[], books?: string[] });
-        expect(lib.parserErrors).toBeUndefined();
+            `, parser) as { books?: string[] });
         expect(lib.books).not.toBeUndefined();
         expect(lib.books?.length).toBe(2);
     });
@@ -321,7 +320,7 @@ describe('check the default value converter for data type rules using terminal r
         const result = parser.parse('123 true abc');
         expect(result.lexerErrors.length).toBe(0);
         expect(result.parserErrors.length).toBe(0);
-        const value = result.value as unknown as { propInteger: number, propBoolean: boolean, propString: string };
+        const value = result.value as AstNode & { propInteger: number, propBoolean: boolean, propString: string };
         expect(value.propInteger).not.toBe('123');
         expect(value.propInteger).toBe(123);
         expect(value.propBoolean).toBe(true);
@@ -343,7 +342,7 @@ describe('Boolean value converter', () => {
     });
 
     function expectValue(input: string, value: unknown): void {
-        const main = parser.parse(input).value as unknown as { value: unknown };
+        const main = parser.parse(input).value as AstNode & { value: unknown };
         expect(main.value).toBe(value);
     }
 
@@ -375,7 +374,7 @@ describe('BigInt Parser value converter', () => {
     });
 
     function expectValue(input: string, value: unknown): void {
-        const main = parser.parse(input).value as unknown as { value: unknown };
+        const main = parser.parse(input).value as AstNode & { value: unknown };
         expect(main.value).toBe(value);
     }
 
@@ -412,7 +411,7 @@ describe('Date Parser value converter', () => {
     });
 
     test('Parsed Date is correct Date object', () => {
-        const parseResult = parser.parse('2022-10-12T00:00').value as unknown as { value: unknown };
+        const parseResult = parser.parse('2022-10-12T00:00').value as AstNode & { value: unknown };
         expect(parseResult.value).toEqual(new Date('2022-10-12T00:00'));
     });
 });
@@ -451,12 +450,12 @@ describe('Parser calls value converter', () => {
     });
 
     function expectValue(input: string, value: unknown): void {
-        const main = parser.parse(input).value as unknown as { value: unknown };
+        const main = parser.parse(input).value as AstNode & { value: unknown };
         expect(main.value).toBe(value);
     }
 
     function expectEqual(input: string, value: unknown): void {
-        const main = parser.parse(input).value as unknown as { value: unknown };
+        const main = parser.parse(input).value as AstNode & { value: unknown };
         expect(main.value).toEqual(value);
     }
 
@@ -527,7 +526,7 @@ describe('Parser calls value converter', () => {
         const result = parser.parse('A');
         expect(result.lexerErrors.length).toBe(0);
         expect(result.parserErrors.length).toBe(0);
-        const value = result.value as unknown as { value: string };
+        const value = result.value as AstNode & { value: string };
         expect(value.value).toBeTypeOf('string');
         expect(value.value).toBe('A');
     });
@@ -547,7 +546,7 @@ describe('Parser calls value converter', () => {
         const result = parser.parse('A');
         expect(result.lexerErrors.length).toBe(0);
         expect(result.parserErrors.length).toBe(0);
-        const value = result.value as unknown as { value: string };
+        const value = result.value as AstNode & { value: string };
         expect(value.value).toBeTypeOf('string');
         expect(value.value).toBe('A');
     });
@@ -817,7 +816,7 @@ describe('Parsing default values', () => {
 
     test('Assigns default values for properties', async () => {
         const result = parser.parse('hi');
-        const model = result.value as unknown as {
+        const model = result.value as AstNode & {
             a: string
             b: string
             c: string[]
@@ -829,7 +828,7 @@ describe('Parsing default values', () => {
 
     test('Does not overwrite parsed value for "b"', async () => {
         const result = parser.parse('hi world');
-        const model = result.value as unknown as {
+        const model = result.value as AstNode & {
             a: string
             b: string
             c: string[]
@@ -840,7 +839,7 @@ describe('Parsing default values', () => {
 
     test('Does not overwrite parsed value for "c"', async () => {
         const result = parser.parse('hi world d e');
-        const model = result.value as unknown as {
+        const model = result.value as AstNode & {
             a: string
             b: string
             c: string[]

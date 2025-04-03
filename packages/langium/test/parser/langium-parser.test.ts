@@ -89,6 +89,28 @@ describe('hidden node parsing', () => {
 
 });
 
+describe('parser error recovery', () => {
+
+    for (const [open, close] of [[1, 0], [2, 0], [3, 0], [2, 1], [3, 1], [3, 2]]) {
+        test(`recovers from lexer error with ${open} open and ${close} close parenthesis`, async () => {
+            const text = `
+                grammar Test
+                entry Model: value=Expr ';';
+                Expr: '(' Expr ')' | value=ID;
+                terminal ID: /[_a-zA-Z][\\w_]*/;
+                hidden terminal WS: /\\s+/;
+            `;
+            const services = await createServicesForGrammar({ grammar: text });
+            const opening = '('.repeat(open);
+            const closing = ')'.repeat(close);
+            const result = services.parser.LangiumParser.parse(`${opening}a${closing};`);
+            // Expect only one parser error independent of the number of missing closing parenthesis
+            expect(result.parserErrors).toHaveLength(1);
+        });
+    }
+
+});
+
 interface A extends AstNode {
     name: string
 }
