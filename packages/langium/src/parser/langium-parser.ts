@@ -12,7 +12,7 @@ import type { LangiumCoreServices } from '../services.js';
 import type { AstNode, AstReflection, CompositeCstNode, CstNode } from '../syntax-tree.js';
 import type { Lexer, LexerResult } from './lexer.js';
 import type { IParserConfig } from './parser-config.js';
-import type { ValueConverter } from './value-converter.js';
+import { type ValueType, isValueConverterError, type ValueConverter, type ValueConverterError } from './value-converter.js';
 import { defaultParserErrorProvider, EmbeddedActionsParser, LLkLookaheadStrategy } from 'chevrotain';
 import { LLStarLookaheadStrategy } from 'chevrotain-allstar';
 import { isAssignment, isCrossReference, isKeyword } from '../languages/generated/ast.js';
@@ -25,7 +25,8 @@ export type ParseResult<T = AstNode> = {
     value: T,
     parserErrors: IRecognitionException[],
     lexerErrors: ILexingError[],
-    lexerReport?: LexingReport
+    lexerReport?: LexingReport,
+    valueConverterErrors: ValueConverterError[]
 }
 
 export const DatatypeSymbol = Symbol('Datatype');
@@ -193,6 +194,7 @@ export class LangiumParser extends AbstractLangiumParser {
     private lexerResult?: LexerResult;
     private stack: any[] = [];
     private assignmentMap = new Map<AbstractElement, AssignmentElement | undefined>();
+    private converterErrors: ValueConverterError[] = [];
 
     private get current(): any {
         return this.stack[this.stack.length - 1];
@@ -227,6 +229,7 @@ export class LangiumParser extends AbstractLangiumParser {
     }
 
     parse<T extends AstNode = AstNode>(input: string, options: ParserOptions = {}): ParseResult<T> {
+        this.converterErrors = [];
         this.nodeBuilder.buildRootNode(input);
         const lexerResult = this.lexerResult = this.lexer.tokenize(input);
         this.wrapper.input = lexerResult.tokens;
@@ -242,7 +245,8 @@ export class LangiumParser extends AbstractLangiumParser {
             value: result,
             lexerErrors: lexerResult.errors,
             lexerReport: lexerResult.report,
-            parserErrors: this.wrapper.errors
+            parserErrors: this.wrapper.errors,
+            valueConverterErrors: this.converterErrors
         };
     }
 
@@ -297,6 +301,15 @@ export class LangiumParser extends AbstractLangiumParser {
         return hiddenTokens.splice(0, hiddenTokens.length);
     }
 
+    private convertValue(value: string, cstNode: CstNode): ValueType | undefined {
+        const result = this.converter.convert(value, cstNode);
+        if (isValueConverterError(result)) {
+            this.converterErrors.push(result);
+            return undefined;
+        }
+        return result;
+    }
+
     consume(idx: number, tokenType: TokenType, feature: AbstractElement): void {
         const token = this.wrapper.wrapConsume(idx, tokenType);
         if (!this.isRecording() && this.isValidToken(token)) {
@@ -310,12 +323,12 @@ export class LangiumParser extends AbstractLangiumParser {
             const { assignment, isCrossRef } = this.getAssignment(feature);
             const current = this.current;
             if (assignment) {
-                const convertedValue = isKeyword(feature) ? token.image : this.converter.convert(token.image, leafNode);
+                const convertedValue = isKeyword(feature) ? token.image : this.convertValue(token.image, leafNode);
                 this.assign(assignment.operator, assignment.feature, convertedValue, leafNode, isCrossRef);
             } else if (isDataTypeNode(current)) {
                 let text = token.image;
                 if (!isKeyword(feature)) {
-                    text = this.converter.convert(text, leafNode).toString();
+                    text = this.convertValue(text, leafNode)?.toString() ?? '';
                 }
                 current.value += text;
             }
@@ -411,7 +424,7 @@ export class LangiumParser extends AbstractLangiumParser {
         this.nodeBuilder.construct(obj);
         this.stack.pop();
         if (isDataTypeNode(obj)) {
-            return this.converter.convert(obj.value, obj.$cstNode);
+            return this.convertValue(obj.value, obj.$cstNode);
         } else {
             assignMandatoryProperties(this.astReflection, obj);
         }

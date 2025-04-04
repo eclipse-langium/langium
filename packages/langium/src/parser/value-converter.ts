@@ -16,14 +16,25 @@ export interface ValueConverter {
     /**
      * Converts a string value from the source text format into a value to be held in the AST.
      */
-    convert(input: string, cstNode: CstNode): ValueType;
+    convert(input: string, cstNode: CstNode): ValueType | ValueConverterError;
 }
 
 export type ValueType = string | number | boolean | bigint | Date;
 
+export type ValueConverterError = {
+    message: string;
+    cstNode: CstNode;
+}
+
+export function isValueConverterError(error: unknown): error is ValueConverterError {
+    return typeof error === 'object' && error !== null
+        && typeof (error as ValueConverterError).message === 'string'
+        && typeof (error as ValueConverterError).cstNode === 'object';
+}
+
 export class DefaultValueConverter implements ValueConverter {
 
-    convert(input: string, cstNode: CstNode): ValueType {
+    convert(input: string, cstNode: CstNode): ValueType | ValueConverterError {
         let feature: AbstractElement | undefined = cstNode.grammarSource;
         if (isCrossReference(feature)) {
             feature = getCrossReferenceTerminal(feature);
@@ -39,7 +50,7 @@ export class DefaultValueConverter implements ValueConverter {
     }
 
     // eslint-disable-next-line @typescript-eslint/no-unused-vars
-    protected runConverter(rule: AbstractRule, input: string, cstNode: CstNode): ValueType {
+    protected runConverter(rule: AbstractRule, input: string, cstNode: CstNode): ValueType | ValueConverterError {
         switch (rule.name.toUpperCase()) {
             case 'INT': return ValueConverter.convertInt(input);
             case 'STRING': return ValueConverter.convertString(input);

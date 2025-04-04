@@ -67,6 +67,7 @@ export class DefaultHydrator implements Hydrator {
             // We need to create shallow copies of the errors
             // The original errors inherit from the `Error` class, which is not transferable across worker threads
             parserErrors: result.parserErrors.map(e => ({ ...e, message: e.message })),
+            valueConverterErrors: result.valueConverterErrors,
             value: this.dehydrateAstNode(result.value, this.createDehyrationContext(result.value))
         };
     }
@@ -171,6 +172,7 @@ export class DefaultHydrator implements Hydrator {
             lexerErrors: result.lexerErrors,
             lexerReport: result.lexerReport,
             parserErrors: result.parserErrors,
+            valueConverterErrors: result.valueConverterErrors,
             value: this.hydrateAstNode(node, context) as T
         };
     }

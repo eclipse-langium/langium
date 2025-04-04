@@ -209,7 +209,7 @@ export class DefaultLangiumDocumentFactory implements LangiumDocumentFactory {
             return this.createLangiumDocument<T>(parseResult, uri, undefined, content);
 
         } else if ('$model' in content) {
-            const parseResult = { value: content.$model, parserErrors: [], lexerErrors: [] };
+            const parseResult = { value: content.$model, parserErrors: [], lexerErrors: [], valueConverterErrors: [] };
             return this.createLangiumDocument<T>(parseResult, uri);
 
         } else {

@@ -30,6 +30,8 @@ export interface ValidationOptions {
     stopAfterLexingErrors?: boolean
     /** If true, no further diagnostics are reported if there are parsing errors. */
     stopAfterParsingErrors?: boolean
+    /** If true, no further diagnostics are reported if there are value converter errors. */
+    stopAfterValueConverterErrors?: boolean
     /** If true, no further diagnostics are reported if there are linking errors. */
     stopAfterLinkingErrors?: boolean
 }
@@ -73,6 +75,11 @@ export class DefaultDocumentValidator implements DocumentValidator {
 
             this.processParsingErrors(parseResult, diagnostics, options);
             if (options.stopAfterParsingErrors && diagnostics.some(d => d.data?.code === DocumentValidator.ParsingError)) {
+                return diagnostics;
+            }
+
+            this.processValueConverterErrors(parseResult, diagnostics, options);
+            if (options.stopAfterValueConverterErrors && diagnostics.some(d => d.data?.code === DocumentValidator.ValueConverterError)) {
                 return diagnostics;
             }
 
@@ -155,6 +162,19 @@ export class DefaultDocumentValidator implements DocumentValidator {
                 };
                 diagnostics.push(diagnostic);
             }
+        }
+    }
+
+    protected processValueConverterErrors(parseResult: ParseResult, diagnostics: Diagnostic[], _options: ValidationOptions): void {
+        for (const error of parseResult.valueConverterErrors) {
+            const diagnostic: Diagnostic = {
+                severity: toDiagnosticSeverity('error'),
+                range: error.cstNode.range,
+                message: error.message,
+                data: diagnosticData(DocumentValidator.ValueConverterError),
+                source: this.getSource()
+            };
+            diagnostics.push(diagnostic);
         }
     }
 
@@ -298,6 +318,7 @@ export namespace DocumentValidator {
     export const LexingInfo = 'lexing-info';
     export const LexingHint = 'lexing-hint';
     export const ParsingError = 'parsing-error';
+    export const ValueConverterError = 'value-converter-error';
     export const LinkingError = 'linking-error';
 }
 
