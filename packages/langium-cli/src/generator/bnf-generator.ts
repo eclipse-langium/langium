@@ -6,8 +6,8 @@
 
 import { CstUtils, type Grammar } from 'langium';
 import { EOL } from 'langium/generate';
-import * as _ from 'lodash';
-import type { AbstractElement, AbstractRule, Condition, NamedArgument, Parameter, TerminalRule } from '../../../langium/lib/languages/generated/ast.js';
+import _ from 'lodash';
+import type { AbstractElement, AbstractRule, Condition, NamedArgument, Parameter } from '../../../langium/lib/languages/generated/ast.js';
 import {
     isAction, isAlternatives, isAssignment,
     isCrossReference, isGroup, isKeyword,
@@ -18,21 +18,25 @@ import {
 export function generateBnf(grammars: Grammar[], options: GeneratorOptions = { dialect: 'GBNF' }): string {
     const grammarsWithName = grammars.filter(grammar => !!grammar.name);
 
+    const isHiddenTerminalRule = (rule: AbstractRule): boolean => {
+        return isTerminalRule(rule) && rule.hidden;
+    };
+
     const ctx: GeneratorContext = {
         rootAssigned: options.dialect === 'EBNF',
-        hasHiddenRules: grammarsWithName.some(grammar => grammar.rules.some(rule => isTerminalRule(rule) && rule.hidden)),
+        hasHiddenRules: grammarsWithName.some(grammar => grammar.rules.some(isHiddenTerminalRule)),
         dialect: options.dialect,
         commentStyle: options.commentStyle ?? (options.dialect === 'GBNF' ? 'hash' : 'parentheses')
     };
 
-    const hiddenRules: TerminalRule[] = [];
+    const hiddenRules: AbstractRule[] = [];
 
     let result: string = '';
     grammarsWithName.forEach(grammar => {
         grammar.rules.forEach(rule => {
             result += processRule(rule, ctx);
             result += EOL + EOL;
-            if (ctx.hasHiddenRules && isTerminalRule(rule) && rule.hidden) {
+            if (isHiddenTerminalRule(rule)) {
                 hiddenRules.push(rule);
             }
         });
@@ -59,13 +63,12 @@ function processRule(rule: AbstractRule, ctx: GeneratorContext): string {
         const variations: Array<Record<string, boolean>> = parserRuleVariations(rule.parameters);
         let content = '';
         variations.forEach((variation, idx) => {
-            ctx.parserRuleVariation = variation;
-            content += `${ruleComment}${processName(ruleName, ctx, variation)} ::= ${hiddenPrefix}${processElement(rule.definition, ctx)}`;
+            const variationCtx = { ...ctx, parserRuleVariation: variation };
+            content += `${ruleComment}${processName(ruleName, variationCtx, variation)} ::= ${hiddenPrefix}${processElement(rule.definition, variationCtx)}`;
             if (idx < variations.length - 1) {
                 content += EOL;
             }
         });
-        ctx.parserRuleVariation = undefined;
         return content;
     }
     return `${ruleComment}${processName(ruleName, ctx)} ::= ${hiddenPrefix}${processElement(rule.definition, ctx)}`;
