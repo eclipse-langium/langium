@@ -54,7 +54,7 @@ describe('DefaultDocumentBuilder', () => {
         const workspace = services.shared.workspace;
         const documentFactory = workspace.LangiumDocumentFactory;
         const documents = workspace.LangiumDocuments;
-        const document = documentFactory.fromString('', URI.parse('file:///test1.txt'));
+        const document = documentFactory.fromString<Model>('', URI.parse('file:///test1.txt'));
         documents.addDocument(document);
 
         const builder = workspace.DocumentBuilder;
@@ -73,7 +73,7 @@ describe('DefaultDocumentBuilder', () => {
         const workspace = services.shared.workspace;
         const documentFactory = workspace.LangiumDocumentFactory;
         const documents = workspace.LangiumDocuments;
-        const document = documentFactory.fromString('', URI.parse('file:///test1.txt'));
+        const document = documentFactory.fromString<Model>('', URI.parse('file:///test1.txt'));
         documents.addDocument(document);
 
         const builder = workspace.DocumentBuilder;
@@ -91,7 +91,7 @@ describe('DefaultDocumentBuilder', () => {
         const services = await createServices();
         const documentFactory = services.shared.workspace.LangiumDocumentFactory;
         const documents = services.shared.workspace.LangiumDocuments;
-        const document = documentFactory.fromString(`
+        const document = documentFactory.fromString<Model>(`
             foo 1 A
             foo 11 B
             bar A
@@ -131,14 +131,14 @@ describe('DefaultDocumentBuilder', () => {
         const workspace = services.shared.workspace;
         const documentFactory = workspace.LangiumDocumentFactory;
         const documents = workspace.LangiumDocuments;
-        const document1 = documentFactory.fromString(`
+        const document1 = documentFactory.fromString<Model>(`
             foo 1 A
             foo 11 B
             bar A
             bar B
         `, URI.parse('file:///test1.txt'));
         documents.addDocument(document1);
-        const document2 = documentFactory.fromString(`
+        const document2 = documentFactory.fromString<Model>(`
             foo 1 C
             foo 11 D
             bar C
@@ -176,14 +176,14 @@ describe('DefaultDocumentBuilder', () => {
         const workspace = services.shared.workspace;
         const documentFactory = workspace.LangiumDocumentFactory;
         const documents = workspace.LangiumDocuments;
-        const document1 = documentFactory.fromString(`
+        const document1 = documentFactory.fromString<Model>(`
             foo 1 A
             foo 11 B
             bar A
             bar B
         `, URI.parse('file:///test1.txt'));
         documents.addDocument(document1);
-        const document2 = documentFactory.fromString(`
+        const document2 = documentFactory.fromString<Model>(`
             foo 1 C
             foo 11 A
             bar C
@@ -225,7 +225,7 @@ describe('DefaultDocumentBuilder', () => {
         const services = await createServices();
         const documentFactory = services.shared.workspace.LangiumDocumentFactory;
         const documents = services.shared.workspace.LangiumDocuments;
-        const document1 = documentFactory.fromString(`
+        const document1 = documentFactory.fromString<Model>(`
             foo 1 AnotherStrangeBar
             foo 11 B
             bar AnotherStrangeBar
@@ -260,7 +260,7 @@ describe('DefaultDocumentBuilder', () => {
         const services = await createServices();
         const documentFactory = services.shared.workspace.LangiumDocumentFactory;
         const documents = services.shared.workspace.LangiumDocuments;
-        const document1 = documentFactory.fromString(`
+        const document1 = documentFactory.fromString<Model>(`
             foo 1 AnotherStrangeBar
             foo 11 B
             bar AnotherStrangeBar
@@ -283,13 +283,37 @@ describe('DefaultDocumentBuilder', () => {
         ]);
     });
 
+    test('skips linking if eagerLinking is false', async () => {
+        const services = await createServices();
+        const documentFactory = services.shared.workspace.LangiumDocumentFactory;
+        const documents = services.shared.workspace.LangiumDocuments;
+        const document = documentFactory.fromString<Model>(`
+            foo 1 A
+            foo 11 B
+            bar A
+            bar B
+        `, URI.parse('file:///test1.txt'));
+        documents.addDocument(document);
+
+        const builder = services.shared.workspace.DocumentBuilder;
+        await builder.build([document], { eagerLinking: false });
+        expect(document.state).toBe(DocumentState.ComputedScopes);
+        // References should not be linked when eagerLinking is false
+        expect(document.references).toHaveLength(0);
+        // But we can still resolve references on demand
+        const firstFoo = document.parseResult.value.foos[0];
+        expect(firstFoo.bar.ref).toBeDefined();
+        expect(firstFoo.bar.ref!.$type).toBe('Bar');
+        expect(firstFoo.bar.ref!.name).toBe('A');
+    });
+
     test('can handle multiple listeners (buildPhase)', async () => {
         const services = await createServices();
         const workspace = services.shared.workspace;
         const documentFactory = workspace.LangiumDocumentFactory;
         const documents = workspace.LangiumDocuments;
         const uri = URI.parse('file:///test1.txt');
-        const document1 = documentFactory.fromString(`
+        const document1 = documentFactory.fromString<Model>(`
             foo 1 A
             foo 11 B
             bar A
@@ -313,7 +337,7 @@ describe('DefaultDocumentBuilder', () => {
         const documentFactory = workspace.LangiumDocumentFactory;
         const documents = workspace.LangiumDocuments;
         const uri = URI.parse('file:///test1.txt');
-        const document1 = documentFactory.fromString(`
+        const document1 = documentFactory.fromString<Model>(`
             foo 1 A
             foo 11 B
             bar A
@@ -342,7 +366,7 @@ describe('DefaultDocumentBuilder', () => {
         const documentFactory = services.shared.workspace.LangiumDocumentFactory;
         const documents = services.shared.workspace.LangiumDocuments;
         const builder = services.shared.workspace.DocumentBuilder;
-        const document = documentFactory.fromString('', URI.parse('file:///test1.txt'));
+        const document = documentFactory.fromString<Model>('', URI.parse('file:///test1.txt'));
         documents.addDocument(document);
 
         const actual: string[] = [];
@@ -366,7 +390,7 @@ describe('DefaultDocumentBuilder', () => {
         const documentFactory = services.shared.workspace.LangiumDocumentFactory;
         const documents = services.shared.workspace.LangiumDocuments;
         const builder = services.shared.workspace.DocumentBuilder;
-        const document = documentFactory.fromString('', URI.parse('file:///test1.txt'));
+        const document = documentFactory.fromString<Model>('', URI.parse('file:///test1.txt'));
         documents.addDocument(document);
 
         const actual: string[] = [];
@@ -402,7 +426,7 @@ describe('DefaultDocumentBuilder', () => {
         const documentFactory = services.shared.workspace.LangiumDocumentFactory;
         const documents = services.shared.workspace.LangiumDocuments;
         const builder = services.shared.workspace.DocumentBuilder;
-        const document = documentFactory.fromString('', URI.parse('file:///test1.txt'));
+        const document = documentFactory.fromString<Model>('', URI.parse('file:///test1.txt'));
         documents.addDocument(document);
 
         const cancelTokenSource = startCancelableOperation();
@@ -423,7 +447,7 @@ describe('DefaultDocumentBuilder', () => {
         const documents = services.shared.workspace.LangiumDocuments;
         const builder = services.shared.workspace.DocumentBuilder;
         const documentUri = URI.parse('file:///test1.txt');
-        const document = documentFactory.fromString('', documentUri);
+        const document = documentFactory.fromString<Model>('', documentUri);
         documents.addDocument(document);
         await builder.build([document], { validation: true });
         expect(document.state).toBe(DocumentState.Validated);
@@ -440,7 +464,7 @@ describe('DefaultDocumentBuilder', () => {
         const services = await createServices();
         const documentFactory = services.shared.workspace.LangiumDocumentFactory;
         const documents = services.shared.workspace.LangiumDocuments;
-        const document = documentFactory.fromString(`
+        const document = documentFactory.fromString<Model>(`
             foo 1 A
             foo 11 B
             bar A
@@ -470,14 +494,14 @@ describe('DefaultDocumentBuilder', () => {
         const services = await createServices();
         const documentFactory = services.shared.workspace.LangiumDocumentFactory;
         const documents = services.shared.workspace.LangiumDocuments;
-        const document1 = documentFactory.fromString(`
+        const document1 = documentFactory.fromString<Model>(`
             foo 1 A
             foo 11 B
             bar A
             bar B
         `, URI.parse('file:///test1.txt'));
         documents.addDocument(document1);
-        const document2 = documentFactory.fromString(`
+        const document2 = documentFactory.fromString<Model>(`
             foo 1 A
             foo 11 B
             bar A
@@ -521,7 +545,7 @@ describe('DefaultDocumentBuilder', () => {
         const workspace = services.shared.workspace;
         const documentFactory = workspace.LangiumDocumentFactory;
         const documents = workspace.LangiumDocuments;
-        const document = documentFactory.fromString(`
+        const document = documentFactory.fromString<Model>(`
             foo 1 A
             foo 11 B
             bar A
@@ -558,7 +582,7 @@ describe('DefaultDocumentBuilder', () => {
         const workspace = services.shared.workspace;
         const documentFactory = workspace.LangiumDocumentFactory;
         const documents = workspace.LangiumDocuments;
-        const document = documentFactory.fromString(`
+        const document = documentFactory.fromString<Model>(`
             foo 1 A
             foo 11 B
             bar A
@@ -582,10 +606,9 @@ describe('DefaultDocumentBuilder', () => {
 
         // Resolve the reference "on-the-fly"
         // We would expect that doing so will add the reference to the document references
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        const first = (document.parseResult.value as any).foos[0].bar.ref;
+        const first = document.parseResult.value.foos[0].bar.ref;
         expect(first).toBeDefined();
-        expect(first.$type).toBe('Bar');
+        expect(first!.$type).toBe('Bar');
 
         expect(document.references).toHaveLength(1);
 
@@ -747,6 +770,7 @@ type TestAstType = {
 
 interface Model extends AstNode {
     foos: Foo[]
+    bars: Bar[]
 }
 
 interface Foo extends AstNode {

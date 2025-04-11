@@ -23,6 +23,14 @@ import { DocumentState } from './documents.js';
 
 export interface BuildOptions {
     /**
+     * Control the linking and references indexing phase with this option. The default if not specified is `true`.
+     * If set to `false`, references can still be resolved - that's done lazily when you access the `ref` property of
+     * a reference. But you won't get any diagnostics for linking errors and the references won't be considered
+     * when updating other documents.
+     */
+    eagerLinking?: boolean
+
+    /**
      * Control the validation phase with this option:
      *  - `true` enables all validation checks and forces revalidating the documents
      *  - `false` or `undefined` disables all validation checks
@@ -322,12 +330,13 @@ export class DefaultDocumentBuilder implements DocumentBuilder {
             doc.precomputedScopes = await scopeComputation.computeLocalScopes(doc, cancelToken);
         });
         // 3. Linking
-        await this.runCancelable(documents, DocumentState.Linked, cancelToken, doc => {
+        const toBeLinked = documents.filter(doc => this.shouldLink(doc));
+        await this.runCancelable(toBeLinked, DocumentState.Linked, cancelToken, doc => {
             const linker = this.serviceRegistry.getServices(doc.uri).references.Linker;
             return linker.link(doc, cancelToken);
         });
         // 4. Index references
-        await this.runCancelable(documents, DocumentState.IndexedReferences, cancelToken, doc =>
+        await this.runCancelable(toBeLinked, DocumentState.IndexedReferences, cancelToken, doc =>
             this.indexManager.updateReferences(doc, cancelToken)
         );
         // 5. Validation
@@ -477,6 +486,16 @@ export class DefaultDocumentBuilder implements DocumentBuilder {
             await interruptAndCheck(cancelToken);
             await listener(documents, cancelToken);
         }
+    }
+
+    /**
+     * Determine whether the given document should be linked during a build. The default
+     * implementation checks the `eagerLinking` property of the build options. If it's set to `true`
+     * or `undefined`, the document is included in the linking phase. This also affects the
+     * references indexing phase, which depends on eager linking.
+     */
+    protected shouldLink(document: LangiumDocument): boolean {
+        return this.getBuildOptions(document).eagerLinking ?? true;
     }
 
     /**
