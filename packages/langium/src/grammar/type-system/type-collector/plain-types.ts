@@ -23,6 +23,7 @@ export interface PlainInterface {
     properties: PlainProperty[];
     declared: boolean;
     abstract: boolean;
+    comment?: string;
 }
 
 export function isPlainInterface(type: PlainType): type is PlainInterface {
@@ -36,6 +37,7 @@ export interface PlainUnion {
     type: PlainPropertyType;
     declared: boolean;
     dataType?: string;
+    comment?: string;
 }
 
 export function isPlainUnion(type: PlainType): type is PlainUnion {
@@ -48,6 +50,7 @@ export interface PlainProperty {
     astNodes: Set<Assignment | Action | TypeAttribute>;
     type: PlainPropertyType;
     defaultValue?: PlainPropertyDefaultValue;
+    comment?: string;
 }
 
 export type PlainPropertyDefaultValue = string | number | boolean | PlainPropertyDefaultValue[];
@@ -113,13 +116,14 @@ export function plainToTypes(plain: PlainAstTypes): AstTypes {
     const interfaceTypes = new Map<string, InterfaceType>();
     const unionTypes = new Map<string, UnionType>();
     for (const interfaceValue of plain.interfaces) {
-        const type = new InterfaceType(interfaceValue.name, interfaceValue.declared, interfaceValue.abstract);
+        const type = new InterfaceType(interfaceValue.name, interfaceValue.declared, interfaceValue.abstract, interfaceValue.comment);
         interfaceTypes.set(interfaceValue.name, type);
     }
     for (const unionValue of plain.unions) {
         const type = new UnionType(unionValue.name, {
             declared: unionValue.declared,
-            dataType: unionValue.dataType
+            dataType: unionValue.dataType,
+            comment: unionValue.comment,
         });
         unionTypes.set(unionValue.name, type);
     }
@@ -157,7 +161,8 @@ function plainToProperty(property: PlainProperty, interfaces: Map<string, Interf
         name: property.name,
         optional: property.optional,
         astNodes: property.astNodes,
-        type: plainToPropertyType(property.type, undefined, interfaces, unions)
+        type: plainToPropertyType(property.type, undefined, interfaces, unions),
+        comment: property.comment,
     };
     if (property.defaultValue !== undefined) {
         prop.defaultValue = property.defaultValue;
