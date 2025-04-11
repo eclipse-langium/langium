@@ -6,7 +6,7 @@
 
 import * as assert from 'node:assert';
 import type { CompletionItem, CompletionList, Diagnostic, DocumentSymbol, FoldingRange, FormattingOptions, Range, ReferenceParams, SemanticTokensParams, SemanticTokenTypes, TextDocumentIdentifier, TextDocumentPositionParams, WorkspaceSymbol } from 'vscode-languageserver-protocol';
-import { DiagnosticSeverity, MarkupContent } from 'vscode-languageserver-types';
+import { CodeAction, DiagnosticSeverity, MarkupContent } from 'vscode-languageserver-types';
 import { normalizeEOL } from '../generate/template-string.js';
 import type { LangiumServices, LangiumSharedLSPServices } from '../lsp/lsp-services.js';
 import { SemanticTokensDecoder } from '../lsp/semantic-token-provider.js';
@@ -22,7 +22,6 @@ import { URI } from '../utils/uri-utils.js';
 import { DocumentValidator } from '../validation/document-validator.js';
 import type { BuildOptions } from '../workspace/document-builder.js';
 import { TextDocument, type LangiumDocument } from '../workspace/documents.js';
-
 export interface ParseHelperOptions extends BuildOptions {
     /**
      * Specifies the URI of the generated document. Will use a counter variable if not specified.
@@ -769,4 +768,104 @@ export function expectSemanticToken(tokensWithRanges: DecodedSemanticTokensWithR
         return t.tokenType === options.tokenType && t.offset === range[0] && t.offset + t.text.length === range[1];
     });
     expectedFunction(result.length, 1, `Expected one token with the specified options but found ${result.length}`);
+}
+
+export interface CodeActionResult<T extends AstNode = AstNode> extends AsyncDisposable {
+    /** the document containing the AST */
+    document: LangiumDocument<T>;
+    /** all diagnostics of the validation */
+    diagnosticsAll: Diagnostic[];
+    /** the relevant Diagnostic with the given diagnosticCode, it is expected that the given input has exactly one such diagnostic */
+    diagnosticRelevant: Diagnostic;
+    /** the CodeAction to fix the found relevant problem, it is possible, that there is no such code action */
+    action?: CodeAction;
+}
+
+/**
+ * This is a helper function to easily test code actions (quick-fixes) for validation problems.
+ * @param services the Langium services for the language with code actions
+ * @returns A function to easily test a single code action on the given invalid 'input'.
+ * This function expects, that 'input' contains exactly one validation problem with the given 'diagnosticCode'.
+ * If 'outputAfterFix' is specified, this functions checks, that the diagnostic comes with a single code action for this validation problem.
+ * After applying this code action, 'input' is transformed to 'outputAfterFix'.
+ */
+export function testCodeAction<T extends AstNode = AstNode>(services: LangiumServices): (input: string, diagnosticCode: string, outputAfterFix: string | undefined, options?: ParseHelperOptions) => Promise<CodeActionResult<T>> {
+    const validateHelper = validationHelper<T>(services);
+    return async (input, diagnosticCode, outputAfterFix, options) => {
+        // parse + validate
+        const validationBefore = await validateHelper(input, options);
+        const document = validationBefore.document;
+        const diagnosticsAll = document.diagnostics ?? [];
+        // use only the diagnostics with the given validation code
+        const diagnosticsRelevant = diagnosticsAll.filter(d => d.data && 'code' in d.data && d.data.code === diagnosticCode);
+        // expect exactly one validation with the given code
+        expectedFunction(diagnosticsRelevant.length, 1);
+        const diagnosticRelevant = diagnosticsRelevant[0];
+
+        // check, that the code actions are generated for the selected validation:
+        // prepare the action provider
+        const actionProvider = expectTruthy(services.lsp.CodeActionProvider);
+        // request the actions for this diagnostic
+        const currentActions = await actionProvider!.getCodeActions(document, {
+            ...textDocumentParams(document),
+            range: diagnosticRelevant.range,
+            context: {
+                diagnostics: diagnosticsRelevant,
+                triggerKind: 1 // explicitly triggered by users (or extensions)
+            }
+        });
+
+        // evaluate the resulting actions
+        let action: CodeAction | undefined;
+        let validationAfter: ValidationResult | undefined;
+        if (outputAfterFix) {
+            // exactly one code action is expected
+            expectTruthy(currentActions);
+            expectTruthy(Array.isArray(currentActions));
+            expectedFunction(currentActions!.length, 1);
+            expectTruthy(CodeAction.is(currentActions![0]));
+            action = currentActions![0] as CodeAction;
+
+            // execute the found code action
+            const edits = expectTruthy(action.edit?.changes![document.textDocument.uri]);
+            const updatedText = TextDocument.applyEdits(document.textDocument, edits!);
+
+            // check the result after applying the code action:
+            // 1st text is updated as expected
+            expectedFunction(updatedText, outputAfterFix);
+            // 2nd the validation diagnostic is gone after applying the code action
+            validationAfter = await validateHelper(updatedText, options);
+            const diagnosticsUpdated = validationAfter.diagnostics.filter(d => d.data && 'code' in d.data && d.data.code === diagnosticCode);
+            expectedFunction(diagnosticsUpdated.length, 0);
+        } else {
+            // no code action is expected
+            expectFalsy(currentActions);
+        }
+
+        // collect the data to return
+        async function dispose(): Promise<void> {
+            validationBefore.dispose();
+            validationAfter?.dispose();
+        }
+        return {
+            document,
+            diagnosticsAll,
+            diagnosticRelevant: diagnosticRelevant,
+            action,
+            dispose: () => dispose()
+        };
+    };
+}
+
+function expectTruthy<T>(value: T): NonNullable<T> {
+    if (value) {
+        return value;
+    } else {
+        throw new Error();
+    }
+}
+function expectFalsy(value: unknown) {
+    if (value) {
+        throw new Error();
+    }
 }
