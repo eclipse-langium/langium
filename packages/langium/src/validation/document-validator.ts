@@ -28,9 +28,9 @@ export interface ValidationOptions {
     categories?: ValidationCategory[];
     /** If true, no further diagnostics are reported if there are lexing errors. */
     stopAfterLexingErrors?: boolean
-    /** If true, no further diagnostics are reported if there are parsing errors. */
+    /** If true, no further diagnostics are reported if there are parsing errors. Lexing errors are reported first. */
     stopAfterParsingErrors?: boolean
-    /** If true, no further diagnostics are reported if there are linking errors. */
+    /** If true, no further diagnostics are reported if there are linking errors. Lexing and parsing errors are reported first. */
     stopAfterLinkingErrors?: boolean
 }
 
