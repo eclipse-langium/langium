@@ -209,6 +209,10 @@
         "langiumInternal": {
             "description": "A flag to determine whether langium uses itself to bootstrap",
             "type": "boolean"
+        },
+        "generatePartialAst": {
+            "description": "Generate a partial AST with optional properties (usefull to access the parsed AST with an incomplete document)",
+            "type": "boolean"
         }
     },
     "required": [
