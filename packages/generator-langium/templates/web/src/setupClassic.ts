@@ -1,6 +1,7 @@
-import { MonacoEditorLanguageClientWrapper, UserConfig } from 'monaco-editor-wrapper';
+import type { UserConfig } from 'monaco-editor-wrapper';
+import { MonacoEditorLanguageClientWrapper } from 'monaco-editor-wrapper';
 import { configureWorker, defineUserServices } from './setupCommon.js';
-import monarchSyntax from "./syntaxes/<%= language-id %>.monarch.js";
+import monarchSyntax from './syntaxes/<%= language-id %>.monarch.js';
 
 export const setupConfigClassic = (): UserConfig => {
     return {
@@ -9,7 +10,7 @@ export const setupConfigClassic = (): UserConfig => {
             editorAppConfig: {
                 $type: 'classic',
                 languageId: '<%= language-id %>',
-                code: `// <%= RawLanguageName %> is running in the web!`,
+                code: '// <%= RawLanguageName %> is running in the web!',
                 useDiffEditor: false,
                 languageExtensionConfig: { id: 'langium' },
                 languageDef: monarchSyntax,

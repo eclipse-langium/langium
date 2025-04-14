@@ -152,7 +152,7 @@ export function joinToNode<T>(
  *       children: ${ joinTracedToNode(entity, 'children')(entity.children, child => child.name, { separator: ' ' }) };
  *   `.appendNewLine()
  */
-export function joinTracedToNode<T extends AstNode>(astNode: T, property?: Properties<T>): // eslint-disable-next-line @typescript-eslint/indent
+export function joinTracedToNode<T extends AstNode>(astNode: T, property?: Properties<T>): // eslint-disable-next-line @stylistic/indent
     <E>(iterable: Iterable<E> | E[], toGenerated?: ((element: E, index: number, isLast: boolean) => Generated) | JoinOptions<E>, options?: JoinOptions<E>) => CompositeGeneratorNode;
 
 /**
@@ -178,7 +178,7 @@ export function joinTracedToNode<T extends AstNode>(astNode: T, property?: Prope
  *       children: ${ joinTracedToNode(findNodesForProperty(entity.$cstNode, 'children'))(entity.children, child => child.name, { separator: ' ' }) };
  *   `.appendNewLine()
  */
-export function joinTracedToNode(sourceRegion: SourceRegion | undefined): // eslint-disable-next-line @typescript-eslint/indent
+export function joinTracedToNode(sourceRegion: SourceRegion | undefined): // eslint-disable-next-line @stylistic/indent
     <E>(iterable: Iterable<E> | E[], toGenerated?: ((element: E, index: number, isLast: boolean) => Generated) | JoinOptions<E>, options?: JoinOptions<E>) => CompositeGeneratorNode;
 
 /**
@@ -207,11 +207,11 @@ export function joinTracedToNode(sourceRegion: SourceRegion | undefined): // esl
  *       children: ${ joinTracedToNode(findNodesForProperty(entity.$cstNode, 'children'))(entity.children, child => child.name, { separator: ' ' }) };
  *   `.appendNewLine()
  */
-export function joinTracedToNode(sourceRegions: SourceRegion[]): // eslint-disable-next-line @typescript-eslint/indent
+export function joinTracedToNode(sourceRegions: SourceRegion[]): // eslint-disable-next-line @stylistic/indent
     <E>(iterable: Iterable<E> | E[], toGenerated?: ((element: E, index: number, isLast: boolean) => Generated) | JoinOptions<E>, options?: JoinOptions<E>) => CompositeGeneratorNode;
 
 // implementation:
-export function joinTracedToNode<T extends AstNode>(source: T | undefined | SourceRegion | SourceRegion[], property?: Properties<T>): // eslint-disable-next-line @typescript-eslint/indent
+export function joinTracedToNode<T extends AstNode>(source: T | undefined | SourceRegion | SourceRegion[], property?: Properties<T>): // eslint-disable-next-line @stylistic/indent
     <E>(iterable: Iterable<E> | E[], toGenerated?: ((element: E, index: number, isLast: boolean) => Generated) | JoinOptions<E>, options?: JoinOptions<E>) => CompositeGeneratorNode {
     return (iterable, toGeneratedOrOptions, options) => {
         options ??= typeof toGeneratedOrOptions === 'object' ? toGeneratedOrOptions : undefined;
@@ -256,7 +256,7 @@ export function joinTracedToNode<T extends AstNode>(source: T | undefined | Sour
  *       children: ${ joinTracedToNode(entity, 'children')(entity.children, child => child.name, { separator: ' ' }) };
  *   `.appendNewLine()
  */
-export function joinTracedToNodeIf<T extends AstNode>(condition: boolean, astNode: T, property?: Properties<T>): // eslint-disable-next-line @typescript-eslint/indent
+export function joinTracedToNodeIf<T extends AstNode>(condition: boolean, astNode: T, property?: Properties<T>): // eslint-disable-next-line @stylistic/indent
     <E>(iterable: Iterable<E> | E[], toGenerated?: ((element: E, index: number, isLast: boolean) => Generated) | JoinOptions<E>, options?: JoinOptions<E>) => CompositeGeneratorNode | undefined;
 
 /**
@@ -288,7 +288,7 @@ export function joinTracedToNodeIf<T extends AstNode>(condition: boolean, astNod
  *       children: ${ joinTracedToNodeIf(entity !== undefined, () => entity.$cstNode)(entity.children, child => child.name, { separator: ' ' }) };
  *   `.appendNewLine()
  */
-export function joinTracedToNodeIf(condition: boolean, sourceRegion: SourceRegion | undefined | (() => SourceRegion | undefined)): // eslint-disable-next-line @typescript-eslint/indent
+export function joinTracedToNodeIf(condition: boolean, sourceRegion: SourceRegion | undefined | (() => SourceRegion | undefined)): // eslint-disable-next-line @stylistic/indent
     <E>(iterable: Iterable<E> | E[], toGenerated?: ((element: E, index: number, isLast: boolean) => Generated) | JoinOptions<E>, options?: JoinOptions<E>) => CompositeGeneratorNode | undefined;
 
 /**
@@ -322,11 +322,11 @@ export function joinTracedToNodeIf(condition: boolean, sourceRegion: SourceRegio
  *       children: ${ joinTracedToNodeIf(entity !== undefined, () => findNodesForProperty(entity.$cstNode, 'children'))(entity.children, child => child.name, { separator: ' ' }) };
  *   `.appendNewLine()
  */
-export function joinTracedToNodeIf(condition: boolean, sourceRegions: SourceRegion[] | (() => SourceRegion[])): // eslint-disable-next-line @typescript-eslint/indent
+export function joinTracedToNodeIf(condition: boolean, sourceRegions: SourceRegion[] | (() => SourceRegion[])): // eslint-disable-next-line @stylistic/indent
     <E>(iterable: Iterable<E> | E[], toGenerated?: ((element: E, index: number, isLast: boolean) => Generated) | JoinOptions<E>, options?: JoinOptions<E>) => CompositeGeneratorNode | undefined;
 
 // implementation:
-export function joinTracedToNodeIf<T extends AstNode>(condition: boolean, source: T | undefined | SourceRegion | SourceRegion[] | (() => undefined | SourceRegion | SourceRegion[]), property?: Properties<T>): // eslint-disable-next-line @typescript-eslint/indent
+export function joinTracedToNodeIf<T extends AstNode>(condition: boolean, source: T | undefined | SourceRegion | SourceRegion[] | (() => undefined | SourceRegion | SourceRegion[]), property?: Properties<T>): // eslint-disable-next-line @stylistic/indent
     <E>(iterable: Iterable<E> | E[], toGenerated?: ((element: E, index: number, isLast: boolean) => Generated) | JoinOptions<E>, options?: JoinOptions<E>) => CompositeGeneratorNode | undefined {
     return condition ? joinTracedToNode((typeof source === 'function' ? source() : source) as T, property) : () => undefined;
 }
