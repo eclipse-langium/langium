@@ -17,7 +17,6 @@ import { extractDestinationAndName } from './cli-util.js';
  * @returns the content of the HTML file.
  */
 export function generateSummaryFileHTMLContent(model: RequirementModel, testModels: TestModel[]): string {
-    /* eslint-disable @typescript-eslint/indent */
     return toString(
         expandToNode`
             <html>
@@ -44,7 +43,6 @@ export function generateSummaryFileHTMLContent(model: RequirementModel, testMode
             </html>
         `.appendNewLine()
     );
-    /* eslint-enable @typescript-eslint/indent */
 }
 
 export function generateSummary(model: RequirementModel, testModels: TestModel[], filePath: string, destination: string | undefined): string {

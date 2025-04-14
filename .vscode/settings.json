@@ -1,24 +1,26 @@
 {
-    "typescript.tsdk": "./node_modules/typescript/lib",
-    "typescript.enablePromptUseWorkspaceTsdk": true,
-    "langium.build.ignorePatterns": "node_modules,out,/packages/generator-langium/**",
-    "editor.guides.bracketPairs": true,
-    "eslint.codeAction.showDocumentation": {
-        "enable": true
-    },
-    "eslint.format.enable": true,
-    "eslint.validate": [
-        "javascript",
-        "typescript"
-    ],
-    "vitest.configSearchPatternExclude": "{**/node_modules/**,**/dist/**,**/generated/**,**/templates/**,**/examples/hello*/**,**/.*/**,**/*.d.ts}",
-    "vitest.debugExclude": [
-        "<node_internals>/**", "**/node_modules/**", "!**/node_modules/vscode-uri/**"
-    ],
-    "[json]": {
-        "editor.defaultFormatter": "vscode.json-language-features"
-    },
-    "[jsonc]": {
-        "editor.defaultFormatter": "vscode.json-language-features"
-    }
+  "typescript.tsdk": "./node_modules/typescript/lib",
+  "typescript.enablePromptUseWorkspaceTsdk": true,
+  "langium.build.ignorePatterns": "node_modules,out,/packages/generator-langium/**",
+  "editor.guides.bracketPairs": true,
+  "eslint.codeAction.showDocumentation": {
+    "enable": true
+  },
+  "eslint.format.enable": true,
+  "eslint.validate": [
+    "javascript",
+    "typescript"
+  ],
+  "vitest.configSearchPatternExclude": "{**/node_modules/**,**/dist/**,**/generated/**,**/templates/**,**/examples/hello*/**,**/.*/**,**/*.d.ts}",
+  "vitest.debugExclude": [
+    "<node_internals>/**",
+    "**/node_modules/**",
+    "!**/node_modules/vscode-uri/**"
+  ],
+  "[json]": {
+    "editor.defaultFormatter": "vscode.json-language-features"
+  },
+  "[jsonc]": {
+    "editor.defaultFormatter": "vscode.json-language-features"
+  }
 }

@@ -150,7 +150,7 @@ export class LangiumGenerator extends Generator {
                 ),
                 message: 'Include language tests?',
                 default: true
-            } as PromptQuestion<Answers>,
+            } as PromptQuestion<Answers>
         ]);
     }
 
@@ -249,7 +249,7 @@ export * from './generated/module.js';
             tsConfigBuildJson.references.push({ path: './packages/language/tsconfig.test.json' });
 
             const languagePackageJson = this.fs.readJSON(this._extensionPath('packages/language/package.json'));
-            languagePackageJson.devDependencies.vitest = '~1.5.0';
+            languagePackageJson.devDependencies.vitest = '~3.1.3';
             languagePackageJson.scripts.test = 'vitest run';
             this.fs.delete(this._extensionPath('packages/language/package.json'));
             this.fs.writeJSON(this._extensionPath('packages/language/package.json'), languagePackageJson, undefined, 4);

@@ -1,83 +1,82 @@
 {
-    "name": "langium-statemachine-dsl",
-    "displayName": "State Machine DSL",
-    "version": "3.5.0",
-    "description": "Example language built with Langium",
-    "homepage": "https://langium.org",
-    "engines": {
-        "vscode": "^1.67.0"
-    },
-    "license": "MIT",
-    "categories": [
-        "Programming Languages"
-    ],
-    "contributes": {
-        "languages": [
-            {
-                "id": "statemachine",
-                "aliases": [
-                    "Statemachine",
-                    "statemachine"
-                ],
-                "extensions": [
-                    ".statemachine"
-                ],
-                "configuration": "./language-configuration.json"
-            }
+  "name": "langium-statemachine-dsl",
+  "displayName": "State Machine DSL",
+  "version": "3.5.0",
+  "description": "Example language built with Langium",
+  "homepage": "https://langium.org",
+  "engines": {
+    "vscode": "^1.67.0"
+  },
+  "license": "MIT",
+  "categories": [
+    "Programming Languages"
+  ],
+  "contributes": {
+    "languages": [
+      {
+        "id": "statemachine",
+        "aliases": [
+          "Statemachine",
+          "statemachine"
         ],
-        "grammars": [
-            {
-                "language": "statemachine",
-                "scopeName": "source.statemachine",
-                "path": "./syntaxes/statemachine.tmLanguage.json"
-            }
-        ]
-    },
-    "activationEvents": [
-        "onLanguage:statemachine"
+        "extensions": [
+          ".statemachine"
+        ],
+        "configuration": "./language-configuration.json"
+      }
     ],
-    "files": [
-        "bin",
-        "out",
-        "src",
-        "syntaxes",
-        "language-configuration.json"
-    ],
-    "bin": {
-        "statemachine-cli": "./bin/cli.js"
-    },
-    "type": "module",
-    "main": "./out/extension.cjs",
-    "scripts": {
-        "build": "node esbuild.mjs",
-        "watch": "node esbuild.mjs --watch",
-        "lint": "eslint src test --ext ts",
-        "langium:generate": "langium generate",
-        "publish:next": "npm --no-git-tag-version version \"$(semver $npm_package_version -i minor)-next.$(git rev-parse --short HEAD)\" && npm publish --tag next",
-        "publish:latest": "npm publish --tag latest --access public"
-    },
-    "dependencies": {
-        "chalk": "~5.3.0",
-        "commander": "~11.0.0",
-        "langium": "~3.5.0",
-        "vscode-languageclient": "~9.0.1",
-        "vscode-languageserver": "~9.0.1"
-    },
-    "devDependencies": {
-        "langium-cli": "~3.5.0"
-    },
-    "volta": {
-        "node": "20.19.2",
-        "npm": "10.8.2"
-    },
-    "repository": {
-        "type": "git",
-        "url": "https://github.com/eclipse-langium/langium",
-        "directory": "examples/statemachine"
-    },
-    "bugs": "https://github.com/eclipse-langium/langium/issues",
-    "author": {
-        "name": "TypeFox",
-        "url": "https://www.typefox.io"
-    }
+    "grammars": [
+      {
+        "language": "statemachine",
+        "scopeName": "source.statemachine",
+        "path": "./syntaxes/statemachine.tmLanguage.json"
+      }
+    ]
+  },
+  "activationEvents": [
+    "onLanguage:statemachine"
+  ],
+  "files": [
+    "bin",
+    "out",
+    "src",
+    "syntaxes",
+    "language-configuration.json"
+  ],
+  "bin": {
+    "statemachine-cli": "./bin/cli.js"
+  },
+  "type": "module",
+  "main": "./out/extension.cjs",
+  "scripts": {
+    "build": "node esbuild.mjs",
+    "watch": "node esbuild.mjs --watch",
+    "langium:generate": "langium generate",
+    "publish:next": "npm --no-git-tag-version version \"$(semver $npm_package_version -i minor)-next.$(git rev-parse --short HEAD)\" && npm publish --tag next",
+    "publish:latest": "npm publish --tag latest --access public"
+  },
+  "dependencies": {
+    "chalk": "~5.4.1",
+    "commander": "~14.0.0",
+    "langium": "~3.5.0",
+    "vscode-languageclient": "~9.0.1",
+    "vscode-languageserver": "~9.0.1"
+  },
+  "devDependencies": {
+    "langium-cli": "~3.5.0"
+  },
+  "volta": {
+      "node": "20.19.2",
+      "npm": "10.8.2"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/eclipse-langium/langium",
+    "directory": "examples/statemachine"
+  },
+  "bugs": "https://github.com/eclipse-langium/langium/issues",
+  "author": {
+    "name": "TypeFox",
+    "url": "https://www.typefox.io"
+  }
 }

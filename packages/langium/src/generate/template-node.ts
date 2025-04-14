@@ -211,7 +211,7 @@ export function expandTracedToNode<T extends AstNode>(source: T | undefined | So
  *       Hello ${ traceToNode(entity, 'name')(entity.name) }
  *   `.appendNewLine()
  */
-export function expandTracedToNodeIf<T extends AstNode>(condition: boolean, astNode: T, property?: Properties<T>): // eslint-disable-next-line @typescript-eslint/indent
+export function expandTracedToNodeIf<T extends AstNode>(condition: boolean, astNode: T, property?: Properties<T>): // eslint-disable-next-line @stylistic/indent
         (staticParts: TemplateStringsArray, ...substitutions: unknown[]) => CompositeGeneratorNode | undefined;
 
 /**
@@ -240,7 +240,7 @@ export function expandTracedToNodeIf<T extends AstNode>(condition: boolean, astN
  *       Hello ${ traceToNode(entity, 'name')(entity.name) }
  *   `.appendNewLine()
  */
-export function expandTracedToNodeIf<T extends AstNode>(condition: boolean, astNode: T, property: Properties<T>, index: number | undefined): // eslint-disable-next-line @typescript-eslint/indent
+export function expandTracedToNodeIf<T extends AstNode>(condition: boolean, astNode: T, property: Properties<T>, index: number | undefined): // eslint-disable-next-line @stylistic/indent
         (staticParts: TemplateStringsArray, ...substitutions: unknown[]) => CompositeGeneratorNode | undefined;
 
 /**
@@ -267,7 +267,7 @@ export function expandTracedToNodeIf<T extends AstNode>(condition: boolean, astN
  *       Hello ${ traceToNode(entity, 'name')(entity.name) }
  *   `.appendNewLine()
  */
-export function expandTracedToNodeIf(condition: boolean, sourceRegion: SourceRegion | undefined | (() => SourceRegion | undefined)): // eslint-disable-next-line @typescript-eslint/indent
+export function expandTracedToNodeIf(condition: boolean, sourceRegion: SourceRegion | undefined | (() => SourceRegion | undefined)): // eslint-disable-next-line @stylistic/indent
         (staticParts: TemplateStringsArray, ...substitutions: unknown[]) => CompositeGeneratorNode | undefined;
 
 /**
@@ -299,11 +299,11 @@ export function expandTracedToNodeIf(condition: boolean, sourceRegion: SourceReg
  *       Hello ${ traceToNode(entity, 'name')(entity.name) }
  *   `.appendNewLine()
  */
-export function expandTracedToNodeIf(condition: boolean, sourceRegions: SourceRegion[]): // eslint-disable-next-line @typescript-eslint/indent
+export function expandTracedToNodeIf(condition: boolean, sourceRegions: SourceRegion[]): // eslint-disable-next-line @stylistic/indent
         (staticParts: TemplateStringsArray, ...substitutions: unknown[]) => CompositeGeneratorNode | undefined;
 
 // implementation:
-export function expandTracedToNodeIf<T extends AstNode>(condition: boolean, source: T | undefined | SourceRegion | SourceRegion[] | (() => undefined | SourceRegion | SourceRegion[]), property?: Properties<T>, index?: number): // eslint-disable-next-line @typescript-eslint/indent
+export function expandTracedToNodeIf<T extends AstNode>(condition: boolean, source: T | undefined | SourceRegion | SourceRegion[] | (() => undefined | SourceRegion | SourceRegion[]), property?: Properties<T>, index?: number): // eslint-disable-next-line @stylistic/indent
         (staticParts: TemplateStringsArray, ...substitutions: unknown[]) => CompositeGeneratorNode | undefined {
     return condition ? expandTracedToNode((typeof source === 'function' ? source() : source) as T, property!, index) : () => undefined;
 }

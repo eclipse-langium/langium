@@ -113,7 +113,6 @@ export type ValidationChecks<T> = {
  * to you to schedule these checks: after the fast checks are done, or after saving a document,
  * or with an explicit command, etc.
  */
-// eslint-disable-next-line @typescript-eslint/ban-types
 export type ValidationCategory = 'fast' | 'slow' | 'built-in' | (string & {});
 
 export namespace ValidationCategory {

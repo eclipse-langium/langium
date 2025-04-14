@@ -7,12 +7,13 @@
     "npm": ">=10.2.3"
   },
   "scripts": {
-    "clean": "shx rm -rf packages/*/lib packages/*/out packages/*/*.tsbuildinfo examples/*/*.tsbuildinfo",
+    "clean": "shx rm -rf packages/*/lib packages/*/*.tsbuildinfo packages/*/out packages/*/app packages/*/coverage packages/*/test/generator-tests examples/*/*.tsbuildinfo",
     "build": "tsc -b tsconfig.build.json && npm run build --workspace=langium-vscode --workspace=examples/domainmodel --workspace=examples/arithmetics --workspace=examples/statemachine --workspace=examples/requirements",
-    "watch": "concurrently -n tsc,vscode,domainmodel,arithmetics,requirements,statemachine -c blue,yellow,green,green,green,green \"tsc -b tsconfig.build.json -w\" \"npm run watch --workspace=langium-vscode\" \"npm run watch --workspace=examples/domainmodel\" \"npm run watch --workspace=examples/arithmetics\" \"npm run watch --workspace=examples/statemachine\" \"npm run watch --workspace=examples/requirements\"",
+    "watch": "concurrently -n tsc,vscode,domainmodel,arithmetics,requirements,statemachine -c blue,yellow,green,green,green,green \"npm run watch:tsc\" \"npm run watch --workspace=langium-vscode\" \"npm run watch --workspace=examples/domainmodel\" \"npm run watch --workspace=examples/arithmetics\" \"npm run watch --workspace=examples/statemachine\" \"npm run watch --workspace=examples/requirements\"",
     "watch:tsc": "tsc -b tsconfig.build.json -w",
     "build:clean": "npm run clean && npm run build",
-    "lint": "npm run lint --workspaces",
+    "lint": "eslint",
+    "lint:fix": "eslint --fix",
     "test": "vitest",
     "test:run": "vitest --run",
     "test:ui": "vitest --ui",
@@ -25,23 +26,28 @@
     "reset:repo": "git clean -f -X -d"
   },
   "devDependencies": {
-    "@types/node": "~20.17.47",
+    "@eslint/eslintrc": "~3.3.1",
+    "@eslint/js": "~9.27.0",
+    "@stylistic/eslint-plugin": "~4.2.0",
+    "@types/node": "~20.17.48",
     "@types/vscode": "~1.67.0",
-    "@typescript-eslint/eslint-plugin": "~6.4.1",
-    "@typescript-eslint/parser": "~6.4.1",
-    "@vitest/coverage-v8": "~1.5.0",
-    "@vitest/ui": "~1.5.0",
-    "concurrently": "~8.2.1",
-    "editorconfig": "~2.0.0",
-    "esbuild": "~0.19.2",
-    "eslint": "~8.56.0",
+    "@typescript-eslint/eslint-plugin": "~8.32.1",
+    "@typescript-eslint/parser": "~8.32.1",
+    "@vitest/coverage-v8": "~3.1.3",
+    "@vitest/ui": "~3.1.3",
+    "concurrently": "~9.1.2",
+    "editorconfig": "~2.0.1",
+    "esbuild": "~0.25.4",
+    "eslint": "~9.27.0",
     "eslint-plugin-header": "~3.1.1",
+    "eslint-plugin-import": "~2.31.0",
+    "eslint-plugin-unused-imports": "~4.1.4",
     "shx": "~0.4.0",
     "typescript": "~5.8.3",
-    "vitest": "~1.5.0"
+    "vitest": "~3.1.3"
   },
   "optionalDependencies": {
-    "@rollup/rollup-linux-x64-gnu": "^4.0.0"
+    "@rollup/rollup-linux-x64-gnu": "^4"
   },
   "volta": {
     "node": "20.19.2",
