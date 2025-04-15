@@ -5,7 +5,7 @@
  ******************************************************************************/
 
 import type { AstReflection, ReferenceInfo, TypeProperty, TypeMetaData } from '../syntax-tree.js';
-import type { LangiumDocuments } from '../workspace/documents.js';
+import type { LangiumCoreServices } from '../index.js';
 import type { Grammar } from '../languages/generated/ast.js';
 import type { AstTypes, Property } from './type-system/type-collector/types.js';
 import { AbstractAstReflection } from '../syntax-tree.js';
@@ -15,11 +15,11 @@ import { collectAst } from './type-system/ast-collector.js';
 import { collectTypeHierarchy, findReferenceTypes, isAstType, mergeTypesAndInterfaces } from './type-system/types-util.js';
 
 export function interpretAstReflection(astTypes: AstTypes): AstReflection;
-export function interpretAstReflection(grammar: Grammar, documents?: LangiumDocuments): AstReflection;
-export function interpretAstReflection(grammarOrTypes: Grammar | AstTypes, documents?: LangiumDocuments): AstReflection {
+export function interpretAstReflection(grammar: Grammar, services?: LangiumCoreServices): AstReflection;
+export function interpretAstReflection(grammarOrTypes: Grammar | AstTypes, services?: LangiumCoreServices): AstReflection {
     let collectedTypes: AstTypes;
     if (isGrammar(grammarOrTypes)) {
-        collectedTypes = collectAst(grammarOrTypes, documents);
+        collectedTypes = collectAst(grammarOrTypes, services);
     } else {
         collectedTypes = grammarOrTypes;
     }

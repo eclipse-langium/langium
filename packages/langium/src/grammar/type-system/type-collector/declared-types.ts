@@ -5,13 +5,15 @@
  ******************************************************************************/
 
 import type { Interface, Type, TypeDefinition, ValueLiteral } from '../../../languages/generated/ast.js';
+import type { LangiumCoreServices } from '../../../index.js';
 import { isArrayLiteral, isBooleanLiteral } from '../../../languages/generated/ast.js';
 import type { PlainAstTypes, PlainInterface, PlainProperty, PlainPropertyDefaultValue, PlainPropertyType, PlainUnion } from './plain-types.js';
 import { isArrayType, isReferenceType, isUnionType, isSimpleType } from '../../../languages/generated/ast.js';
 import { getTypeNameWithoutError, isPrimitiveGrammarType } from '../../internal-grammar-util.js';
 import { getTypeName } from '../../../utils/grammar-utils.js';
 
-export function collectDeclaredTypes(interfaces: Interface[], unions: Type[]): PlainAstTypes {
+export function collectDeclaredTypes(interfaces: Interface[], unions: Type[], services?: LangiumCoreServices): PlainAstTypes {
+    const commentProvider = services?.documentation.CommentProvider;
     const declaredTypes: PlainAstTypes = { unions: [], interfaces: [] };
 
     // add interfaces
@@ -22,7 +24,8 @@ export function collectDeclaredTypes(interfaces: Interface[], unions: Type[]): P
                 name: attribute.name,
                 optional: attribute.isOptional,
                 astNodes: new Set([attribute]),
-                type: typeDefinitionToPropertyType(attribute.type)
+                type: typeDefinitionToPropertyType(attribute.type),
+                comment: commentProvider?.getComment(attribute)
             };
             if (attribute.defaultValue) {
                 property.defaultValue = toPropertyDefaultValue(attribute.defaultValue);
@@ -41,7 +44,8 @@ export function collectDeclaredTypes(interfaces: Interface[], unions: Type[]): P
             abstract: false,
             properties: properties,
             superTypes: superTypes,
-            subTypes: new Set()
+            subTypes: new Set(),
+            comment: commentProvider?.getComment(type),
         };
         declaredTypes.interfaces.push(interfaceType);
     }
@@ -53,7 +57,8 @@ export function collectDeclaredTypes(interfaces: Interface[], unions: Type[]): P
             declared: true,
             type: typeDefinitionToPropertyType(union.type),
             superTypes: new Set(),
-            subTypes: new Set()
+            subTypes: new Set(),
+            comment: commentProvider?.getComment(union),
         };
         declaredTypes.unions.push(unionType);
     }
