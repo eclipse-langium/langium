@@ -25,7 +25,6 @@
     "clean": "shx rm -rf app",
     "build": "tsc",
     "watch": "tsc --watch",
-    "lint": "eslint src test --ext .ts",
     "run": "yo langium",
     "test": "vitest run",
     "debug": "npx --node-arg=--inspect yo langium",
