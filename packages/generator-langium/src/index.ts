@@ -181,7 +181,7 @@ export class LangiumGenerator extends Generator {
         const pkgJson = this.fs.readJSON(path.join(this.sourceRoot(), '.package.json'));
         this.fs.extendJSON(this._extensionPath('package-template.json'), pkgJson, undefined, 4);
 
-        for (const path of ['.', '.vscode', '.eslintrc.json']) {
+        for (const path of ['.', '.vscode', 'eslint.config.mjs']) {
             this.fs.copy(
                 this.templatePath(path),
                 this._extensionPath(path),

@@ -30,7 +30,6 @@
     "clean": "shx rm -rf lib coverage",
     "build": "tsc",
     "watch": "tsc --watch",
-    "lint": "eslint src --ext .ts",
     "publish:next": "npm --no-git-tag-version version \"$(semver $npm_package_version -i minor)-next.$(git rev-parse --short HEAD)\" && npm publish --tag next",
     "publish:latest": "npm publish --tag latest --access public"
   },
@@ -39,8 +38,8 @@
     "railroad-diagrams": "~1.0.0"
   },
   "volta": {
-    "node": "18.19.1",
-    "npm": "10.2.4"
+    "node": "22.14.0",
+    "npm": "10.9.2"
   },
   "repository": {
     "type": "git",

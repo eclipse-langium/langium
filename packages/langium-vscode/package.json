@@ -91,18 +91,17 @@
     "vscode:prepublish": "npm run clean && tsc --noEmit && npm run lint && node esbuild.mjs --minify && npm run copy:schema",
     "clean": "shx rm -rf out",
     "build": "tsc --noEmit && node esbuild.mjs",
-    "watch": "node esbuild.mjs --watch",
-    "lint": "eslint src --ext ts"
+    "watch": "node esbuild.mjs --watch"
   },
   "dependencies": {
     "langium": "3.4.0",
     "langium-railroad": "3.4.0",
     "vscode-languageserver": "~9.0.1",
-    "ignore": "~5.2.4"
+    "ignore": "~7.0.3"
   },
   "volta": {
-    "node": "18.19.1",
-    "npm": "10.2.4"
+    "node": "22.14.0",
+    "npm": "10.9.2"
   },
   "repository": {
     "type": "git",

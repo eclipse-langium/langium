@@ -15,7 +15,6 @@ import { collectKeywords, collectTerminalRegexps } from './langium-util.js';
 export function generateAst(services: LangiumCoreServices, grammars: Grammar[], config: LangiumConfig): string {
     const astTypes = collectAst(grammars, services.shared.workspace.LangiumDocuments);
     const importFrom = config.langiumInternal ? `../../syntax-tree${config.importExtension}` : 'langium';
-    /* eslint-disable @typescript-eslint/indent */
     const fileNode = expandToNode`
         ${generatedHeader}
 
@@ -32,7 +31,6 @@ export function generateAst(services: LangiumCoreServices, grammars: Grammar[], 
         }
     `;
     return toString(fileNode);
-    /* eslint-enable @typescript-eslint/indent */
 }
 
 function generateAstReflection(config: LangiumConfig, astTypes: AstTypes): Generated {
@@ -69,7 +67,6 @@ function generateAstReflection(config: LangiumConfig, astTypes: AstTypes): Gener
 }
 
 function buildTypeMetaDataMethod(astTypes: AstTypes): Generated {
-    /* eslint-disable @typescript-eslint/indent */
     return expandToNode`
         switch (type) {
             ${
@@ -103,7 +100,6 @@ function buildTypeMetaDataMethod(astTypes: AstTypes): Generated {
             }
         }
     `;
-    /* eslint-enable @typescript-eslint/indent */
 }
 
 function buildPropertyType(props: Property[]): Generated {
@@ -134,7 +130,6 @@ function stringifyDefaultValue(value?: PropertyDefaultValue): string | undefined
 
 function buildReferenceTypeMethod(crossReferenceTypes: CrossReferenceType[]): Generated {
     const buckets = new MultiMap<string, string>(crossReferenceTypes.map(e => [e.referenceType, `${e.type}:${e.feature}`]));
-    /* eslint-disable @typescript-eslint/indent */
     return expandToNode`
         const referenceId = ${'`${refInfo.container.$type}:${refInfo.property}`'};
         switch (referenceId) {
@@ -154,7 +149,6 @@ function buildReferenceTypeMethod(crossReferenceTypes: CrossReferenceType[]): Ge
             }
         }
     `;
-    /* eslint-enable @typescript-eslint/indent */
 }
 
 type CrossReferenceType = {
@@ -195,7 +189,6 @@ function buildCrossReferenceTypes(astTypes: AstTypes): CrossReferenceType[] {
 
 function buildIsSubtypeMethod(astTypes: AstTypes): Generated {
     const groups = groupBySupertypes(astTypes);
-    /* eslint-disable @typescript-eslint/indent */
     return expandToNode`
         switch (subtype) {
             ${
@@ -214,7 +207,6 @@ function buildIsSubtypeMethod(astTypes: AstTypes): Generated {
             }
         }
     `;
-    /* eslint-enable @typescript-eslint/indent */
 }
 
 function groupBySupertypes(astTypes: AstTypes): MultiMap<string, string> {

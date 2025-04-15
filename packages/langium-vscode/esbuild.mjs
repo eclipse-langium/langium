@@ -1,4 +1,4 @@
-//@ts-check
+// @ts-check
 import * as esbuild from 'esbuild';
 
 const watch = process.argv.includes('--watch');
