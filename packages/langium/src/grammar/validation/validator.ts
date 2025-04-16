@@ -13,7 +13,7 @@ import type { AstNode, Properties, Reference } from '../../syntax-tree.js';
 import { getContainerOfType, streamAllContents } from '../../utils/ast-utils.js';
 import { MultiMap } from '../../utils/collections.js';
 import { toDocumentSegment } from '../../utils/cst-utils.js';
-import { findNameAssignment, findNodeForKeyword, findNodeForProperty, getAllReachableRules, isArrayCardinality, isDataTypeRule, isOptionalCardinality, terminalRegex } from '../../utils/grammar-utils.js';
+import { findNameAssignment, findNodeForKeyword, findNodeForProperty, getAllReachableRules, getAllRulesUsedForCrossReferences, isArrayCardinality, isDataTypeRule, isOptionalCardinality, terminalRegex } from '../../utils/grammar-utils.js';
 import type { Stream } from '../../utils/stream.js';
 import { stream } from '../../utils/stream.js';
 import type { DiagnosticData, ValidationAcceptor, ValidationChecks } from '../../validation/validation-registry.js';
@@ -107,6 +107,7 @@ export namespace IssueCodes {
     export const UseRegexTokens = 'use-regex-tokens';
     export const EntryRuleTokenSyntax = 'entry-rule-token-syntax';
     export const CrossRefTokenSyntax = 'cross-ref-token-syntax';
+    export const ParserRuleToTypeDecl = 'parser-rule-to-type-decl';
     export const UnnecessaryFileExtension = 'unnecessary-file-extension';
     export const InvalidReturns = 'invalid-returns';
     export const InvalidInfers = 'invalid-infers';
@@ -605,17 +606,25 @@ export class LangiumGrammarValidator {
 
     checkGrammarForUnusedRules(grammar: ast.Grammar, accept: ValidationAcceptor): void {
         const reachableRules = getAllReachableRules(grammar, true);
+        const parserRulesUsedByCrossReferences = getAllRulesUsedForCrossReferences(grammar);
 
         for (const rule of grammar.rules) {
             if (ast.isTerminalRule(rule) && rule.hidden || isEmptyRule(rule)) {
                 continue;
             }
             if (!reachableRules.has(rule)) {
-                accept('hint', 'This rule is declared but never referenced.', {
-                    node: rule,
-                    property: 'name',
-                    tags: [DiagnosticTag.Unnecessary]
-                });
+                if (ast.isParserRule(rule) && parserRulesUsedByCrossReferences.has(rule)) {
+                    accept('hint', 'This parser rule is not used for parsing, but referenced by cross-references. Consider to replace this rule by a type declaration.', {
+                        node: rule,
+                        data: diagnosticData(IssueCodes.ParserRuleToTypeDecl)
+                    });
+                } else {
+                    accept('hint', 'This rule is declared but never referenced.', {
+                        node: rule,
+                        property: 'name',
+                        tags: [DiagnosticTag.Unnecessary]
+                    });
+                }
             }
         }
     }
