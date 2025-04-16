@@ -174,17 +174,17 @@ export class LangiumGenerator extends Generator {
         const referencedTsconfigBaseName = this.answers.includeTest ? 'tsconfig.src.json' : 'tsconfig.json';
         const templateCopyOptions: CopyOptions = {
             process: content => this._replaceTemplateWords(fileExtensionGlob, languageName, languageId, referencedTsconfigBaseName, content),
-            processDestinationPath: path => this._replaceTemplateNames(languageId, path)
+            processDestinationPath: destPath => this._replaceTemplateNames(languageId, destPath)
         };
 
         this.sourceRoot(path.join(__dirname, TEMPLATE_CORE_DIR));
         const pkgJson = this.fs.readJSON(path.join(this.sourceRoot(), '.package.json'));
         this.fs.extendJSON(this._extensionPath('package-template.json'), pkgJson, undefined, 4);
 
-        for (const path of ['.', '.vscode', 'eslint.config.mjs']) {
+        for (const pathElement of ['.', '.vscode', 'eslint.config.mjs']) {
             this.fs.copy(
-                this.templatePath(path),
-                this._extensionPath(path),
+                this.templatePath(pathElement),
+                this._extensionPath(pathElement),
                 templateCopyOptions
             );
         }
@@ -197,10 +197,10 @@ export class LangiumGenerator extends Generator {
             const pkgJson = this.fs.readJSON(path.join(this.sourceRoot(), '.package.json'));
             this.fs.extendJSON(this._extensionPath('package-template.json'), pkgJson, undefined, 4);
             this.sourceRoot(path.join(__dirname, TEMPLATE_VSCODE_DIR));
-            for (const path of ['.', '.vscode', '.vscodeignore']) {
+            for (const pathElement of ['.', '.vscode', '.vscodeignore']) {
                 this.fs.copy(
-                    this.templatePath(path),
-                    this._extensionPath(path),
+                    this.templatePath(pathElement),
+                    this._extensionPath(pathElement),
                     templateCopyOptions
                 );
             }
@@ -210,10 +210,10 @@ export class LangiumGenerator extends Generator {
             this.sourceRoot(path.join(__dirname, TEMPLATE_CLI_DIR));
             const pkgJson = this.fs.readJSON(path.join(this.sourceRoot(), '.package.json'));
             this.fs.extendJSON(this._extensionPath('package-template.json'),pkgJson, undefined, 4);
-            for (const path of ['.']) {
+            for (const pathElement of ['.']) {
                 this.fs.copy(
-                    this.templatePath(path),
-                    this._extensionPath(path),
+                    this.templatePath(pathElement),
+                    this._extensionPath(pathElement),
                     templateCopyOptions
                 );
             }
@@ -224,10 +224,10 @@ export class LangiumGenerator extends Generator {
             const pkgJson = this.fs.readJSON(path.join(this.sourceRoot(), '.package.json'));
             this.fs.extendJSON(this._extensionPath('package-template.json'), pkgJson, undefined, 4);
             this.sourceRoot(path.join(__dirname, TEMPLATE_WEB_DIR));
-            for (const path of ['.']) {
+            for (const pathElement of ['.']) {
                 this.fs.copy(
-                    this.templatePath(path),
-                    this._extensionPath(path),
+                    this.templatePath(pathElement),
+                    this._extensionPath(pathElement),
                     templateCopyOptions
                 );
             }
@@ -306,8 +306,8 @@ export class LangiumGenerator extends Generator {
         }
     }
 
-    _extensionPath(...path: string[]): string {
-        return this.destinationPath(USER_DIR, this.answers.extensionName, ...path);
+    _extensionPath(...pathElement: string[]): string {
+        return this.destinationPath(USER_DIR, this.answers.extensionName, ...pathElement);
     }
 
     _replaceTemplateWords(fileExtensionGlob: string, languageName: string, languageId: string, tsconfigBaseName: string, content: string | Buffer): string {
@@ -322,8 +322,8 @@ export class LangiumGenerator extends Generator {
             .replace(NEWLINES, EOL);
     }
 
-    _replaceTemplateNames(languageId: string, path: string): string {
-        return path.replace(LANGUAGE_PATH_ID, languageId);
+    _replaceTemplateNames(languageId: string, inputPath: string): string {
+        return inputPath.replace(LANGUAGE_PATH_ID, languageId);
     }
 }
 
