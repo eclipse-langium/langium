@@ -1,7 +1,7 @@
 {
     "name": "langium-domainmodel-dsl",
     "displayName": "Domain Model DSL",
-    "version": "3.4.0",
+    "version": "3.5.0",
     "description": "Example language built with Langium",
     "homepage": "https://langium.org",
     "engines": {
@@ -60,13 +60,13 @@
     "dependencies": {
         "chalk": "~5.3.0",
         "commander": "~11.0.0",
-        "langium": "~3.4.0",
+        "langium": "~3.5.0",
         "lodash": "~4.17.21",
         "vscode-languageclient": "~9.0.1",
         "vscode-languageserver": "~9.0.1"
     },
     "devDependencies": {
-        "langium-cli": "~3.4.0"
+        "langium-cli": "~3.5.0"
     },
     "volta": {
         "node": "18.19.1",

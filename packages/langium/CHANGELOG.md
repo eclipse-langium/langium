@@ -1,20 +1,35 @@
 # Change Log of `langium`
 
-## 3.4.0 (Feb. 2025)
+## v3.5.0 (Apr. 2025)
+
+* Improve parser error recovery ([#1822](https://github.com/eclipse-langium/langium/pull/1822)).
+* Fix a bug when waiting for documents if the specified document already is at the specified state ([#1830](https://github.com/eclipse-langium/langium/pull/1830)).
+* Comments on parser rules and properties are now reflected in the generated AST ([#1835](github.com/eclipse-langium/langium/pull/1835)).
+* Comments on keywords in the grammar are now provided as hover information ([#1842](https://github.com/eclipse-langium/langium/pull/1842)).
+* The document builder now supports custom user defined validation categories ([#1837](https://github.com/eclipse-langium/langium/pull/1837)).
+* Generated code now avoids name collisions with Langium imports ([#1843](https://github.com/eclipse-langium/langium/pull/1843)).
+* The CLI supports generating GBNF grammars from the Langium grammar definition ([#1860](https://github.com/eclipse-langium/langium/pull/1860)).
+* Declared properties with default values are no longer required to be assigned in parser rules ([#1863](https://github.com/eclipse-langium/langium/pull/1863)).
+* The `fileNames` option can now be used in the Langium config to improve control over file associations to the language server ([#1873](https://github.com/eclipse-langium/langium/pull/1873)).
+* Add a `DeepPartialAstNode` utility type for better type checking ([#1875](https://github.com/eclipse-langium/langium/pull/1875)).
+* Improve generation of case insensitive regexp in grammars ([#1878](https://github.com/eclipse-langium/langium/pull/1878)).
+* Add a document builder option to skip eager linking ([#1899](https://github.com/eclipse-langium/langium/pull/1899)).
+
+## v3.4.0 (Feb. 2025)
 
 * Improve definition of AST convenience types ([#1771](https://github.com/eclipse-langium/langium/pull/1771)).
 * Improve handling of Windows drive letters in `UriUtils` ([#1816](https://github.com/eclipse-langium/langium/pull/1816)).
 * Add replacement for the `NotebookDocuments` service from `vscode-languageserver` ([#1743](https://github.com/eclipse-langium/langium/pull/1743)).
 * Fix a minor bug in the text generator related to `undefined` elements and indentation ([#1814](https://github.com/eclipse-langium/langium/pull/1814)).
 
-## 3.3.1 (Jan. 2025)
+## v3.3.1 (Jan. 2025)
 
 * Improves performance for files with a lot of comments ([#1790](https://github.com/eclipse-langium/langium/pull/1790)).
 * Improves completion behavior for some edge cases ([#1689](https://github.com/eclipse-langium/langium/pull/1689)).
 * Fixes an error related to linking in rules with fragment rules ([#1762](https://github.com/eclipse-langium/langium/pull/1762)).
 * Fixes an issue related to FireFox `setTimeout` behavior ([#1787](https://github.com/eclipse-langium/langium/pull/1787)).
 
-## 3.3.0 (Nov. 2024)
+## v3.3.0 (Nov. 2024)
 
 This release marks the graduation of Langium to a mature Eclipse Foundation project.
 See the [GitLab issue](https://gitlab.eclipse.org/eclipsefdn/emo-team/emo/-/issues/810) for more information.

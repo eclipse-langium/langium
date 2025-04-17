@@ -1,5 +1,13 @@
 # Change Log of `langium-cli`
 
+## v3.5.0 (Apr. 2025)
+
+Update the internal `langium` version to 3.5.
+
+## v3.4.0 (Feb. 2025)
+
+Update the internal `langium` version to 3.4.
+
 ## v3.3.0 (Nov. 2024)
 
 The `mode` flag (i.e. `production` or `development`) is now exposed via the generated language meta data ([#1688](https://github.com/eclipse-langium/langium/pull/1688)).
