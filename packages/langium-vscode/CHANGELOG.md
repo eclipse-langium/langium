@@ -1,5 +1,18 @@
 # Change Log of `langium-vscode`
 
+## v3.5.0 (Apr. 2025)
+
+* Update the internal `langium` version to 3.5.
+* Add code actions to generate type declarations from parser rules used only in cross references ([#1391](https://github.com/eclipse-langium/langium/pull/1391)).
+
+## v3.4.0 (Feb. 2025)
+
+Update the internal `langium` version to 3.4.
+
+## v3.3.0 (Nov. 2024)
+
+Update the internal `langium` version to 3.3.
+
 ## v3.2.0 (Sep. 2024)
 
 * Fix a false positive regexp validation ([#1631](https://github.com/eclipse-langium/langium/pull/1631)).
