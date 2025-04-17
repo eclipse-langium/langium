@@ -4,6 +4,7 @@
  * terms of the MIT License, which is available in the project root.
  ******************************************************************************/
 
+/* eslint-disable @stylistic/indent */
 import type { Grammar, LangiumCoreServices, Reference } from 'langium';
 import { expandToNode, joinToNode, normalizeEOL, toString } from 'langium/generate';
 import type { URI } from 'vscode-uri';

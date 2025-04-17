@@ -1064,7 +1064,7 @@ export function traceToNodeIf(condition: boolean, sourceRegion: SourceRegion | u
 export function traceToNodeIf(condition: boolean, sourceRegions: SourceRegion[] | (() => SourceRegion[])): (content?: Generated | ((node: CompositeGeneratorNode) => void)) => CompositeGeneratorNode | undefined;
 
 // implementation
-export function traceToNodeIf<T extends AstNode>(condition: boolean, source: T | undefined | SourceRegion | SourceRegion[] | (() => undefined | SourceRegion | SourceRegion[]), property?: Properties<T>, index?: number): // eslint-disable-next-line @typescript-eslint/indent
+export function traceToNodeIf<T extends AstNode>(condition: boolean, source: T | undefined | SourceRegion | SourceRegion[] | (() => undefined | SourceRegion | SourceRegion[]), property?: Properties<T>, index?: number): // eslint-disable-next-line @stylistic/indent
         (content?: Generated | ((node: CompositeGeneratorNode) => void)) => CompositeGeneratorNode | undefined {
     return condition ? traceToNode((typeof source === 'function' ? source() : source) as T, property!, index) : () => undefined;
 }

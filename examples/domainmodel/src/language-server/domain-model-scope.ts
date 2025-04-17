@@ -69,7 +69,6 @@ export class DomainModelScopeComputation extends DefaultScopeComputation {
 
     protected createQualifiedDescription(pack: PackageDeclaration, description: AstNodeDescription, document: LangiumDocument): AstNodeDescription {
         const name = this.qualifiedNameProvider.getQualifiedName(pack.name, description.name);
-        // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
         return this.descriptions.createDescription(description.node!, name, document);
     }
 

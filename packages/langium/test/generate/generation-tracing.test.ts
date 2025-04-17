@@ -11,7 +11,7 @@ import { createServicesForGrammar } from 'langium/grammar';
 import { beforeAll, describe, expect, test } from 'vitest';
 
 // don't bather because of unexpected indentations, e.g. within template substitutions
-/* eslint-disable @typescript-eslint/indent */
+/* eslint-disable @stylistic/indent */
 
 let parse: (text: string) => Promise<AstNode>;
 let parse2: (text: string) => Promise<AstNode>;
@@ -360,11 +360,9 @@ describe('tracing using $cstNode or $textRegion', () => {
     test('should trace single node with preamble in output 1', async () => {
         const source = await parse2('AH "IH" OH');
         const { text, trace } = toStringAndTrace(
-            expandToNode`
-                Preamble; 
-            `.appendTraced(source)(
-                'beginning ... end' // eslint-disable-line @typescript-eslint/indent
-            )                       // eslint-disable-line @typescript-eslint/indent
+            expandToNode`Preamble; `.appendTraced(source)(
+                'beginning ... end'
+            )
         );
         // persistSourceRegions(trace);
 
@@ -381,9 +379,7 @@ describe('tracing using $cstNode or $textRegion', () => {
     test('should trace single node with preamble in output 2', async () => {
         const source = await parse2('AH "IH" OH');
         const { text, trace } = toStringAndTrace(
-            expandToNode`
-                Preamble; 
-            `.appendTracedTemplate(source)`
+            expandToNode`Preamble; `.appendTracedTemplate(source)`
                 beginning ... end
             `
         );
@@ -564,10 +560,7 @@ describe('tracing using $cstNode or $textRegion', () => {
     test('should trace conditionally appended elements', async () => {
         const source = await parse2('AH "IH" OH 0815') as AstNode & { name?: string, values: Array<string | number> };
         const { text, trace } = toStringAndTrace(
-            expandToNode`
-                Preamble; 
-            `.appendTracedIf(!!source.name, source, 'name')(() => source?.name ?? ' WRONG ') /* expected to be _not_ appended! */
-            // eslint-disable-next-line @typescript-eslint/indent
+            expandToNode`Preamble; `.appendTracedIf(!!source.name, source, 'name')(() => source?.name ?? ' WRONG ') /* expected to be _not_ appended! */
             .appendTracedTemplateIf(source.values.length !== 0, source, 'values')`
                 beginning ${ joinTracedToNode(source, 'values')(source.values, undefined, { separator: ' ', filter: (_, i) => i % 2 === 1}) } end
             `

@@ -1,4 +1,5 @@
-import { MonacoEditorLanguageClientWrapper, UserConfig } from 'monaco-editor-wrapper';
+import type { UserConfig } from 'monaco-editor-wrapper';
+import { MonacoEditorLanguageClientWrapper } from 'monaco-editor-wrapper';
 import { configureWorker, defineUserServices } from './setupCommon.js';
 
 export const setupConfigExtended = (): UserConfig => {
@@ -12,7 +13,7 @@ export const setupConfigExtended = (): UserConfig => {
             editorAppConfig: {
                 $type: 'extended',
                 languageId: '<%= language-id %>',
-                code: `// <%= RawLanguageName %> is running in the web!`,
+                code: '// <%= RawLanguageName %> is running in the web!',
                 useDiffEditor: false,
                 extensions: [{
                     config: {
@@ -38,7 +39,7 @@ export const setupConfigExtended = (): UserConfig => {
                         }
                     },
                     filesOrContents: extensionFilesOrContents,
-                }],                
+                }],
                 userConfiguration: {
                     json: JSON.stringify({
                         'workbench.colorTheme': 'Default Dark Modern',

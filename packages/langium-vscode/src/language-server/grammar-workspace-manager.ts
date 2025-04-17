@@ -46,7 +46,7 @@ export class LangiumGrammarWorkspaceManager extends DefaultWorkspaceManager {
                 .map(pattern => pattern.trim())
                 .filter(pattern => pattern.length > 0);
             if (ignorePatterns.length > 0) {
-                this.matcher = ignore.default().add(ignorePatterns);
+                this.matcher = ignore().add(ignorePatterns);
             }
         }
         return super.initializeWorkspace(folders, cancelToken);

@@ -1,93 +1,92 @@
 {
-    "name": "langium-arithmetics-dsl",
-    "displayName": "Arithmetics DSL",
-    "version": "3.4.0",
-    "description": "Example language built with Langium",
-    "homepage": "https://langium.org",
-    "engines": {
-        "vscode": "^1.67.0"
-    },
-    "license": "MIT",
-    "categories": [
-        "Programming Languages"
-    ],
-    "contributes": {
-        "languages": [
-            {
-                "id": "arithmetics",
-                "aliases": [
-                    "Arithmetics",
-                    "arithmetics"
-                ],
-                "extensions": [
-                    ".calc"
-                ],
-                "configuration": "./language-configuration.json"
-            }
+  "name": "langium-arithmetics-dsl",
+  "displayName": "Arithmetics DSL",
+  "version": "3.4.0",
+  "description": "Example language built with Langium",
+  "homepage": "https://langium.org",
+  "engines": {
+    "vscode": "^1.67.0"
+  },
+  "license": "MIT",
+  "categories": [
+    "Programming Languages"
+  ],
+  "contributes": {
+    "languages": [
+      {
+        "id": "arithmetics",
+        "aliases": [
+          "Arithmetics",
+          "arithmetics"
         ],
-        "grammars": [
-            {
-                "language": "arithmetics",
-                "scopeName": "source.arithmetics",
-                "path": "./syntaxes/arithmetics.tmLanguage.json"
-            }
-        ]
-    },
-    "activationEvents": [
-        "onLanguage:arithmetics"
+        "extensions": [
+          ".calc"
+        ],
+        "configuration": "./language-configuration.json"
+      }
     ],
-    "files": [
-        "bin",
-        "out",
-        "src",
-        "syntaxes",
-        "language-configuration.json"
-    ],
-    "bin": {
-        "arithmetics-cli": "./bin/cli.js"
+    "grammars": [
+      {
+        "language": "arithmetics",
+        "scopeName": "source.arithmetics",
+        "path": "./syntaxes/arithmetics.tmLanguage.json"
+      }
+    ]
+  },
+  "activationEvents": [
+    "onLanguage:arithmetics"
+  ],
+  "files": [
+    "bin",
+    "out",
+    "src",
+    "syntaxes",
+    "language-configuration.json"
+  ],
+  "bin": {
+    "arithmetics-cli": "./bin/cli.js"
+  },
+  "type": "module",
+  "main": "./out/extension.cjs",
+  "exports": {
+    ".": {
+      "types": "./out/extension.d.ts",
+      "default": "./out/extension.js"
     },
-    "type": "module",
-    "main": "./out/extension.cjs",
-    "exports": {
-        ".": {
-            "types": "./out/extension.d.ts",
-            "default": "./out/extension.js"
-        },
-        "./api": {
-            "types": "./out/language-server/generated/ast.d.ts",
-            "default": "./out/language-server/generated/ast.js"
-        }
-    },
-    "scripts": {
-        "build": "node esbuild.mjs",
-        "watch": "node esbuild.mjs --watch",
-        "lint": "eslint src test --ext ts",
-        "langium:generate": "langium generate",
-        "publish:next": "npm --no-git-tag-version version \"$(semver $npm_package_version -i minor)-next.$(git rev-parse --short HEAD)\" && npm publish --tag next",
-        "publish:latest": "npm publish --tag latest --access public"
-    },
-    "dependencies": {
-        "chalk": "~5.3.0",
-        "commander": "~11.0.0",
-        "langium": "~3.4.0",
-        "vscode-languageclient": "~9.0.1",
-        "vscode-languageserver": "~9.0.1"
-    },
-    "devDependencies": {
-        "langium-cli": "~3.4.0"
-    },
-    "volta": {
-        "node": "18.19.1",
-        "npm": "10.2.4"
-    },
-    "repository": {
-        "type": "git",
-        "url": "https://github.com/eclipse-langium/langium",
-        "directory": "examples/arithmetics"
-    },
-    "bugs": "https://github.com/eclipse-langium/langium/issues",
-    "author": {
-        "name": "TypeFox",
-        "url": "https://www.typefox.io"
+    "./api": {
+      "types": "./out/language-server/generated/ast.d.ts",
+      "default": "./out/language-server/generated/ast.js"
     }
+  },
+  "scripts": {
+    "build": "node esbuild.mjs",
+    "watch": "node esbuild.mjs --watch",
+    "langium:generate": "langium generate",
+    "publish:next": "npm --no-git-tag-version version \"$(semver $npm_package_version -i minor)-next.$(git rev-parse --short HEAD)\" && npm publish --tag next",
+    "publish:latest": "npm publish --tag latest --access public"
+  },
+  "dependencies": {
+    "chalk": "~5.4.1",
+    "commander": "~13.1.0",
+    "langium": "~3.4.0",
+    "vscode-languageclient": "~9.0.1",
+    "vscode-languageserver": "~9.0.1"
+  },
+  "devDependencies": {
+    "langium-cli": "~3.4.0"
+  },
+  "volta": {
+    "node": "22.14.0",
+    "npm": "10.9.2"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/eclipse-langium/langium",
+    "directory": "examples/arithmetics"
+  },
+  "bugs": "https://github.com/eclipse-langium/langium/issues",
+  "author": {
+    "name": "TypeFox",
+    "url": "https://www.typefox.io"
+  }
 }

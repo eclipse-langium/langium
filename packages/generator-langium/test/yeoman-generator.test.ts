@@ -11,6 +11,8 @@ import { describe, test } from 'vitest';
 import type * as Generator from 'yeoman-generator';
 import { createHelpers } from 'yeoman-test';
 import type { Answers, LangiumGenerator, PostAnwers } from '../src/index.js';
+import * as langiumPackageJson from '../../langium/package.json' with { type: 'json' };
+import * as langiumCliPackageJson from '../../langium-cli/package.json' with { type: 'json' };
 
 const answersForCore: Answers & PostAnwers = {
     extensionName: 'hello-world',
@@ -28,7 +30,7 @@ describe('Check yeoman generator works', () => {
     const moduleRoot = path.join(packageTestDir, '../app');
 
     const files = (targetRoot: string) => [
-        targetRoot + '/.eslintrc.json',
+        targetRoot + '/eslint.config.mjs',
         targetRoot + '/.gitignore',
         targetRoot + '/langium-config.json',
         targetRoot + '/langium-quickstart.md',
@@ -136,11 +138,6 @@ describe('Check yeoman generator works', () => {
     }, 120_000);
 });
 
-// eslint-disable-next-line @typescript-eslint/no-var-requires
-const langiumVersion = `~${require('../../langium/package.json').version}`;
-// eslint-disable-next-line @typescript-eslint/no-var-requires
-const langiumCliVersion = `~${require('../../langium-cli/package.json').version}`;
-
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 const PACKAGE_JSON_EXPECTATION: Record<string, any> = {
     name: 'hello-world',
@@ -150,20 +147,22 @@ const PACKAGE_JSON_EXPECTATION: Record<string, any> = {
     scripts: {
         'build': 'tsc -b tsconfig.json',
         'watch': 'tsc -b tsconfig.json --watch',
-        'lint': 'eslint src --ext ts',
+        'lint': 'eslint',
         'langium:generate': 'langium generate',
         'langium:watch': 'langium generate --watch'
     },
     'dependencies': {
-        'langium': langiumVersion
+        'langium': `~${langiumPackageJson.default.version}`
     },
     'devDependencies': {
-        '@types/node': '^18.0.0',
-        '@typescript-eslint/eslint-plugin': '~7.3.1',
-        '@typescript-eslint/parser': '~7.3.1',
-        'eslint': '~8.57.0',
-        'langium-cli': langiumCliVersion,
-        'typescript': '~5.1.6'
+        '@eslint/eslintrc': '^3',
+        '@eslint/js': '^9',
+        '@types/node': '^20',
+        '@typescript-eslint/eslint-plugin': '^8',
+        '@typescript-eslint/parser': '^8',
+        'eslint': '^9',
+        'langium-cli': `~${langiumCliPackageJson.default.version}`,
+        'typescript': '~5.8.3'
     }
 };
 

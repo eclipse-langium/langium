@@ -1,33 +1,35 @@
 {
-    "name": "<%= extension-name %>",
-    "description": "Please enter a brief description here",
-    "version": "0.0.1",
-    "files": [
-        "out",
-        "src"
-    ],
-    "type": "module",
-    "scripts": {
-        "build": "tsc -b <%= tsconfig %>",
-        "watch": "tsc -b <%= tsconfig %> --watch",
-        "lint": "eslint src --ext ts",
-        "langium:generate": "langium generate",
-        "langium:generate:production": "langium generate --mode=production",
-        "langium:watch": "langium generate --watch"
-    },
-    "dependencies": {
-        "langium": "~3.4.0"
-    },
-    "devDependencies": {
-        "@types/node": "^18.0.0",
-        "@typescript-eslint/parser": "~7.3.1",
-        "@typescript-eslint/eslint-plugin": "~7.3.1",
-        "eslint": "~8.57.0",
-        "langium-cli": "~3.4.0",
-        "typescript": "~5.1.6"
-    },
-    "volta": {
-        "node": "18.19.1",
-        "npm": "10.2.4"
-    }
+  "name": "<%= extension-name %>",
+  "description": "Please enter a brief description here",
+  "version": "0.0.1",
+  "files": [
+    "out",
+    "src"
+  ],
+  "type": "module",
+  "scripts": {
+    "build": "tsc -b <%= tsconfig %>",
+    "watch": "tsc -b <%= tsconfig %> --watch",
+    "lint": "eslint",
+    "langium:generate": "langium generate",
+    "langium:generate:production": "langium generate --mode=production",
+    "langium:watch": "langium generate --watch"
+  },
+  "dependencies": {
+    "langium": "~3.4.0"
+  },
+  "devDependencies": {
+    "@eslint/eslintrc": "^3",
+    "@eslint/js": "^9",
+    "@types/node": "^20",
+    "@typescript-eslint/eslint-plugin": "^8",
+    "@typescript-eslint/parser": "^8",
+    "eslint": "^9",
+    "langium-cli": "~3.4.0",
+    "typescript": "~5.8.3"
+  },
+  "volta": {
+    "node": "22.14.0",
+    "npm": "10.9.2"
+  }
 }

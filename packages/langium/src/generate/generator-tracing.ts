@@ -47,7 +47,7 @@ interface DocumentSegmentWithFileURI extends Omit<DocumentSegment, 'range'> {
     range?: Range;
 }
 
-type SourceRegionPartial = Pick<DocumentSegmentWithFileURI, 'offset' | 'end'> & Partial<DocumentSegmentWithFileURI> // eslint-disable-next-line @typescript-eslint/indent
+type SourceRegionPartial = Pick<DocumentSegmentWithFileURI, 'offset' | 'end'> & Partial<DocumentSegmentWithFileURI>
                            | Pick<DocumentSegmentWithFileURI, 'offset' | 'length'> & Partial<DocumentSegmentWithFileURI>;
 
 export function getSourceRegion(sourceSpec: TraceSourceSpec | undefined | SourceRegion | SourceRegion[]): DocumentSegmentWithFileURI | CstNode | undefined {
@@ -85,7 +85,7 @@ function isCstNode(segment: object | undefined): segment is CstNode {
 function getDocumentURIOrUndefined(astNode: AstNode): string | undefined {
     try {
         return getDocument(astNode).uri.toString();
-    } catch (e) {
+    } catch (_error) {
         return undefined;
     }
 }

@@ -16,7 +16,7 @@ export function generateModule(grammars: Grammar[], config: LangiumConfig, gramm
     const hasIParserConfigImport = Boolean(parserConfig) || grammars.some(grammar => grammarConfigMap.get(grammar)?.chevrotainParserConfig !== undefined);
     let needsGeneralParserConfig = undefined;
 
-    /* eslint-disable @typescript-eslint/indent */
+    /* eslint-disable @stylistic/indent */
     const node = expandToNode`
         ${generatedHeader}
     `.appendNewLine(
@@ -104,7 +104,7 @@ export function generateModule(grammars: Grammar[], config: LangiumConfig, gramm
             { appendNewLineIfNotEmpty: true}
         )}
     `;
-    /* eslint-enable @typescript-eslint/indent */
+    /* eslint-enable @stylistic/indent */
 
     return toString(node);
 }
