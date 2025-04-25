@@ -19,24 +19,78 @@ export type FileSystemFilter = (node: FileSystemNode) => boolean;
  */
 export interface FileSystemProvider {
     /**
+     * Checks if a file exists at the specified URI.
+     * @returns `true` if a file exists at the specified URI, `false` otherwise.
+     */
+    exists(uri: URI): Promise<boolean>;
+    /**
+     * Checks if a file exists at the specified URI synchronously.
+     * @returns `true` if a file exists at the specified URI, `false` otherwise.
+     */
+    existsSync(uri: URI): boolean;
+    /**
+     * Reads a binary file asynchronously from a given URI.
+     * @returns The binary content of the file with the specified URI.
+     */
+    readBinary(uri: URI): Promise<Uint8Array>;
+    /**
+     * Reads a binary file synchronously from a given URI.
+     * @returns The binary content of the file with the specified URI.
+     */
+    readBinarySync(uri: URI): Uint8Array;
+    /**
      * Reads a document asynchronously from a given URI.
      * @returns The string content of the file with the specified URI.
      */
     readFile(uri: URI): Promise<string>;
     /**
+     * Reads a document synchronously from a given URI.
+     * @returns The string content of the file with the specified
+     */
+    readFileSync(uri: URI): string;
+    /**
      * Reads the directory information for the given URI.
      * @returns The list of file system entries that are contained within the specified directory.
      */
     readDirectory(uri: URI): Promise<FileSystemNode[]>;
+    /**
+     * Reads the directory information for the given URI synchronously.
+     * @returns The list of file system entries that are contained within the specified directory.
+     */
+    readDirectorySync(uri: URI): FileSystemNode[];
 }
 
 export class EmptyFileSystemProvider implements FileSystemProvider {
+
+    async exists(): Promise<boolean> {
+        return false;
+    }
+
+    existsSync(): boolean {
+        return false;
+    }
+
+    readBinary(): Promise<Uint8Array> {
+        throw new Error('No file system is available.');
+    }
+
+    readBinarySync(): Uint8Array {
+        throw new Error('No file system is available.');
+    }
 
     readFile(): Promise<string> {
         throw new Error('No file system is available.');
     }
 
+    readFileSync(): string {
+        throw new Error('No file system is available.');
+    }
+
     async readDirectory(): Promise<FileSystemNode[]> {
+        return [];
+    }
+
+    readDirectorySync(): FileSystemNode[] {
         return [];
     }
 
