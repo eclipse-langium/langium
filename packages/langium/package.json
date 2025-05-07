@@ -4,7 +4,7 @@
   "description": "A language engineering tool for the Language Server Protocol",
   "homepage": "https://langium.org",
   "engines": {
-    "node": ">=18.0.0"
+    "node": ">=20.10.0"
   },
   "keywords": [
     "language",
@@ -76,8 +76,8 @@
     "typedoc": "^0.26.7"
   },
   "volta": {
-    "node": "18.19.1",
-    "npm": "10.2.4"
+    "node": "20.19.2",
+    "npm": "10.8.2"
   },
   "repository": {
     "type": "git",
