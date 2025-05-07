@@ -227,13 +227,13 @@ const PACKAGE_JSON_EXPECTATION: Record<string, any> = {
         'langium:watch': 'npm run --workspace packages/language langium:watch'
     },
     'devDependencies': {
-        '@types/node': '^18.0.0',
+        '@types/node': '~20.17.47',
         'shx':  '~0.4.0',
-        'typescript': '~5.4.5'
+        'typescript': '~5.8.3'
     },
     volta: {
-        'node': '18.20.3',
-        'npm': '10.7.0'
+        'node': '20.19.2',
+        'npm': '10.8.2'
     },
     workspaces: [
         'packages/language'
@@ -247,7 +247,8 @@ const PACKAGE_JSON_EXPECTATION_CLI: Record<string, any> = {
     version: '0.0.1',
     type: 'module',
     engines: {
-        node: '>=18.0.0'
+        'node': '>=20.10.0',
+        'npm': '>=10.2.3'
     },
     files: ['bin', 'out', 'src'],
     bin: {
@@ -264,8 +265,8 @@ const PACKAGE_JSON_EXPECTATION_CLI: Record<string, any> = {
         'commander': '~11.1.0'
     },
     volta: {
-        'node': '18.20.3',
-        'npm': '10.7.0'
+        'node': '20.19.2',
+        'npm': '10.8.2'
     }
 };
 

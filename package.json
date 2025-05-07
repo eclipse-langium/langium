@@ -3,13 +3,14 @@
   "private": true,
   "engineStrict": true,
   "engines": {
-    "node": ">= 18.0.0",
-    "npm": ">= 9.5.0"
+    "node": ">=20.10.0",
+    "npm": ">=10.2.3"
   },
   "scripts": {
     "clean": "shx rm -rf packages/*/lib packages/*/out packages/*/*.tsbuildinfo examples/*/*.tsbuildinfo",
     "build": "tsc -b tsconfig.build.json && npm run build --workspace=langium-vscode --workspace=examples/domainmodel --workspace=examples/arithmetics --workspace=examples/statemachine --workspace=examples/requirements",
     "watch": "concurrently -n tsc,vscode,domainmodel,arithmetics,requirements,statemachine -c blue,yellow,green,green,green,green \"tsc -b tsconfig.build.json -w\" \"npm run watch --workspace=langium-vscode\" \"npm run watch --workspace=examples/domainmodel\" \"npm run watch --workspace=examples/arithmetics\" \"npm run watch --workspace=examples/statemachine\" \"npm run watch --workspace=examples/requirements\"",
+    "watch:tsc": "tsc -b tsconfig.build.json -w",
     "build:clean": "npm run clean && npm run build",
     "lint": "npm run lint --workspaces",
     "test": "vitest",
@@ -24,7 +25,7 @@
     "reset:repo": "git clean -f -X -d"
   },
   "devDependencies": {
-    "@types/node": "~16.18.41",
+    "@types/node": "~20.17.47",
     "@types/vscode": "~1.67.0",
     "@typescript-eslint/eslint-plugin": "~6.4.1",
     "@typescript-eslint/parser": "~6.4.1",
@@ -35,16 +36,16 @@
     "esbuild": "~0.19.2",
     "eslint": "~8.56.0",
     "eslint-plugin-header": "~3.1.1",
-    "shx": "~0.3.4",
-    "typescript": "~5.4.5",
+    "shx": "~0.4.0",
+    "typescript": "~5.8.3",
     "vitest": "~1.5.0"
   },
-  "overrides": {
-    "@types/node": "~16.18.41"
+  "optionalDependencies": {
+    "@rollup/rollup-linux-x64-gnu": "^4.0.0"
   },
   "volta": {
-    "node": "18.19.1",
-    "npm": "10.2.4"
+    "node": "20.19.2",
+    "npm": "10.8.2"
   },
   "workspaces": [
     "packages/langium",
