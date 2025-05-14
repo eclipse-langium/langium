@@ -1,4 +1,4 @@
-import type { LanguageClientOptions, ServerOptions} from 'vscode-languageclient/node.js';
+import type { LanguageClientOptions, ServerOptions } from 'vscode-languageclient/node.js';
 import type * as vscode from 'vscode';
 import * as path from 'node:path';
 import { LanguageClient, TransportKind } from 'vscode-languageclient/node.js';
@@ -6,8 +6,8 @@ import { LanguageClient, TransportKind } from 'vscode-languageclient/node.js';
 let client: LanguageClient;
 
 // This function is called when the extension is activated.
-export function activate(context: vscode.ExtensionContext): void {
-    client = startLanguageClient(context);
+export async function activate(context: vscode.ExtensionContext): Promise<void> {
+    client = await startLanguageClient(context);
 }
 
 // This function is called when the extension is deactivated.
@@ -18,7 +18,7 @@ export function deactivate(): Thenable<void> | undefined {
     return undefined;
 }
 
-function startLanguageClient(context: vscode.ExtensionContext): LanguageClient {
+async function startLanguageClient(context: vscode.ExtensionContext): Promise<LanguageClient> {
     const serverModule = context.asAbsolutePath(path.join('out', 'language', 'main.cjs'));
     // The debug options for the server
     // --inspect=6009: runs the server in Node's Inspector mode so VS Code can attach to the server for debugging.
@@ -46,6 +46,6 @@ function startLanguageClient(context: vscode.ExtensionContext): LanguageClient {
     );
 
     // Start the client. This will also launch the server
-    client.start();
+    await client.start();
     return client;
 }
