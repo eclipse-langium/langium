@@ -62,12 +62,12 @@ describe('JsonSerializer', async () => {
         const document1 = await parse(`
             element a
         `, {
-            documentUri: 'file:///test1.langium'
+            documentUri: 'file:///test1.txt'
         });
         const document2 = await parse(`
             element b refers a
         `, {
-            documentUri: 'file:///test2.langium'
+            documentUri: 'file:///test2.txt'
         });
         await services.shared.workspace.DocumentBuilder.build([document1, document2]);
         const json = serializer.serialize(document2.parseResult.value, { space: 4 });
@@ -79,7 +79,7 @@ describe('JsonSerializer', async () => {
                         "$type": "Element",
                         "name": "b",
                         "other": {
-                            "$ref": "file:///test1.langium#/elements@0"
+                            "$ref": "file:///test1.txt#/elements@0"
                         }
                     }
                 ]
@@ -91,12 +91,12 @@ describe('JsonSerializer', async () => {
         const document1 = await parse(`
             element a
         `, {
-            documentUri: 'file:///test1.langium'
+            documentUri: 'file:///test1.txt'
         });
         const document2 = await parse(`
             element b refers a
         `, {
-            documentUri: 'file:///test2.langium'
+            documentUri: 'file:///test2.txt'
         });
         await services.shared.workspace.DocumentBuilder.build([document1, document2]);
         const json = serializer.serialize(document2.parseResult.value, {
@@ -111,7 +111,7 @@ describe('JsonSerializer', async () => {
                         "$type": "Element",
                         "name": "b",
                         "other": {
-                            "$ref": "file:///foo/test1.langium#/elements@0"
+                            "$ref": "file:///foo/test1.txt#/elements@0"
                         }
                     }
                 ]
@@ -147,7 +147,7 @@ describe('JsonSerializer', async () => {
         const document1 = await parse(`
             element a
         `, {
-            documentUri: 'file:///test1.langium'
+            documentUri: 'file:///test1.txt'
         });
         await services.shared.workspace.DocumentBuilder.build([document1]);
         const json = expandToStringLF`
@@ -158,7 +158,7 @@ describe('JsonSerializer', async () => {
                         "$type": "Element",
                         "name": "b",
                         "other": {
-                            "$ref": "file:///test1.langium#/elements@0"
+                            "$ref": "file:///test1.txt#/elements@0"
                         }
                     }
                 ]
@@ -173,7 +173,7 @@ describe('JsonSerializer', async () => {
         const document1 = await parse(`
             element a
         `, {
-            documentUri: 'file:///test1.langium'
+            documentUri: 'file:///test1.txt'
         });
         await services.shared.workspace.DocumentBuilder.build([document1]);
         const json = expandToStringLF`
@@ -184,7 +184,7 @@ describe('JsonSerializer', async () => {
                         "$type": "Element",
                         "name": "b",
                         "other": {
-                            "$ref": "file:///foo/test1.langium#/elements@0"
+                            "$ref": "file:///foo/test1.txt#/elements@0"
                         }
                     }
                 ]
@@ -209,7 +209,7 @@ describe('JsonSerializer', async () => {
                         "$type": "Element",
                         "name": "b",
                         "other": {
-                            "$ref": "file:///does-not-exist.langium#/elements@0"
+                            "$ref": "file:///does-not-exist.txt#/elements@0"
                         }
                     }
                 ]
@@ -217,7 +217,7 @@ describe('JsonSerializer', async () => {
         `;
         const model = serializer.deserialize<Entry>(json);
         expect(model.elements).toHaveLength(1);
-        expect(model.elements[0].other?.error?.message).toEqual('Could not find document for URI: file:///does-not-exist.langium#/elements@0');
+        expect(model.elements[0].other?.error?.message).toEqual('Could not find document for URI: file:///does-not-exist.txt#/elements@0');
     });
 
 });

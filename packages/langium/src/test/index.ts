@@ -7,3 +7,4 @@
  */
 
 export * from './langium-test.js';
+export * from './virtual-file-system.js';

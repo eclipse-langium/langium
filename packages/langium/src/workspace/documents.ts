@@ -24,7 +24,7 @@ import type { Stream } from '../utils/stream.js';
 import { TextDocument } from './documents.js';
 import { CancellationToken } from '../utils/cancellation.js';
 import { stream } from '../utils/stream.js';
-import { URI } from '../utils/uri-utils.js';
+import { URI, UriTrie } from '../utils/uri-utils.js';
 
 /**
  * A Langium document holds the parse result (AST and CST) and any additional state that is derived
@@ -387,6 +387,13 @@ export interface LangiumDocuments {
      * @returns the affected {@link LangiumDocument} if existing for convenience
      */
     deleteDocument(uri: URI): LangiumDocument | undefined;
+    /**
+     * If the given URI is a directory, remove all documents within this directory.
+     * If it is a file, just remove that single document from the documents.
+     *
+     * @returns the affected {@link LangiumDocument}s if existing for convenience
+     */
+    deleteDocuments(uri: URI): LangiumDocument[];
 }
 
 export class DefaultLangiumDocuments implements LangiumDocuments {
@@ -394,7 +401,7 @@ export class DefaultLangiumDocuments implements LangiumDocuments {
     protected readonly langiumDocumentFactory: LangiumDocumentFactory;
     protected readonly serviceRegistry: ServiceRegistry;
 
-    protected readonly documentMap: Map<string, LangiumDocument> = new Map();
+    protected readonly documentTrie = new UriTrie<LangiumDocument>();
 
     constructor(services: LangiumSharedCoreServices) {
         this.langiumDocumentFactory = services.workspace.LangiumDocumentFactory;
@@ -402,20 +409,25 @@ export class DefaultLangiumDocuments implements LangiumDocuments {
     }
 
     get all(): Stream<LangiumDocument> {
-        return stream(this.documentMap.values());
+        return stream(this.documentTrie.all());
     }
 
     addDocument(document: LangiumDocument): void {
         const uriString = document.uri.toString();
-        if (this.documentMap.has(uriString)) {
+        if (this.documentTrie.has(uriString)) {
             throw new Error(`A document with the URI '${uriString}' is already present.`);
         }
-        this.documentMap.set(uriString, document);
+        this.documentTrie.insert(uriString, document);
     }
 
     getDocument(uri: URI): LangiumDocument | undefined {
         const uriString = uri.toString();
-        return this.documentMap.get(uriString);
+        return this.documentTrie.find(uriString);
+    }
+
+    getDocuments(folder: URI): LangiumDocument[] {
+        const uriString = folder.toString();
+        return this.documentTrie.findAll(uriString);
     }
 
     async getOrCreateDocument(uri: URI, cancellationToken?: CancellationToken): Promise<LangiumDocument> {
@@ -444,12 +456,12 @@ export class DefaultLangiumDocuments implements LangiumDocuments {
     }
 
     hasDocument(uri: URI): boolean {
-        return this.documentMap.has(uri.toString());
+        return this.documentTrie.has(uri.toString());
     }
 
     invalidateDocument(uri: URI): LangiumDocument | undefined {
         const uriString = uri.toString();
-        const langiumDoc = this.documentMap.get(uriString);
+        const langiumDoc = this.documentTrie.find(uriString);
         if (langiumDoc) {
             const linker = this.serviceRegistry.getServices(uri).references.Linker;
             linker.unlink(langiumDoc);
@@ -462,11 +474,21 @@ export class DefaultLangiumDocuments implements LangiumDocuments {
 
     deleteDocument(uri: URI): LangiumDocument | undefined {
         const uriString = uri.toString();
-        const langiumDoc = this.documentMap.get(uriString);
+        const langiumDoc = this.documentTrie.find(uriString);
         if (langiumDoc) {
             langiumDoc.state = DocumentState.Changed;
-            this.documentMap.delete(uriString);
+            this.documentTrie.delete(uriString);
         }
         return langiumDoc;
+    }
+
+    deleteDocuments(folder: URI): LangiumDocument[] {
+        const uriString = folder.toString();
+        const langiumDocs = this.documentTrie.findAll(uriString);
+        for (const langiumDoc of langiumDocs) {
+            langiumDoc.state = DocumentState.Changed;
+        }
+        this.documentTrie.delete(uriString);
+        return langiumDocs;
     }
 }

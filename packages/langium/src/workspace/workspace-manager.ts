@@ -15,6 +15,7 @@ import type { BuildOptions, DocumentBuilder } from './document-builder.js';
 import type { LangiumDocument, LangiumDocuments } from './documents.js';
 import type { FileSystemNode, FileSystemProvider } from './file-system-provider.js';
 import type { WorkspaceLock } from './workspace-lock.js';
+import { stream } from '../utils/stream.js';
 
 // export type WorkspaceFolder from 'vscode-languageserver-types' for convenience,
 //  is supposed to avoid confusion as 'WorkspaceFolder' might accidentally be imported via 'vscode-languageclient'
@@ -64,6 +65,21 @@ export interface WorkspaceManager {
      * @throws OperationCancelled if a cancellation event has been detected
      */
     initializeWorkspace(folders: WorkspaceFolder[], cancelToken?: CancellationToken): Promise<void>;
+
+    /**
+     * Searches for workspace files in the given folder and its subdirectories.
+     * Note that this method does not create documents for the found files.
+     * @param uri The URI of the folder to search in.
+     * @returns A promise that resolves to an array of URIs of the found files.
+     */
+    searchFolder(uri: URI): Promise<URI[]>;
+
+    /**
+     * Determine whether the given file system node shall be included in the workspace.
+     * @param entry The file system node to check.
+     * @returns `true` if the entry shall be included, `false` otherwise.
+     */
+    shouldIncludeEntry(entry: FileSystemNode): boolean;
 
 }
 /**
@@ -127,8 +143,6 @@ export class DefaultWorkspaceManager implements WorkspaceManager {
      * This methods loads all documents in the workspace and other documents and returns them.
      */
     protected async performStartup(folders: WorkspaceFolder[]): Promise<LangiumDocument[]> {
-        const fileExtensions = this.serviceRegistry.all.flatMap(e => e.LanguageMetaData.fileExtensions);
-        const fileNames = this.serviceRegistry.all.flatMap(e => e.LanguageMetaData.fileNames ?? []);
         const documents: LangiumDocument[] = [];
         const collector = (document: LangiumDocument) => {
             documents.push(document);
@@ -140,10 +154,17 @@ export class DefaultWorkspaceManager implements WorkspaceManager {
         // we can still assume that all library documents and file documents are loaded by the time we start building documents.
         // The mutex prevents anything from performing a workspace build until we check the cancellation token
         await this.loadAdditionalDocuments(folders, collector);
+        const uris: URI[] = [];
         await Promise.all(
-            folders.map(wf => [wf, this.getRootFolder(wf)] as [WorkspaceFolder, URI])
-                .map(async entry => this.traverseFolder(...entry, {fileExtensions, fileNames}, collector))
+            folders.map(wf => this.getRootFolder(wf))
+                .map(async entry => this.traverseFolder(entry, uris))
         );
+        // Ensure that we only create one document per URI/file
+        const uniqueUris = stream(uris).distinct(uri => uri.toString());
+        await Promise.all(uniqueUris.map(async uri => {
+            const document = await this.langiumDocuments.getOrCreateDocument(uri);
+            collector(document);
+        }));
         this._ready.resolve();
         return documents;
     }
@@ -168,26 +189,31 @@ export class DefaultWorkspaceManager implements WorkspaceManager {
 
     /**
      * Traverse the file system folder identified by the given URI and its subfolders. All
-     * contained files that match the file extensions are added to the collector.
+     * contained files that match the file extensions are added to the `uris` array.
      */
-    protected async traverseFolder(workspaceFolder: WorkspaceFolder, folderPath: URI, selector: FileSelector, collector: (document: LangiumDocument) => void): Promise<void> {
+    protected async traverseFolder(folderPath: URI, uris: URI[]): Promise<void> {
         const content = await this.fileSystemProvider.readDirectory(folderPath);
         await Promise.all(content.map(async entry => {
-            if (this.includeEntry(workspaceFolder, entry, selector)) {
+            if (this.shouldIncludeEntry(entry)) {
                 if (entry.isDirectory) {
-                    await this.traverseFolder(workspaceFolder, entry.uri, selector, collector);
+                    await this.traverseFolder(entry.uri, uris);
                 } else if (entry.isFile) {
-                    const document = await this.langiumDocuments.getOrCreateDocument(entry.uri);
-                    collector(document);
+                    uris.push(entry.uri);
                 }
             }
         }));
     }
 
+    async searchFolder(uri: URI): Promise<URI[]> {
+        const uris: URI[] = [];
+        await this.traverseFolder(uri, uris);
+        return uris;
+    }
+
     /**
      * Determine whether the given folder entry shall be included while indexing the workspace.
      */
-    protected includeEntry(_workspaceFolder: WorkspaceFolder, entry: FileSystemNode, selector: FileSelector): boolean {
+    shouldIncludeEntry(entry: FileSystemNode): boolean {
         const name = UriUtils.basename(entry.uri);
         if (name.startsWith('.')) {
             return false;
@@ -195,8 +221,7 @@ export class DefaultWorkspaceManager implements WorkspaceManager {
         if (entry.isDirectory) {
             return name !== 'node_modules' && name !== 'out';
         } else if (entry.isFile) {
-            return selector.fileExtensions.includes(UriUtils.extname(entry.uri)) ||
-                selector.fileNames.includes(UriUtils.basename(entry.uri));
+            return this.serviceRegistry.hasServices(entry.uri);
         }
         return false;
     }

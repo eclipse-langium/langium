@@ -92,32 +92,7 @@ export class DefaultDocumentUpdateHandler implements DocumentUpdateHandler {
     }
 
     protected registerFileWatcher(services: LangiumSharedServices): void {
-        const watchers: FileSystemWatcher[] = [];
-        // extensions
-        const fileExtensions = stream(services.ServiceRegistry.all)
-            .flatMap(language => language.LanguageMetaData.fileExtensions)
-            .map(ext => ext.startsWith('.') ? ext.substring(1) : ext)
-            .distinct()
-            .toArray();
-        if (fileExtensions.length > 0) {
-            watchers.push({
-                globPattern: fileExtensions.length === 1
-                    ? `**/*.${fileExtensions[0]}`
-                    : `**/*.{${fileExtensions.join(',')}}`
-            });
-        }
-        // filenames
-        const fileNames = stream(services.ServiceRegistry.all)
-            .flatMap(language => language.LanguageMetaData.fileNames ?? [])
-            .distinct()
-            .toArray();
-        if (fileNames.length > 0) {
-            watchers.push({
-                globPattern: fileNames.length === 1
-                    ? `**/${fileNames[0]}`
-                    : `**/{${fileNames.join(',')}}`
-            });
-        }
+        const watchers = this.getWatchers();
         if (watchers.length > 0) {
             const connection = services.lsp.Connection;
             const options: DidChangeWatchedFilesRegistrationOptions = { watchers };
@@ -125,10 +100,16 @@ export class DefaultDocumentUpdateHandler implements DocumentUpdateHandler {
         }
     }
 
+    protected getWatchers(): FileSystemWatcher[] {
+        return [{
+            // We need to watch all file changes in the workspace
+            // Otherwise we miss changes to directories
+            // This is a limitation of specific language client implementations
+            globPattern: '**/*'
+        }];
+    }
+
     protected fireDocumentUpdate(changed: URI[], deleted: URI[]): void {
-        // Filter out URIs that do not have a service in the registry
-        // Running the document builder update will fail for those URIs
-        changed = changed.filter(uri => this.serviceRegistry.hasServices(uri));
         // Only fire the document update when the workspace manager is ready
         // Otherwise, we might miss the initial indexing of the workspace
         this.workspaceManager.ready.then(() => {
