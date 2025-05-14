@@ -5,7 +5,7 @@
  ******************************************************************************/
 
 /* eslint-disable @typescript-eslint/no-explicit-any */
-import type { DSLMethodOpts, ILexingError, IOrAlt, IParserErrorMessageProvider, IRecognitionException, IToken, TokenType, TokenVocabulary } from 'chevrotain';
+import type { DSLMethodOpts, ILexingError, IOrAlt, IParserErrorMessageProvider, IRecognitionException, IToken, TokenType, TokenVocabulary, IRuleConfig } from 'chevrotain';
 import type { AbstractElement, Action, Assignment, InfixRule, ParserRule } from '../languages/generated/ast.js';
 import { isInfixRule } from '../languages/generated/ast.js';
 import type { Linker } from '../references/linker.js';
@@ -193,6 +193,11 @@ export interface ParserOptions {
     rule?: string
 }
 
+interface OperatorPrecedence {
+    precedence: number
+    rightAssoc: boolean
+}
+
 export class LangiumParser extends AbstractLangiumParser {
     private readonly linker: Linker;
     private readonly converter: ValueConverter;
@@ -201,7 +206,7 @@ export class LangiumParser extends AbstractLangiumParser {
     private lexerResult?: LexerResult;
     private stack: any[] = [];
     private assignmentMap = new Map<AbstractElement, AssignmentElement | undefined>();
-    private operatorPrecedence = new Map<string, Map<string, number>>();
+    private operatorPrecedence = new Map<string, Map<string, OperatorPrecedence>>();
 
     private get current(): any {
         return this.stack[this.stack.length - 1];
@@ -230,11 +235,14 @@ export class LangiumParser extends AbstractLangiumParser {
 
     private registerPrecedenceMap(rule: InfixRule): void {
         const name = rule.name;
-        const map = new Map<string, number>();
+        const map = new Map<string, OperatorPrecedence>();
         for (let i = 0; i < rule.operators.precedences.length; i++) {
             const precedence = rule.operators.precedences[i];
             for (const keyword of precedence.operators) {
-                map.set(keyword.value, i);
+                map.set(keyword.value, {
+                    precedence: i,
+                    rightAssoc: precedence.associativity === 'right'
+                });
             }
         }
         this.operatorPrecedence.set(name, map);
@@ -448,7 +456,7 @@ export class LangiumParser extends AbstractLangiumParser {
         return obj;
     }
 
-    private constructInfix(obj: InfixElement, precedence: Map<string, number>): any {
+    private constructInfix(obj: InfixElement, precedence: Map<string, OperatorPrecedence>): any {
         if (obj.parts.length === 1) {
             // Captured just a single, non-binary expression
             // Simply return the expression as is.
@@ -460,13 +468,25 @@ export class LangiumParser extends AbstractLangiumParser {
 
         for (let i = 0; i < obj.operators.length; i++) {
             const operator = obj.operators[i];
-            const precedenceValue = precedence.get(operator) ?? Infinity;
+            const opPrecedence = precedence.get(operator) ?? {
+                precedence: Infinity,
+                rightAssoc: false
+            };
 
-            // If we find an operator with lower precedence or equal precedence
-            // (for left-to-right evaluation), update our tracking
-            if (precedenceValue > lowestPrecedenceValue) {
-                lowestPrecedenceValue = precedenceValue;
+            // For equal precedence, use associativity to determine which operator to pick
+            if (opPrecedence.precedence > lowestPrecedenceValue) {
+                // Always pick operators with lower precedence (higher precedence value)
+                lowestPrecedenceValue = opPrecedence.precedence;
                 lowestPrecedenceIdx = i;
+            } else if (opPrecedence.precedence === lowestPrecedenceValue) {
+                // Check associativity when precedence is equal
+                if (!opPrecedence.rightAssoc) {
+                    // For left associative operators (default), pick the leftmost one
+                    // This means choosing the rightmost equal-precedence operator when working backwards
+                    lowestPrecedenceIdx = i;
+                }
+                // For right associative operators with equal precedence,
+                // we keep the previous (rightmost) index
             }
         }
 

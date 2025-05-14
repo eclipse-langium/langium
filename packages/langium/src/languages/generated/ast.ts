@@ -46,6 +46,7 @@ export type LangiumGrammarKeywordNames =
     | "EOF"
     | "["
     | "]"
+    | "assoc"
     | "bigint"
     | "boolean"
     | "current"
@@ -60,9 +61,11 @@ export type LangiumGrammarKeywordNames =
     | "infers"
     | "infix"
     | "interface"
+    | "left"
     | "number"
     | "on"
     | "returns"
+    | "right"
     | "string"
     | "terminal"
     | "true"
@@ -90,6 +93,12 @@ export function isAbstractType(item: unknown): item is AbstractType {
     return reflection.isInstance(item, AbstractType);
 }
 
+export type Associativity = 'left' | 'right';
+
+export function isAssociativity(item: unknown): item is Associativity {
+    return item === 'left' || item === 'right';
+}
+
 export type Condition = BooleanLiteral | Conjunction | Disjunction | Negation | ParameterReference;
 
 export const Condition = 'Condition';
@@ -98,10 +107,10 @@ export function isCondition(item: unknown): item is Condition {
     return reflection.isInstance(item, Condition);
 }
 
-export type FeatureName = 'current' | 'entry' | 'extends' | 'false' | 'fragment' | 'grammar' | 'hidden' | 'import' | 'infer' | 'infers' | 'interface' | 'returns' | 'terminal' | 'true' | 'type' | 'with' | PrimitiveType | string;
+export type FeatureName = 'assoc' | 'current' | 'entry' | 'extends' | 'false' | 'fragment' | 'grammar' | 'hidden' | 'import' | 'infer' | 'infers' | 'interface' | 'left' | 'returns' | 'right' | 'terminal' | 'true' | 'type' | 'with' | PrimitiveType | string;
 
 export function isFeatureName(item: unknown): item is FeatureName {
-    return isPrimitiveType(item) || item === 'current' || item === 'entry' || item === 'extends' || item === 'false' || item === 'fragment' || item === 'grammar' || item === 'hidden' || item === 'import' || item === 'interface' || item === 'returns' || item === 'terminal' || item === 'true' || item === 'type' || item === 'infer' || item === 'infers' || item === 'with' || (typeof item === 'string' && (/\^?[_a-zA-Z][\w_]*/.test(item)));
+    return isPrimitiveType(item) || item === 'right' || item === 'left' || item === 'assoc' || item === 'current' || item === 'entry' || item === 'extends' || item === 'false' || item === 'fragment' || item === 'grammar' || item === 'hidden' || item === 'import' || item === 'interface' || item === 'returns' || item === 'terminal' || item === 'true' || item === 'type' || item === 'infer' || item === 'infers' || item === 'with' || (typeof item === 'string' && (/\^?[_a-zA-Z][\w_]*/.test(item)));
 }
 
 export type PrimitiveType = 'Date' | 'bigint' | 'boolean' | 'number' | 'string';
@@ -261,6 +270,7 @@ export function isInfixRule(item: unknown): item is InfixRule {
 export interface InfixRuleOperatorList extends langium.AstNode {
     readonly $container: InfixRuleOperators;
     readonly $type: 'InfixRuleOperatorList';
+    associativity?: Associativity;
     operators: Array<Keyword>;
 }
 
@@ -931,6 +941,7 @@ export class LangiumGrammarAstReflection extends langium.AbstractAstReflection {
                 return {
                     name: InfixRuleOperatorList,
                     properties: [
+                        { name: 'associativity' },
                         { name: 'operators', defaultValue: [] }
                     ]
                 };

@@ -39,7 +39,7 @@ export interface ValidationAstTypes {
 export function collectTypeResources(grammars: Grammar | Grammar[], services?: LangiumCoreServices): TypeResources {
     const astResources = collectAllAstResources(grammars, undefined, undefined, services);
     const declared = collectDeclaredTypes(astResources.interfaces, astResources.types, services);
-    const inferred = collectInferredTypes(astResources.parserRules, astResources.datatypeRules, astResources.infixRules declared, services);
+    const inferred = collectInferredTypes(astResources.parserRules, astResources.datatypeRules, astResources.infixRules, declared, services);
 
     return {
         astResources,

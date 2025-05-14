@@ -78,7 +78,11 @@ InfixRule: 'infix' RuleNameAndParams 'on' call=RuleCall ':' operators=InfixRuleO
 
 InfixRuleOperators: precedences+=InfixRuleOperatorList ('>' precedences+=InfixRuleOperatorList)*;
 
-InfixRuleOperatorList: operators+=Keyword ('|' operators+=Keyword)*;
+InfixRuleOperatorList:
+    (associativity=Associativity 'assoc')?
+    operators+=Keyword ('|' operators+=Keyword)*;
+
+Associativity returns string: 'left' | 'right';
 
 InferredType<imperative>:
     (<imperative> 'infer' | <!imperative> 'infers') name=ID;
@@ -225,7 +229,7 @@ CharacterRange infers AbstractElement:
     {infer CharacterRange} left=Keyword ('..' right=Keyword)?;
 
 FeatureName returns string:
-    'current' | 'entry' | 'extends' | 'false' | 'fragment' | 'grammar' | 'hidden' | 'import' | 'interface' | 'returns' | 'terminal' | 'true' | 'type' | 'infer' | 'infers' | 'with' | PrimitiveType | ID;
+    'right' | 'left' | 'assoc' | 'current' | 'entry' | 'extends' | 'false' | 'fragment' | 'grammar' | 'hidden' | 'import' | 'interface' | 'returns' | 'terminal' | 'true' | 'type' | 'infer' | 'infers' | 'with' | PrimitiveType | ID;
 
 terminal ID: /\^?[_a-zA-Z][\w_]*/;
 terminal STRING: /"(\\.|[^"\\])*"|'(\\.|[^'\\])*'/;
