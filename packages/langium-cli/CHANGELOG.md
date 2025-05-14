@@ -2,7 +2,10 @@
 
 ## v3.5.0 (Apr. 2025)
 
-Update the internal `langium` version to 3.5.
+* Update the internal `langium` version to 3.5.
+* Comments on parser rules and properties are now reflected in the generated AST ([#1835](github.com/eclipse-langium/langium/pull/1835)).
+* Generated code now avoids name collisions with Langium imports ([#1843](https://github.com/eclipse-langium/langium/pull/1843)).
+* Supports generating GBNF grammars from the Langium grammar definition ([#1860](https://github.com/eclipse-langium/langium/pull/1860)).
 
 ## v3.4.0 (Feb. 2025)
 
