@@ -99,6 +99,14 @@ export interface UriTrieNode<T> {
     element?: T;
 }
 
+/**
+ * A trie structure for URIs. It allows to insert, delete and find elements by their URI.
+ * More specifically, it allows to efficiently find all elements that are children of a given URI.
+ *
+ * Unlike a regular trie, this implementation uses the name of the URI segments as keys.
+ *
+ * @see {@link https://en.wikipedia.org/wiki/Trie}
+ */
 export class UriTrie<T> {
 
     private readonly root: InternalUriTrieNode<T> = { name: '', children: new Map() };
@@ -158,7 +166,7 @@ export class UriTrie<T> {
     }
 
     all(): T[] {
-        return this.collectDocuments(this.root);
+        return this.collectValues(this.root);
     }
 
     findAll(prefix: URI | string): T[] {
@@ -166,7 +174,7 @@ export class UriTrie<T> {
         if (!node) {
             return [];
         }
-        return this.collectDocuments(node);
+        return this.collectValues(node);
     }
 
     private getNode(uri: string, create: true): InternalUriTrieNode<T>;
@@ -197,13 +205,13 @@ export class UriTrie<T> {
         return current;
     }
 
-    private collectDocuments(node: InternalUriTrieNode<T>): T[] {
+    private collectValues(node: InternalUriTrieNode<T>): T[] {
         const result: T[] = [];
         if (node.element) {
             result.push(node.element);
         }
         for (const child of node.children.values()) {
-            result.push(...this.collectDocuments(child));
+            result.push(...this.collectValues(child));
         }
         return result;
     }

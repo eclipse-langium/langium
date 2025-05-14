@@ -18,7 +18,17 @@ export type FileSystemFilter = (node: FileSystemNode) => boolean;
  * Provides methods to interact with an abstract file system. The default implementation is based on the node.js `fs` API.
  */
 export interface FileSystemProvider {
+    /**
+     * Gets the status of a file or directory.
+     * The status includes meta data such as whether the node is a file or directory.
+     * @param uri The URI of the file or directory.
+     */
     stat(uri: URI): Promise<FileSystemNode>;
+    /**
+     * Gets the status of a file or directory synchronously.
+     * The status includes meta data such as whether the node is a file or directory.
+     * @param uri The URI of the file or directory.
+     */
     statSync(uri: URI): FileSystemNode;
     /**
      * Reads a document asynchronously from a given URI.

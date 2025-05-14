@@ -67,19 +67,19 @@ export interface WorkspaceManager {
     initializeWorkspace(folders: WorkspaceFolder[], cancelToken?: CancellationToken): Promise<void>;
 
     /**
-     * Searches for workspace files in the given directory and its subdirectories.
+     * Searches for workspace files in the given folder and its subdirectories.
      * Note that this method does not create documents for the found files.
-     * @param uri The URI of the directory to search in.
+     * @param uri The URI of the folder to search in.
      * @returns A promise that resolves to an array of URIs of the found files.
      */
-    searchDirectory(uri: URI): Promise<URI[]>;
+    searchFolder(uri: URI): Promise<URI[]>;
 
     /**
      * Determine whether the given file system node shall be included in the workspace.
      * @param entry The file system node to check.
      * @returns `true` if the entry shall be included, `false` otherwise.
      */
-    includeEntry(entry: FileSystemNode): boolean;
+    shouldIncludeEntry(entry: FileSystemNode): boolean;
 
 }
 /**
@@ -189,12 +189,12 @@ export class DefaultWorkspaceManager implements WorkspaceManager {
 
     /**
      * Traverse the file system folder identified by the given URI and its subfolders. All
-     * contained files that match the file extensions are added to the collector.
+     * contained files that match the file extensions are added to the `uris` array.
      */
     protected async traverseFolder(folderPath: URI, uris: URI[]): Promise<void> {
         const content = await this.fileSystemProvider.readDirectory(folderPath);
         await Promise.all(content.map(async entry => {
-            if (this.includeEntry(entry)) {
+            if (this.shouldIncludeEntry(entry)) {
                 if (entry.isDirectory) {
                     await this.traverseFolder(entry.uri, uris);
                 } else if (entry.isFile) {
@@ -204,7 +204,7 @@ export class DefaultWorkspaceManager implements WorkspaceManager {
         }));
     }
 
-    async searchDirectory(uri: URI): Promise<URI[]> {
+    async searchFolder(uri: URI): Promise<URI[]> {
         const uris: URI[] = [];
         await this.traverseFolder(uri, uris);
         return uris;
@@ -213,7 +213,7 @@ export class DefaultWorkspaceManager implements WorkspaceManager {
     /**
      * Determine whether the given folder entry shall be included while indexing the workspace.
      */
-    includeEntry(entry: FileSystemNode): boolean {
+    shouldIncludeEntry(entry: FileSystemNode): boolean {
         const name = UriUtils.basename(entry.uri);
         if (name.startsWith('.')) {
             return false;

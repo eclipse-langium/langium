@@ -271,9 +271,9 @@ export class DefaultDocumentBuilder implements DocumentBuilder {
             const stat = await this.fileSystemProvider.stat(changed);
             if (stat.isDirectory) {
                 // If a directory has changed, we need to check all documents in that directory
-                const uris = await this.workspaceManager().searchDirectory(changed);
+                const uris = await this.workspaceManager().searchFolder(changed);
                 return uris;
-            } else if (this.workspaceManager().includeEntry(stat)) {
+            } else if (this.workspaceManager().shouldIncludeEntry(stat)) {
                 // Return the changed URI if it's a file that we can handle
                 return [changed];
             }
