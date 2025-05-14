@@ -6,7 +6,7 @@
 
 import type { Ignore } from 'ignore';
 import ignore from 'ignore';
-import type { ConfigurationProvider, FileSelector, FileSystemNode, WorkspaceFolder } from 'langium';
+import type { ConfigurationProvider, FileSystemNode, WorkspaceFolder } from 'langium';
 import { Cancellation, DefaultWorkspaceManager, URI, UriUtils } from 'langium';
 import type { LangiumSharedServices } from 'langium/lsp';
 import * as path from 'path';
