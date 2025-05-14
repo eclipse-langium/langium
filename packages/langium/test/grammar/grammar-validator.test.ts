@@ -1314,12 +1314,14 @@ describe('Cross-reference to type union is only valid if all alternatives are AS
         `);
 
         const grammar = validationResult.document.parseResult.value;
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        const rules = grammar.rules as any;
         expectError(validationResult, /Data type rules for cross-references must be of type string./, {
-            node: (((grammar.rules[0].definition as GrammarTypes.Group).elements[0] as GrammarTypes.Assignment).terminal as GrammarTypes.CrossReference).terminal as GrammarTypes.RuleCall,
+            node: rules[0].definition.elements[0].terminal.terminal,
             property: 'rule'
         });
         expectError(validationResult, /Terminal rules for cross-references must be of type string./, {
-            node: (((grammar.rules[0].definition as GrammarTypes.Group).elements[1] as GrammarTypes.Assignment).terminal as GrammarTypes.CrossReference).terminal as GrammarTypes.RuleCall,
+            node: rules[0].definition.elements[1].terminal.terminal,
             property: 'rule'
         });
     });

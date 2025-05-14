@@ -261,7 +261,7 @@ export class InterfaceType {
         return toString(
             expandToNode`
                 interface ${name}${superTypes.length > 0 ? ` extends ${superTypes}` : ''} {
-                    ${pushProperties(this.properties, 'DeclaredType', reservedWords)}
+                    ${pushProperties(this.properties, 'DeclaredType')}
                 }
             `.appendNewLine()
         );
@@ -415,12 +415,13 @@ function typeParenthesis(type: PropertyType, name: string): string {
 
 function pushProperties(
     properties: Property[],
-    mode: 'AstType' | 'DeclaredType',
-    reserved = new Set<string>()
+    mode: 'AstType' | 'DeclaredType'
 ): Generated {
 
     function propertyToNode(property: Property): Generated {
-        const name = mode === 'AstType' ? property.name : escapeReservedWords(property.name, reserved);
+        // We don't need to escape reserved words in the property name
+        // The parser will be able to handle it just fine
+        const name = property.name;
         const optional = property.optional && !isMandatoryPropertyType(property.type);
         const propType = propertyTypeToString(property.type, mode);
         return expandToNode`${property.comment}`

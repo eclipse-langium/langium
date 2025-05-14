@@ -7,10 +7,10 @@
 import { CstUtils, type Grammar } from 'langium';
 import { EOL } from 'langium/generate';
 import _ from 'lodash';
-import type { AbstractElement, AbstractRule, Condition, NamedArgument, Parameter } from '../../../langium/lib/languages/generated/ast.js';
+import type { AbstractElement, AbstractRule, Condition, InfixRule, NamedArgument, Parameter } from '../../../langium/lib/languages/generated/ast.js';
 import {
     isAction, isAlternatives, isAssignment,
-    isCrossReference, isGroup, isKeyword,
+    isCrossReference, isGroup, isInfixRule, isKeyword,
     isParserRule, isRegexToken,
     isRuleCall, isTerminalAlternatives, isTerminalGroup, isTerminalRule, isTerminalRuleCall
 } from '../../../langium/lib/languages/generated/ast.js';
@@ -71,7 +71,21 @@ function processRule(rule: AbstractRule, ctx: GeneratorContext): string {
         });
         return content;
     }
-    return `${ruleComment}${processName(ruleName, ctx)} ::= ${hiddenPrefix}${processElement(rule.definition, ctx)}`;
+    if (isInfixRule(rule)) {
+        return `${ruleComment}${processName(ruleName, ctx)} ::= ${hiddenPrefix}${processInfix(rule, ctx)}`;
+    } else {
+        return `${ruleComment}${processName(ruleName, ctx)} ::= ${hiddenPrefix}${processElement(rule.definition, ctx)}`;
+    }
+}
+
+function processInfix(rule: InfixRule, ctx: GeneratorContext): string {
+    const infixRuleName = processName(rule.name, ctx);
+    const variation = collectArguments(rule.call.rule.ref, rule.call.arguments, ctx);
+    const ruleName = rule.call.rule.ref?.name ?? rule.call.rule.$refText;
+    const call = processName(ruleName, ctx, variation);
+    const operators = rule.operators.precedences.flatMap(prec => prec.operators.map(op => `"${op.value}"`));
+    const allOperators = `(${operators.join(' | ')})`;
+    return `${infixRuleName} ::= ${call} (${allOperators} ${call})*`;
 }
 
 function processElement(element: AbstractElement, ctx: GeneratorContext): string {
