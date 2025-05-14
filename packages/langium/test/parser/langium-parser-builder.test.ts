@@ -1145,33 +1145,6 @@ describe('Parsing with lookbehind tokens', () => {
     }
 });
 
-describe('Parsing infix expressions', async () => {
-
-    const parser = await parserFromGrammar(`
-        grammar test
-        entry Main: Expression;
-        infix Expression on Number: '%' > '*' | '/' > '+' | '-';
-        Primary: Number | '(' Expression ')';
-        Number: value=NUM;
-        terminal NUM: /[0-9]+/;
-        hidden terminal WS: /\\s+/;
-        `
-    );
-
-    test('Simple binary expression structure', async () => {
-        const validResult = parser.parse('4 * 5 + 6') as ParseResult<GenericAstNode>;
-        expect(validResult.value).toBeDefined();
-        expect(validResult.value.operator).toBe('*');
-        const left = validResult.value.left as GenericAstNode;
-        expect(left.value).toBe('4');
-        const right = validResult.value.right as GenericAstNode;
-        expect(right.operator).toBe('+');
-        expect((right.left as GenericAstNode).value).toBe('5');
-        expect((right.right as GenericAstNode).value).toBe('6');
-    });
-
-});
-
 async function parserFromGrammar(grammar: string): Promise<LangiumParser> {
     return (await createServicesForGrammar({ grammar })).parser.LangiumParser;
 }

@@ -273,7 +273,7 @@ export class LangiumParser extends AbstractLangiumParser {
         this.nodeBuilder.addHiddenNodes(lexerResult.hidden);
         this.unorderedGroups.clear();
         this.lexerResult = undefined;
-        linkContentToContainer(result, true);
+        linkContentToContainer(result, { deep: true });
         return {
             value: result,
             lexerErrors: lexerResult.errors,
