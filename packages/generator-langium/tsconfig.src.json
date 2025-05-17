@@ -2,18 +2,7 @@
   "extends": "../../tsconfig.json",
   "compilerOptions": {
     "rootDir": "src",
-    "outDir": "app",
-
-    // there is kind of a bug in the type definitions of yeoman-generator,
-    //  namely in 'yeoman-generator/dist/generator.d.ts' that states
-    //   import EventEmitter from 'node:events';
-    //  instead of
-    //   import { EventEmitter } from 'node:events';
-    // this breaks the inheritance hierarchy of class 'Generator', whose type definition
-    //  is an implicit composition of class 'BaseGenerator' and interface 'BaseGenerator',
-    //  both defined in 'yeoman-generator/dist/generator.d.ts'
-    // the following setting instructs TSC to tolerate that.
-    "allowSyntheticDefaultImports": true
+    "outDir": "app"
   },
   "include": [
     "src/**/*"

@@ -344,7 +344,16 @@ export abstract class AbstractFormatter implements Formatter {
 
     protected getExistingIndentationCharacterCount(text: string, context: FormattingContext): number {
         const tabWhitespace = ' '.repeat(context.options.tabSize);
-        const normalized = context.options.insertSpaces ? text.replaceAll('\t', tabWhitespace) : text.replaceAll(tabWhitespace, '\t');
+        let replacement = '';
+        let regex;
+        if (context.options.insertSpaces) {
+            regex = new RegExp('\\t', 'g');
+            replacement = tabWhitespace;
+        } else {
+            regex = new RegExp(tabWhitespace, 'g');
+            replacement = '\t';
+        }
+        const normalized = text.replace(regex, replacement);
         return normalized.length;
     }
 
