@@ -207,12 +207,12 @@ export class LangiumGenerator extends Generator {
             'README.md',
             'tsconfig.json',
             'tsconfig.src.json',
-            'vitest.config.ts',
             'src',
         ];
         if (this.answers.includeTest) {
             languageFiles.push('tsconfig.test.json');
             languageFiles.push('test');
+            languageFiles.push('vitest.config.ts');
         }
         for (const path of languageFiles) {
             this.fs.copy(

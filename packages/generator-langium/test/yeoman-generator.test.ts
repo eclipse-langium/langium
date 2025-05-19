@@ -271,7 +271,7 @@ const PACKAGE_JSON_EXPECTATION_CLI: Record<string, any> = {
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 const PACKAGE_JSON_EXPECTATION_EXTENSION: Record<string, any> = {
-    name: 'hello-world-extension',
+    name: 'vscode-hello-world',
     description: 'The extension specific package',
     version: '0.0.1',
     displayName: 'hello-world',
