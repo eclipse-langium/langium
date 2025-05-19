@@ -1,0 +1,27 @@
+{
+    "name": "<%= language-id %>-workspace",
+    "description": "Base workspace package",
+    "version": "0.0.1",
+    "type": "module",
+    "private": true,
+    "scripts": {
+        "clean": "npm run clean --workspaces",
+        "watch": "tsc -b tsconfig.build.json --watch",
+        "build": "tsc -b tsconfig.build.json && npm run build --workspaces",
+        "build:clean": "npm run clean && npm run build",
+        "langium:generate": "npm run --workspace packages/language langium:generate",
+        "langium:watch": "npm run --workspace packages/language langium:watch"
+    },
+    "devDependencies": {
+        "@types/node": "^18.0.0",
+        "shx": "~0.4.0",
+        "typescript": "~5.4.5"
+    },
+    "volta": {
+        "node": "18.20.3",
+        "npm": "10.7.0"
+    },
+    "workspaces": [
+        "packages/language"
+    ]
+}

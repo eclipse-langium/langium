@@ -1,0 +1,15 @@
+{
+    "extends": "../../tsconfig.json",
+    "compilerOptions": {
+        "noEmit": true,
+        "rootDir": "."
+    },
+    "references": [
+        {
+            "path": "../language/tsconfig.src.json"
+        }
+    ],
+    "include": [
+        "src/**/*.ts"
+    ]
+}
