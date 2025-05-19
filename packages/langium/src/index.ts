@@ -23,4 +23,5 @@ export * from './workspace/index.js';
 // Export the Langium Grammar AST definitions in the `GrammarAST` namespace
 import * as GrammarAST from './languages/generated/ast.js';
 import type { Grammar } from './languages/generated/ast.js';
-export { Grammar, GrammarAST };
+export type { Grammar };
+export { GrammarAST };
