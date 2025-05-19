@@ -22,7 +22,11 @@ Evaluation:
 Expression:
     BinaryExpression;
 
-infix BinaryExpression on PrimaryExpression: '%' > '^' > '*' | '/' > '+' | '-';
+infix BinaryExpression on PrimaryExpression:
+    '%'
+    > '^'
+    > '*' | '/'
+    > '+' | '-';
 
 PrimaryExpression infers Expression:
     '(' Expression ')' |

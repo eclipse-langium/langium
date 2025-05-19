@@ -3942,6 +3942,14 @@ export const LangiumGrammarGrammar = (): Grammar => loadedLangiumGrammarGrammar 
         "elements": [
           {
             "$type": "Keyword",
+            "value": "infix"
+          },
+          {
+            "$type": "Keyword",
+            "value": "on"
+          },
+          {
+            "$type": "Keyword",
             "value": "right"
           },
           {
