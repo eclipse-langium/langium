@@ -1,7 +1,7 @@
 ---
-name: "Bug report"
-about: Report a reproducible bug or regression.
-labels: 'bug'
+name: Bug report
+about: Report a reproducible bug or regression
+type: Bug
 
 ---
 
