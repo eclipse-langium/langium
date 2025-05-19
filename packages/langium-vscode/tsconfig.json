@@ -4,7 +4,11 @@
     "rootDir": "src",
     "outDir": "out"
   },
-  "references": [{ "path": "../langium/tsconfig.src.json" }],
+  "references": [{
+    "path": "../langium/tsconfig.src.json"
+  }, {
+    "path": "../langium-railroad/tsconfig.json"
+  }],
   "include": [
     "src/**/*"
   ]

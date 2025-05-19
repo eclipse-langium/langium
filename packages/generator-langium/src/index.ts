@@ -4,7 +4,7 @@
  * terms of the MIT License, which is available in the project root.
  ******************************************************************************/
 
-import Generator from 'yeoman-generator';
+import Generator, { type PromptQuestion } from 'yeoman-generator';
 import type { CopyOptions } from 'mem-fs-editor';
 import _ from 'lodash';
 import chalk from 'chalk';
@@ -94,7 +94,7 @@ export class LangiumGenerator extends Generator {
                 ),
                 message: 'Your extension name:',
                 default: 'hello-world',
-            },
+            } as PromptQuestion<Answers>,
             {
                 type: 'input',
                 name: 'rawLanguageName',
@@ -109,7 +109,7 @@ export class LangiumGenerator extends Generator {
                     /^[a-zA-Z].*$/.test(input)
                         ? true
                         : 'The language name must start with a letter.',
-            },
+            } as PromptQuestion<Answers>,
             {
                 type: 'input',
                 name: 'fileExtensions',
@@ -123,7 +123,7 @@ export class LangiumGenerator extends Generator {
                     /^\.?\w+(\s*,\s*\.?\w+)*$/.test(input)
                         ? true
                         : 'A file extension can start with . and must contain only letters and digits. Extensions must be separated by commas.',
-            },
+            } as PromptQuestion<Answers>,
             {
                 type: 'confirm',
                 name: 'includeVSCode',
@@ -131,8 +131,8 @@ export class LangiumGenerator extends Generator {
                     'Your language can be run inside of a VSCode extension.'
                 ),
                 message: 'Include VSCode extension?',
-                default: 'yes'
-            },
+                default: true
+            } as PromptQuestion<Answers>,
             {
                 type: 'confirm',
                 name: 'includeCLI',
@@ -140,8 +140,8 @@ export class LangiumGenerator extends Generator {
                     'You can add CLI to your language.'
                 ),
                 message: 'Include CLI?',
-                default: 'yes'
-            },
+                default: true
+            } as PromptQuestion<Answers>,
             {
                 type: 'confirm',
                 name: 'includeTest',
@@ -149,8 +149,8 @@ export class LangiumGenerator extends Generator {
                     'You can add the setup for language tests using Vitest.'
                 ),
                 message: 'Include language tests?',
-                default: 'yes'
-            }
+                default: true
+            } as PromptQuestion<Answers>,
         ]);
     }
 
