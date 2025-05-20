@@ -164,6 +164,7 @@ export class DefaultDocumentValidator implements DocumentValidator {
             if (linkingError) {
                 const info: DiagnosticInfo<AstNode, string> = {
                     node: linkingError.container,
+                    range: reference.$refNode?.range,
                     property: linkingError.property,
                     index: linkingError.index,
                     data: {
