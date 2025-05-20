@@ -50,7 +50,6 @@ export function generatePrismHighlighting(grammar: Grammar, config: LangiumLangu
 }
 
 function generate(highlighter: PrismHighlighter, languageId: string): string {
-    /* eslint-disable @typescript-eslint/indent */
     return toString(
         expandToNode`
             // This file is generated using a best effort guess for your language.
@@ -74,7 +73,6 @@ function generate(highlighter: PrismHighlighter, languageId: string): string {
             };
         `.appendNewLine()
     );
-    /* eslint-enable @typescript-eslint/indent */
 }
 
 function generateElement(element: HighlightElement): Generated {
