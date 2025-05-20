@@ -994,7 +994,7 @@ describe('Handling hidden nodes', () => {
         const doc = await parser("Test returns string: /** comment 1 */ 'A' | /** comment 2 */  'B' | /** comment 3 */ 'C';");
         expect(doc).toBeDefined();
         const value = doc.parseResult.value as Grammar;
-        const ruleDef = value.rules[0].definition as GrammarAST.Alternatives;
+        const ruleDef = (value.rules[0] as GrammarAST.ParserRule).definition as GrammarAST.Alternatives;
         const a = ruleDef.elements[0];
         const commentNode = CstUtils.findCommentNode(a.$cstNode, ['ML_COMMENT']);
         expect(commentNode).toBeDefined();

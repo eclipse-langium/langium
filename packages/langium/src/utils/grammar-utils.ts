@@ -366,6 +366,9 @@ function isDataTypeRuleInternal(rule: ast.ParserRule, visited: Set<ast.ParserRul
             if (ast.isParserRule(node.rule.ref) && !isDataTypeRuleInternal(node.rule.ref, visited)) {
                 return false;
             }
+            if (ast.isInfixRule(node.rule.ref)) {
+                return false;
+            }
         } else if (ast.isAssignment(node)) {
             return false;
         } else if (ast.isAction(node)) {
@@ -411,7 +414,16 @@ function isDataTypeInternal(type: ast.TypeDefinition, visited: Set<ast.TypeDefin
     }
 }
 
-export function getExplicitRuleType(rule: ast.ParserRule): string | undefined {
+export function getExplicitRuleType(rule: ast.AbstractRule): string | undefined {
+    if (ast.isInfixRule(rule)) {
+        const call = rule.call.rule.ref;
+        if (call) {
+            return getExplicitRuleType(call);
+        }
+        return undefined;
+    } else if (ast.isTerminalRule(rule)) {
+        return undefined;
+    }
     if (rule.inferredType) {
         return rule.inferredType.name;
     } else if (rule.dataType) {
@@ -465,6 +477,8 @@ export function getActionType(action: ast.Action): string | undefined {
 export function getRuleTypeName(rule: ast.AbstractRule): string {
     if (ast.isTerminalRule(rule)) {
         return rule.type?.name ?? 'string';
+    } else if (ast.isInfixRule(rule)) {
+        return rule.name;
     } else {
         return isDataTypeRule(rule) ? rule.name : getExplicitRuleType(rule) ?? rule.name;
     }
@@ -480,6 +494,8 @@ export function getRuleTypeName(rule: ast.AbstractRule): string {
 export function getRuleType(rule: ast.AbstractRule): string {
     if (ast.isTerminalRule(rule)) {
         return rule.type?.name ?? 'string';
+    } else if (ast.isInfixRule(rule)) {
+        return rule.name;
     } else {
         return getExplicitRuleType(rule) ?? rule.name;
     }

@@ -79,6 +79,21 @@ export class LangiumGrammarFormatter extends AbstractFormatter {
             const nodes = formatter.nodes(...node.rules, ...node.interfaces, ...node.types, ...node.imports);
             nodes.prepend(Formatting.noIndent());
             formatter.keyword('grammar').prepend(Formatting.noSpace()).append(Formatting.oneSpace());
+        } else if (ast.isInfixRuleOperatorList(node)) {
+            const formatter = this.getNodeFormatter(node);
+            formatter.keywords('left', 'right').append(Formatting.oneSpace());
+            formatter.keywords('|').surround(Formatting.oneSpace());
+        } else if (ast.isInfixRuleOperators(node)) {
+            const formatter = this.getNodeFormatter(node);
+            formatter.keywords('>').prepend(Formatting.newLine());
+        } else if (ast.isInfixRule(node)) {
+            const formatter = this.getNodeFormatter(node);
+            formatter.keyword('infix').append(Formatting.oneSpace());
+            formatter.keyword('on').append(Formatting.oneSpace());
+            const semicolon = formatter.keyword(';');
+            const colon = formatter.keyword(':');
+            colon.prepend(Formatting.noSpace());
+            formatter.interior(colon, semicolon).prepend(Formatting.indent());
         }
 
         if (ast.isAbstractElement(node)) {
