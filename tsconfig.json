@@ -46,7 +46,9 @@
     // Skip type checking of declaration files.
     "skipLibCheck": true,
     // This setting controls how TypeScript determines whether a file is a script or a module.
-    "moduleDetection": "force"
+    "moduleDetection": "force",
+    // any imports or exports without a type modifier are left around. Anything that uses the type modifier is dropped entirely.
+    "verbatimModuleSyntax": true
   },
   "include": [
      "**/src/**/*",
