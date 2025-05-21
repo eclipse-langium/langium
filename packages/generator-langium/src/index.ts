@@ -213,7 +213,6 @@ export class LangiumGenerator extends Generator {
         // .gitignore files don't get published to npm, so we need to copy it under a different name
         this.fs.copy(this.templatePath('gitignore.txt'), this._extensionPath('.gitignore'));
 
-        this.log(this.answers.includeExampleCode);
         if (this.answers.includeExampleCode) {
             this.sourceRoot(path.join(__dirname, `${BASE_DIR}/${PACKAGE_LANGUAGE}`));
             const languageFiles = [
@@ -258,6 +257,11 @@ export * from './generated/module.js';
             // Write language index.ts and langium-config.json
             this.fs.write(this._extensionPath('packages/language/src/index.ts'), languageIndex);
             this.fs.writeJSON(this._extensionPath('packages/language/langium-config.json'), langiumConfigJson, undefined, 4);
+        }
+        else {
+            // Add skip-generate and skip-build as arguments
+            // when no exploitable code is generated
+            this.args.push('skip-generate', 'skip-build');
         }
 
         if (this.answers.includeTest) {
@@ -334,7 +338,9 @@ export * from './generated/module.js';
         if(!this.args.includes('skip-install')) {
             this.spawnSync('npm', ['install'], opts);
         }
-        this.spawnSync('npm', ['run', 'langium:generate'], opts);
+        if(!this.args.includes('skip-generate')) {
+            this.spawnSync('npm', ['run', 'langium:generate'], opts);
+        }
         if(!this.args.includes('skip-build')) {
             this.spawnSync('npm', ['run', 'build'], opts);
         }
