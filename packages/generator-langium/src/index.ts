@@ -213,46 +213,52 @@ export class LangiumGenerator extends Generator {
         // .gitignore files don't get published to npm, so we need to copy it under a different name
         this.fs.copy(this.templatePath('gitignore.txt'), this._extensionPath('.gitignore'));
 
-        this.sourceRoot(path.join(__dirname, `${BASE_DIR}/${PACKAGE_LANGUAGE}`));
-        const languageFiles = [
-            'package.json',
-            'README.md',
-            'tsconfig.json',
-            'tsconfig.src.json',
-            'src',
-        ];
-        if (this.answers.includeTest) {
-            languageFiles.push('tsconfig.test.json');
-            languageFiles.push('test');
-            languageFiles.push('vitest.config.ts');
-        }
-        for (const path of languageFiles) {
-            this.fs.copy(
-                this.templatePath(path),
-                this._extensionPath(`${PACKAGE_LANGUAGE}/${path}`),
-                templateCopyOptions
-            );
-        }
+        this.log(this.answers.includeExampleCode);
+        if (this.answers.includeExampleCode) {
+            this.sourceRoot(path.join(__dirname, `${BASE_DIR}/${PACKAGE_LANGUAGE}`));
+            const languageFiles = [
+                'package.json',
+                'README.md',
+                'tsconfig.json',
+                'tsconfig.src.json',
+                'src',
+            ];
+            if (this.answers.includeTest) {
+                languageFiles.push('tsconfig.test.json');
+                languageFiles.push('test');
+                languageFiles.push('vitest.config.ts');
+            }
+            for (const path of languageFiles) {
+                this.fs.copy(
+                    this.templatePath(path),
+                    this._extensionPath(`${PACKAGE_LANGUAGE}/${path}`),
+                    templateCopyOptions
+                );
+            }
 
-        const langiumConfigJson = {
-            projectName: languageName,
-            languages: [{
-                id: languageId,
-                grammar: `src/${languageId}.langium`,
-                fileExtensions: [ fileExtensionGlob ],
-                textMate: {
-                    out: `syntaxes/${languageId}.tmLanguage.json`
-                }
-            } as LangiumLanguageConfigSubset],
-            out: 'src/generated'
-        };
+            const langiumConfigJson = {
+                projectName: languageName,
+                languages: [{
+                    id: languageId,
+                    grammar: `src/${languageId}.langium`,
+                    fileExtensions: [ fileExtensionGlob ],
+                    textMate: {
+                        out: `syntaxes/${languageId}.tmLanguage.json`
+                    }
+                } as LangiumLanguageConfigSubset],
+                out: 'src/generated'
+            };
 
-        const languageIndex = `export * from './${languageId}-module.js';
+            const languageIndex = `export * from './${languageId}-module.js';
 export * from './${languageId}-validator.js';
 export * from './generated/ast.js';
 export * from './generated/grammar.js';
 export * from './generated/module.js';
 `;
+            // Write language index.ts and langium-config.json
+            this.fs.write(this._extensionPath('packages/language/src/index.ts'), languageIndex);
+            this.fs.writeJSON(this._extensionPath('packages/language/langium-config.json'), langiumConfigJson, undefined, 4);
+        }
 
         if (this.answers.includeTest) {
             mainPackageJson.scripts.test = 'npm run --workspace packages/language test';
@@ -291,10 +297,6 @@ export * from './generated/module.js';
             mainPackageJson.workspaces.push('packages/cli');
             tsConfigBuildJson.references.push({ path: './packages/cli/tsconfig.json' });
         }
-
-        // Write language index.ts and langium-config.json
-        this.fs.write(this._extensionPath('packages/language/src/index.ts'), languageIndex);
-        this.fs.writeJSON(this._extensionPath('packages/language/langium-config.json'), langiumConfigJson, undefined, 4);
 
         if (this.answers.includeVSCode) {
             this.sourceRoot(path.join(__dirname, `${BASE_DIR}/${PACKAGE_EXTENSION}`));
