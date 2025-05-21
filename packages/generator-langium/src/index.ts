@@ -149,7 +149,8 @@ export class LangiumGenerator extends Generator {
                 type: 'confirm',
                 name: 'includeExampleCode',
                 prefix: description(
-                    'You can add an example language to play around with Langium.'
+                    'You can add an example language to play around with Langium.',
+                    'If not, a blank project will be generated.'
                 ),
                 message: 'Add example code?',
                 default: true
@@ -162,8 +163,6 @@ export class LangiumGenerator extends Generator {
                 ),
                 message: 'Include language tests?',
                 default: true,
-                // Only ask for tests when example code is included
-                when: (answers: Answers) => answers.includeExampleCode
             } as PromptQuestion<Answers>
         ]);
     }
