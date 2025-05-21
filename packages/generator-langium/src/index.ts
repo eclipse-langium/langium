@@ -20,6 +20,8 @@ const PACKAGE_LANGUAGE = 'packages/language';
 const PACKAGE_LANGUAGE_EXAMPLE = 'packages/language-example';
 const PACKAGE_LANGUAGE_MINIMAL = 'packages/language-minimal';
 const PACKAGE_CLI = 'packages/cli';
+const PACKAGE_CLI_EXAMPLE = 'packages/cli-example';
+const PACKAGE_CLI_MINIMAL = 'packages/cli-minimal';
 const PACKAGE_EXTENSION = 'packages/extension';
 const USER_DIR = '.';
 
@@ -138,21 +140,21 @@ export class LangiumGenerator extends Generator {
             } as PromptQuestion<Answers>,
             {
                 type: 'confirm',
-                name: 'includeCLI',
-                prefix: description(
-                    'You can add CLI to your language.'
-                ),
-                message: 'Include CLI?',
-                default: true
-            } as PromptQuestion<Answers>,
-            {
-                type: 'confirm',
                 name: 'includeExampleCode',
                 prefix: description(
                     'You can add an example language to play around with Langium.',
                     'If not, a blank project will be generated.'
                 ),
                 message: 'Add example code?',
+                default: true
+            } as PromptQuestion<Answers>,
+            {
+                type: 'confirm',
+                name: 'includeCLI',
+                prefix: description(
+                    'You can add CLI to your language.'
+                ),
+                message: 'Include CLI?',
                 default: true
             } as PromptQuestion<Answers>,
             {
@@ -286,7 +288,9 @@ export * from './generated/module.js';
         }
 
         if (this.answers.includeCLI) {
-            this.sourceRoot(path.join(__dirname, `${BASE_DIR}/${PACKAGE_CLI}`));
+            this.sourceRoot(path.join(__dirname, `${BASE_DIR}/${
+                this.answers.includeExampleCode ? PACKAGE_CLI_EXAMPLE : PACKAGE_CLI_MINIMAL
+            }`));
             const cliFiles = [
                 'package.json',
                 'tsconfig.json',
