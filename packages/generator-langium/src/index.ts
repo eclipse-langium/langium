@@ -159,7 +159,9 @@ export class LangiumGenerator extends Generator {
                     'You can add the setup for language tests using Vitest.'
                 ),
                 message: 'Include language tests?',
-                default: true
+                default: true,
+                // Only ask for tests when example code is included
+                when: (answers: Answers) => answers.includeExampleCode
             } as PromptQuestion<Answers>
         ]);
     }
