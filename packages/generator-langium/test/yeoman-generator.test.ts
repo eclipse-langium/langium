@@ -18,6 +18,7 @@ const answersForCore: Answers & PostAnwers = {
     fileExtensions: '.hello',
     includeVSCode: false,
     includeCLI: false,
+    includeExampleCode: false,
     includeTest: false,
     openWith: false
 };

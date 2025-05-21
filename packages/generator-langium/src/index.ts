@@ -38,6 +38,7 @@ export interface Answers {
     fileExtensions: string;
     includeVSCode: boolean;
     includeCLI: boolean;
+    includeExampleCode: boolean;
     includeTest: boolean;
 }
 
@@ -140,6 +141,15 @@ export class LangiumGenerator extends Generator {
                     'You can add CLI to your language.'
                 ),
                 message: 'Include CLI?',
+                default: true
+            } as PromptQuestion<Answers>,
+            {
+                type: 'confirm',
+                name: 'includeExampleCode',
+                prefix: description(
+                    'You can add an example language to play around with Langium.'
+                ),
+                message: 'Add example code?',
                 default: true
             } as PromptQuestion<Answers>,
             {
