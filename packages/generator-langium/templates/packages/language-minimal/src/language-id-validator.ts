@@ -9,7 +9,7 @@ export function registerValidationChecks(services: <%= LanguageName %>Services) 
     const registry = services.validation.ValidationRegistry;
     const validator = services.validation.<%= LanguageName %>Validator;
     const checks: ValidationChecks<<%= LanguageName %>AstType> = {
-        Person: validator.checkPersonStartsWithCapital
+        // TODO: Add logic for validation checks of properties
     };
     registry.register(checks, validator);
 }
