@@ -17,6 +17,8 @@ const __dirname = url.fileURLToPath(new URL('.', import.meta.url));
 
 const BASE_DIR = '../templates';
 const PACKAGE_LANGUAGE = 'packages/language';
+const PACKAGE_LANGUAGE_EXAMPLE = 'packages/language-example';
+const PACKAGE_LANGUAGE_MINIMAL = 'packages/language-minimal';
 const PACKAGE_CLI = 'packages/cli';
 const PACKAGE_EXTENSION = 'packages/extension';
 const USER_DIR = '.';
@@ -214,55 +216,57 @@ export class LangiumGenerator extends Generator {
         this.fs.copy(this.templatePath('gitignore.txt'), this._extensionPath('.gitignore'));
 
         if (this.answers.includeExampleCode) {
-            this.sourceRoot(path.join(__dirname, `${BASE_DIR}/${PACKAGE_LANGUAGE}`));
-            const languageFiles = [
-                'package.json',
-                'README.md',
-                'tsconfig.json',
-                'tsconfig.src.json',
-                'src',
-            ];
-            if (this.answers.includeTest) {
-                languageFiles.push('tsconfig.test.json');
-                languageFiles.push('test');
-                languageFiles.push('vitest.config.ts');
-            }
-            for (const path of languageFiles) {
-                this.fs.copy(
-                    this.templatePath(path),
-                    this._extensionPath(`${PACKAGE_LANGUAGE}/${path}`),
-                    templateCopyOptions
-                );
-            }
+            this.sourceRoot(path.join(__dirname, `${BASE_DIR}/${PACKAGE_LANGUAGE_EXAMPLE}`));
+        }
+        else {
+            this.sourceRoot(path.join(__dirname, `${BASE_DIR}/${PACKAGE_LANGUAGE_MINIMAL}`));
+            // Add skip-generate and skip-build as arguments
+            // when no exploitable code is generated
+            this.args.push('skip-generate', 'skip-build');
+        }
 
-            const langiumConfigJson = {
-                projectName: languageName,
-                languages: [{
-                    id: languageId,
-                    grammar: `src/${languageId}.langium`,
-                    fileExtensions: [ fileExtensionGlob ],
-                    textMate: {
-                        out: `syntaxes/${languageId}.tmLanguage.json`
-                    }
-                } as LangiumLanguageConfigSubset],
-                out: 'src/generated'
-            };
+        const languageFiles = [
+            'package.json',
+            'README.md',
+            'tsconfig.json',
+            'tsconfig.src.json',
+            'src',
+        ];
+        if (this.answers.includeTest) {
+            languageFiles.push('tsconfig.test.json');
+            languageFiles.push('test');
+            languageFiles.push('vitest.config.ts');
+        }
+        for (const path of languageFiles) {
+            this.fs.copy(
+                this.templatePath(path),
+                this._extensionPath(`${PACKAGE_LANGUAGE}/${path}`),
+                templateCopyOptions
+            );
+        }
 
-            const languageIndex = `export * from './${languageId}-module.js';
+        const langiumConfigJson = {
+            projectName: languageName,
+            languages: [{
+                id: languageId,
+                grammar: `src/${languageId}.langium`,
+                fileExtensions: [ fileExtensionGlob ],
+                textMate: {
+                    out: `syntaxes/${languageId}.tmLanguage.json`
+                }
+            } as LangiumLanguageConfigSubset],
+            out: 'src/generated'
+        };
+
+        const languageIndex = `export * from './${languageId}-module.js';
 export * from './${languageId}-validator.js';
 export * from './generated/ast.js';
 export * from './generated/grammar.js';
 export * from './generated/module.js';
 `;
-            // Write language index.ts and langium-config.json
-            this.fs.write(this._extensionPath('packages/language/src/index.ts'), languageIndex);
-            this.fs.writeJSON(this._extensionPath('packages/language/langium-config.json'), langiumConfigJson, undefined, 4);
-        }
-        else {
-            // Add skip-generate and skip-build as arguments
-            // when no exploitable code is generated
-            this.args.push('skip-generate', 'skip-build');
-        }
+        // Write language index.ts and langium-config.json
+        this.fs.write(this._extensionPath('packages/language/src/index.ts'), languageIndex);
+        this.fs.writeJSON(this._extensionPath('packages/language/langium-config.json'), langiumConfigJson, undefined, 4);
 
         if (this.answers.includeTest) {
             mainPackageJson.scripts.test = 'npm run --workspace packages/language test';
