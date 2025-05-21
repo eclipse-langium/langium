@@ -1,9 +1,4 @@
-import type { Model } from '<%= language-id %>-language';
-import { create<%= LanguageName %>Services, <%= LanguageName %>LanguageMetaData } from '<%= language-id %>-language';
-import chalk from 'chalk';
 import { Command } from 'commander';
-import { extractAstNode } from './util.js';
-import { NodeFileSystem } from 'langium/node';
 import * as url from 'node:url';
 import * as fs from 'node:fs/promises';
 import * as path from 'node:path';
@@ -20,8 +15,6 @@ export default function(): void {
     const program = new Command();
 
     program.version(JSON.parse(packageContent).version);
-
-    const fileExtensions = <%= LanguageName %>LanguageMetaData.fileExtensions.join(', ');
 
     // TODO: use Program API to declare the CLI
 
