@@ -142,13 +142,20 @@ function _resolve<I, T>(obj: any, prop: string | symbol | number, module: Module
  */
 function _merge(target: Module<any>, source?: Module<any>): Module<unknown> {
     if (source) {
-        for (const [key, value2] of Object.entries(source)) {
-            if (value2 !== undefined) {
-                const value1 = target[key];
-                if (value1 !== null && value2 !== null && typeof value1 === 'object' && typeof value2 === 'object') {
-                    target[key] = _merge(value1, value2);
+        for (const [key, sourceValue] of Object.entries(source)) {
+            if (sourceValue !== undefined && sourceValue !== null) {
+                const targetValue = target[key];
+                if (typeof sourceValue === 'object') {
+                    if (typeof targetValue === 'object' && targetValue !== null) {
+                        target[key] = _merge(targetValue, sourceValue);
+                    } else {
+                        target[key] = _merge({}, sourceValue);
+                    }
                 } else {
-                    target[key] = value2;
+                    target[key] = sourceValue;
+                    // note the following for values being service constructor functions:
+                    // 'target[key]' will now reference the same function object being referenced by 'source[key]'.
+                    // This is accepted here, since function objects cannot be safely copied in general.
                 }
             }
         }

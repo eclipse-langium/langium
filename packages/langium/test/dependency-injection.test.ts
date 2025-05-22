@@ -7,9 +7,8 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 /* eslint-disable @typescript-eslint/no-unused-vars */
 
-import type { Module } from 'langium';
+import { Module, inject } from 'langium';
 import { describe, expect, test } from 'vitest';
-import { inject } from 'langium';
 
 describe('A dependency type', () => {
 
@@ -356,4 +355,98 @@ describe('The inject result', () => {
         expect(() => (obj.a = 1)).toThrowError('Cannot set property on injected service container');
     });
 
+});
+
+describe('The Module.merge function', () => {
+
+    const moduleA: Module<{ a: unknown, b: unknown }> = Object.freeze({ a: () => 1,       b: () => ({ b: 2 }) });
+    const moduleB: Module<{ c: unknown, d: unknown }> = Object.freeze({ c: () => () => 3, d: () => [ 4, 5]    });
+
+    test('Merge two flat modules', () => {
+        const merged = Module.merge(moduleA, moduleB);
+
+        expect(merged).toEqual({
+            ...moduleA,
+            ...moduleB,
+        });
+
+        // 'moduleA' and 'moduleB' shall stay unchanged during the merge,
+        //   which is enforced by them being frozen;
+
+        // this implies that:
+        // 'merged' is supposed to be a new object, different from moduleA and moduleB
+        expect(merged).not.toBe(moduleA);
+        expect(merged).not.toBe(moduleB);
+    });
+
+    test('Merge two nested modules with different parent keys', () => {
+        type NestedModule = {
+            subModuleA: typeof moduleA,
+            subModuleB: typeof moduleB
+        }
+
+        const m1: Partial<NestedModule> = { subModuleA: moduleA };
+        const m2: Partial<NestedModule> = { subModuleB: moduleB };
+
+        const merged = Module.merge(m1, m2);
+
+        expect(merged).toEqual({
+            subModuleA: moduleA,
+            subModuleB: moduleB
+        });
+
+        // 'merged.subModuleA' and 'merged.subModuleB' are supposed to be new objects, different from moduleA and moduleB
+        expect(merged.subModuleA).not.toBe(moduleA);
+        expect(merged.subModuleB).not.toBe(moduleB);
+    });
+
+    test('Merge two nested modules with equal parent keys and different child keys', () => {
+        type NestedModule = {
+            subModule: Partial<typeof moduleA & typeof moduleB>,
+        }
+
+        const m1: Partial<NestedModule> = { subModule: moduleA };
+        const m2: Partial<NestedModule> = { subModule: moduleB };
+
+        const merged = Module.merge(m1, m2);
+
+        expect(merged).toEqual({
+            subModule: {
+                ...moduleA,
+                ...moduleB
+            }
+        });
+
+        // 'merged.subModule' is supposed to be a new object, different from moduleA and moduleB
+        expect(merged.subModule).not.toBe(moduleA);
+        expect(merged.subModule).not.toBe(moduleB);
+
+        // besides, 'moduleA' and 'moduleB' shall stay unchanged during the merge,
+        //   which is enforced by them being frozen;
+    });
+
+    test('Merge two nested modules with equal parent keys and equal child keys', () => {
+        type NestedModule = {
+            subModule: Partial<typeof moduleA>,
+        }
+
+        const m1: Partial<NestedModule> = { subModule: moduleA };
+        const m2: Partial<NestedModule> = { subModule: Object.freeze({ a: moduleB.c, b: moduleB.d}) };
+
+        const merged = Module.merge(m1, m2);
+
+        expect(merged).toEqual({
+            subModule: {
+                a: moduleB.c,
+                b: moduleB.d
+            }
+        });
+
+        // 'merged.subModule' is supposed to be a new object, different from moduleA and m2.subModule
+        expect(merged.subModule).not.toBe(moduleA);
+        expect(merged.subModule).not.toBe(m2.subModule);
+
+        // besides, 'moduleA' and 'm2.subModule' shall stay unchanged during the merge,
+        //   which is enforced by them being frozen;
+    });
 });
