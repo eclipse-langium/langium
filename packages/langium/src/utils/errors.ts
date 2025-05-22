@@ -12,6 +12,12 @@ export class ErrorWithLocation extends Error {
     }
 }
 
-export function assertUnreachable(_: never): never {
-    throw new Error('Error! The input value was not handled.');
+export function assertUnreachable(_: never, message = 'Error: Got unexpected value.'): never {
+    throw new Error(message);
+}
+
+export function assertCondition(condition: boolean, message: string = 'Error: Condition is violated.'): asserts condition {
+    if (!condition) {
+        throw new Error(message);
+    }
 }
