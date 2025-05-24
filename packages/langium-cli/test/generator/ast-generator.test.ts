@@ -390,6 +390,33 @@ describe('Ast generator', () => {
     };`
     );
 
+    testTypeMetaData('should generate property metadata for empty types', `
+        grammar TestGrammar
+
+        interface IAmArray { }
+        interface DeclaredArray extends IAmArray{
+            elements: ArrayContent[];
+        }
+
+        DeclaredArray returns DeclaredArray:
+            'declared' (elements+=ArrayContent)* ';';
+
+        hidden terminal WS: /\\s+/;
+        terminal ID: /[_a-zA-Z][\\w_]*/;
+    `,
+`    readonly IAmArray = {
+        $name: IAmArray,
+        $properties: [
+        ]
+    };
+    readonly DeclaredArray = {
+        $name: DeclaredArray,
+        $properties: [
+            { name: 'elements', defaultValue: [] }
+        ]
+    };`
+    );
+
     testTypeMetaData('should generate escaped default value', `
         grammar TestGrammar
 

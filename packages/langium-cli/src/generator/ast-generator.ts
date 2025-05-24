@@ -73,20 +73,15 @@ function generateAstReflection(config: LangiumConfig, astTypes: AstTypes): Gener
 
 function buildTypeMetaDataMethod(astTypes: AstTypes): Generated {
     return joinToNode(
-        astTypes.interfaces,
-        interfaceType => {
-            const props = interfaceType.superProperties;
-            return (props.length > 0)
-                ? expandToNode`
-                    readonly ${interfaceType.name} = {
-                        $name: ${interfaceType.name},
-                        $properties: [
-                            ${buildPropertyType(props)}
-                        ]
-                    };
-                `
-                : undefined;
-        },
+        astTypes.interfaces, // this does not include union types like "A = B | C"!
+        interfaceType => expandToNode`
+            readonly ${interfaceType.name} = {
+                $name: ${interfaceType.name},
+                $properties: [
+                    ${buildPropertyType(interfaceType.superProperties /* own and inherited properties! */)}
+                ]
+            };
+        `,
         {
             appendNewLineIfNotEmpty: true
         }

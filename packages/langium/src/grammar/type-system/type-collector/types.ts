@@ -163,6 +163,7 @@ export class InterfaceType {
 
     properties: Property[] = [];
 
+    /** All own and all inherited properties. */
     get superProperties(): Property[] {
         return this.getSuperProperties(new Set());
     }
