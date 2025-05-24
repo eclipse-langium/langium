@@ -78,8 +78,8 @@ function buildTypeMetaDataMethod(astTypes: AstTypes): Generated {
                             ? expandToNode`
                                 case ${interfaceType.name}: {
                                     return {
-                                        name: ${interfaceType.name},
-                                        properties: [
+                                        $name: ${interfaceType.name},
+                                        $properties: [
                                             ${buildPropertyType(props)}
                                         ]
                                     };
@@ -94,8 +94,8 @@ function buildTypeMetaDataMethod(astTypes: AstTypes): Generated {
             }
             default: {
                 return {
-                    name: type,
-                    properties: []
+                    $name: type,
+                    $properties: []
                 };
             }
         }

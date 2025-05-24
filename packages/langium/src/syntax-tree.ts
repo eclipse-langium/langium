@@ -200,9 +200,9 @@ export abstract class AbstractAstReflection implements AstReflection {
  */
 export interface TypeMetaData {
     /** The name of this meta model type. Corresponds to the `AstNode.$type` value. */
-    name: string
+    $name: string
     /** A list of properties. They can contain default values for their respective property in the AST. */
-    properties: TypeProperty[]
+    $properties: TypeProperty[]
 }
 
 /**

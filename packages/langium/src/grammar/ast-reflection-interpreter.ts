@@ -71,8 +71,8 @@ class InterpretedAstReflection extends AbstractAstReflection {
 
     getTypeMetaData(type: string): TypeMetaData {
         return this.metaData.get(type) ?? {
-            name: type,
-            properties: []
+            $name: type,
+            $properties: []
         };
     }
 
@@ -113,8 +113,8 @@ function buildTypeMetaData(astTypes: AstTypes): Map<string, TypeMetaData> {
     for (const interfaceType of astTypes.interfaces) {
         const props = interfaceType.superProperties;
         map.set(interfaceType.name, {
-            name: interfaceType.name,
-            properties: buildPropertyMetaData(props)
+            $name: interfaceType.name,
+            $properties: buildPropertyMetaData(props)
         });
     }
     return map;

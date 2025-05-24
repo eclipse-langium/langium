@@ -151,24 +151,24 @@ export class StatemachineAstReflection extends langium.AbstractAstReflection {
         switch (type) {
             case Command: {
                 return {
-                    name: Command,
-                    properties: [
+                    $name: Command,
+                    $properties: [
                         { name: 'name' }
                     ]
                 };
             }
             case Event: {
                 return {
-                    name: Event,
-                    properties: [
+                    $name: Event,
+                    $properties: [
                         { name: 'name' }
                     ]
                 };
             }
             case State: {
                 return {
-                    name: State,
-                    properties: [
+                    $name: State,
+                    $properties: [
                         { name: 'actions', defaultValue: [] },
                         { name: 'name' },
                         { name: 'transitions', defaultValue: [] }
@@ -177,8 +177,8 @@ export class StatemachineAstReflection extends langium.AbstractAstReflection {
             }
             case Statemachine: {
                 return {
-                    name: Statemachine,
-                    properties: [
+                    $name: Statemachine,
+                    $properties: [
                         { name: 'commands', defaultValue: [] },
                         { name: 'events', defaultValue: [] },
                         { name: 'init' },
@@ -189,8 +189,8 @@ export class StatemachineAstReflection extends langium.AbstractAstReflection {
             }
             case Transition: {
                 return {
-                    name: Transition,
-                    properties: [
+                    $name: Transition,
+                    $properties: [
                         { name: 'event' },
                         { name: 'state' }
                     ]
@@ -198,8 +198,8 @@ export class StatemachineAstReflection extends langium.AbstractAstReflection {
             }
             default: {
                 return {
-                    name: type,
-                    properties: []
+                    $name: type,
+                    $properties: []
                 };
             }
         }

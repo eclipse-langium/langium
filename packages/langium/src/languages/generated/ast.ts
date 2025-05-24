@@ -789,8 +789,8 @@ export class LangiumGrammarAstReflection extends langium.AbstractAstReflection {
         switch (type) {
             case AbstractElement: {
                 return {
-                    name: AbstractElement,
-                    properties: [
+                    $name: AbstractElement,
+                    $properties: [
                         { name: 'cardinality' },
                         { name: 'lookahead' }
                     ]
@@ -798,32 +798,32 @@ export class LangiumGrammarAstReflection extends langium.AbstractAstReflection {
             }
             case ArrayLiteral: {
                 return {
-                    name: ArrayLiteral,
-                    properties: [
+                    $name: ArrayLiteral,
+                    $properties: [
                         { name: 'elements', defaultValue: [] }
                     ]
                 };
             }
             case ArrayType: {
                 return {
-                    name: ArrayType,
-                    properties: [
+                    $name: ArrayType,
+                    $properties: [
                         { name: 'elementType' }
                     ]
                 };
             }
             case BooleanLiteral: {
                 return {
-                    name: BooleanLiteral,
-                    properties: [
+                    $name: BooleanLiteral,
+                    $properties: [
                         { name: 'true', defaultValue: false }
                     ]
                 };
             }
             case Conjunction: {
                 return {
-                    name: Conjunction,
-                    properties: [
+                    $name: Conjunction,
+                    $properties: [
                         { name: 'left' },
                         { name: 'right' }
                     ]
@@ -831,8 +831,8 @@ export class LangiumGrammarAstReflection extends langium.AbstractAstReflection {
             }
             case Disjunction: {
                 return {
-                    name: Disjunction,
-                    properties: [
+                    $name: Disjunction,
+                    $properties: [
                         { name: 'left' },
                         { name: 'right' }
                     ]
@@ -840,8 +840,8 @@ export class LangiumGrammarAstReflection extends langium.AbstractAstReflection {
             }
             case Grammar: {
                 return {
-                    name: Grammar,
-                    properties: [
+                    $name: Grammar,
+                    $properties: [
                         { name: 'definesHiddenTokens', defaultValue: false },
                         { name: 'hiddenTokens', defaultValue: [] },
                         { name: 'imports', defaultValue: [] },
@@ -856,24 +856,24 @@ export class LangiumGrammarAstReflection extends langium.AbstractAstReflection {
             }
             case GrammarImport: {
                 return {
-                    name: GrammarImport,
-                    properties: [
+                    $name: GrammarImport,
+                    $properties: [
                         { name: 'path' }
                     ]
                 };
             }
             case InferredType: {
                 return {
-                    name: InferredType,
-                    properties: [
+                    $name: InferredType,
+                    $properties: [
                         { name: 'name' }
                     ]
                 };
             }
             case Interface: {
                 return {
-                    name: Interface,
-                    properties: [
+                    $name: Interface,
+                    $properties: [
                         { name: 'attributes', defaultValue: [] },
                         { name: 'name' },
                         { name: 'superTypes', defaultValue: [] }
@@ -882,8 +882,8 @@ export class LangiumGrammarAstReflection extends langium.AbstractAstReflection {
             }
             case NamedArgument: {
                 return {
-                    name: NamedArgument,
-                    properties: [
+                    $name: NamedArgument,
+                    $properties: [
                         { name: 'calledByName', defaultValue: false },
                         { name: 'parameter' },
                         { name: 'value' }
@@ -892,40 +892,40 @@ export class LangiumGrammarAstReflection extends langium.AbstractAstReflection {
             }
             case Negation: {
                 return {
-                    name: Negation,
-                    properties: [
+                    $name: Negation,
+                    $properties: [
                         { name: 'value' }
                     ]
                 };
             }
             case NumberLiteral: {
                 return {
-                    name: NumberLiteral,
-                    properties: [
+                    $name: NumberLiteral,
+                    $properties: [
                         { name: 'value' }
                     ]
                 };
             }
             case Parameter: {
                 return {
-                    name: Parameter,
-                    properties: [
+                    $name: Parameter,
+                    $properties: [
                         { name: 'name' }
                     ]
                 };
             }
             case ParameterReference: {
                 return {
-                    name: ParameterReference,
-                    properties: [
+                    $name: ParameterReference,
+                    $properties: [
                         { name: 'parameter' }
                     ]
                 };
             }
             case ParserRule: {
                 return {
-                    name: ParserRule,
-                    properties: [
+                    $name: ParserRule,
+                    $properties: [
                         { name: 'dataType' },
                         { name: 'definesHiddenTokens', defaultValue: false },
                         { name: 'definition' },
@@ -942,24 +942,24 @@ export class LangiumGrammarAstReflection extends langium.AbstractAstReflection {
             }
             case ReferenceType: {
                 return {
-                    name: ReferenceType,
-                    properties: [
+                    $name: ReferenceType,
+                    $properties: [
                         { name: 'referenceType' }
                     ]
                 };
             }
             case ReturnType: {
                 return {
-                    name: ReturnType,
-                    properties: [
+                    $name: ReturnType,
+                    $properties: [
                         { name: 'name' }
                     ]
                 };
             }
             case SimpleType: {
                 return {
-                    name: SimpleType,
-                    properties: [
+                    $name: SimpleType,
+                    $properties: [
                         { name: 'primitiveType' },
                         { name: 'stringType' },
                         { name: 'typeRef' }
@@ -968,16 +968,16 @@ export class LangiumGrammarAstReflection extends langium.AbstractAstReflection {
             }
             case StringLiteral: {
                 return {
-                    name: StringLiteral,
-                    properties: [
+                    $name: StringLiteral,
+                    $properties: [
                         { name: 'value' }
                     ]
                 };
             }
             case TerminalRule: {
                 return {
-                    name: TerminalRule,
-                    properties: [
+                    $name: TerminalRule,
+                    $properties: [
                         { name: 'definition' },
                         { name: 'fragment', defaultValue: false },
                         { name: 'hidden', defaultValue: false },
@@ -988,8 +988,8 @@ export class LangiumGrammarAstReflection extends langium.AbstractAstReflection {
             }
             case Type: {
                 return {
-                    name: Type,
-                    properties: [
+                    $name: Type,
+                    $properties: [
                         { name: 'name' },
                         { name: 'type' }
                     ]
@@ -997,8 +997,8 @@ export class LangiumGrammarAstReflection extends langium.AbstractAstReflection {
             }
             case TypeAttribute: {
                 return {
-                    name: TypeAttribute,
-                    properties: [
+                    $name: TypeAttribute,
+                    $properties: [
                         { name: 'defaultValue' },
                         { name: 'isOptional', defaultValue: false },
                         { name: 'name' },
@@ -1008,16 +1008,16 @@ export class LangiumGrammarAstReflection extends langium.AbstractAstReflection {
             }
             case UnionType: {
                 return {
-                    name: UnionType,
-                    properties: [
+                    $name: UnionType,
+                    $properties: [
                         { name: 'types', defaultValue: [] }
                     ]
                 };
             }
             case Action: {
                 return {
-                    name: Action,
-                    properties: [
+                    $name: Action,
+                    $properties: [
                         { name: 'cardinality' },
                         { name: 'feature' },
                         { name: 'inferredType' },
@@ -1029,8 +1029,8 @@ export class LangiumGrammarAstReflection extends langium.AbstractAstReflection {
             }
             case Alternatives: {
                 return {
-                    name: Alternatives,
-                    properties: [
+                    $name: Alternatives,
+                    $properties: [
                         { name: 'cardinality' },
                         { name: 'elements', defaultValue: [] },
                         { name: 'lookahead' }
@@ -1039,8 +1039,8 @@ export class LangiumGrammarAstReflection extends langium.AbstractAstReflection {
             }
             case Assignment: {
                 return {
-                    name: Assignment,
-                    properties: [
+                    $name: Assignment,
+                    $properties: [
                         { name: 'cardinality' },
                         { name: 'feature' },
                         { name: 'lookahead' },
@@ -1051,8 +1051,8 @@ export class LangiumGrammarAstReflection extends langium.AbstractAstReflection {
             }
             case CharacterRange: {
                 return {
-                    name: CharacterRange,
-                    properties: [
+                    $name: CharacterRange,
+                    $properties: [
                         { name: 'cardinality' },
                         { name: 'left' },
                         { name: 'lookahead' },
@@ -1062,8 +1062,8 @@ export class LangiumGrammarAstReflection extends langium.AbstractAstReflection {
             }
             case CrossReference: {
                 return {
-                    name: CrossReference,
-                    properties: [
+                    $name: CrossReference,
+                    $properties: [
                         { name: 'cardinality' },
                         { name: 'deprecatedSyntax', defaultValue: false },
                         { name: 'lookahead' },
@@ -1074,8 +1074,8 @@ export class LangiumGrammarAstReflection extends langium.AbstractAstReflection {
             }
             case EndOfFile: {
                 return {
-                    name: EndOfFile,
-                    properties: [
+                    $name: EndOfFile,
+                    $properties: [
                         { name: 'cardinality' },
                         { name: 'lookahead' }
                     ]
@@ -1083,8 +1083,8 @@ export class LangiumGrammarAstReflection extends langium.AbstractAstReflection {
             }
             case Group: {
                 return {
-                    name: Group,
-                    properties: [
+                    $name: Group,
+                    $properties: [
                         { name: 'cardinality' },
                         { name: 'elements', defaultValue: [] },
                         { name: 'guardCondition' },
@@ -1094,8 +1094,8 @@ export class LangiumGrammarAstReflection extends langium.AbstractAstReflection {
             }
             case Keyword: {
                 return {
-                    name: Keyword,
-                    properties: [
+                    $name: Keyword,
+                    $properties: [
                         { name: 'cardinality' },
                         { name: 'lookahead' },
                         { name: 'value' }
@@ -1104,8 +1104,8 @@ export class LangiumGrammarAstReflection extends langium.AbstractAstReflection {
             }
             case NegatedToken: {
                 return {
-                    name: NegatedToken,
-                    properties: [
+                    $name: NegatedToken,
+                    $properties: [
                         { name: 'cardinality' },
                         { name: 'lookahead' },
                         { name: 'terminal' }
@@ -1114,8 +1114,8 @@ export class LangiumGrammarAstReflection extends langium.AbstractAstReflection {
             }
             case RegexToken: {
                 return {
-                    name: RegexToken,
-                    properties: [
+                    $name: RegexToken,
+                    $properties: [
                         { name: 'cardinality' },
                         { name: 'lookahead' },
                         { name: 'regex' }
@@ -1124,8 +1124,8 @@ export class LangiumGrammarAstReflection extends langium.AbstractAstReflection {
             }
             case RuleCall: {
                 return {
-                    name: RuleCall,
-                    properties: [
+                    $name: RuleCall,
+                    $properties: [
                         { name: 'arguments', defaultValue: [] },
                         { name: 'cardinality' },
                         { name: 'lookahead' },
@@ -1135,8 +1135,8 @@ export class LangiumGrammarAstReflection extends langium.AbstractAstReflection {
             }
             case TerminalAlternatives: {
                 return {
-                    name: TerminalAlternatives,
-                    properties: [
+                    $name: TerminalAlternatives,
+                    $properties: [
                         { name: 'cardinality' },
                         { name: 'elements', defaultValue: [] },
                         { name: 'lookahead' }
@@ -1145,8 +1145,8 @@ export class LangiumGrammarAstReflection extends langium.AbstractAstReflection {
             }
             case TerminalGroup: {
                 return {
-                    name: TerminalGroup,
-                    properties: [
+                    $name: TerminalGroup,
+                    $properties: [
                         { name: 'cardinality' },
                         { name: 'elements', defaultValue: [] },
                         { name: 'lookahead' }
@@ -1155,8 +1155,8 @@ export class LangiumGrammarAstReflection extends langium.AbstractAstReflection {
             }
             case TerminalRuleCall: {
                 return {
-                    name: TerminalRuleCall,
-                    properties: [
+                    $name: TerminalRuleCall,
+                    $properties: [
                         { name: 'cardinality' },
                         { name: 'lookahead' },
                         { name: 'rule' }
@@ -1165,8 +1165,8 @@ export class LangiumGrammarAstReflection extends langium.AbstractAstReflection {
             }
             case UnorderedGroup: {
                 return {
-                    name: UnorderedGroup,
-                    properties: [
+                    $name: UnorderedGroup,
+                    $properties: [
                         { name: 'cardinality' },
                         { name: 'elements', defaultValue: [] },
                         { name: 'lookahead' }
@@ -1175,8 +1175,8 @@ export class LangiumGrammarAstReflection extends langium.AbstractAstReflection {
             }
             case UntilToken: {
                 return {
-                    name: UntilToken,
-                    properties: [
+                    $name: UntilToken,
+                    $properties: [
                         { name: 'cardinality' },
                         { name: 'lookahead' },
                         { name: 'terminal' }
@@ -1185,8 +1185,8 @@ export class LangiumGrammarAstReflection extends langium.AbstractAstReflection {
             }
             case Wildcard: {
                 return {
-                    name: Wildcard,
-                    properties: [
+                    $name: Wildcard,
+                    $properties: [
                         { name: 'cardinality' },
                         { name: 'lookahead' }
                     ]
@@ -1194,8 +1194,8 @@ export class LangiumGrammarAstReflection extends langium.AbstractAstReflection {
             }
             default: {
                 return {
-                    name: type,
-                    properties: []
+                    $name: type,
+                    $properties: []
                 };
             }
         }

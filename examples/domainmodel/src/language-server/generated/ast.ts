@@ -165,24 +165,24 @@ export class DomainModelAstReflection extends langium.AbstractAstReflection {
         switch (type) {
             case DataType: {
                 return {
-                    name: DataType,
-                    properties: [
+                    $name: DataType,
+                    $properties: [
                         { name: 'name' }
                     ]
                 };
             }
             case Domainmodel: {
                 return {
-                    name: Domainmodel,
-                    properties: [
+                    $name: Domainmodel,
+                    $properties: [
                         { name: 'elements', defaultValue: [] }
                     ]
                 };
             }
             case Entity: {
                 return {
-                    name: Entity,
-                    properties: [
+                    $name: Entity,
+                    $properties: [
                         { name: 'features', defaultValue: [] },
                         { name: 'name' },
                         { name: 'superType' }
@@ -191,8 +191,8 @@ export class DomainModelAstReflection extends langium.AbstractAstReflection {
             }
             case Feature: {
                 return {
-                    name: Feature,
-                    properties: [
+                    $name: Feature,
+                    $properties: [
                         { name: 'many', defaultValue: false },
                         { name: 'name' },
                         { name: 'type' }
@@ -201,8 +201,8 @@ export class DomainModelAstReflection extends langium.AbstractAstReflection {
             }
             case PackageDeclaration: {
                 return {
-                    name: PackageDeclaration,
-                    properties: [
+                    $name: PackageDeclaration,
+                    $properties: [
                         { name: 'elements', defaultValue: [] },
                         { name: 'name' }
                     ]
@@ -210,8 +210,8 @@ export class DomainModelAstReflection extends langium.AbstractAstReflection {
             }
             default: {
                 return {
-                    name: type,
-                    properties: []
+                    $name: type,
+                    $properties: []
                 };
             }
         }

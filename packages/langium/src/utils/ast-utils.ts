@@ -237,7 +237,7 @@ export function findLocalReferences(targetNode: AstNode, lookup = getDocument(ta
 export function assignMandatoryProperties(reflection: AstReflection, node: AstNode): void {
     const typeMetaData = reflection.getTypeMetaData(node.$type);
     const genericNode = node as GenericAstNode;
-    for (const property of typeMetaData.properties) {
+    for (const property of typeMetaData.$properties) {
         // Only set the value if the property is not already set and if it has a default value
         if (property.defaultValue !== undefined && genericNode[property.name] === undefined) {
             genericNode[property.name] = copyDefaultValue(property.defaultValue);

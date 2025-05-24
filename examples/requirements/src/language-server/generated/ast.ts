@@ -153,16 +153,16 @@ export class RequirementsAndTestsAstReflection extends langium.AbstractAstReflec
         switch (type) {
             case Contact: {
                 return {
-                    name: Contact,
-                    properties: [
+                    $name: Contact,
+                    $properties: [
                         { name: 'user_name' }
                     ]
                 };
             }
             case Environment: {
                 return {
-                    name: Environment,
-                    properties: [
+                    $name: Environment,
+                    $properties: [
                         { name: 'description' },
                         { name: 'name' }
                     ]
@@ -170,8 +170,8 @@ export class RequirementsAndTestsAstReflection extends langium.AbstractAstReflec
             }
             case Requirement: {
                 return {
-                    name: Requirement,
-                    properties: [
+                    $name: Requirement,
+                    $properties: [
                         { name: 'environments', defaultValue: [] },
                         { name: 'name' },
                         { name: 'text' }
@@ -180,8 +180,8 @@ export class RequirementsAndTestsAstReflection extends langium.AbstractAstReflec
             }
             case RequirementModel: {
                 return {
-                    name: RequirementModel,
-                    properties: [
+                    $name: RequirementModel,
+                    $properties: [
                         { name: 'contact' },
                         { name: 'environments', defaultValue: [] },
                         { name: 'requirements', defaultValue: [] }
@@ -190,8 +190,8 @@ export class RequirementsAndTestsAstReflection extends langium.AbstractAstReflec
             }
             case Test: {
                 return {
-                    name: Test,
-                    properties: [
+                    $name: Test,
+                    $properties: [
                         { name: 'environments', defaultValue: [] },
                         { name: 'name' },
                         { name: 'requirements', defaultValue: [] },
@@ -201,8 +201,8 @@ export class RequirementsAndTestsAstReflection extends langium.AbstractAstReflec
             }
             case TestModel: {
                 return {
-                    name: TestModel,
-                    properties: [
+                    $name: TestModel,
+                    $properties: [
                         { name: 'contact' },
                         { name: 'tests', defaultValue: [] }
                     ]
@@ -210,8 +210,8 @@ export class RequirementsAndTestsAstReflection extends langium.AbstractAstReflec
             }
             default: {
                 return {
-                    name: type,
-                    properties: []
+                    $name: type,
+                    $properties: []
                 };
             }
         }

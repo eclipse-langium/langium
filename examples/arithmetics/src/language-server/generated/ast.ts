@@ -203,8 +203,8 @@ export class ArithmeticsAstReflection extends langium.AbstractAstReflection {
         switch (type) {
             case BinaryExpression: {
                 return {
-                    name: BinaryExpression,
-                    properties: [
+                    $name: BinaryExpression,
+                    $properties: [
                         { name: 'left' },
                         { name: 'operator' },
                         { name: 'right' }
@@ -213,16 +213,16 @@ export class ArithmeticsAstReflection extends langium.AbstractAstReflection {
             }
             case DeclaredParameter: {
                 return {
-                    name: DeclaredParameter,
-                    properties: [
+                    $name: DeclaredParameter,
+                    $properties: [
                         { name: 'name' }
                     ]
                 };
             }
             case Definition: {
                 return {
-                    name: Definition,
-                    properties: [
+                    $name: Definition,
+                    $properties: [
                         { name: 'args', defaultValue: [] },
                         { name: 'expr' },
                         { name: 'name' }
@@ -231,16 +231,16 @@ export class ArithmeticsAstReflection extends langium.AbstractAstReflection {
             }
             case Evaluation: {
                 return {
-                    name: Evaluation,
-                    properties: [
+                    $name: Evaluation,
+                    $properties: [
                         { name: 'expression' }
                     ]
                 };
             }
             case FunctionCall: {
                 return {
-                    name: FunctionCall,
-                    properties: [
+                    $name: FunctionCall,
+                    $properties: [
                         { name: 'args', defaultValue: [] },
                         { name: 'func' }
                     ]
@@ -248,8 +248,8 @@ export class ArithmeticsAstReflection extends langium.AbstractAstReflection {
             }
             case Module: {
                 return {
-                    name: Module,
-                    properties: [
+                    $name: Module,
+                    $properties: [
                         { name: 'name' },
                         { name: 'statements', defaultValue: [] }
                     ]
@@ -257,16 +257,16 @@ export class ArithmeticsAstReflection extends langium.AbstractAstReflection {
             }
             case NumberLiteral: {
                 return {
-                    name: NumberLiteral,
-                    properties: [
+                    $name: NumberLiteral,
+                    $properties: [
                         { name: 'value' }
                     ]
                 };
             }
             default: {
                 return {
-                    name: type,
-                    properties: []
+                    $name: type,
+                    $properties: []
                 };
             }
         }
