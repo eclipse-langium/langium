@@ -45,7 +45,7 @@ function generateAstReflection(config: LangiumConfig, astTypes: AstTypes): Gener
 
         export class ${config.projectName}AstReflection extends langium.AbstractAstReflection {
 
-            ${buildTypeMetaDataMethod(astTypes)}
+            ${buildTypeMetaData(astTypes)}
 
             getAllTypes(): string[] {
                 return [${typeNames.join(', ')}];
@@ -71,7 +71,7 @@ function generateAstReflection(config: LangiumConfig, astTypes: AstTypes): Gener
     `.appendNewLine();
 }
 
-function buildTypeMetaDataMethod(astTypes: AstTypes): Generated {
+function buildTypeMetaData(astTypes: AstTypes): Generated {
     return joinToNode(
         astTypes.interfaces, // this does not include union types like "A = B | C"!
         interfaceType => expandToNode`
