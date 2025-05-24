@@ -1109,11 +1109,8 @@ export class LangiumGrammarAstReflection extends langium.AbstractAstReflection {
         }
     }
 
-    getTypeMetaData(type: string): langium.TypeMetaData {
-        return (this[type as keyof LangiumGrammarAstReflection] as langium.TypeMetaData) ?? {
-            $name: type,
-            $properties: []
-        };
+    getTypeMetaData(type: string): langium.TypeMetaData | undefined {
+        return this[type as keyof LangiumGrammarAstReflection] as (langium.TypeMetaData | undefined);
     }
 }
 

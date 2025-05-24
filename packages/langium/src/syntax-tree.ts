@@ -136,7 +136,7 @@ export interface AstReflection {
     getAllTypes(): string[]
     getAllSubTypes(type: string): string[]
     getReferenceType(refInfo: ReferenceInfo): string
-    getTypeMetaData(type: string): TypeMetaData
+    getTypeMetaData(type: string): TypeMetaData | undefined
     isInstance(node: unknown, type: string): boolean
     isSubtype(subtype: string, supertype: string): boolean
 }
@@ -152,7 +152,7 @@ export abstract class AbstractAstReflection implements AstReflection {
 
     abstract getAllTypes(): string[];
     abstract getReferenceType(refInfo: ReferenceInfo): string;
-    abstract getTypeMetaData(type: string): TypeMetaData;
+    abstract getTypeMetaData(type: string): TypeMetaData | undefined;
     protected abstract computeIsSubtype(subtype: string, supertype: string): boolean;
 
     isInstance(node: unknown, type: string): boolean {

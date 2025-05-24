@@ -82,13 +82,13 @@ describe('AST reflection interpreter', () => {
         });
 
         test('Creates metadata with super types', () => {
-            const superMetadata = reflectionForInheritance.getTypeMetaData('Super');
+            const superMetadata = reflectionForInheritance.getTypeMetaData('Super')!;
             expect(superMetadata.$properties).toHaveLength(2);
             expect(superMetadata.$properties[0].name).toBe('A');
             expect(superMetadata.$properties[0].defaultValue).toBe('a');
             expect(superMetadata.$properties[1].name).toBe('Ref');
             expect(superMetadata.$properties[1].defaultValue).toBeUndefined();
-            const subMetadata = reflectionForInheritance.getTypeMetaData('Sub');
+            const subMetadata = reflectionForInheritance.getTypeMetaData('Sub')!;
             expect(subMetadata.$properties).toHaveLength(3);
             expect(subMetadata.$properties[0].name).toBe('A');
             expect(subMetadata.$properties[0].defaultValue).toBe('a');

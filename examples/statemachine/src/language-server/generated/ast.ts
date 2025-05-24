@@ -185,11 +185,8 @@ export class StatemachineAstReflection extends langium.AbstractAstReflection {
         }
     }
 
-    getTypeMetaData(type: string): langium.TypeMetaData {
-        return (this[type as keyof StatemachineAstReflection] as langium.TypeMetaData) ?? {
-            $name: type,
-            $properties: []
-        };
+    getTypeMetaData(type: string): langium.TypeMetaData | undefined {
+        return this[type as keyof StatemachineAstReflection] as (langium.TypeMetaData | undefined);
     }
 }
 

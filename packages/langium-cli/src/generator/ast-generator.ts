@@ -59,11 +59,8 @@ function generateAstReflection(config: LangiumConfig, astTypes: AstTypes): Gener
                 ${buildReferenceTypeMethod(crossReferenceTypes)}
             }
 
-            getTypeMetaData(type: string): langium.TypeMetaData {
-                return (this[type as keyof ${config.projectName}AstReflection] as langium.TypeMetaData) ?? {
-                    $name: type,
-                    $properties: []
-                };
+            getTypeMetaData(type: string): langium.TypeMetaData | undefined {
+                return this[type as keyof ${config.projectName}AstReflection] as (langium.TypeMetaData | undefined);
             }
         }
 
