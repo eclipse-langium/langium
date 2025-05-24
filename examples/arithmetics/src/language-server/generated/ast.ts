@@ -161,6 +161,55 @@ export type ArithmeticsAstType = {
 
 export class ArithmeticsAstReflection extends langium.AbstractAstReflection {
 
+    readonly BinaryExpression = {
+        $name: BinaryExpression,
+        $properties: [
+            { name: 'left' },
+            { name: 'operator' },
+            { name: 'right' }
+        ]
+    };
+    readonly DeclaredParameter = {
+        $name: DeclaredParameter,
+        $properties: [
+            { name: 'name' }
+        ]
+    };
+    readonly Definition = {
+        $name: Definition,
+        $properties: [
+            { name: 'args', defaultValue: [] },
+            { name: 'expr' },
+            { name: 'name' }
+        ]
+    };
+    readonly Evaluation = {
+        $name: Evaluation,
+        $properties: [
+            { name: 'expression' }
+        ]
+    };
+    readonly FunctionCall = {
+        $name: FunctionCall,
+        $properties: [
+            { name: 'args', defaultValue: [] },
+            { name: 'func' }
+        ]
+    };
+    readonly Module = {
+        $name: Module,
+        $properties: [
+            { name: 'name' },
+            { name: 'statements', defaultValue: [] }
+        ]
+    };
+    readonly NumberLiteral = {
+        $name: NumberLiteral,
+        $properties: [
+            { name: 'value' }
+        ]
+    };
+
     getAllTypes(): string[] {
         return [AbstractDefinition, BinaryExpression, DeclaredParameter, Definition, Evaluation, Expression, FunctionCall, Module, NumberLiteral, Statement];
     }
@@ -200,76 +249,10 @@ export class ArithmeticsAstReflection extends langium.AbstractAstReflection {
     }
 
     getTypeMetaData(type: string): langium.TypeMetaData {
-        switch (type) {
-            case BinaryExpression: {
-                return {
-                    $name: BinaryExpression,
-                    $properties: [
-                        { name: 'left' },
-                        { name: 'operator' },
-                        { name: 'right' }
-                    ]
-                };
-            }
-            case DeclaredParameter: {
-                return {
-                    $name: DeclaredParameter,
-                    $properties: [
-                        { name: 'name' }
-                    ]
-                };
-            }
-            case Definition: {
-                return {
-                    $name: Definition,
-                    $properties: [
-                        { name: 'args', defaultValue: [] },
-                        { name: 'expr' },
-                        { name: 'name' }
-                    ]
-                };
-            }
-            case Evaluation: {
-                return {
-                    $name: Evaluation,
-                    $properties: [
-                        { name: 'expression' }
-                    ]
-                };
-            }
-            case FunctionCall: {
-                return {
-                    $name: FunctionCall,
-                    $properties: [
-                        { name: 'args', defaultValue: [] },
-                        { name: 'func' }
-                    ]
-                };
-            }
-            case Module: {
-                return {
-                    $name: Module,
-                    $properties: [
-                        { name: 'name' },
-                        { name: 'statements', defaultValue: [] }
-                    ]
-                };
-            }
-            case NumberLiteral: {
-                return {
-                    $name: NumberLiteral,
-                    $properties: [
-                        { name: 'value' }
-                    ]
-                };
-            }
-            default: {
-                return {
-                    $name: type,
-                    $properties: []
-                };
-            }
-        }
+        return (this[type as keyof ArithmeticsAstReflection] as langium.TypeMetaData) ?? {
+            $name: type,
+            $properties: []
+        };
     }
 }
 

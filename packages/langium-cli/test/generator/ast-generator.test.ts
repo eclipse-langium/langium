@@ -6,8 +6,8 @@
 
 import { EmptyFileSystem, type Grammar } from 'langium';
 import { expandToString, normalizeEOL } from 'langium/generate';
-import { parseHelper } from 'langium/test';
 import { createLangiumGrammarServices } from 'langium/grammar';
+import { parseHelper } from 'langium/test';
 import { describe, expect, test } from 'vitest';
 import { generateAst } from '../../src/generator/ast-generator.js';
 import type { LangiumConfig } from '../../src/package-types.js';
@@ -375,34 +375,19 @@ describe('Ast generator', () => {
 
         hidden terminal WS: /\\s+/;
         terminal ID: /[_a-zA-Z][\\w_]*/;
-    `, expandToString`
-        getTypeMetaData(type: string): langium.TypeMetaData {
-                switch (type) {
-                    case IAmArray: {
-                        return {
-                            $name: IAmArray,
-                            $properties: [
-                                { name: 'elements', defaultValue: [] }
-                            ]
-                        };
-                    }
-                    case DeclaredArray: {
-                        return {
-                            $name: DeclaredArray,
-                            $properties: [
-                                { name: 'elements', defaultValue: [] }
-                            ]
-                        };
-                    }
-                    default: {
-                        return {
-                            $name: type,
-                            $properties: []
-                        };
-                    }
-                }
-            }
-        }`
+    `,
+`    readonly IAmArray = {
+        $name: IAmArray,
+        $properties: [
+            { name: 'elements', defaultValue: [] }
+        ]
+    };
+    readonly DeclaredArray = {
+        $name: DeclaredArray,
+        $properties: [
+            { name: 'elements', defaultValue: [] }
+        ]
+    };`
     );
 
     testTypeMetaData('should generate escaped default value', `
@@ -417,26 +402,13 @@ describe('Ast generator', () => {
 
         hidden terminal WS: /\\s+/;
         terminal ID: /[_a-zA-Z][\\w_]*/;
-    `, expandToString`
-        getTypeMetaData(type: string): langium.TypeMetaData {
-                switch (type) {
-                    case Test: {
-                        return {
-                            $name: Test,
-                            $properties: [
-                                { name: 'value', defaultValue: '\\'test\\'' }
-                            ]
-                        };
-                    }
-                    default: {
-                        return {
-                            $name: type,
-                            $properties: []
-                        };
-                    }
-                }
-            }
-        }`
+    `,
+`    readonly Test = {
+        $name: Test,
+        $properties: [
+            { name: 'value', defaultValue: '\\'test\\'' }
+        ]
+    };`
     );
 
     testReferenceType('check all referenceIds are properly generated', `
@@ -505,21 +477,21 @@ async function testTerminalConstants(grammar: string, expected: string) {
 }
 
 function testGeneratedInterface(name: string, grammar: string, expected: string): void {
-    testGenerated(name, grammar, expected, 'export interface', 'export type testAstType');
+    testGenerated(name, grammar, expected, 'export interface', '\n\nexport type testAstType');
 }
 
 function testGeneratedAst(name: string, grammar: string, expected: string): void {
-    testGenerated(name, grammar, expected, 'export type', 'export type testAstType', 3);
+    testGenerated(name, grammar, expected, 'export type', '\n\nexport type testAstType', 3);
 }
 
 function testTypeMetaData(name: string, grammar: string, expected: string): void {
-    testGenerated(name, grammar, expected, 'getTypeMetaData', 'export const reflection');
+    testGenerated(name, grammar, expected, 'extends langium.AbstractAstReflection {\n\n', '\n\n    getAllTypes():', 0, false);
 }
 
 function testReferenceType(name: string, grammar: string, expected: string): void {
-    testGenerated(name, grammar, expected, 'getReferenceType', 'getTypeMetaData');
+    testGenerated(name, grammar, expected, 'getReferenceType', '\n\n    getTypeMetaData');
 }
-function testGenerated(name: string, grammar: string, expected: string, start: string, end: string, startCount = 0): void {
+function testGenerated(name: string, grammar: string, expected: string, start: string, end: string, startCount = 0, includingStart: boolean = true): void {
     test(name, async () => {
         const result = (await parse(grammar)).parseResult;
         const config: LangiumConfig = {
@@ -527,13 +499,13 @@ function testGenerated(name: string, grammar: string, expected: string, start: s
             projectName: 'test',
             languages: []
         };
-        const expectedPart = normalizeEOL(expected).trim();
+        const expectedPart = normalizeEOL(expected);
         const typesFileContent = generateAst(services.grammar, [result.value], config);
-        let startIndex = typesFileContent.indexOf(start);
+        let startIndex = typesFileContent.indexOf(start) + (includingStart ? 0 : start.length);
         for (let i = 0; i < startCount; i++) {
-            startIndex = typesFileContent.indexOf(start, startIndex + start.length);
+            startIndex = typesFileContent.indexOf(start, startIndex + start.length) + (includingStart ? 0 : start.length);
         }
-        const relevantPart = typesFileContent.substring(startIndex, typesFileContent.indexOf(end)).trim();
+        const relevantPart = typesFileContent.substring(startIndex, typesFileContent.indexOf(end));
         expect(relevantPart).toEqual(expectedPart);
     });
 }

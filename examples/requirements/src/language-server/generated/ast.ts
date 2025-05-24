@@ -121,6 +121,52 @@ export type RequirementsAndTestsAstType = {
 
 export class RequirementsAndTestsAstReflection extends langium.AbstractAstReflection {
 
+    readonly Contact = {
+        $name: Contact,
+        $properties: [
+            { name: 'user_name' }
+        ]
+    };
+    readonly Environment = {
+        $name: Environment,
+        $properties: [
+            { name: 'description' },
+            { name: 'name' }
+        ]
+    };
+    readonly Requirement = {
+        $name: Requirement,
+        $properties: [
+            { name: 'environments', defaultValue: [] },
+            { name: 'name' },
+            { name: 'text' }
+        ]
+    };
+    readonly RequirementModel = {
+        $name: RequirementModel,
+        $properties: [
+            { name: 'contact' },
+            { name: 'environments', defaultValue: [] },
+            { name: 'requirements', defaultValue: [] }
+        ]
+    };
+    readonly Test = {
+        $name: Test,
+        $properties: [
+            { name: 'environments', defaultValue: [] },
+            { name: 'name' },
+            { name: 'requirements', defaultValue: [] },
+            { name: 'testFile' }
+        ]
+    };
+    readonly TestModel = {
+        $name: TestModel,
+        $properties: [
+            { name: 'contact' },
+            { name: 'tests', defaultValue: [] }
+        ]
+    };
+
     getAllTypes(): string[] {
         return [Contact, Environment, Requirement, RequirementModel, Test, TestModel];
     }
@@ -150,71 +196,10 @@ export class RequirementsAndTestsAstReflection extends langium.AbstractAstReflec
     }
 
     getTypeMetaData(type: string): langium.TypeMetaData {
-        switch (type) {
-            case Contact: {
-                return {
-                    $name: Contact,
-                    $properties: [
-                        { name: 'user_name' }
-                    ]
-                };
-            }
-            case Environment: {
-                return {
-                    $name: Environment,
-                    $properties: [
-                        { name: 'description' },
-                        { name: 'name' }
-                    ]
-                };
-            }
-            case Requirement: {
-                return {
-                    $name: Requirement,
-                    $properties: [
-                        { name: 'environments', defaultValue: [] },
-                        { name: 'name' },
-                        { name: 'text' }
-                    ]
-                };
-            }
-            case RequirementModel: {
-                return {
-                    $name: RequirementModel,
-                    $properties: [
-                        { name: 'contact' },
-                        { name: 'environments', defaultValue: [] },
-                        { name: 'requirements', defaultValue: [] }
-                    ]
-                };
-            }
-            case Test: {
-                return {
-                    $name: Test,
-                    $properties: [
-                        { name: 'environments', defaultValue: [] },
-                        { name: 'name' },
-                        { name: 'requirements', defaultValue: [] },
-                        { name: 'testFile' }
-                    ]
-                };
-            }
-            case TestModel: {
-                return {
-                    $name: TestModel,
-                    $properties: [
-                        { name: 'contact' },
-                        { name: 'tests', defaultValue: [] }
-                    ]
-                };
-            }
-            default: {
-                return {
-                    $name: type,
-                    $properties: []
-                };
-            }
-        }
+        return (this[type as keyof RequirementsAndTestsAstReflection] as langium.TypeMetaData) ?? {
+            $name: type,
+            $properties: []
+        };
     }
 }
 

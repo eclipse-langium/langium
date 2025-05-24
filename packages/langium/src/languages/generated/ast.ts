@@ -692,6 +692,330 @@ export type LangiumGrammarAstType = {
 
 export class LangiumGrammarAstReflection extends langium.AbstractAstReflection {
 
+    readonly AbstractElement = {
+        $name: AbstractElement,
+        $properties: [
+            { name: 'cardinality' },
+            { name: 'lookahead' }
+        ]
+    };
+    readonly ArrayLiteral = {
+        $name: ArrayLiteral,
+        $properties: [
+            { name: 'elements', defaultValue: [] }
+        ]
+    };
+    readonly ArrayType = {
+        $name: ArrayType,
+        $properties: [
+            { name: 'elementType' }
+        ]
+    };
+    readonly BooleanLiteral = {
+        $name: BooleanLiteral,
+        $properties: [
+            { name: 'true', defaultValue: false }
+        ]
+    };
+    readonly Conjunction = {
+        $name: Conjunction,
+        $properties: [
+            { name: 'left' },
+            { name: 'right' }
+        ]
+    };
+    readonly Disjunction = {
+        $name: Disjunction,
+        $properties: [
+            { name: 'left' },
+            { name: 'right' }
+        ]
+    };
+    readonly Grammar = {
+        $name: Grammar,
+        $properties: [
+            { name: 'definesHiddenTokens', defaultValue: false },
+            { name: 'hiddenTokens', defaultValue: [] },
+            { name: 'imports', defaultValue: [] },
+            { name: 'interfaces', defaultValue: [] },
+            { name: 'isDeclared', defaultValue: false },
+            { name: 'name' },
+            { name: 'rules', defaultValue: [] },
+            { name: 'types', defaultValue: [] },
+            { name: 'usedGrammars', defaultValue: [] }
+        ]
+    };
+    readonly GrammarImport = {
+        $name: GrammarImport,
+        $properties: [
+            { name: 'path' }
+        ]
+    };
+    readonly InferredType = {
+        $name: InferredType,
+        $properties: [
+            { name: 'name' }
+        ]
+    };
+    readonly Interface = {
+        $name: Interface,
+        $properties: [
+            { name: 'attributes', defaultValue: [] },
+            { name: 'name' },
+            { name: 'superTypes', defaultValue: [] }
+        ]
+    };
+    readonly NamedArgument = {
+        $name: NamedArgument,
+        $properties: [
+            { name: 'calledByName', defaultValue: false },
+            { name: 'parameter' },
+            { name: 'value' }
+        ]
+    };
+    readonly Negation = {
+        $name: Negation,
+        $properties: [
+            { name: 'value' }
+        ]
+    };
+    readonly NumberLiteral = {
+        $name: NumberLiteral,
+        $properties: [
+            { name: 'value' }
+        ]
+    };
+    readonly Parameter = {
+        $name: Parameter,
+        $properties: [
+            { name: 'name' }
+        ]
+    };
+    readonly ParameterReference = {
+        $name: ParameterReference,
+        $properties: [
+            { name: 'parameter' }
+        ]
+    };
+    readonly ParserRule = {
+        $name: ParserRule,
+        $properties: [
+            { name: 'dataType' },
+            { name: 'definesHiddenTokens', defaultValue: false },
+            { name: 'definition' },
+            { name: 'entry', defaultValue: false },
+            { name: 'fragment', defaultValue: false },
+            { name: 'hiddenTokens', defaultValue: [] },
+            { name: 'inferredType' },
+            { name: 'name' },
+            { name: 'parameters', defaultValue: [] },
+            { name: 'returnType' },
+            { name: 'wildcard', defaultValue: false }
+        ]
+    };
+    readonly ReferenceType = {
+        $name: ReferenceType,
+        $properties: [
+            { name: 'referenceType' }
+        ]
+    };
+    readonly ReturnType = {
+        $name: ReturnType,
+        $properties: [
+            { name: 'name' }
+        ]
+    };
+    readonly SimpleType = {
+        $name: SimpleType,
+        $properties: [
+            { name: 'primitiveType' },
+            { name: 'stringType' },
+            { name: 'typeRef' }
+        ]
+    };
+    readonly StringLiteral = {
+        $name: StringLiteral,
+        $properties: [
+            { name: 'value' }
+        ]
+    };
+    readonly TerminalRule = {
+        $name: TerminalRule,
+        $properties: [
+            { name: 'definition' },
+            { name: 'fragment', defaultValue: false },
+            { name: 'hidden', defaultValue: false },
+            { name: 'name' },
+            { name: 'type' }
+        ]
+    };
+    readonly Type = {
+        $name: Type,
+        $properties: [
+            { name: 'name' },
+            { name: 'type' }
+        ]
+    };
+    readonly TypeAttribute = {
+        $name: TypeAttribute,
+        $properties: [
+            { name: 'defaultValue' },
+            { name: 'isOptional', defaultValue: false },
+            { name: 'name' },
+            { name: 'type' }
+        ]
+    };
+    readonly UnionType = {
+        $name: UnionType,
+        $properties: [
+            { name: 'types', defaultValue: [] }
+        ]
+    };
+    readonly Action = {
+        $name: Action,
+        $properties: [
+            { name: 'cardinality' },
+            { name: 'feature' },
+            { name: 'inferredType' },
+            { name: 'lookahead' },
+            { name: 'operator' },
+            { name: 'type' }
+        ]
+    };
+    readonly Alternatives = {
+        $name: Alternatives,
+        $properties: [
+            { name: 'cardinality' },
+            { name: 'elements', defaultValue: [] },
+            { name: 'lookahead' }
+        ]
+    };
+    readonly Assignment = {
+        $name: Assignment,
+        $properties: [
+            { name: 'cardinality' },
+            { name: 'feature' },
+            { name: 'lookahead' },
+            { name: 'operator' },
+            { name: 'terminal' }
+        ]
+    };
+    readonly CharacterRange = {
+        $name: CharacterRange,
+        $properties: [
+            { name: 'cardinality' },
+            { name: 'left' },
+            { name: 'lookahead' },
+            { name: 'right' }
+        ]
+    };
+    readonly CrossReference = {
+        $name: CrossReference,
+        $properties: [
+            { name: 'cardinality' },
+            { name: 'deprecatedSyntax', defaultValue: false },
+            { name: 'lookahead' },
+            { name: 'terminal' },
+            { name: 'type' }
+        ]
+    };
+    readonly EndOfFile = {
+        $name: EndOfFile,
+        $properties: [
+            { name: 'cardinality' },
+            { name: 'lookahead' }
+        ]
+    };
+    readonly Group = {
+        $name: Group,
+        $properties: [
+            { name: 'cardinality' },
+            { name: 'elements', defaultValue: [] },
+            { name: 'guardCondition' },
+            { name: 'lookahead' }
+        ]
+    };
+    readonly Keyword = {
+        $name: Keyword,
+        $properties: [
+            { name: 'cardinality' },
+            { name: 'lookahead' },
+            { name: 'value' }
+        ]
+    };
+    readonly NegatedToken = {
+        $name: NegatedToken,
+        $properties: [
+            { name: 'cardinality' },
+            { name: 'lookahead' },
+            { name: 'terminal' }
+        ]
+    };
+    readonly RegexToken = {
+        $name: RegexToken,
+        $properties: [
+            { name: 'cardinality' },
+            { name: 'lookahead' },
+            { name: 'regex' }
+        ]
+    };
+    readonly RuleCall = {
+        $name: RuleCall,
+        $properties: [
+            { name: 'arguments', defaultValue: [] },
+            { name: 'cardinality' },
+            { name: 'lookahead' },
+            { name: 'rule' }
+        ]
+    };
+    readonly TerminalAlternatives = {
+        $name: TerminalAlternatives,
+        $properties: [
+            { name: 'cardinality' },
+            { name: 'elements', defaultValue: [] },
+            { name: 'lookahead' }
+        ]
+    };
+    readonly TerminalGroup = {
+        $name: TerminalGroup,
+        $properties: [
+            { name: 'cardinality' },
+            { name: 'elements', defaultValue: [] },
+            { name: 'lookahead' }
+        ]
+    };
+    readonly TerminalRuleCall = {
+        $name: TerminalRuleCall,
+        $properties: [
+            { name: 'cardinality' },
+            { name: 'lookahead' },
+            { name: 'rule' }
+        ]
+    };
+    readonly UnorderedGroup = {
+        $name: UnorderedGroup,
+        $properties: [
+            { name: 'cardinality' },
+            { name: 'elements', defaultValue: [] },
+            { name: 'lookahead' }
+        ]
+    };
+    readonly UntilToken = {
+        $name: UntilToken,
+        $properties: [
+            { name: 'cardinality' },
+            { name: 'lookahead' },
+            { name: 'terminal' }
+        ]
+    };
+    readonly Wildcard = {
+        $name: Wildcard,
+        $properties: [
+            { name: 'cardinality' },
+            { name: 'lookahead' }
+        ]
+    };
+
     getAllTypes(): string[] {
         return [AbstractElement, AbstractRule, AbstractType, Action, Alternatives, ArrayLiteral, ArrayType, Assignment, BooleanLiteral, CharacterRange, Condition, Conjunction, CrossReference, Disjunction, EndOfFile, Grammar, GrammarImport, Group, InferredType, Interface, Keyword, NamedArgument, NegatedToken, Negation, NumberLiteral, Parameter, ParameterReference, ParserRule, ReferenceType, RegexToken, ReturnType, RuleCall, SimpleType, StringLiteral, TerminalAlternatives, TerminalGroup, TerminalRule, TerminalRuleCall, Type, TypeAttribute, TypeDefinition, UnionType, UnorderedGroup, UntilToken, ValueLiteral, Wildcard];
     }
@@ -786,419 +1110,10 @@ export class LangiumGrammarAstReflection extends langium.AbstractAstReflection {
     }
 
     getTypeMetaData(type: string): langium.TypeMetaData {
-        switch (type) {
-            case AbstractElement: {
-                return {
-                    $name: AbstractElement,
-                    $properties: [
-                        { name: 'cardinality' },
-                        { name: 'lookahead' }
-                    ]
-                };
-            }
-            case ArrayLiteral: {
-                return {
-                    $name: ArrayLiteral,
-                    $properties: [
-                        { name: 'elements', defaultValue: [] }
-                    ]
-                };
-            }
-            case ArrayType: {
-                return {
-                    $name: ArrayType,
-                    $properties: [
-                        { name: 'elementType' }
-                    ]
-                };
-            }
-            case BooleanLiteral: {
-                return {
-                    $name: BooleanLiteral,
-                    $properties: [
-                        { name: 'true', defaultValue: false }
-                    ]
-                };
-            }
-            case Conjunction: {
-                return {
-                    $name: Conjunction,
-                    $properties: [
-                        { name: 'left' },
-                        { name: 'right' }
-                    ]
-                };
-            }
-            case Disjunction: {
-                return {
-                    $name: Disjunction,
-                    $properties: [
-                        { name: 'left' },
-                        { name: 'right' }
-                    ]
-                };
-            }
-            case Grammar: {
-                return {
-                    $name: Grammar,
-                    $properties: [
-                        { name: 'definesHiddenTokens', defaultValue: false },
-                        { name: 'hiddenTokens', defaultValue: [] },
-                        { name: 'imports', defaultValue: [] },
-                        { name: 'interfaces', defaultValue: [] },
-                        { name: 'isDeclared', defaultValue: false },
-                        { name: 'name' },
-                        { name: 'rules', defaultValue: [] },
-                        { name: 'types', defaultValue: [] },
-                        { name: 'usedGrammars', defaultValue: [] }
-                    ]
-                };
-            }
-            case GrammarImport: {
-                return {
-                    $name: GrammarImport,
-                    $properties: [
-                        { name: 'path' }
-                    ]
-                };
-            }
-            case InferredType: {
-                return {
-                    $name: InferredType,
-                    $properties: [
-                        { name: 'name' }
-                    ]
-                };
-            }
-            case Interface: {
-                return {
-                    $name: Interface,
-                    $properties: [
-                        { name: 'attributes', defaultValue: [] },
-                        { name: 'name' },
-                        { name: 'superTypes', defaultValue: [] }
-                    ]
-                };
-            }
-            case NamedArgument: {
-                return {
-                    $name: NamedArgument,
-                    $properties: [
-                        { name: 'calledByName', defaultValue: false },
-                        { name: 'parameter' },
-                        { name: 'value' }
-                    ]
-                };
-            }
-            case Negation: {
-                return {
-                    $name: Negation,
-                    $properties: [
-                        { name: 'value' }
-                    ]
-                };
-            }
-            case NumberLiteral: {
-                return {
-                    $name: NumberLiteral,
-                    $properties: [
-                        { name: 'value' }
-                    ]
-                };
-            }
-            case Parameter: {
-                return {
-                    $name: Parameter,
-                    $properties: [
-                        { name: 'name' }
-                    ]
-                };
-            }
-            case ParameterReference: {
-                return {
-                    $name: ParameterReference,
-                    $properties: [
-                        { name: 'parameter' }
-                    ]
-                };
-            }
-            case ParserRule: {
-                return {
-                    $name: ParserRule,
-                    $properties: [
-                        { name: 'dataType' },
-                        { name: 'definesHiddenTokens', defaultValue: false },
-                        { name: 'definition' },
-                        { name: 'entry', defaultValue: false },
-                        { name: 'fragment', defaultValue: false },
-                        { name: 'hiddenTokens', defaultValue: [] },
-                        { name: 'inferredType' },
-                        { name: 'name' },
-                        { name: 'parameters', defaultValue: [] },
-                        { name: 'returnType' },
-                        { name: 'wildcard', defaultValue: false }
-                    ]
-                };
-            }
-            case ReferenceType: {
-                return {
-                    $name: ReferenceType,
-                    $properties: [
-                        { name: 'referenceType' }
-                    ]
-                };
-            }
-            case ReturnType: {
-                return {
-                    $name: ReturnType,
-                    $properties: [
-                        { name: 'name' }
-                    ]
-                };
-            }
-            case SimpleType: {
-                return {
-                    $name: SimpleType,
-                    $properties: [
-                        { name: 'primitiveType' },
-                        { name: 'stringType' },
-                        { name: 'typeRef' }
-                    ]
-                };
-            }
-            case StringLiteral: {
-                return {
-                    $name: StringLiteral,
-                    $properties: [
-                        { name: 'value' }
-                    ]
-                };
-            }
-            case TerminalRule: {
-                return {
-                    $name: TerminalRule,
-                    $properties: [
-                        { name: 'definition' },
-                        { name: 'fragment', defaultValue: false },
-                        { name: 'hidden', defaultValue: false },
-                        { name: 'name' },
-                        { name: 'type' }
-                    ]
-                };
-            }
-            case Type: {
-                return {
-                    $name: Type,
-                    $properties: [
-                        { name: 'name' },
-                        { name: 'type' }
-                    ]
-                };
-            }
-            case TypeAttribute: {
-                return {
-                    $name: TypeAttribute,
-                    $properties: [
-                        { name: 'defaultValue' },
-                        { name: 'isOptional', defaultValue: false },
-                        { name: 'name' },
-                        { name: 'type' }
-                    ]
-                };
-            }
-            case UnionType: {
-                return {
-                    $name: UnionType,
-                    $properties: [
-                        { name: 'types', defaultValue: [] }
-                    ]
-                };
-            }
-            case Action: {
-                return {
-                    $name: Action,
-                    $properties: [
-                        { name: 'cardinality' },
-                        { name: 'feature' },
-                        { name: 'inferredType' },
-                        { name: 'lookahead' },
-                        { name: 'operator' },
-                        { name: 'type' }
-                    ]
-                };
-            }
-            case Alternatives: {
-                return {
-                    $name: Alternatives,
-                    $properties: [
-                        { name: 'cardinality' },
-                        { name: 'elements', defaultValue: [] },
-                        { name: 'lookahead' }
-                    ]
-                };
-            }
-            case Assignment: {
-                return {
-                    $name: Assignment,
-                    $properties: [
-                        { name: 'cardinality' },
-                        { name: 'feature' },
-                        { name: 'lookahead' },
-                        { name: 'operator' },
-                        { name: 'terminal' }
-                    ]
-                };
-            }
-            case CharacterRange: {
-                return {
-                    $name: CharacterRange,
-                    $properties: [
-                        { name: 'cardinality' },
-                        { name: 'left' },
-                        { name: 'lookahead' },
-                        { name: 'right' }
-                    ]
-                };
-            }
-            case CrossReference: {
-                return {
-                    $name: CrossReference,
-                    $properties: [
-                        { name: 'cardinality' },
-                        { name: 'deprecatedSyntax', defaultValue: false },
-                        { name: 'lookahead' },
-                        { name: 'terminal' },
-                        { name: 'type' }
-                    ]
-                };
-            }
-            case EndOfFile: {
-                return {
-                    $name: EndOfFile,
-                    $properties: [
-                        { name: 'cardinality' },
-                        { name: 'lookahead' }
-                    ]
-                };
-            }
-            case Group: {
-                return {
-                    $name: Group,
-                    $properties: [
-                        { name: 'cardinality' },
-                        { name: 'elements', defaultValue: [] },
-                        { name: 'guardCondition' },
-                        { name: 'lookahead' }
-                    ]
-                };
-            }
-            case Keyword: {
-                return {
-                    $name: Keyword,
-                    $properties: [
-                        { name: 'cardinality' },
-                        { name: 'lookahead' },
-                        { name: 'value' }
-                    ]
-                };
-            }
-            case NegatedToken: {
-                return {
-                    $name: NegatedToken,
-                    $properties: [
-                        { name: 'cardinality' },
-                        { name: 'lookahead' },
-                        { name: 'terminal' }
-                    ]
-                };
-            }
-            case RegexToken: {
-                return {
-                    $name: RegexToken,
-                    $properties: [
-                        { name: 'cardinality' },
-                        { name: 'lookahead' },
-                        { name: 'regex' }
-                    ]
-                };
-            }
-            case RuleCall: {
-                return {
-                    $name: RuleCall,
-                    $properties: [
-                        { name: 'arguments', defaultValue: [] },
-                        { name: 'cardinality' },
-                        { name: 'lookahead' },
-                        { name: 'rule' }
-                    ]
-                };
-            }
-            case TerminalAlternatives: {
-                return {
-                    $name: TerminalAlternatives,
-                    $properties: [
-                        { name: 'cardinality' },
-                        { name: 'elements', defaultValue: [] },
-                        { name: 'lookahead' }
-                    ]
-                };
-            }
-            case TerminalGroup: {
-                return {
-                    $name: TerminalGroup,
-                    $properties: [
-                        { name: 'cardinality' },
-                        { name: 'elements', defaultValue: [] },
-                        { name: 'lookahead' }
-                    ]
-                };
-            }
-            case TerminalRuleCall: {
-                return {
-                    $name: TerminalRuleCall,
-                    $properties: [
-                        { name: 'cardinality' },
-                        { name: 'lookahead' },
-                        { name: 'rule' }
-                    ]
-                };
-            }
-            case UnorderedGroup: {
-                return {
-                    $name: UnorderedGroup,
-                    $properties: [
-                        { name: 'cardinality' },
-                        { name: 'elements', defaultValue: [] },
-                        { name: 'lookahead' }
-                    ]
-                };
-            }
-            case UntilToken: {
-                return {
-                    $name: UntilToken,
-                    $properties: [
-                        { name: 'cardinality' },
-                        { name: 'lookahead' },
-                        { name: 'terminal' }
-                    ]
-                };
-            }
-            case Wildcard: {
-                return {
-                    $name: Wildcard,
-                    $properties: [
-                        { name: 'cardinality' },
-                        { name: 'lookahead' }
-                    ]
-                };
-            }
-            default: {
-                return {
-                    $name: type,
-                    $properties: []
-                };
-            }
-        }
+        return (this[type as keyof LangiumGrammarAstReflection] as langium.TypeMetaData) ?? {
+            $name: type,
+            $properties: []
+        };
     }
 }
 

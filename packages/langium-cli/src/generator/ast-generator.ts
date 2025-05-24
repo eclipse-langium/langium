@@ -45,6 +45,8 @@ function generateAstReflection(config: LangiumConfig, astTypes: AstTypes): Gener
 
         export class ${config.projectName}AstReflection extends langium.AbstractAstReflection {
 
+            ${buildTypeMetaDataMethod(astTypes)}
+
             getAllTypes(): string[] {
                 return [${typeNames.join(', ')}];
             }
@@ -58,7 +60,10 @@ function generateAstReflection(config: LangiumConfig, astTypes: AstTypes): Gener
             }
 
             getTypeMetaData(type: string): langium.TypeMetaData {
-                ${buildTypeMetaDataMethod(astTypes)}
+                return (this[type as keyof ${config.projectName}AstReflection] as langium.TypeMetaData) ?? {
+                    $name: type,
+                    $properties: []
+                };
             }
         }
 
@@ -67,39 +72,25 @@ function generateAstReflection(config: LangiumConfig, astTypes: AstTypes): Gener
 }
 
 function buildTypeMetaDataMethod(astTypes: AstTypes): Generated {
-    return expandToNode`
-        switch (type) {
-            ${
-                joinToNode(
-                    astTypes.interfaces,
-                    interfaceType => {
-                        const props = interfaceType.superProperties;
-                        return (props.length > 0)
-                            ? expandToNode`
-                                case ${interfaceType.name}: {
-                                    return {
-                                        $name: ${interfaceType.name},
-                                        $properties: [
-                                            ${buildPropertyType(props)}
-                                        ]
-                                    };
-                                }
-                            `
-                            : undefined;
-                    },
-                    {
-                        appendNewLineIfNotEmpty: true
-                    }
-                )
-            }
-            default: {
-                return {
-                    $name: type,
-                    $properties: []
-                };
-            }
+    return joinToNode(
+        astTypes.interfaces,
+        interfaceType => {
+            const props = interfaceType.superProperties;
+            return (props.length > 0)
+                ? expandToNode`
+                    readonly ${interfaceType.name} = {
+                        $name: ${interfaceType.name},
+                        $properties: [
+                            ${buildPropertyType(props)}
+                        ]
+                    };
+                `
+                : undefined;
+        },
+        {
+            appendNewLineIfNotEmpty: true
         }
-    `;
+    );
 }
 
 function buildPropertyType(props: Property[]): Generated {

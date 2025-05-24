@@ -1107,6 +1107,8 @@ function isEmptyRule(rule: ast.AbstractRule): boolean {
 
 const reservedNames = new Set([
     // Built-in objects, properties and methods
+    // (This set contains lower-case names, since the validation 'Rule name should start with an upper case letter.' is only a warning, no error)
+
     // Collections
     'Array',
     'Int8Array',
@@ -1173,6 +1175,16 @@ const reservedNames = new Set([
     // Reflection
     'Reflect',
     'Proxy',
+    // All properties of AbstractAstReflection, otherwise duplicated members occur
+    'subtypes',
+    'allSubtypes',
+    'getAllTypes',
+    'getReferenceType',
+    'getTypeMetaData',
+    'computeIsSubtype',
+    'isInstance',
+    'isSubtype',
+    'getAllSubTypes',
     // Others
     'Date',
     'Intl',

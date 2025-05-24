@@ -116,6 +116,44 @@ export type StatemachineAstType = {
 
 export class StatemachineAstReflection extends langium.AbstractAstReflection {
 
+    readonly Command = {
+        $name: Command,
+        $properties: [
+            { name: 'name' }
+        ]
+    };
+    readonly Event = {
+        $name: Event,
+        $properties: [
+            { name: 'name' }
+        ]
+    };
+    readonly State = {
+        $name: State,
+        $properties: [
+            { name: 'actions', defaultValue: [] },
+            { name: 'name' },
+            { name: 'transitions', defaultValue: [] }
+        ]
+    };
+    readonly Statemachine = {
+        $name: Statemachine,
+        $properties: [
+            { name: 'commands', defaultValue: [] },
+            { name: 'events', defaultValue: [] },
+            { name: 'init' },
+            { name: 'name' },
+            { name: 'states', defaultValue: [] }
+        ]
+    };
+    readonly Transition = {
+        $name: Transition,
+        $properties: [
+            { name: 'event' },
+            { name: 'state' }
+        ]
+    };
+
     getAllTypes(): string[] {
         return [Command, Event, State, Statemachine, Transition];
     }
@@ -148,61 +186,10 @@ export class StatemachineAstReflection extends langium.AbstractAstReflection {
     }
 
     getTypeMetaData(type: string): langium.TypeMetaData {
-        switch (type) {
-            case Command: {
-                return {
-                    $name: Command,
-                    $properties: [
-                        { name: 'name' }
-                    ]
-                };
-            }
-            case Event: {
-                return {
-                    $name: Event,
-                    $properties: [
-                        { name: 'name' }
-                    ]
-                };
-            }
-            case State: {
-                return {
-                    $name: State,
-                    $properties: [
-                        { name: 'actions', defaultValue: [] },
-                        { name: 'name' },
-                        { name: 'transitions', defaultValue: [] }
-                    ]
-                };
-            }
-            case Statemachine: {
-                return {
-                    $name: Statemachine,
-                    $properties: [
-                        { name: 'commands', defaultValue: [] },
-                        { name: 'events', defaultValue: [] },
-                        { name: 'init' },
-                        { name: 'name' },
-                        { name: 'states', defaultValue: [] }
-                    ]
-                };
-            }
-            case Transition: {
-                return {
-                    $name: Transition,
-                    $properties: [
-                        { name: 'event' },
-                        { name: 'state' }
-                    ]
-                };
-            }
-            default: {
-                return {
-                    $name: type,
-                    $properties: []
-                };
-            }
-        }
+        return (this[type as keyof StatemachineAstReflection] as langium.TypeMetaData) ?? {
+            $name: type,
+            $properties: []
+        };
     }
 }
 

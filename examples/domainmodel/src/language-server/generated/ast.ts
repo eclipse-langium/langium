@@ -126,6 +126,42 @@ export type DomainModelAstType = {
 
 export class DomainModelAstReflection extends langium.AbstractAstReflection {
 
+    readonly DataType = {
+        $name: DataType,
+        $properties: [
+            { name: 'name' }
+        ]
+    };
+    readonly Domainmodel = {
+        $name: Domainmodel,
+        $properties: [
+            { name: 'elements', defaultValue: [] }
+        ]
+    };
+    readonly Entity = {
+        $name: Entity,
+        $properties: [
+            { name: 'features', defaultValue: [] },
+            { name: 'name' },
+            { name: 'superType' }
+        ]
+    };
+    readonly Feature = {
+        $name: Feature,
+        $properties: [
+            { name: 'many', defaultValue: false },
+            { name: 'name' },
+            { name: 'type' }
+        ]
+    };
+    readonly PackageDeclaration = {
+        $name: PackageDeclaration,
+        $properties: [
+            { name: 'elements', defaultValue: [] },
+            { name: 'name' }
+        ]
+    };
+
     getAllTypes(): string[] {
         return [AbstractElement, DataType, Domainmodel, Entity, Feature, PackageDeclaration, Type];
     }
@@ -162,59 +198,10 @@ export class DomainModelAstReflection extends langium.AbstractAstReflection {
     }
 
     getTypeMetaData(type: string): langium.TypeMetaData {
-        switch (type) {
-            case DataType: {
-                return {
-                    $name: DataType,
-                    $properties: [
-                        { name: 'name' }
-                    ]
-                };
-            }
-            case Domainmodel: {
-                return {
-                    $name: Domainmodel,
-                    $properties: [
-                        { name: 'elements', defaultValue: [] }
-                    ]
-                };
-            }
-            case Entity: {
-                return {
-                    $name: Entity,
-                    $properties: [
-                        { name: 'features', defaultValue: [] },
-                        { name: 'name' },
-                        { name: 'superType' }
-                    ]
-                };
-            }
-            case Feature: {
-                return {
-                    $name: Feature,
-                    $properties: [
-                        { name: 'many', defaultValue: false },
-                        { name: 'name' },
-                        { name: 'type' }
-                    ]
-                };
-            }
-            case PackageDeclaration: {
-                return {
-                    $name: PackageDeclaration,
-                    $properties: [
-                        { name: 'elements', defaultValue: [] },
-                        { name: 'name' }
-                    ]
-                };
-            }
-            default: {
-                return {
-                    $name: type,
-                    $properties: []
-                };
-            }
-        }
+        return (this[type as keyof DomainModelAstReflection] as langium.TypeMetaData) ?? {
+            $name: type,
+            $properties: []
+        };
     }
 }
 
