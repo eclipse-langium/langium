@@ -362,6 +362,8 @@ describe('The Module.merge function', () => {
     const moduleA: Module<{ a: unknown, b: unknown }> = Object.freeze({ a: () => 1,       b: () => ({ b: 2 }) });
     const moduleB: Module<{ c: unknown, d: unknown }> = Object.freeze({ c: () => () => 3, d: () => [ 4, 5]    });
 
+    // Recall the contract: 'moduleA' and 'moduleB' shall stay unchanged during the merge, which is enforced by them being frozen.
+
     test('Merge two flat modules', () => {
         const merged = Module.merge(moduleA, moduleB);
 
@@ -370,10 +372,6 @@ describe('The Module.merge function', () => {
             ...moduleB,
         });
 
-        // 'moduleA' and 'moduleB' shall stay unchanged during the merge,
-        //   which is enforced by them being frozen;
-
-        // this implies that:
         // 'merged' is supposed to be a new object, different from moduleA and moduleB
         expect(merged).not.toBe(moduleA);
         expect(merged).not.toBe(moduleB);
