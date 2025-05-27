@@ -13,7 +13,7 @@ import { DefaultServiceRegistry, EmptyFileSystem, URI, createDefaultSharedCoreMo
 describe('DefaultServiceRegistry', () => {
 
     test('should work with a single language', () => {
-        const language: LangiumCoreServices = { LanguageMetaData: { fileExtensions: ['.foo'], languageId: 'foo' } } as any;
+        const language: LangiumCoreServices = { LanguageMetaData: { fileExtensions: ['.bar'], languageId: 'bar' } } as any;
         const registry = new DefaultServiceRegistry(createSharedCoreServices());
         registry.register(language);
         expect(registry.getServices(URI.parse('file:/foo.bar'))).toBe(language);

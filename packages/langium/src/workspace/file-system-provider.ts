@@ -19,6 +19,18 @@ export type FileSystemFilter = (node: FileSystemNode) => boolean;
  */
 export interface FileSystemProvider {
     /**
+     * Gets the status of a file or directory.
+     * The status includes meta data such as whether the node is a file or directory.
+     * @param uri The URI of the file or directory.
+     */
+    stat(uri: URI): Promise<FileSystemNode>;
+    /**
+     * Gets the status of a file or directory synchronously.
+     * The status includes meta data such as whether the node is a file or directory.
+     * @param uri The URI of the file or directory.
+     */
+    statSync(uri: URI): FileSystemNode;
+    /**
      * Reads a document asynchronously from a given URI.
      * @returns The string content of the file with the specified URI.
      */
@@ -31,6 +43,14 @@ export interface FileSystemProvider {
 }
 
 export class EmptyFileSystemProvider implements FileSystemProvider {
+
+    stat(_uri: URI): Promise<FileSystemNode> {
+        throw new Error('No file system is available.');
+    }
+
+    statSync(_uri: URI): FileSystemNode {
+        throw new Error('No file system is available.');
+    }
 
     readFile(): Promise<string> {
         throw new Error('No file system is available.');

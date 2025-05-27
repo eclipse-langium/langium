@@ -6,7 +6,7 @@
 
 import type { Ignore } from 'ignore';
 import ignore from 'ignore';
-import type { ConfigurationProvider, FileSelector, FileSystemNode, WorkspaceFolder } from 'langium';
+import type { ConfigurationProvider, FileSystemNode, WorkspaceFolder } from 'langium';
 import { Cancellation, DefaultWorkspaceManager, URI, UriUtils } from 'langium';
 import type { LangiumSharedServices } from 'langium/lsp';
 import * as path from 'path';
@@ -52,15 +52,15 @@ export class LangiumGrammarWorkspaceManager extends DefaultWorkspaceManager {
         return super.initializeWorkspace(folders, cancelToken);
     }
 
-    protected override includeEntry(workspaceFolder: WorkspaceFolder, entry: FileSystemNode, selector: FileSelector): boolean {
-        if (this.matcher) {
+    override shouldIncludeEntry(entry: FileSystemNode): boolean {
+        const workspaceFolder = this.workspaceFolders?.find(folder => UriUtils.contains(folder.uri, entry.uri));
+        if (this.matcher && workspaceFolder) {
             // create path relative to workspace folder root: /user/foo/workspace/entry.txt -> entry.txt
             const relPath = path.relative(URI.parse(workspaceFolder.uri).path, entry.uri.path);
             const ignored = this.matcher.ignores(relPath);
-            return !ignored && (entry.isDirectory || (entry.isFile && (selector.fileExtensions.includes(UriUtils.extname(entry.uri)) ||
-                selector.fileNames.includes(UriUtils.basename(entry.uri)))));
+            return !ignored && (entry.isDirectory || (entry.isFile && this.serviceRegistry.hasServices(entry.uri)));
         }
-        return super.includeEntry(workspaceFolder, entry, selector);
+        return super.shouldIncludeEntry(entry);
     }
 
 }
