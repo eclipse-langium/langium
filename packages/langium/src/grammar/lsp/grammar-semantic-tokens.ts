@@ -8,7 +8,7 @@ import type { AstNode } from '../../syntax-tree.js';
 import type { SemanticTokenAcceptor } from '../../lsp/semantic-token-provider.js';
 import { SemanticTokenTypes } from 'vscode-languageserver';
 import { AbstractSemanticTokenProvider } from '../../lsp/semantic-token-provider.js';
-import { isAction, isAssignment, isParameter, isParameterReference, isReturnType, isRuleCall, isSimpleType, isTypeAttribute } from '../../languages/generated/ast.js';
+import { isAction, isAssignment, isInfixRule, isParameter, isParameterReference, isReturnType, isRuleCall, isSimpleType, isTypeAttribute } from '../../languages/generated/ast.js';
 
 export class LangiumGrammarSemanticTokenProvider extends AbstractSemanticTokenProvider {
 
@@ -54,7 +54,7 @@ export class LangiumGrammarSemanticTokenProvider extends AbstractSemanticTokenPr
                 type: SemanticTokenTypes.parameter
             });
         } else if (isRuleCall(node)) {
-            if (node.rule.ref?.fragment) {
+            if (!isInfixRule(node.rule.ref) && node.rule.ref?.fragment) {
                 acceptor({
                     node,
                     property: 'rule',

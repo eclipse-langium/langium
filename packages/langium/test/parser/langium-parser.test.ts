@@ -114,3 +114,86 @@ describe('parser error recovery', () => {
 interface A extends AstNode {
     name: string
 }
+
+describe('Infix operator parsing', async () => {
+
+    const grammar = `
+        grammar Test
+        entry Model: expr=Expr;
+        Expr: BinaryExpr;
+        infix BinaryExpr on PrimaryExpr:
+            '*' | '/'
+            > '+' | '-'
+            > right assoc '=' | '*=' | '/=' | '+=' | '-=';
+
+        PrimaryExpr: '(' expr=Expr ')' | value=Number;
+
+        terminal Number: /[0-9]+/;
+        hidden terminal WS: /\\s+/;
+    `;
+
+    const services = await createServicesForGrammar({ grammar });
+    const parse = parseHelper<AstNode>(services);
+
+    test('Should parse infix operator with standalone expr', async () => {
+        await expectExpr('1', '1');
+    });
+
+    test('Should parse infix operator with two expressions', async () => {
+        await expectExpr('1 + 2', '(1 + 2)');
+    });
+
+    test('Should parse infix operator with correct precedence #1', async () => {
+        await expectExpr('1 + 2 * 3', '(1 + (2 * 3))');
+        await expectExpr('1 + 2 + 3', '((1 + 2) + 3)');
+    });
+
+    test('Should parse infix operator with correct precedence #2', async () => {
+        await expectExpr('1 + 2 * 3 + 4', '((1 + (2 * 3)) + 4)');
+        // Note that the precedence of '*' is the same as '/' and that they are left associative
+        await expectExpr('1 + 2 * 3 / 4', '(1 + ((2 * 3) / 4))');
+        await expectExpr('1 + 2 * 3 - 4', '((1 + (2 * 3)) - 4)');
+    });
+
+    test('Should parse infix operator with correct associativity', async () => {
+        await expectExpr('1 = 2 + 3', '(1 = (2 + 3))');
+        await expectExpr('1 + 2 + 3', '((1 + 2) + 3)');
+        // Note that = is right associative. If it were left associative, the result would be ((1 = 2) = 3)
+        await expectExpr('1 = 2 = 3', '(1 = (2 = 3))');
+    });
+
+    async function expectExpr(text: string, expected: string): Promise<void> {
+        const document = await parse(text);
+        expect(document.parseResult.parserErrors.length).toBe(0);
+        const expr = document.parseResult.value as ExprModel;
+        expect(stringifyExpr(expr.expr)).toEqual(expected);
+    }
+
+    function stringifyExpr(expr: Expr): string {
+        if (expr.$type === 'BinaryExpr') {
+            const bin = expr as BinaryExpr;
+            return `(${stringifyExpr(bin.left)} ${bin.operator} ${stringifyExpr(bin.right)})`;
+        } else if (expr.$type === 'PrimaryExpr') {
+            const prim = expr as PrimaryExpr;
+            return prim.value || `(${stringifyExpr(prim.expr!)})`;
+        }
+        return '';
+    }
+});
+
+interface ExprModel extends AstNode {
+    expr: Expr;
+}
+
+type Expr = BinaryExpr | PrimaryExpr;
+
+interface BinaryExpr extends AstNode {
+    operator: string;
+    left: Expr;
+    right: Expr;
+}
+
+interface PrimaryExpr extends AstNode {
+    expr?: Expr;
+    value?: string;
+}

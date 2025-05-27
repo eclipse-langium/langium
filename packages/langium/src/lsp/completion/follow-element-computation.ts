@@ -176,6 +176,20 @@ function findFirstFeaturesInternal(options: { next: NextFeature, cardinalities: 
         };
         return findFirstFeaturesInternal({ next: ruleCallNext, cardinalities, visited, plus })
             .map(e => modifyCardinality(e, feature.cardinality, cardinalities));
+    } else if (ast.isRuleCall(feature) && ast.isInfixRule(feature.rule.ref)) {
+        const rule = feature.rule.ref;
+        const call = rule.call.rule.ref;
+        if (!ast.isParserRule(call)) {
+            console.error('Failed to resolve reference to ' + rule.call.rule.$refText);
+            return [];
+        }
+        const ruleCallNext = {
+            feature: call.definition,
+            type: getExplicitRuleType(call) ?? call.name,
+            property: 'parts'
+        };
+        return findFirstFeaturesInternal({ next: ruleCallNext, cardinalities, visited, plus })
+            .map(e => modifyCardinality(e, feature.cardinality, cardinalities));
     } else {
         return [next];
     }

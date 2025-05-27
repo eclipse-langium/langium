@@ -447,8 +447,13 @@ export class LangiumGrammarValidator {
             }
             // If the element is a direct rule call
             // We need to check whether the element consumes anything
-            if (ast.isRuleCall(element) && element.rule.ref?.definition) {
-                return consumesAnything(element.rule.ref.definition);
+            if (ast.isRuleCall(element)) {
+                if (ast.isInfixRule(element.rule.ref)) {
+                    // Infix rules always at least consume their operators
+                    return true;
+                } else if (element.rule.ref?.definition) {
+                    return consumesAnything(element.rule.ref.definition);
+                }
             }
             // Else, assert that we consume something.
             return true;
@@ -749,7 +754,7 @@ export class LangiumGrammarValidator {
         };
         const ref = call.rule.ref;
         // Parsing an unassigned terminal rule is fine.
-        if (!ref || ast.isTerminalRule(ref)) {
+        if (!ref || ast.isTerminalRule(ref) || ast.isInfixRule(ref)) {
             return;
         }
         // Fragment or data type rules are fine too.
@@ -1102,6 +1107,9 @@ export class LangiumGrammarValidator {
 }
 
 function isEmptyRule(rule: ast.AbstractRule): boolean {
+    if (ast.isInfixRule(rule)) {
+        return false;
+    }
     return !rule.definition || !rule.definition.$cstNode || rule.definition.$cstNode.length === 0;
 }
 
