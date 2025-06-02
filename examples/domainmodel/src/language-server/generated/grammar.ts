@@ -211,6 +211,7 @@ export const DomainModelGrammar = (): Grammar => loadedDomainModelGrammar ?? (lo
                 "operator": "=",
                 "terminal": {
                   "$type": "CrossReference",
+                  "isMulti": true,
                   "type": {
                     "$ref": "#/rules@5"
                   },
@@ -305,7 +306,8 @@ export const DomainModelGrammar = (): Grammar => loadedDomainModelGrammar ?? (lo
                 },
                 "arguments": []
               },
-              "deprecatedSyntax": false
+              "deprecatedSyntax": false,
+              "isMulti": false
             }
           }
         ]

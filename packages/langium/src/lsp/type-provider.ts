@@ -31,14 +31,18 @@ export abstract class AbstractTypeDefinitionProvider implements TypeDefinitionPr
         this.references = services.references.References;
     }
 
-    getTypeDefinition(document: LangiumDocument, params: TypeDefinitionParams, cancelToken = CancellationToken.None): MaybePromise<LocationLink[] | undefined> {
+    async getTypeDefinition(document: LangiumDocument, params: TypeDefinitionParams, cancelToken = CancellationToken.None): Promise<LocationLink[] | undefined> {
         const rootNode = document.parseResult.value;
         if (rootNode.$cstNode) {
             const sourceCstNode = findDeclarationNodeAtOffset(rootNode.$cstNode, document.textDocument.offsetAt(params.position));
             if (sourceCstNode) {
-                const nodeDeclaration = this.references.findDeclaration(sourceCstNode);
-                if (nodeDeclaration) {
-                    return this.collectGoToTypeLocationLinks(nodeDeclaration, cancelToken);
+                const nodeDeclarations = this.references.findDeclarations(sourceCstNode);
+                const links: LocationLink[] = [];
+                for (const node of nodeDeclarations) {
+                    const location = await this.collectGoToTypeLocationLinks(node, cancelToken);
+                    if (location) {
+                        links.push(...location);
+                    }
                 }
             }
         }

@@ -51,7 +51,7 @@ export interface Reference<T extends AstNode = AstNode> {
      * resolution by the `Linker` in case it has not been done yet. If the reference cannot be resolved,
      * the value is `undefined`.
      */
-    readonly ref?: T;
+    readonly ref: T | undefined;
 
     /** If any problem occurred while resolving the reference, it is described by this property. */
     readonly error?: LinkingError;
@@ -63,8 +63,40 @@ export interface Reference<T extends AstNode = AstNode> {
     readonly $nodeDescription?: AstNodeDescription;
 }
 
+export interface MultiReference<T extends AstNode = AstNode> {
+    /** The CST node from which the reference was parsed */
+    readonly $refNode?: CstNode;
+    /** The actual text used to look up in the surrounding scope */
+    readonly $refText: string;
+    /**
+     * The resolved references. Accessing this property may trigger cross-reference
+     * resolution by the `Linker` in case it has not been done yet.
+     * If no references can be found, the array is empty (but not `undefined`)
+     * and the `error` property is set.
+     */
+    readonly items: Array<MultiReferenceItem<T>>;
+    /** If any problem occurred while resolving the reference, it is described by this property. */
+    readonly error?: LinkingError;
+}
+
+/**
+ * Represents a single resolved reference of a {@link MultiReference} instance.
+ */
+export interface MultiReferenceItem<T extends AstNode = AstNode> {
+    /** The node description for the AstNode returned by `ref`  */
+    readonly $nodeDescription?: AstNodeDescription;
+    /**
+     * The target AST node of this reference.
+     */
+    readonly ref: T;
+}
+
 export function isReference(obj: unknown): obj is Reference {
-    return typeof obj === 'object' && obj !== null && typeof (obj as Reference).$refText === 'string';
+    return typeof obj === 'object' && obj !== null && typeof (obj as Reference).$refText === 'string' && 'ref' in obj;
+}
+
+export function isMultiReference(obj: unknown): obj is MultiReference {
+    return typeof obj === 'object' && obj !== null && typeof (obj as Reference).$refText === 'string' && 'items' in obj;
 }
 
 export type ResolvedReference<T extends AstNode = AstNode> = Reference<T> & {
@@ -107,7 +139,7 @@ export function isAstNodeDescription(obj: unknown): obj is AstNodeDescription {
  * unresolved references.
  */
 export interface ReferenceInfo {
-    reference: Reference
+    reference: Reference | MultiReference
     container: AstNode
     property: string
     index?: number
@@ -116,15 +148,15 @@ export interface ReferenceInfo {
 /**
  * Used to collect information when the `Linker` service fails to resolve a cross-reference.
  */
-export interface LinkingError extends ReferenceInfo {
+export interface LinkingError {
     message: string;
+    info: ReferenceInfo;
     targetDescription?: AstNodeDescription;
 }
 
 export function isLinkingError(obj: unknown): obj is LinkingError {
     return typeof obj === 'object' && obj !== null
-        && isAstNode((obj as LinkingError).container)
-        && isReference((obj as LinkingError).reference)
+        && typeof (obj as LinkingError).info === 'object'
         && typeof (obj as LinkingError).message === 'string';
 }
 

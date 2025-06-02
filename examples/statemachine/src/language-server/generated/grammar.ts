@@ -96,7 +96,8 @@ export const StatemachineGrammar = (): Grammar => loadedStatemachineGrammar ?? (
               "type": {
                 "$ref": "#/rules@3"
               },
-              "deprecatedSyntax": false
+              "deprecatedSyntax": false,
+              "isMulti": false
             },
             "$comment": "/** The starting state for the machine */"
           },
@@ -210,7 +211,8 @@ export const StatemachineGrammar = (): Grammar => loadedStatemachineGrammar ?? (
                   "type": {
                     "$ref": "#/rules@2"
                   },
-                  "deprecatedSyntax": false
+                  "deprecatedSyntax": false,
+                  "isMulti": false
                 },
                 "cardinality": "+"
               },
@@ -264,7 +266,8 @@ export const StatemachineGrammar = (): Grammar => loadedStatemachineGrammar ?? (
               "type": {
                 "$ref": "#/rules@1"
               },
-              "deprecatedSyntax": false
+              "deprecatedSyntax": false,
+              "isMulti": false
             },
             "$comment": "/** The event triggering the transition */"
           },
@@ -281,7 +284,8 @@ export const StatemachineGrammar = (): Grammar => loadedStatemachineGrammar ?? (
               "type": {
                 "$ref": "#/rules@3"
               },
-              "deprecatedSyntax": false
+              "deprecatedSyntax": false,
+              "isMulti": false
             },
             "$comment": "/** The target state */"
           }

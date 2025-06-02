@@ -393,6 +393,7 @@ export function isParserRule(item: unknown): item is ParserRule {
 export interface ReferenceType extends langium.AstNode {
     readonly $container: ArrayType | ReferenceType | Type | TypeAttribute | UnionType;
     readonly $type: 'ReferenceType';
+    isMulti: boolean;
     referenceType: TypeDefinition;
 }
 
@@ -549,6 +550,7 @@ export function isCharacterRange(item: unknown): item is CharacterRange {
 export interface CrossReference extends AbstractElement {
     readonly $type: 'CrossReference';
     deprecatedSyntax: boolean;
+    isMulti: boolean;
     terminal?: AbstractElement;
     type: langium.Reference<AbstractType>;
 }
@@ -1028,6 +1030,7 @@ export class LangiumGrammarAstReflection extends langium.AbstractAstReflection {
                 return {
                     name: ReferenceType,
                     properties: [
+                        { name: 'isMulti', defaultValue: false },
                         { name: 'referenceType' }
                     ]
                 };
@@ -1150,6 +1153,7 @@ export class LangiumGrammarAstReflection extends langium.AbstractAstReflection {
                     properties: [
                         { name: 'cardinality' },
                         { name: 'deprecatedSyntax', defaultValue: false },
+                        { name: 'isMulti', defaultValue: false },
                         { name: 'lookahead' },
                         { name: 'terminal' },
                         { name: 'type' }

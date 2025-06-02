@@ -55,14 +55,15 @@ export class DefaultDocumentHighlightProvider implements DocumentHighlightProvid
         if (!selectedNode) {
             return undefined;
         }
-        const targetAstNode = this.references.findDeclaration(selectedNode);
-        if (targetAstNode) {
-            const includeDeclaration = UriUtils.equals(getDocument(targetAstNode).uri, document.uri);
-            const options: FindReferencesOptions = { documentUri: document.uri, includeDeclaration };
-            const references = this.references.findReferences(targetAstNode, options);
-            return references.map(ref => this.createDocumentHighlight(ref)).toArray();
+        const targetAstNode = this.references.findDeclarations(selectedNode);
+        const highlights: DocumentHighlight[] = [];
+        for (const target of targetAstNode) {
+            const includeDeclaration = UriUtils.equals(getDocument(target).uri, document.uri);
+            const options: FindReferencesOptions = { documentUri: document.uri, includeDeclaration: includeDeclaration };
+            const references = this.references.findReferences(target, options);
+            highlights.push(...references.map(ref => this.createDocumentHighlight(ref)).toArray());
         }
-        return undefined;
+        return highlights;
     }
 
     /**
