@@ -10,6 +10,8 @@ export function registerValidationChecks(services: <%= LanguageName %>Services) 
     const validator = services.validation.<%= LanguageName %>Validator;
     const checks: ValidationChecks<<%= LanguageName %>AstType> = {
         // TODO: Declare validators for your properties
+        // See doc : https://langium.org/docs/learn/workflow/create_validations/
+
     };
     registry.register(checks, validator);
 }
@@ -20,4 +22,5 @@ export function registerValidationChecks(services: <%= LanguageName %>Services) 
 export class <%= LanguageName %>Validator {
 
     // TODO: Add logic here for validation checks of properties
+    // See doc : https://langium.org/docs/learn/workflow/create_validations/
 }
