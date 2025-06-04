@@ -19,7 +19,6 @@ import type { ParseResult, ParserOptions } from '../parser/langium-parser.js';
 import type { ServiceRegistry } from '../service-registry.js';
 import type { LangiumSharedCoreServices } from '../services.js';
 import type { AstNode, AstNodeDescription, Mutable, Reference } from '../syntax-tree.js';
-import type { MultiMap } from '../utils/collections.js';
 import type { Stream } from '../utils/stream.js';
 import { TextDocument } from './documents.js';
 import { CancellationToken } from '../utils/cancellation.js';
@@ -95,10 +94,15 @@ export enum DocumentState {
 }
 
 /**
- * Result of the scope precomputation phase (`ScopeComputation` service).
+ * Result of the scope pre-computation phase (`ScopeComputation` service).
  * It maps every AST node to the set of symbols that are visible in the subtree of that node.
  */
-export type PrecomputedScopes = MultiMap<AstNode, AstNodeDescription>
+export interface PrecomputedScopes {
+    add(key: AstNode, value: AstNodeDescription): void
+    addAll(key: AstNode, values: AstNodeDescription[]): void
+    get(key: AstNode): readonly AstNodeDescription[]
+    getStream(key: AstNode): Stream<AstNodeDescription>
+}
 
 export interface DocumentSegment {
     readonly range: Range
