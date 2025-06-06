@@ -160,117 +160,113 @@ export type ArithmeticsAstType = {
 }
 
 export class ArithmeticsAstReflection extends langium.AbstractAstReflection {
-
-    getAllTypes(): string[] {
-        return [AbstractDefinition, BinaryExpression, DeclaredParameter, Definition, Evaluation, Expression, FunctionCall, Module, NumberLiteral, Statement];
-    }
-
-    protected override computeIsSubtype(subtype: string, supertype: string): boolean {
-        switch (subtype) {
-            case BinaryExpression:
-            case FunctionCall:
-            case NumberLiteral: {
-                return this.isSubtype(Expression, supertype);
-            }
-            case DeclaredParameter: {
-                return this.isSubtype(AbstractDefinition, supertype);
-            }
-            case Definition: {
-                return this.isSubtype(AbstractDefinition, supertype) || this.isSubtype(Statement, supertype);
-            }
-            case Evaluation: {
-                return this.isSubtype(Statement, supertype);
-            }
-            default: {
-                return false;
-            }
-        }
-    }
-
-    getReferenceType(refInfo: langium.ReferenceInfo): string {
-        const referenceId = `${refInfo.container.$type}:${refInfo.property}`;
-        switch (referenceId) {
-            case 'FunctionCall:func': {
-                return AbstractDefinition;
-            }
-            default: {
-                throw new Error(`${referenceId} is not a valid reference id.`);
-            }
-        }
-    }
-
-    getTypeMetaData(type: string): langium.TypeMetaData {
-        switch (type) {
-            case BinaryExpression: {
-                return {
-                    name: BinaryExpression,
-                    properties: [
-                        { name: 'left' },
-                        { name: 'operator' },
-                        { name: 'right' }
-                    ]
-                };
-            }
-            case DeclaredParameter: {
-                return {
-                    name: DeclaredParameter,
-                    properties: [
-                        { name: 'name' }
-                    ]
-                };
-            }
-            case Definition: {
-                return {
-                    name: Definition,
-                    properties: [
-                        { name: 'args', defaultValue: [] },
-                        { name: 'expr' },
-                        { name: 'name' }
-                    ]
-                };
-            }
-            case Evaluation: {
-                return {
-                    name: Evaluation,
-                    properties: [
-                        { name: 'expression' }
-                    ]
-                };
-            }
-            case FunctionCall: {
-                return {
-                    name: FunctionCall,
-                    properties: [
-                        { name: 'args', defaultValue: [] },
-                        { name: 'func' }
-                    ]
-                };
-            }
-            case Module: {
-                return {
-                    name: Module,
-                    properties: [
-                        { name: 'name' },
-                        { name: 'statements', defaultValue: [] }
-                    ]
-                };
-            }
-            case NumberLiteral: {
-                return {
-                    name: NumberLiteral,
-                    properties: [
-                        { name: 'value' }
-                    ]
-                };
-            }
-            default: {
-                return {
-                    name: type,
-                    properties: []
-                };
-            }
-        }
-    }
+    override readonly types = {
+        BinaryExpression: {
+            name: BinaryExpression,
+            properties: {
+                left: {
+                    name: 'left'
+                },
+                operator: {
+                    name: 'operator'
+                },
+                right: {
+                    name: 'right'
+                }
+            },
+            superTypes: ['Expression'],
+            // Property name constants
+            _left: 'left',
+            _operator: 'operator',
+            _right: 'right'
+        },
+        DeclaredParameter: {
+            name: DeclaredParameter,
+            properties: {
+                name: {
+                    name: 'name'
+                }
+            },
+            superTypes: ['AbstractDefinition'],
+            // Property name constants
+            _name: 'name'
+        },
+        Definition: {
+            name: Definition,
+            properties: {
+                args: {
+                    name: 'args',
+                    defaultValue: []
+                },
+                expr: {
+                    name: 'expr'
+                },
+                name: {
+                    name: 'name'
+                }
+            },
+            superTypes: ['AbstractDefinition', 'Statement'],
+            // Property name constants
+            _args: 'args',
+            _expr: 'expr',
+            _name: 'name'
+        },
+        Evaluation: {
+            name: Evaluation,
+            properties: {
+                expression: {
+                    name: 'expression'
+                }
+            },
+            superTypes: ['Statement'],
+            // Property name constants
+            _expression: 'expression'
+        },
+        FunctionCall: {
+            name: FunctionCall,
+            properties: {
+                args: {
+                    name: 'args',
+                    defaultValue: []
+                },
+                func: {
+                    name: 'func',
+                    referenceType: 'AbstractDefinition'
+                }
+            },
+            superTypes: ['Expression'],
+            // Property name constants
+            _args: 'args',
+            _func: 'func'
+        },
+        Module: {
+            name: Module,
+            properties: {
+                name: {
+                    name: 'name'
+                },
+                statements: {
+                    name: 'statements',
+                    defaultValue: []
+                }
+            },
+            superTypes: [],
+            // Property name constants
+            _name: 'name',
+            _statements: 'statements'
+        },
+        NumberLiteral: {
+            name: NumberLiteral,
+            properties: {
+                value: {
+                    name: 'value'
+                }
+            },
+            superTypes: ['Expression'],
+            // Property name constants
+            _value: 'value'
+        },
+    } as const satisfies langium.AstMetaData
 }
 
 export const reflection = new ArithmeticsAstReflection();

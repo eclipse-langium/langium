@@ -120,102 +120,119 @@ export type RequirementsAndTestsAstType = {
 }
 
 export class RequirementsAndTestsAstReflection extends langium.AbstractAstReflection {
-
-    getAllTypes(): string[] {
-        return [Contact, Environment, Requirement, RequirementModel, Test, TestModel];
-    }
-
-    protected override computeIsSubtype(subtype: string, supertype: string): boolean {
-        switch (subtype) {
-            default: {
-                return false;
-            }
+    override readonly types = {
+        Contact: {
+            name: Contact,
+            properties: {
+                user_name: {
+                    name: 'user_name'
+                }
+            },
+            superTypes: [],
+            // Property name constants
+            _user_name: 'user_name'
+        },
+        Environment: {
+            name: Environment,
+            properties: {
+                description: {
+                    name: 'description'
+                },
+                name: {
+                    name: 'name'
+                }
+            },
+            superTypes: [],
+            // Property name constants
+            _description: 'description',
+            _name: 'name'
+        },
+        Requirement: {
+            name: Requirement,
+            properties: {
+                environments: {
+                    name: 'environments',
+                    defaultValue: [],
+                    referenceType: 'Environment'
+                },
+                name: {
+                    name: 'name'
+                },
+                text: {
+                    name: 'text'
+                }
+            },
+            superTypes: [],
+            // Property name constants
+            _environments: 'environments',
+            _name: 'name',
+            _text: 'text'
+        },
+        RequirementModel: {
+            name: RequirementModel,
+            properties: {
+                contact: {
+                    name: 'contact'
+                },
+                environments: {
+                    name: 'environments',
+                    defaultValue: []
+                },
+                requirements: {
+                    name: 'requirements',
+                    defaultValue: []
+                }
+            },
+            superTypes: [],
+            // Property name constants
+            _contact: 'contact',
+            _environments: 'environments',
+            _requirements: 'requirements'
+        },
+        Test: {
+            name: Test,
+            properties: {
+                environments: {
+                    name: 'environments',
+                    defaultValue: [],
+                    referenceType: 'Environment'
+                },
+                name: {
+                    name: 'name'
+                },
+                requirements: {
+                    name: 'requirements',
+                    defaultValue: [],
+                    referenceType: 'Requirement'
+                },
+                testFile: {
+                    name: 'testFile'
+                }
+            },
+            superTypes: [],
+            // Property name constants
+            _environments: 'environments',
+            _name: 'name',
+            _requirements: 'requirements',
+            _testFile: 'testFile'
+        },
+        TestModel: {
+            name: TestModel,
+            properties: {
+                contact: {
+                    name: 'contact'
+                },
+                tests: {
+                    name: 'tests',
+                    defaultValue: []
+                }
+            },
+            superTypes: [],
+            // Property name constants
+            _contact: 'contact',
+            _tests: 'tests'
         }
-    }
-
-    getReferenceType(refInfo: langium.ReferenceInfo): string {
-        const referenceId = `${refInfo.container.$type}:${refInfo.property}`;
-        switch (referenceId) {
-            case 'Requirement:environments':
-            case 'Test:environments': {
-                return Environment;
-            }
-            case 'Test:requirements': {
-                return Requirement;
-            }
-            default: {
-                throw new Error(`${referenceId} is not a valid reference id.`);
-            }
-        }
-    }
-
-    getTypeMetaData(type: string): langium.TypeMetaData {
-        switch (type) {
-            case Contact: {
-                return {
-                    name: Contact,
-                    properties: [
-                        { name: 'user_name' }
-                    ]
-                };
-            }
-            case Environment: {
-                return {
-                    name: Environment,
-                    properties: [
-                        { name: 'description' },
-                        { name: 'name' }
-                    ]
-                };
-            }
-            case Requirement: {
-                return {
-                    name: Requirement,
-                    properties: [
-                        { name: 'environments', defaultValue: [] },
-                        { name: 'name' },
-                        { name: 'text' }
-                    ]
-                };
-            }
-            case RequirementModel: {
-                return {
-                    name: RequirementModel,
-                    properties: [
-                        { name: 'contact' },
-                        { name: 'environments', defaultValue: [] },
-                        { name: 'requirements', defaultValue: [] }
-                    ]
-                };
-            }
-            case Test: {
-                return {
-                    name: Test,
-                    properties: [
-                        { name: 'environments', defaultValue: [] },
-                        { name: 'name' },
-                        { name: 'requirements', defaultValue: [] },
-                        { name: 'testFile' }
-                    ]
-                };
-            }
-            case TestModel: {
-                return {
-                    name: TestModel,
-                    properties: [
-                        { name: 'contact' },
-                        { name: 'tests', defaultValue: [] }
-                    ]
-                };
-            }
-            default: {
-                return {
-                    name: type,
-                    properties: []
-                };
-            }
-        }
-    }
+    } as const satisfies langium.AstMetaData
 }
 
 export const reflection = new RequirementsAndTestsAstReflection();

@@ -744,537 +744,844 @@ export type LangiumGrammarAstType = {
 }
 
 export class LangiumGrammarAstReflection extends langium.AbstractAstReflection {
-
-    getAllTypes(): string[] {
-        return [AbstractElement, AbstractRule, AbstractType, Action, Alternatives, ArrayLiteral, ArrayType, Assignment, BooleanLiteral, CharacterRange, Condition, Conjunction, CrossReference, Disjunction, EndOfFile, Grammar, GrammarImport, Group, InferredType, InfixRule, InfixRuleOperatorList, InfixRuleOperators, Interface, Keyword, NamedArgument, NegatedToken, Negation, NumberLiteral, Parameter, ParameterReference, ParserRule, ReferenceType, RegexToken, ReturnType, RuleCall, SimpleType, StringLiteral, TerminalAlternatives, TerminalGroup, TerminalRule, TerminalRuleCall, Type, TypeAttribute, TypeDefinition, UnionType, UnorderedGroup, UntilToken, ValueLiteral, Wildcard];
-    }
-
-    protected override computeIsSubtype(subtype: string, supertype: string): boolean {
-        switch (subtype) {
-            case Action:
-            case Alternatives:
-            case Assignment:
-            case CharacterRange:
-            case CrossReference:
-            case EndOfFile:
-            case Group:
-            case Keyword:
-            case NegatedToken:
-            case RegexToken:
-            case RuleCall:
-            case TerminalAlternatives:
-            case TerminalGroup:
-            case TerminalRuleCall:
-            case UnorderedGroup:
-            case UntilToken:
-            case Wildcard: {
-                return this.isSubtype(AbstractElement, supertype);
-            }
-            case ArrayLiteral:
-            case NumberLiteral:
-            case StringLiteral: {
-                return this.isSubtype(ValueLiteral, supertype);
-            }
-            case ArrayType:
-            case ReferenceType:
-            case SimpleType:
-            case UnionType: {
-                return this.isSubtype(TypeDefinition, supertype);
-            }
-            case BooleanLiteral: {
-                return this.isSubtype(Condition, supertype) || this.isSubtype(ValueLiteral, supertype);
-            }
-            case Conjunction:
-            case Disjunction:
-            case Negation:
-            case ParameterReference: {
-                return this.isSubtype(Condition, supertype);
-            }
-            case InferredType:
-            case Interface:
-            case Type: {
-                return this.isSubtype(AbstractType, supertype);
-            }
-            case InfixRule:
-            case ParserRule: {
-                return this.isSubtype(AbstractRule, supertype) || this.isSubtype(AbstractType, supertype);
-            }
-            case TerminalRule: {
-                return this.isSubtype(AbstractRule, supertype);
-            }
-            default: {
-                return false;
-            }
+    override readonly types = {
+        AbstractElement: {
+            name: AbstractElement,
+            properties: {
+                cardinality: {
+                    name: 'cardinality'
+                },
+                lookahead: {
+                    name: 'lookahead'
+                }
+            },
+            superTypes: [],
+            // Property name constants
+            _cardinality: 'cardinality',
+            _lookahead: 'lookahead'
+        },
+        Action: {
+            name: Action,
+            properties: {
+                cardinality: {
+                    name: 'cardinality'
+                },
+                feature: {
+                    name: 'feature'
+                },
+                inferredType: {
+                    name: 'inferredType'
+                },
+                lookahead: {
+                    name: 'lookahead'
+                },
+                operator: {
+                    name: 'operator'
+                },
+                type: {
+                    name: 'type',
+                    referenceType: 'AbstractType'
+                }
+            },
+            superTypes: ['AbstractElement'],
+            // Property name constants
+            _cardinality: 'cardinality',
+            _feature: 'feature',
+            _inferredType: 'inferredType',
+            _lookahead: 'lookahead',
+            _operator: 'operator',
+            _type: 'type'
+        },
+        Alternatives: {
+            name: Alternatives,
+            properties: {
+                cardinality: {
+                    name: 'cardinality'
+                },
+                elements: {
+                    name: 'elements',
+                    defaultValue: []
+                },
+                lookahead: {
+                    name: 'lookahead'
+                }
+            },
+            superTypes: ['AbstractElement'],
+            // Property name constants
+            _cardinality: 'cardinality',
+            _elements: 'elements',
+            _lookahead: 'lookahead'
+        },
+        ArrayLiteral: {
+            name: ArrayLiteral,
+            properties: {
+                elements: {
+                    name: 'elements',
+                    defaultValue: []
+                }
+            },
+            superTypes: ['ValueLiteral'],
+            // Property name constants
+            _elements: 'elements'
+        },
+        ArrayType: {
+            name: ArrayType,
+            properties: {
+                elementType: {
+                    name: 'elementType'
+                }
+            },
+            superTypes: ['TypeDefinition'],
+            // Property name constants
+            _elementType: 'elementType'
+        },
+        Assignment: {
+            name: Assignment,
+            properties: {
+                cardinality: {
+                    name: 'cardinality'
+                },
+                feature: {
+                    name: 'feature'
+                },
+                lookahead: {
+                    name: 'lookahead'
+                },
+                operator: {
+                    name: 'operator'
+                },
+                predicate: {
+                    name: 'predicate'
+                },
+                terminal: {
+                    name: 'terminal'
+                }
+            },
+            superTypes: ['AbstractElement'],
+            // Property name constants
+            _cardinality: 'cardinality',
+            _feature: 'feature',
+            _lookahead: 'lookahead',
+            _operator: 'operator',
+            _predicate: 'predicate',
+            _terminal: 'terminal'
+        },
+        BooleanLiteral: {
+            name: BooleanLiteral,
+            properties: {
+                true: {
+                    name: 'true',
+                    defaultValue: false
+                }
+            },
+            superTypes: ['Condition', 'ValueLiteral'],
+            // Property name constants
+            _true: 'true'
+        },
+        CharacterRange: {
+            name: CharacterRange,
+            properties: {
+                cardinality: {
+                    name: 'cardinality'
+                },
+                left: {
+                    name: 'left'
+                },
+                lookahead: {
+                    name: 'lookahead'
+                },
+                right: {
+                    name: 'right'
+                }
+            },
+            superTypes: ['AbstractElement'],
+            // Property name constants
+            _cardinality: 'cardinality',
+            _left: 'left',
+            _lookahead: 'lookahead',
+            _right: 'right'
+        },
+        Conjunction: {
+            name: Conjunction,
+            properties: {
+                left: {
+                    name: 'left'
+                },
+                right: {
+                    name: 'right'
+                }
+            },
+            superTypes: ['Condition'],
+            // Property name constants
+            _left: 'left',
+            _right: 'right'
+        },
+        CrossReference: {
+            name: CrossReference,
+            properties: {
+                cardinality: {
+                    name: 'cardinality'
+                },
+                deprecatedSyntax: {
+                    name: 'deprecatedSyntax',
+                    defaultValue: false
+                },
+                lookahead: {
+                    name: 'lookahead'
+                },
+                terminal: {
+                    name: 'terminal'
+                },
+                type: {
+                    name: 'type',
+                    referenceType: 'AbstractType'
+                }
+            },
+            superTypes: ['AbstractElement'],
+            // Property name constants
+            _cardinality: 'cardinality',
+            _deprecatedSyntax: 'deprecatedSyntax',
+            _lookahead: 'lookahead',
+            _terminal: 'terminal',
+            _type: 'type'
+        },
+        Disjunction: {
+            name: Disjunction,
+            properties: {
+                left: {
+                    name: 'left'
+                },
+                right: {
+                    name: 'right'
+                }
+            },
+            superTypes: ['Condition'],
+            // Property name constants
+            _left: 'left',
+            _right: 'right'
+        },
+        EndOfFile: {
+            name: EndOfFile,
+            properties: {
+                cardinality: {
+                    name: 'cardinality'
+                },
+                lookahead: {
+                    name: 'lookahead'
+                }
+            },
+            superTypes: ['AbstractElement'],
+            // Property name constants
+            _cardinality: 'cardinality',
+            _lookahead: 'lookahead'
+        },
+        Grammar: {
+            name: Grammar,
+            properties: {
+                imports: {
+                    name: 'imports',
+                    defaultValue: []
+                },
+                interfaces: {
+                    name: 'interfaces',
+                    defaultValue: []
+                },
+                isDeclared: {
+                    name: 'isDeclared',
+                    defaultValue: false
+                },
+                name: {
+                    name: 'name'
+                },
+                rules: {
+                    name: 'rules',
+                    defaultValue: []
+                },
+                types: {
+                    name: 'types',
+                    defaultValue: []
+                }
+            },
+            superTypes: [],
+            // Property name constants
+            _imports: 'imports',
+            _interfaces: 'interfaces',
+            _isDeclared: 'isDeclared',
+            _name: 'name',
+            _rules: 'rules',
+            _types: 'types'
+        },
+        GrammarImport: {
+            name: GrammarImport,
+            properties: {
+                path: {
+                    name: 'path'
+                }
+            },
+            superTypes: [],
+            // Property name constants
+            _path: 'path'
+        },
+        Group: {
+            name: Group,
+            properties: {
+                cardinality: {
+                    name: 'cardinality'
+                },
+                elements: {
+                    name: 'elements',
+                    defaultValue: []
+                },
+                guardCondition: {
+                    name: 'guardCondition'
+                },
+                lookahead: {
+                    name: 'lookahead'
+                },
+                predicate: {
+                    name: 'predicate'
+                }
+            },
+            superTypes: ['AbstractElement'],
+            // Property name constants
+            _cardinality: 'cardinality',
+            _elements: 'elements',
+            _guardCondition: 'guardCondition',
+            _lookahead: 'lookahead',
+            _predicate: 'predicate'
+        },
+        InferredType: {
+            name: InferredType,
+            properties: {
+                name: {
+                    name: 'name'
+                }
+            },
+            superTypes: ['AbstractType'],
+            // Property name constants
+            _name: 'name'
+        },
+        InfixRule: {
+            name: InfixRule,
+            properties: {
+                call: {
+                    name: 'call'
+                },
+                name: {
+                    name: 'name'
+                },
+                operators: {
+                    name: 'operators'
+                },
+                parameters: {
+                    name: 'parameters',
+                    defaultValue: []
+                }
+            },
+            superTypes: ['AbstractRule', 'AbstractType'],
+            // Property name constants
+            _call: 'call',
+            _name: 'name',
+            _operators: 'operators',
+            _parameters: 'parameters'
+        },
+        InfixRuleOperatorList: {
+            name: InfixRuleOperatorList,
+            properties: {
+                associativity: {
+                    name: 'associativity'
+                },
+                operators: {
+                    name: 'operators',
+                    defaultValue: []
+                }
+            },
+            superTypes: [],
+            // Property name constants
+            _associativity: 'associativity',
+            _operators: 'operators'
+        },
+        InfixRuleOperators: {
+            name: InfixRuleOperators,
+            properties: {
+                precedences: {
+                    name: 'precedences',
+                    defaultValue: []
+                }
+            },
+            superTypes: [],
+            // Property name constants
+            _precedences: 'precedences'
+        },
+        Interface: {
+            name: Interface,
+            properties: {
+                attributes: {
+                    name: 'attributes',
+                    defaultValue: []
+                },
+                name: {
+                    name: 'name'
+                },
+                superTypes: {
+                    name: 'superTypes',
+                    defaultValue: [],
+                    referenceType: 'AbstractType'
+                }
+            },
+            superTypes: ['AbstractType'],
+            // Property name constants
+            _attributes: 'attributes',
+            _name: 'name',
+            _superTypes: 'superTypes'
+        },
+        Keyword: {
+            name: Keyword,
+            properties: {
+                cardinality: {
+                    name: 'cardinality'
+                },
+                lookahead: {
+                    name: 'lookahead'
+                },
+                predicate: {
+                    name: 'predicate'
+                },
+                value: {
+                    name: 'value'
+                }
+            },
+            superTypes: ['AbstractElement'],
+            // Property name constants
+            _cardinality: 'cardinality',
+            _lookahead: 'lookahead',
+            _predicate: 'predicate',
+            _value: 'value'
+        },
+        NamedArgument: {
+            name: NamedArgument,
+            properties: {
+                calledByName: {
+                    name: 'calledByName',
+                    defaultValue: false
+                },
+                parameter: {
+                    name: 'parameter',
+                    referenceType: 'Parameter'
+                },
+                value: {
+                    name: 'value'
+                }
+            },
+            superTypes: [],
+            // Property name constants
+            _calledByName: 'calledByName',
+            _parameter: 'parameter',
+            _value: 'value'
+        },
+        NegatedToken: {
+            name: NegatedToken,
+            properties: {
+                cardinality: {
+                    name: 'cardinality'
+                },
+                lookahead: {
+                    name: 'lookahead'
+                },
+                terminal: {
+                    name: 'terminal'
+                }
+            },
+            superTypes: ['AbstractElement'],
+            // Property name constants
+            _cardinality: 'cardinality',
+            _lookahead: 'lookahead',
+            _terminal: 'terminal'
+        },
+        Negation: {
+            name: Negation,
+            properties: {
+                value: {
+                    name: 'value'
+                }
+            },
+            superTypes: ['Condition'],
+            // Property name constants
+            _value: 'value'
+        },
+        NumberLiteral: {
+            name: NumberLiteral,
+            properties: {
+                value: {
+                    name: 'value'
+                }
+            },
+            superTypes: ['ValueLiteral'],
+            // Property name constants
+            _value: 'value'
+        },
+        Parameter: {
+            name: Parameter,
+            properties: {
+                name: {
+                    name: 'name'
+                }
+            },
+            superTypes: [],
+            // Property name constants
+            _name: 'name'
+        },
+        ParameterReference: {
+            name: ParameterReference,
+            properties: {
+                parameter: {
+                    name: 'parameter',
+                    referenceType: 'Parameter'
+                }
+            },
+            superTypes: ['Condition'],
+            // Property name constants
+            _parameter: 'parameter'
+        },
+        ParserRule: {
+            name: ParserRule,
+            properties: {
+                dataType: {
+                    name: 'dataType'
+                },
+                definition: {
+                    name: 'definition'
+                },
+                entry: {
+                    name: 'entry',
+                    defaultValue: false
+                },
+                fragment: {
+                    name: 'fragment',
+                    defaultValue: false
+                },
+                inferredType: {
+                    name: 'inferredType'
+                },
+                name: {
+                    name: 'name'
+                },
+                parameters: {
+                    name: 'parameters',
+                    defaultValue: []
+                },
+                returnType: {
+                    name: 'returnType',
+                    referenceType: 'AbstractType'
+                }
+            },
+            superTypes: ['AbstractRule', 'AbstractType'],
+            // Property name constants
+            _dataType: 'dataType',
+            _definition: 'definition',
+            _entry: 'entry',
+            _fragment: 'fragment',
+            _inferredType: 'inferredType',
+            _name: 'name',
+            _parameters: 'parameters',
+            _returnType: 'returnType'
+        },
+        ReferenceType: {
+            name: ReferenceType,
+            properties: {
+                referenceType: {
+                    name: 'referenceType'
+                }
+            },
+            superTypes: ['TypeDefinition'],
+            // Property name constants
+            _referenceType: 'referenceType'
+        },
+        RegexToken: {
+            name: RegexToken,
+            properties: {
+                cardinality: {
+                    name: 'cardinality'
+                },
+                lookahead: {
+                    name: 'lookahead'
+                },
+                regex: {
+                    name: 'regex'
+                }
+            },
+            superTypes: ['AbstractElement'],
+            // Property name constants
+            _cardinality: 'cardinality',
+            _lookahead: 'lookahead',
+            _regex: 'regex'
+        },
+        ReturnType: {
+            name: ReturnType,
+            properties: {
+                name: {
+                    name: 'name'
+                }
+            },
+            superTypes: [],
+            // Property name constants
+            _name: 'name'
+        },
+        RuleCall: {
+            name: RuleCall,
+            properties: {
+                arguments: {
+                    name: 'arguments',
+                    defaultValue: []
+                },
+                cardinality: {
+                    name: 'cardinality'
+                },
+                lookahead: {
+                    name: 'lookahead'
+                },
+                predicate: {
+                    name: 'predicate'
+                },
+                rule: {
+                    name: 'rule',
+                    referenceType: 'AbstractRule'
+                }
+            },
+            superTypes: ['AbstractElement'],
+            // Property name constants
+            _arguments: 'arguments',
+            _cardinality: 'cardinality',
+            _lookahead: 'lookahead',
+            _predicate: 'predicate',
+            _rule: 'rule'
+        },
+        SimpleType: {
+            name: SimpleType,
+            properties: {
+                primitiveType: {
+                    name: 'primitiveType'
+                },
+                stringType: {
+                    name: 'stringType'
+                },
+                typeRef: {
+                    name: 'typeRef',
+                    referenceType: 'AbstractType'
+                }
+            },
+            superTypes: ['TypeDefinition'],
+            // Property name constants
+            _primitiveType: 'primitiveType',
+            _stringType: 'stringType',
+            _typeRef: 'typeRef'
+        },
+        StringLiteral: {
+            name: StringLiteral,
+            properties: {
+                value: {
+                    name: 'value'
+                }
+            },
+            superTypes: ['ValueLiteral'],
+            // Property name constants
+            _value: 'value'
+        },
+        TerminalAlternatives: {
+            name: TerminalAlternatives,
+            properties: {
+                cardinality: {
+                    name: 'cardinality'
+                },
+                elements: {
+                    name: 'elements',
+                    defaultValue: []
+                },
+                lookahead: {
+                    name: 'lookahead'
+                }
+            },
+            superTypes: ['AbstractElement'],
+            // Property name constants
+            _cardinality: 'cardinality',
+            _elements: 'elements',
+            _lookahead: 'lookahead'
+        },
+        TerminalGroup: {
+            name: TerminalGroup,
+            properties: {
+                cardinality: {
+                    name: 'cardinality'
+                },
+                elements: {
+                    name: 'elements',
+                    defaultValue: []
+                },
+                lookahead: {
+                    name: 'lookahead'
+                }
+            },
+            superTypes: ['AbstractElement'],
+            // Property name constants
+            _cardinality: 'cardinality',
+            _elements: 'elements',
+            _lookahead: 'lookahead'
+        },
+        TerminalRule: {
+            name: TerminalRule,
+            properties: {
+                definition: {
+                    name: 'definition'
+                },
+                fragment: {
+                    name: 'fragment',
+                    defaultValue: false
+                },
+                hidden: {
+                    name: 'hidden',
+                    defaultValue: false
+                },
+                name: {
+                    name: 'name'
+                },
+                type: {
+                    name: 'type'
+                }
+            },
+            superTypes: ['AbstractRule'],
+            // Property name constants
+            _definition: 'definition',
+            _fragment: 'fragment',
+            _hidden: 'hidden',
+            _name: 'name',
+            _type: 'type'
+        },
+        TerminalRuleCall: {
+            name: TerminalRuleCall,
+            properties: {
+                cardinality: {
+                    name: 'cardinality'
+                },
+                lookahead: {
+                    name: 'lookahead'
+                },
+                rule: {
+                    name: 'rule',
+                    referenceType: 'TerminalRule'
+                }
+            },
+            superTypes: ['AbstractElement'],
+            // Property name constants
+            _cardinality: 'cardinality',
+            _lookahead: 'lookahead',
+            _rule: 'rule'
+        },
+        Type: {
+            name: Type,
+            properties: {
+                name: {
+                    name: 'name'
+                },
+                type: {
+                    name: 'type'
+                }
+            },
+            superTypes: ['AbstractType'],
+            // Property name constants
+            _name: 'name',
+            _type: 'type'
+        },
+        TypeAttribute: {
+            name: TypeAttribute,
+            properties: {
+                defaultValue: {
+                    name: 'defaultValue'
+                },
+                isOptional: {
+                    name: 'isOptional',
+                    defaultValue: false
+                },
+                name: {
+                    name: 'name'
+                },
+                type: {
+                    name: 'type'
+                }
+            },
+            superTypes: [],
+            // Property name constants
+            _defaultValue: 'defaultValue',
+            _isOptional: 'isOptional',
+            _name: 'name',
+            _type: 'type'
+        },
+        UnionType: {
+            name: UnionType,
+            properties: {
+                types: {
+                    name: 'types',
+                    defaultValue: []
+                }
+            },
+            superTypes: ['TypeDefinition'],
+            // Property name constants
+            _types: 'types'
+        },
+        UnorderedGroup: {
+            name: UnorderedGroup,
+            properties: {
+                cardinality: {
+                    name: 'cardinality'
+                },
+                elements: {
+                    name: 'elements',
+                    defaultValue: []
+                },
+                lookahead: {
+                    name: 'lookahead'
+                }
+            },
+            superTypes: ['AbstractElement'],
+            // Property name constants
+            _cardinality: 'cardinality',
+            _elements: 'elements',
+            _lookahead: 'lookahead'
+        },
+        UntilToken: {
+            name: UntilToken,
+            properties: {
+                cardinality: {
+                    name: 'cardinality'
+                },
+                lookahead: {
+                    name: 'lookahead'
+                },
+                terminal: {
+                    name: 'terminal'
+                }
+            },
+            superTypes: ['AbstractElement'],
+            // Property name constants
+            _cardinality: 'cardinality',
+            _lookahead: 'lookahead',
+            _terminal: 'terminal'
+        },
+        Wildcard: {
+            name: Wildcard,
+            properties: {
+                cardinality: {
+                    name: 'cardinality'
+                },
+                lookahead: {
+                    name: 'lookahead'
+                }
+            },
+            superTypes: ['AbstractElement'],
+            // Property name constants
+            _cardinality: 'cardinality',
+            _lookahead: 'lookahead'
         }
-    }
-
-    getReferenceType(refInfo: langium.ReferenceInfo): string {
-        const referenceId = `${refInfo.container.$type}:${refInfo.property}`;
-        switch (referenceId) {
-            case 'Action:type':
-            case 'CrossReference:type':
-            case 'Interface:superTypes':
-            case 'ParserRule:returnType':
-            case 'SimpleType:typeRef': {
-                return AbstractType;
-            }
-            case 'NamedArgument:parameter':
-            case 'ParameterReference:parameter': {
-                return Parameter;
-            }
-            case 'RuleCall:rule': {
-                return AbstractRule;
-            }
-            case 'TerminalRuleCall:rule': {
-                return TerminalRule;
-            }
-            default: {
-                throw new Error(`${referenceId} is not a valid reference id.`);
-            }
-        }
-    }
-
-    getTypeMetaData(type: string): langium.TypeMetaData {
-        switch (type) {
-            case AbstractElement: {
-                return {
-                    name: AbstractElement,
-                    properties: [
-                        { name: 'cardinality' },
-                        { name: 'lookahead' }
-                    ]
-                };
-            }
-            case ArrayLiteral: {
-                return {
-                    name: ArrayLiteral,
-                    properties: [
-                        { name: 'elements', defaultValue: [] }
-                    ]
-                };
-            }
-            case ArrayType: {
-                return {
-                    name: ArrayType,
-                    properties: [
-                        { name: 'elementType' }
-                    ]
-                };
-            }
-            case BooleanLiteral: {
-                return {
-                    name: BooleanLiteral,
-                    properties: [
-                        { name: 'true', defaultValue: false }
-                    ]
-                };
-            }
-            case Conjunction: {
-                return {
-                    name: Conjunction,
-                    properties: [
-                        { name: 'left' },
-                        { name: 'right' }
-                    ]
-                };
-            }
-            case Disjunction: {
-                return {
-                    name: Disjunction,
-                    properties: [
-                        { name: 'left' },
-                        { name: 'right' }
-                    ]
-                };
-            }
-            case Grammar: {
-                return {
-                    name: Grammar,
-                    properties: [
-                        { name: 'imports', defaultValue: [] },
-                        { name: 'interfaces', defaultValue: [] },
-                        { name: 'isDeclared', defaultValue: false },
-                        { name: 'name' },
-                        { name: 'rules', defaultValue: [] },
-                        { name: 'types', defaultValue: [] }
-                    ]
-                };
-            }
-            case GrammarImport: {
-                return {
-                    name: GrammarImport,
-                    properties: [
-                        { name: 'path' }
-                    ]
-                };
-            }
-            case InferredType: {
-                return {
-                    name: InferredType,
-                    properties: [
-                        { name: 'name' }
-                    ]
-                };
-            }
-            case InfixRule: {
-                return {
-                    name: InfixRule,
-                    properties: [
-                        { name: 'call' },
-                        { name: 'name' },
-                        { name: 'operators' },
-                        { name: 'parameters', defaultValue: [] }
-                    ]
-                };
-            }
-            case InfixRuleOperatorList: {
-                return {
-                    name: InfixRuleOperatorList,
-                    properties: [
-                        { name: 'associativity' },
-                        { name: 'operators', defaultValue: [] }
-                    ]
-                };
-            }
-            case InfixRuleOperators: {
-                return {
-                    name: InfixRuleOperators,
-                    properties: [
-                        { name: 'precedences', defaultValue: [] }
-                    ]
-                };
-            }
-            case Interface: {
-                return {
-                    name: Interface,
-                    properties: [
-                        { name: 'attributes', defaultValue: [] },
-                        { name: 'name' },
-                        { name: 'superTypes', defaultValue: [] }
-                    ]
-                };
-            }
-            case NamedArgument: {
-                return {
-                    name: NamedArgument,
-                    properties: [
-                        { name: 'calledByName', defaultValue: false },
-                        { name: 'parameter' },
-                        { name: 'value' }
-                    ]
-                };
-            }
-            case Negation: {
-                return {
-                    name: Negation,
-                    properties: [
-                        { name: 'value' }
-                    ]
-                };
-            }
-            case NumberLiteral: {
-                return {
-                    name: NumberLiteral,
-                    properties: [
-                        { name: 'value' }
-                    ]
-                };
-            }
-            case Parameter: {
-                return {
-                    name: Parameter,
-                    properties: [
-                        { name: 'name' }
-                    ]
-                };
-            }
-            case ParameterReference: {
-                return {
-                    name: ParameterReference,
-                    properties: [
-                        { name: 'parameter' }
-                    ]
-                };
-            }
-            case ParserRule: {
-                return {
-                    name: ParserRule,
-                    properties: [
-                        { name: 'dataType' },
-                        { name: 'definition' },
-                        { name: 'entry', defaultValue: false },
-                        { name: 'fragment', defaultValue: false },
-                        { name: 'inferredType' },
-                        { name: 'name' },
-                        { name: 'parameters', defaultValue: [] },
-                        { name: 'returnType' }
-                    ]
-                };
-            }
-            case ReferenceType: {
-                return {
-                    name: ReferenceType,
-                    properties: [
-                        { name: 'referenceType' }
-                    ]
-                };
-            }
-            case ReturnType: {
-                return {
-                    name: ReturnType,
-                    properties: [
-                        { name: 'name' }
-                    ]
-                };
-            }
-            case SimpleType: {
-                return {
-                    name: SimpleType,
-                    properties: [
-                        { name: 'primitiveType' },
-                        { name: 'stringType' },
-                        { name: 'typeRef' }
-                    ]
-                };
-            }
-            case StringLiteral: {
-                return {
-                    name: StringLiteral,
-                    properties: [
-                        { name: 'value' }
-                    ]
-                };
-            }
-            case TerminalRule: {
-                return {
-                    name: TerminalRule,
-                    properties: [
-                        { name: 'definition' },
-                        { name: 'fragment', defaultValue: false },
-                        { name: 'hidden', defaultValue: false },
-                        { name: 'name' },
-                        { name: 'type' }
-                    ]
-                };
-            }
-            case Type: {
-                return {
-                    name: Type,
-                    properties: [
-                        { name: 'name' },
-                        { name: 'type' }
-                    ]
-                };
-            }
-            case TypeAttribute: {
-                return {
-                    name: TypeAttribute,
-                    properties: [
-                        { name: 'defaultValue' },
-                        { name: 'isOptional', defaultValue: false },
-                        { name: 'name' },
-                        { name: 'type' }
-                    ]
-                };
-            }
-            case UnionType: {
-                return {
-                    name: UnionType,
-                    properties: [
-                        { name: 'types', defaultValue: [] }
-                    ]
-                };
-            }
-            case Action: {
-                return {
-                    name: Action,
-                    properties: [
-                        { name: 'cardinality' },
-                        { name: 'feature' },
-                        { name: 'inferredType' },
-                        { name: 'lookahead' },
-                        { name: 'operator' },
-                        { name: 'type' }
-                    ]
-                };
-            }
-            case Alternatives: {
-                return {
-                    name: Alternatives,
-                    properties: [
-                        { name: 'cardinality' },
-                        { name: 'elements', defaultValue: [] },
-                        { name: 'lookahead' }
-                    ]
-                };
-            }
-            case Assignment: {
-                return {
-                    name: Assignment,
-                    properties: [
-                        { name: 'cardinality' },
-                        { name: 'feature' },
-                        { name: 'lookahead' },
-                        { name: 'operator' },
-                        { name: 'predicate' },
-                        { name: 'terminal' }
-                    ]
-                };
-            }
-            case CharacterRange: {
-                return {
-                    name: CharacterRange,
-                    properties: [
-                        { name: 'cardinality' },
-                        { name: 'left' },
-                        { name: 'lookahead' },
-                        { name: 'right' }
-                    ]
-                };
-            }
-            case CrossReference: {
-                return {
-                    name: CrossReference,
-                    properties: [
-                        { name: 'cardinality' },
-                        { name: 'deprecatedSyntax', defaultValue: false },
-                        { name: 'lookahead' },
-                        { name: 'terminal' },
-                        { name: 'type' }
-                    ]
-                };
-            }
-            case EndOfFile: {
-                return {
-                    name: EndOfFile,
-                    properties: [
-                        { name: 'cardinality' },
-                        { name: 'lookahead' }
-                    ]
-                };
-            }
-            case Group: {
-                return {
-                    name: Group,
-                    properties: [
-                        { name: 'cardinality' },
-                        { name: 'elements', defaultValue: [] },
-                        { name: 'guardCondition' },
-                        { name: 'lookahead' },
-                        { name: 'predicate' }
-                    ]
-                };
-            }
-            case Keyword: {
-                return {
-                    name: Keyword,
-                    properties: [
-                        { name: 'cardinality' },
-                        { name: 'lookahead' },
-                        { name: 'predicate' },
-                        { name: 'value' }
-                    ]
-                };
-            }
-            case NegatedToken: {
-                return {
-                    name: NegatedToken,
-                    properties: [
-                        { name: 'cardinality' },
-                        { name: 'lookahead' },
-                        { name: 'terminal' }
-                    ]
-                };
-            }
-            case RegexToken: {
-                return {
-                    name: RegexToken,
-                    properties: [
-                        { name: 'cardinality' },
-                        { name: 'lookahead' },
-                        { name: 'regex' }
-                    ]
-                };
-            }
-            case RuleCall: {
-                return {
-                    name: RuleCall,
-                    properties: [
-                        { name: 'arguments', defaultValue: [] },
-                        { name: 'cardinality' },
-                        { name: 'lookahead' },
-                        { name: 'predicate' },
-                        { name: 'rule' }
-                    ]
-                };
-            }
-            case TerminalAlternatives: {
-                return {
-                    name: TerminalAlternatives,
-                    properties: [
-                        { name: 'cardinality' },
-                        { name: 'elements', defaultValue: [] },
-                        { name: 'lookahead' }
-                    ]
-                };
-            }
-            case TerminalGroup: {
-                return {
-                    name: TerminalGroup,
-                    properties: [
-                        { name: 'cardinality' },
-                        { name: 'elements', defaultValue: [] },
-                        { name: 'lookahead' }
-                    ]
-                };
-            }
-            case TerminalRuleCall: {
-                return {
-                    name: TerminalRuleCall,
-                    properties: [
-                        { name: 'cardinality' },
-                        { name: 'lookahead' },
-                        { name: 'rule' }
-                    ]
-                };
-            }
-            case UnorderedGroup: {
-                return {
-                    name: UnorderedGroup,
-                    properties: [
-                        { name: 'cardinality' },
-                        { name: 'elements', defaultValue: [] },
-                        { name: 'lookahead' }
-                    ]
-                };
-            }
-            case UntilToken: {
-                return {
-                    name: UntilToken,
-                    properties: [
-                        { name: 'cardinality' },
-                        { name: 'lookahead' },
-                        { name: 'terminal' }
-                    ]
-                };
-            }
-            case Wildcard: {
-                return {
-                    name: Wildcard,
-                    properties: [
-                        { name: 'cardinality' },
-                        { name: 'lookahead' }
-                    ]
-                };
-            }
-            default: {
-                return {
-                    name: type,
-                    properties: []
-                };
-            }
-        }
-    }
+    } as const satisfies langium.AstMetaData
 }
 
 export const reflection = new LangiumGrammarAstReflection();

@@ -20,7 +20,7 @@ describe('Ast generator', () => {
 
     testGeneratedAst('should generate checker functions for datatype rules comprised of a single string', `
         grammar TestGrammar
-            
+
         A returns string:
             'a';
 
@@ -28,7 +28,7 @@ describe('Ast generator', () => {
         terminal ID: /[_a-zA-Z][\\w_]*/;
     `, expandToString`
         export type A = 'a';
-            
+
         export function isA(item: unknown): item is A {
             return item === 'a';
         }
@@ -36,7 +36,7 @@ describe('Ast generator', () => {
 
     testGeneratedAst('should generate checker functions for datatype rules comprised of a multiple strings', `
         grammar TestGrammar
-            
+
         A returns string:
             'a' | 'b' | 'c';
 
@@ -44,7 +44,7 @@ describe('Ast generator', () => {
         terminal ID: /[_a-zA-Z][\\w_]*/;
     `, expandToString`
         export type A = 'a' | 'b' | 'c';
-            
+
         export function isA(item: unknown): item is A {
             return item === 'a' || item === 'b' || item === 'c';
         }
@@ -52,7 +52,7 @@ describe('Ast generator', () => {
 
     testGeneratedAst('should generate checker functions for datatype rules with subtypes', `
         grammar TestGrammar
-            
+
         A returns string:
             'a';
 
@@ -63,11 +63,11 @@ describe('Ast generator', () => {
         terminal ID: /[_a-zA-Z][\\w_]*/;
     `, expandToString`
         export type A = 'a';
-            
+
         export function isA(item: unknown): item is A {
             return item === 'a';
         }
-            
+
         export type AB = 'b' | A;
 
         export function isAB(item: unknown): item is AB {
@@ -77,7 +77,7 @@ describe('Ast generator', () => {
 
     testGeneratedAst('should generate checker functions for datatype rules referencing a terminal', `
         grammar TestGrammar
-            
+
         A returns string:
             ID;
 
@@ -85,7 +85,7 @@ describe('Ast generator', () => {
         terminal ID: /[_a-zA-Z][\\w_]*/;
     `, expandToString`
         export type A = string;
-        
+
         export function isA(item: unknown): item is A {
             return (typeof item === 'string' && (/[_a-zA-Z][\\w_]*/.test(item)));
         }
@@ -93,7 +93,7 @@ describe('Ast generator', () => {
 
     testGeneratedAst('should generate checker functions for datatype rules referencing multiple terminals', `
         grammar TestGrammar
-            
+
         A returns string:
             ID | STRING;
 
@@ -102,7 +102,7 @@ describe('Ast generator', () => {
         terminal STRING: /"(\\\\.|[^"\\\\])*"|'(\\\\.|[^'\\\\])*'/;
     `, expandToString`
         export type A = string;
-            
+
         export function isA(item: unknown): item is A {
             return (typeof item === 'string' && (/[_a-zA-Z][\\w_]*/.test(item) || /"(\\\\.|[^"\\\\])*"|'(\\\\.|[^'\\\\])*'/.test(item)));
         }
@@ -110,7 +110,7 @@ describe('Ast generator', () => {
 
     testGeneratedAst('should generate checker functions for datatype rules with nested union', `
         grammar TestGrammar
-            
+
         A returns string:
             'a';
 
@@ -127,19 +127,19 @@ describe('Ast generator', () => {
         terminal ID: /[_a-zA-Z][\\w_]*/;
     `, expandToString`
         export type A = 'a';
-            
+
         export function isA(item: unknown): item is A {
             return item === 'a';
         }
-        
+
         export type ABC = (B | C) | A;
-            
+
         export function isABC(item: unknown): item is ABC {
             return isA(item) || isB(item) || isC(item);
         }
 
         export type B = 'b';
-            
+
         export function isB(item: unknown): item is B {
             return item === 'b';
         }
@@ -153,7 +153,7 @@ describe('Ast generator', () => {
 
     testGeneratedAst('should generate checker functions for datatype rules with repeated terminals', `
         grammar TestGrammar
-            
+
         A returns string:
             ID ('.' ID)*;
 
@@ -161,7 +161,7 @@ describe('Ast generator', () => {
         terminal ID: /[_a-zA-Z][\\w_]*/;
     `, expandToString`
         export type A = string;
-            
+
         export function isA(item: unknown): item is A {
             return typeof item === 'string';
         }
@@ -169,7 +169,7 @@ describe('Ast generator', () => {
 
     testGeneratedInterface('should escape string delimiters in property type', `
         grammar TestGrammar
-            
+
         entry Test: value="'test'";
 
         hidden terminal WS: /\\s+/;
@@ -190,12 +190,12 @@ describe('Ast generator', () => {
         grammar TestGrammar
 
         A returns number: '1';
-            
+
         hidden terminal WS: /\\s+/;
         terminal ID: /[_a-zA-Z][\\w_]*/;
     `, expandToString`
         export type A = number;
-            
+
         export function isA(item: unknown): item is A {
             return typeof item === 'number';
         }
@@ -206,12 +206,12 @@ describe('Ast generator', () => {
 
         Node: num=A;
         A returns number: '1';
-            
+
         hidden terminal WS: /\\s+/;
         terminal ID: /[_a-zA-Z][\\w_]*/;
     `, expandToString`
         export type A = number;
-            
+
         export function isA(item: unknown): item is A {
             return typeof item === 'number';
         }
@@ -233,12 +233,12 @@ describe('Ast generator', () => {
 
         Node: num+=A*;
         A returns number: '1';
-            
+
         hidden terminal WS: /\\s+/;
         terminal ID: /[_a-zA-Z][\\w_]*/;
     `, expandToString`
         export type A = number;
-            
+
         export function isA(item: unknown): item is A {
             return typeof item === 'number';
         }
@@ -259,12 +259,12 @@ describe('Ast generator', () => {
         grammar TestGrammar
 
         A returns boolean: 'on';
-            
+
         hidden terminal WS: /\\s+/;
         terminal ID: /[_a-zA-Z][\\w_]*/;
     `, expandToString`
         export type A = boolean;
-            
+
         export function isA(item: unknown): item is A {
             return typeof item === 'boolean';
         }
@@ -274,12 +274,12 @@ describe('Ast generator', () => {
         grammar TestGrammar
 
         A returns bigint: '1';
-            
+
         hidden terminal WS: /\\s+/;
         terminal ID: /[_a-zA-Z][\\w_]*/;
     `, expandToString`
         export type A = bigint;
-            
+
         export function isA(item: unknown): item is A {
             return typeof item === 'bigint';
         }
@@ -289,12 +289,12 @@ describe('Ast generator', () => {
         grammar TestGrammar
 
         A returns Date: '2023-01-01';
-            
+
         hidden terminal WS: /\\s+/;
         terminal ID: /[_a-zA-Z][\\w_]*/;
     `, expandToString`
         export type A = Date;
-        
+
         export function isA(item: unknown): item is A {
             return item instanceof Date;
         }
@@ -302,12 +302,12 @@ describe('Ast generator', () => {
 
     test('should generate terminal names and regular expressions', () => testTerminalConstants(`
         grammar TestGrammar
-            
+
         entry Hello:
             'Hello, ' name=ID '!';
 
         hidden terminal WS: /\\s+/;
-        
+
         terminal ID: /[_a-zA-Z][\\w_]*/;
     `, expandToString`
         export const TestTerminals = {
@@ -318,12 +318,12 @@ describe('Ast generator', () => {
 
     test('should generate terminal constants with range operator', () => testTerminalConstants(`
         grammar TestGrammar
-            
+
         entry Amount:
             value=NUMBER;
 
         hidden terminal WS: /\\s+/;
-        
+
         terminal NUMBER: '0'..'9'+;
     `, expandToString`
         export const TestTerminals = {
@@ -334,12 +334,12 @@ describe('Ast generator', () => {
 
     test('should generate terminal constants with fragments', () => testTerminalConstants(`
         grammar TestGrammar
-            
+
         entry Amount:
             value=NUMBER;
 
         hidden terminal WS: /\\s+/;
-        
+
         terminal NUMBER: DIGIT+;
         terminal fragment DIGIT: '0'..'9';
     `, expandToString`
@@ -351,7 +351,7 @@ describe('Ast generator', () => {
 
     test('should generate terminal constants with slashes', () => testTerminalConstants(`
         grammar TestGrammar
-            
+
         entry Model:
             value=COMMENT;
 
@@ -364,42 +364,39 @@ describe('Ast generator', () => {
 
     testTypeMetaData('should generate property metadata for super types', `
         grammar TestGrammar
-             
+
         interface IAmArray {
             elements: ArrayContent[];
         }
         interface DeclaredArray extends IAmArray{ }
-          
+
         DeclaredArray returns DeclaredArray:
             'declared' (elements+=ArrayContent)* ';';
 
         hidden terminal WS: /\\s+/;
         terminal ID: /[_a-zA-Z][\\w_]*/;
     `, expandToString`
-        getTypeMetaData(type: string): langium.TypeMetaData {
-                switch (type) {
-                    case IAmArray: {
-                        return {
-                            name: IAmArray,
-                            properties: [
-                                { name: 'elements', defaultValue: [] }
-                            ]
-                        };
-                    }
-                    case DeclaredArray: {
-                        return {
-                            name: DeclaredArray,
-                            properties: [
-                                { name: 'elements', defaultValue: [] }
-                            ]
-                        };
-                    }
-                    default: {
-                        return {
-                            name: type,
-                            properties: []
-                        };
-                    }
+        export class testAstReflection extends langium.AbstractAstReflection {
+            override readonly types: langium.AstMetaData = {
+                DeclaredArray: {
+                    name: DeclaredArray,
+                    properties: {
+                        elements: {
+                            name: 'elements',
+                            defaultValue: []
+                        }
+                    },
+                    superTypes: ['IAmArray']
+                },
+                IAmArray: {
+                    name: IAmArray,
+                    properties: {
+                        elements: {
+                            name: 'elements',
+                            defaultValue: []
+                        }
+                    },
+                    superTypes: []
                 }
             }
         }`
@@ -407,33 +404,28 @@ describe('Ast generator', () => {
 
     testTypeMetaData('should generate escaped default value', `
         grammar TestGrammar
-             
+
         interface Test {
             value: string = "'test'";
         }
-          
+
         Test returns Test:
             value=ID;
 
         hidden terminal WS: /\\s+/;
         terminal ID: /[_a-zA-Z][\\w_]*/;
     `, expandToString`
-        getTypeMetaData(type: string): langium.TypeMetaData {
-                switch (type) {
-                    case Test: {
-                        return {
-                            name: Test,
-                            properties: [
-                                { name: 'value', defaultValue: '\\'test\\'' }
-                            ]
-                        };
-                    }
-                    default: {
-                        return {
-                            name: type,
-                            properties: []
-                        };
-                    }
+        export class testAstReflection extends langium.AbstractAstReflection {
+            override readonly types: langium.AstMetaData = {
+                Test: {
+                    name: Test,
+                    properties: {
+                        value: {
+                            name: 'value',
+                            defaultValue: '\\'test\\''
+                        }
+                    },
+                    superTypes: []
                 }
             }
         }`
@@ -441,7 +433,7 @@ describe('Ast generator', () => {
 
     testReferenceType('check all referenceIds are properly generated', `
         grammar TestGrammar
-             
+
         interface A {
             refA1: @A
             refB1: @B
@@ -456,35 +448,86 @@ describe('Ast generator', () => {
             refD1: @D
         }
     `, expandToString`
-        getReferenceType(refInfo: langium.ReferenceInfo): string {
-                const referenceId = \`\${refInfo.container.$type}:\${refInfo.property}\`;
-                switch (referenceId) {
-                    case 'A:refA1':
-                    case 'B:refA1':
-                    case 'C:refA1':
-                    case 'D:refA1': {
-                        return A;
-                    }
-                    case 'A:refB1':
-                    case 'B:refB2':
-                    case 'B:refB1':
-                    case 'C:refB1':
-                    case 'C:refB2':
-                    case 'D:refB1':
-                    case 'D:refB2': {
-                        return B;
-                    }
-                    case 'C:refC1': {
-                        return C;
-                    }
-                    case 'D:refD1': {
-                        return D;
-                    }
-                    default: {
-                        throw new Error(\`\${referenceId} is not a valid reference id.\`);
-                    }
+        export class testAstReflection extends langium.AbstractAstReflection {
+            override readonly types: langium.AstMetaData = {
+                A: {
+                    name: A,
+                    properties: {
+                        refA1: {
+                            name: 'refA1',
+                            referenceType: 'A'
+                        },
+                        refB1: {
+                            name: 'refB1',
+                            referenceType: 'B'
+                        }
+                    },
+                    superTypes: []
+                },
+                B: {
+                    name: B,
+                    properties: {
+                        refA1: {
+                            name: 'refA1',
+                            referenceType: 'A'
+                        },
+                        refB1: {
+                            name: 'refB1',
+                            referenceType: 'B'
+                        },
+                        refB2: {
+                            name: 'refB2',
+                            referenceType: 'B'
+                        }
+                    },
+                    superTypes: ['A']
+                },
+                C: {
+                    name: C,
+                    properties: {
+                        refA1: {
+                            name: 'refA1',
+                            referenceType: 'A'
+                        },
+                        refB1: {
+                            name: 'refB1',
+                            referenceType: 'B'
+                        },
+                        refB2: {
+                            name: 'refB2',
+                            referenceType: 'B'
+                        },
+                        refC1: {
+                            name: 'refC1',
+                            referenceType: 'C'
+                        }
+                    },
+                    superTypes: ['A', 'B']
+                },
+                D: {
+                    name: D,
+                    properties: {
+                        refA1: {
+                            name: 'refA1',
+                            referenceType: 'A'
+                        },
+                        refB1: {
+                            name: 'refB1',
+                            referenceType: 'B'
+                        },
+                        refB2: {
+                            name: 'refB2',
+                            referenceType: 'B'
+                        },
+                        refD1: {
+                            name: 'refD1',
+                            referenceType: 'D'
+                        }
+                    },
+                    superTypes: ['A', 'B']
                 }
-            }`
+            }
+        }`
     );
 });
 
@@ -513,11 +556,11 @@ function testGeneratedAst(name: string, grammar: string, expected: string): void
 }
 
 function testTypeMetaData(name: string, grammar: string, expected: string): void {
-    testGenerated(name, grammar, expected, 'getTypeMetaData', 'export const reflection');
+    testGenerated(name, grammar, expected, 'export class testAstReflection', 'export const reflection');
 }
 
 function testReferenceType(name: string, grammar: string, expected: string): void {
-    testGenerated(name, grammar, expected, 'getReferenceType', 'getTypeMetaData');
+    testGenerated(name, grammar, expected, 'export class testAstReflection', 'export const reflection');
 }
 function testGenerated(name: string, grammar: string, expected: string, start: string, end: string, startCount = 0): void {
     test(name, async () => {
