@@ -30,10 +30,14 @@ export type DomainModelTokenNames = DomainModelTerminalNames | DomainModelKeywor
 
 export type AbstractElement = PackageDeclaration | Type;
 
+/** @deprecated Use `$AbstractElement.$type` instead. */
 export const AbstractElement = 'AbstractElement';
+export const $AbstractElement = {
+    $type: 'AbstractElement'
+} as const;
 
 export function isAbstractElement(item: unknown): item is AbstractElement {
-    return reflection.isInstance(item, AbstractElement);
+    return reflection.isInstance(item, $AbstractElement.$type);
 }
 
 export type QualifiedName = string;
@@ -44,10 +48,14 @@ export function isQualifiedName(item: unknown): item is QualifiedName {
 
 export type Type = DataType | Entity;
 
+/** @deprecated Use `$Type.$type` instead. */
 export const Type = 'Type';
+export const $Type = {
+    $type: 'Type'
+} as const;
 
 export function isType(item: unknown): item is Type {
-    return reflection.isInstance(item, Type);
+    return reflection.isInstance(item, $Type.$type);
 }
 
 export interface DataType extends langium.AstNode {
@@ -56,10 +64,15 @@ export interface DataType extends langium.AstNode {
     name: string;
 }
 
+/** @deprecated Use `$DataType.$type` instead. */
 export const DataType = 'DataType';
+export const $DataType = {
+    $type: 'DataType',
+    name: 'name'
+} as const;
 
 export function isDataType(item: unknown): item is DataType {
-    return reflection.isInstance(item, DataType);
+    return reflection.isInstance(item, $DataType.$type);
 }
 
 export interface Domainmodel extends langium.AstNode {
@@ -67,10 +80,15 @@ export interface Domainmodel extends langium.AstNode {
     elements: Array<AbstractElement>;
 }
 
+/** @deprecated Use `$Domainmodel.$type` instead. */
 export const Domainmodel = 'Domainmodel';
+export const $Domainmodel = {
+    $type: 'Domainmodel',
+    elements: 'elements'
+} as const;
 
 export function isDomainmodel(item: unknown): item is Domainmodel {
-    return reflection.isInstance(item, Domainmodel);
+    return reflection.isInstance(item, $Domainmodel.$type);
 }
 
 export interface Entity extends langium.AstNode {
@@ -81,10 +99,17 @@ export interface Entity extends langium.AstNode {
     superType?: langium.Reference<Entity>;
 }
 
+/** @deprecated Use `$Entity.$type` instead. */
 export const Entity = 'Entity';
+export const $Entity = {
+    $type: 'Entity',
+    features: 'features',
+    name: 'name',
+    superType: 'superType'
+} as const;
 
 export function isEntity(item: unknown): item is Entity {
-    return reflection.isInstance(item, Entity);
+    return reflection.isInstance(item, $Entity.$type);
 }
 
 export interface Feature extends langium.AstNode {
@@ -95,10 +120,17 @@ export interface Feature extends langium.AstNode {
     type: langium.Reference<Type>;
 }
 
+/** @deprecated Use `$Feature.$type` instead. */
 export const Feature = 'Feature';
+export const $Feature = {
+    $type: 'Feature',
+    many: 'many',
+    name: 'name',
+    type: 'type'
+} as const;
 
 export function isFeature(item: unknown): item is Feature {
-    return reflection.isInstance(item, Feature);
+    return reflection.isInstance(item, $Feature.$type);
 }
 
 export interface PackageDeclaration extends langium.AstNode {
@@ -108,10 +140,16 @@ export interface PackageDeclaration extends langium.AstNode {
     name: QualifiedName;
 }
 
+/** @deprecated Use `$PackageDeclaration.$type` instead. */
 export const PackageDeclaration = 'PackageDeclaration';
+export const $PackageDeclaration = {
+    $type: 'PackageDeclaration',
+    elements: 'elements',
+    name: 'name'
+} as const;
 
 export function isPackageDeclaration(item: unknown): item is PackageDeclaration {
-    return reflection.isInstance(item, PackageDeclaration);
+    return reflection.isInstance(item, $PackageDeclaration.$type);
 }
 
 export type DomainModelAstType = {
@@ -127,30 +165,26 @@ export type DomainModelAstType = {
 export class DomainModelAstReflection extends langium.AbstractAstReflection {
     override readonly types = {
         DataType: {
-            name: DataType,
+            name: $DataType.$type,
             properties: {
                 name: {
                     name: 'name'
                 }
             },
-            superTypes: ['Type'],
-            // Property name constants
-            _name: 'name'
+            superTypes: ['Type']
         },
         Domainmodel: {
-            name: Domainmodel,
+            name: $Domainmodel.$type,
             properties: {
                 elements: {
                     name: 'elements',
                     defaultValue: []
                 }
             },
-            superTypes: [],
-            // Property name constants
-            _elements: 'elements'
+            superTypes: []
         },
         Entity: {
-            name: Entity,
+            name: $Entity.$type,
             properties: {
                 features: {
                     name: 'features',
@@ -164,14 +198,10 @@ export class DomainModelAstReflection extends langium.AbstractAstReflection {
                     referenceType: 'Entity'
                 }
             },
-            superTypes: ['Type'],
-            // Property name constants
-            _features: 'features',
-            _name: 'name',
-            _superType: 'superType'
+            superTypes: ['Type']
         },
         Feature: {
-            name: Feature,
+            name: $Feature.$type,
             properties: {
                 many: {
                     name: 'many',
@@ -185,14 +215,10 @@ export class DomainModelAstReflection extends langium.AbstractAstReflection {
                     referenceType: 'Type'
                 }
             },
-            superTypes: [],
-            // Property name constants
-            _many: 'many',
-            _name: 'name',
-            _type: 'type'
+            superTypes: []
         },
         PackageDeclaration: {
-            name: PackageDeclaration,
+            name: $PackageDeclaration.$type,
             properties: {
                 elements: {
                     name: 'elements',
@@ -202,10 +228,7 @@ export class DomainModelAstReflection extends langium.AbstractAstReflection {
                     name: 'name'
                 }
             },
-            superTypes: ['AbstractElement'],
-            // Property name constants
-            _elements: 'elements',
-            _name: 'name'
+            superTypes: ['AbstractElement']
         },
     } as const satisfies langium.AstMetaData
 }

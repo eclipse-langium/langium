@@ -35,26 +35,38 @@ export type ArithmeticsTokenNames = ArithmeticsTerminalNames | ArithmeticsKeywor
 
 export type AbstractDefinition = DeclaredParameter | Definition;
 
+/** @deprecated Use `$AbstractDefinition.$type` instead. */
 export const AbstractDefinition = 'AbstractDefinition';
+export const $AbstractDefinition = {
+    $type: 'AbstractDefinition'
+} as const;
 
 export function isAbstractDefinition(item: unknown): item is AbstractDefinition {
-    return reflection.isInstance(item, AbstractDefinition);
+    return reflection.isInstance(item, $AbstractDefinition.$type);
 }
 
 export type Expression = BinaryExpression | FunctionCall | NumberLiteral;
 
+/** @deprecated Use `$Expression.$type` instead. */
 export const Expression = 'Expression';
+export const $Expression = {
+    $type: 'Expression'
+} as const;
 
 export function isExpression(item: unknown): item is Expression {
-    return reflection.isInstance(item, Expression);
+    return reflection.isInstance(item, $Expression.$type);
 }
 
 export type Statement = Definition | Evaluation;
 
+/** @deprecated Use `$Statement.$type` instead. */
 export const Statement = 'Statement';
+export const $Statement = {
+    $type: 'Statement'
+} as const;
 
 export function isStatement(item: unknown): item is Statement {
-    return reflection.isInstance(item, Statement);
+    return reflection.isInstance(item, $Statement.$type);
 }
 
 export interface BinaryExpression extends langium.AstNode {
@@ -65,10 +77,17 @@ export interface BinaryExpression extends langium.AstNode {
     right: Expression;
 }
 
+/** @deprecated Use `$BinaryExpression.$type` instead. */
 export const BinaryExpression = 'BinaryExpression';
+export const $BinaryExpression = {
+    $type: 'BinaryExpression',
+    left: 'left',
+    operator: 'operator',
+    right: 'right'
+} as const;
 
 export function isBinaryExpression(item: unknown): item is BinaryExpression {
-    return reflection.isInstance(item, BinaryExpression);
+    return reflection.isInstance(item, $BinaryExpression.$type);
 }
 
 export interface DeclaredParameter extends langium.AstNode {
@@ -77,10 +96,15 @@ export interface DeclaredParameter extends langium.AstNode {
     name: string;
 }
 
+/** @deprecated Use `$DeclaredParameter.$type` instead. */
 export const DeclaredParameter = 'DeclaredParameter';
+export const $DeclaredParameter = {
+    $type: 'DeclaredParameter',
+    name: 'name'
+} as const;
 
 export function isDeclaredParameter(item: unknown): item is DeclaredParameter {
-    return reflection.isInstance(item, DeclaredParameter);
+    return reflection.isInstance(item, $DeclaredParameter.$type);
 }
 
 export interface Definition extends langium.AstNode {
@@ -91,10 +115,17 @@ export interface Definition extends langium.AstNode {
     name: string;
 }
 
+/** @deprecated Use `$Definition.$type` instead. */
 export const Definition = 'Definition';
+export const $Definition = {
+    $type: 'Definition',
+    args: 'args',
+    expr: 'expr',
+    name: 'name'
+} as const;
 
 export function isDefinition(item: unknown): item is Definition {
-    return reflection.isInstance(item, Definition);
+    return reflection.isInstance(item, $Definition.$type);
 }
 
 export interface Evaluation extends langium.AstNode {
@@ -103,10 +134,15 @@ export interface Evaluation extends langium.AstNode {
     expression: Expression;
 }
 
+/** @deprecated Use `$Evaluation.$type` instead. */
 export const Evaluation = 'Evaluation';
+export const $Evaluation = {
+    $type: 'Evaluation',
+    expression: 'expression'
+} as const;
 
 export function isEvaluation(item: unknown): item is Evaluation {
-    return reflection.isInstance(item, Evaluation);
+    return reflection.isInstance(item, $Evaluation.$type);
 }
 
 export interface FunctionCall extends langium.AstNode {
@@ -116,10 +152,16 @@ export interface FunctionCall extends langium.AstNode {
     func: langium.Reference<AbstractDefinition>;
 }
 
+/** @deprecated Use `$FunctionCall.$type` instead. */
 export const FunctionCall = 'FunctionCall';
+export const $FunctionCall = {
+    $type: 'FunctionCall',
+    args: 'args',
+    func: 'func'
+} as const;
 
 export function isFunctionCall(item: unknown): item is FunctionCall {
-    return reflection.isInstance(item, FunctionCall);
+    return reflection.isInstance(item, $FunctionCall.$type);
 }
 
 export interface Module extends langium.AstNode {
@@ -128,10 +170,16 @@ export interface Module extends langium.AstNode {
     statements: Array<Statement>;
 }
 
+/** @deprecated Use `$Module.$type` instead. */
 export const Module = 'Module';
+export const $Module = {
+    $type: 'Module',
+    name: 'name',
+    statements: 'statements'
+} as const;
 
 export function isModule(item: unknown): item is Module {
-    return reflection.isInstance(item, Module);
+    return reflection.isInstance(item, $Module.$type);
 }
 
 export interface NumberLiteral extends langium.AstNode {
@@ -140,10 +188,15 @@ export interface NumberLiteral extends langium.AstNode {
     value: number;
 }
 
+/** @deprecated Use `$NumberLiteral.$type` instead. */
 export const NumberLiteral = 'NumberLiteral';
+export const $NumberLiteral = {
+    $type: 'NumberLiteral',
+    value: 'value'
+} as const;
 
 export function isNumberLiteral(item: unknown): item is NumberLiteral {
-    return reflection.isInstance(item, NumberLiteral);
+    return reflection.isInstance(item, $NumberLiteral.$type);
 }
 
 export type ArithmeticsAstType = {
@@ -162,7 +215,7 @@ export type ArithmeticsAstType = {
 export class ArithmeticsAstReflection extends langium.AbstractAstReflection {
     override readonly types = {
         BinaryExpression: {
-            name: BinaryExpression,
+            name: $BinaryExpression.$type,
             properties: {
                 left: {
                     name: 'left'
@@ -174,25 +227,19 @@ export class ArithmeticsAstReflection extends langium.AbstractAstReflection {
                     name: 'right'
                 }
             },
-            superTypes: ['Expression'],
-            // Property name constants
-            _left: 'left',
-            _operator: 'operator',
-            _right: 'right'
+            superTypes: ['Expression']
         },
         DeclaredParameter: {
-            name: DeclaredParameter,
+            name: $DeclaredParameter.$type,
             properties: {
                 name: {
                     name: 'name'
                 }
             },
-            superTypes: ['AbstractDefinition'],
-            // Property name constants
-            _name: 'name'
+            superTypes: ['AbstractDefinition']
         },
         Definition: {
-            name: Definition,
+            name: $Definition.$type,
             properties: {
                 args: {
                     name: 'args',
@@ -205,25 +252,19 @@ export class ArithmeticsAstReflection extends langium.AbstractAstReflection {
                     name: 'name'
                 }
             },
-            superTypes: ['AbstractDefinition', 'Statement'],
-            // Property name constants
-            _args: 'args',
-            _expr: 'expr',
-            _name: 'name'
+            superTypes: ['AbstractDefinition', 'Statement']
         },
         Evaluation: {
-            name: Evaluation,
+            name: $Evaluation.$type,
             properties: {
                 expression: {
                     name: 'expression'
                 }
             },
-            superTypes: ['Statement'],
-            // Property name constants
-            _expression: 'expression'
+            superTypes: ['Statement']
         },
         FunctionCall: {
-            name: FunctionCall,
+            name: $FunctionCall.$type,
             properties: {
                 args: {
                     name: 'args',
@@ -234,13 +275,10 @@ export class ArithmeticsAstReflection extends langium.AbstractAstReflection {
                     referenceType: 'AbstractDefinition'
                 }
             },
-            superTypes: ['Expression'],
-            // Property name constants
-            _args: 'args',
-            _func: 'func'
+            superTypes: ['Expression']
         },
         Module: {
-            name: Module,
+            name: $Module.$type,
             properties: {
                 name: {
                     name: 'name'
@@ -250,21 +288,16 @@ export class ArithmeticsAstReflection extends langium.AbstractAstReflection {
                     defaultValue: []
                 }
             },
-            superTypes: [],
-            // Property name constants
-            _name: 'name',
-            _statements: 'statements'
+            superTypes: []
         },
         NumberLiteral: {
-            name: NumberLiteral,
+            name: $NumberLiteral.$type,
             properties: {
                 value: {
                     name: 'value'
                 }
             },
-            superTypes: ['Expression'],
-            // Property name constants
-            _value: 'value'
+            superTypes: ['Expression']
         },
     } as const satisfies langium.AstMetaData
 }

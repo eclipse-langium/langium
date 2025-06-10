@@ -52,13 +52,11 @@ function generateAstReflection(config: LangiumConfig, astTypes: AstTypes): Gener
                         const superTypes = typeHierarchy.superTypes.get(typeName) || [];
                         return expandToNode`
                             ${typeName}: {
-                                name: ${typeName},
+                                name: $${typeName}.$type,
                                 properties: {
                                     ${buildPropertyMetaData(props)}
                                 },
-                                superTypes: [${superTypes.map(t => `'${t}'`).join(', ')}],
-                                ${props.length > 0 ? '// Property name constants' : ''}
-                                ${buildPropertyNameConstants(props)}
+                                superTypes: [${superTypes.map(t => `'${t}'`).join(', ')}]
                             }
                         `;
                     }
@@ -96,16 +94,6 @@ function buildPropertyMetaData(props: Property[]): Generated {
             `;
         },
         { separator: ',', appendNewLineIfNotEmpty: true}
-    );
-}
-
-function buildPropertyNameConstants(props: Property[]): Generated {
-    const all = props.sort((a, b) => a.name.localeCompare(b.name));
-
-    return joinToNode(
-        all,
-        property => `_${property.name}: '${escapeQuotes(property.name, "'")}'`,
-        { separator: ',', appendNewLineIfNotEmpty: true }
     );
 }
 

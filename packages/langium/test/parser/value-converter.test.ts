@@ -21,7 +21,7 @@ describe('DefaultValueConverter', () => {
         `);
         const terminalA = doc.parseResult.value.rules[0] as GrammarTypes.TerminalRule;
         expect(terminalA).toBeDefined();
-        expect(terminalA.definition.$type).toBe(GrammarAST.CharacterRange);
+        expect(terminalA.definition.$type).toBe(GrammarAST.$CharacterRange.$type);
         expect((terminalA.definition as GrammarAST.CharacterRange).left.value).toBe('a\'\n\t\\');
     });
 
