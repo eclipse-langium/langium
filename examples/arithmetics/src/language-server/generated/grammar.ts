@@ -50,11 +50,8 @@ export const ArithmeticsGrammar = (): Grammar => loadedArithmeticsGrammar ?? (lo
           }
         ]
       },
-      "definesHiddenTokens": false,
       "fragment": false,
-      "hiddenTokens": [],
-      "parameters": [],
-      "wildcard": false
+      "parameters": []
     },
     {
       "$type": "ParserRule",
@@ -78,12 +75,9 @@ export const ArithmeticsGrammar = (): Grammar => loadedArithmeticsGrammar ?? (lo
           }
         ]
       },
-      "definesHiddenTokens": false,
       "entry": false,
       "fragment": false,
-      "hiddenTokens": [],
-      "parameters": [],
-      "wildcard": false
+      "parameters": []
     },
     {
       "$type": "ParserRule",
@@ -177,12 +171,9 @@ export const ArithmeticsGrammar = (): Grammar => loadedArithmeticsGrammar ?? (lo
           }
         ]
       },
-      "definesHiddenTokens": false,
       "entry": false,
       "fragment": false,
-      "hiddenTokens": [],
-      "parameters": [],
-      "wildcard": false
+      "parameters": []
     },
     {
       "$type": "ParserRule",
@@ -199,12 +190,9 @@ export const ArithmeticsGrammar = (): Grammar => loadedArithmeticsGrammar ?? (lo
           "arguments": []
         }
       },
-      "definesHiddenTokens": false,
       "entry": false,
       "fragment": false,
-      "hiddenTokens": [],
-      "parameters": [],
-      "wildcard": false
+      "parameters": []
     },
     {
       "$type": "ParserRule",
@@ -230,12 +218,9 @@ export const ArithmeticsGrammar = (): Grammar => loadedArithmeticsGrammar ?? (lo
           }
         ]
       },
-      "definesHiddenTokens": false,
       "entry": false,
       "fragment": false,
-      "hiddenTokens": [],
-      "parameters": [],
-      "wildcard": false
+      "parameters": []
     },
     {
       "$type": "ParserRule",
@@ -247,12 +232,9 @@ export const ArithmeticsGrammar = (): Grammar => loadedArithmeticsGrammar ?? (lo
         },
         "arguments": []
       },
-      "definesHiddenTokens": false,
       "entry": false,
       "fragment": false,
-      "hiddenTokens": [],
-      "parameters": [],
-      "wildcard": false
+      "parameters": []
     },
     {
       "$type": "InfixRule",
@@ -443,12 +425,9 @@ export const ArithmeticsGrammar = (): Grammar => loadedArithmeticsGrammar ?? (lo
           }
         ]
       },
-      "definesHiddenTokens": false,
       "entry": false,
       "fragment": false,
-      "hiddenTokens": [],
-      "parameters": [],
-      "wildcard": false
+      "parameters": []
     },
     {
       "$type": "TerminalRule",
@@ -528,9 +507,6 @@ export const ArithmeticsGrammar = (): Grammar => loadedArithmeticsGrammar ?? (lo
       }
     }
   ],
-  "definesHiddenTokens": false,
-  "hiddenTokens": [],
   "imports": [],
-  "interfaces": [],
-  "usedGrammars": []
+  "interfaces": []
 }`));

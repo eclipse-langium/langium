@@ -211,15 +211,12 @@ export function isDisjunction(item: unknown): item is Disjunction {
 
 export interface Grammar extends langium.AstNode {
     readonly $type: 'Grammar';
-    definesHiddenTokens: boolean;
-    hiddenTokens: Array<langium.Reference<AbstractRule>>;
     imports: Array<GrammarImport>;
     interfaces: Array<Interface>;
     isDeclared: boolean;
     name?: string;
     rules: Array<AbstractRule>;
     types: Array<Type>;
-    usedGrammars: Array<langium.Reference<Grammar>>;
 }
 
 export const Grammar = 'Grammar';
@@ -372,16 +369,13 @@ export interface ParserRule extends langium.AstNode {
     readonly $container: Grammar;
     readonly $type: 'ParserRule';
     dataType?: PrimitiveType;
-    definesHiddenTokens: boolean;
     definition: AbstractElement;
     entry: boolean;
     fragment: boolean;
-    hiddenTokens: Array<langium.Reference<AbstractRule>>;
     inferredType?: InferredType;
     name: string;
     parameters: Array<Parameter>;
     returnType?: langium.Reference<AbstractType>;
-    wildcard: boolean;
 }
 
 export const ParserRule = 'ParserRule';
@@ -525,6 +519,7 @@ export interface Assignment extends AbstractElement {
     readonly $type: 'Assignment';
     feature: FeatureName;
     operator: '+=' | '=' | '?=';
+    predicate?: '->' | '=>';
     terminal: AbstractElement;
 }
 
@@ -573,6 +568,7 @@ export interface Group extends AbstractElement {
     readonly $type: 'Group';
     elements: Array<AbstractElement>;
     guardCondition?: Condition;
+    predicate?: '->' | '=>';
 }
 
 export const Group = 'Group';
@@ -584,6 +580,7 @@ export function isGroup(item: unknown): item is Group {
 export interface Keyword extends AbstractElement {
     readonly $container: CharacterRange | InfixRuleOperatorList;
     readonly $type: 'Keyword';
+    predicate?: '->' | '=>';
     value: string;
 }
 
@@ -619,6 +616,7 @@ export interface RuleCall extends AbstractElement {
     readonly $container: InfixRule;
     readonly $type: 'RuleCall';
     arguments: Array<NamedArgument>;
+    predicate?: '->' | '=>';
     rule: langium.Reference<AbstractRule>;
 }
 
@@ -820,17 +818,12 @@ export class LangiumGrammarAstReflection extends langium.AbstractAstReflection {
             case 'SimpleType:typeRef': {
                 return AbstractType;
             }
-            case 'Grammar:hiddenTokens':
-            case 'ParserRule:hiddenTokens':
-            case 'RuleCall:rule': {
-                return AbstractRule;
-            }
-            case 'Grammar:usedGrammars': {
-                return Grammar;
-            }
             case 'NamedArgument:parameter':
             case 'ParameterReference:parameter': {
                 return Parameter;
+            }
+            case 'RuleCall:rule': {
+                return AbstractRule;
             }
             case 'TerminalRuleCall:rule': {
                 return TerminalRule;
@@ -898,15 +891,12 @@ export class LangiumGrammarAstReflection extends langium.AbstractAstReflection {
                 return {
                     name: Grammar,
                     properties: [
-                        { name: 'definesHiddenTokens', defaultValue: false },
-                        { name: 'hiddenTokens', defaultValue: [] },
                         { name: 'imports', defaultValue: [] },
                         { name: 'interfaces', defaultValue: [] },
                         { name: 'isDeclared', defaultValue: false },
                         { name: 'name' },
                         { name: 'rules', defaultValue: [] },
-                        { name: 'types', defaultValue: [] },
-                        { name: 'usedGrammars', defaultValue: [] }
+                        { name: 'types', defaultValue: [] }
                     ]
                 };
             }
@@ -1011,16 +1001,13 @@ export class LangiumGrammarAstReflection extends langium.AbstractAstReflection {
                     name: ParserRule,
                     properties: [
                         { name: 'dataType' },
-                        { name: 'definesHiddenTokens', defaultValue: false },
                         { name: 'definition' },
                         { name: 'entry', defaultValue: false },
                         { name: 'fragment', defaultValue: false },
-                        { name: 'hiddenTokens', defaultValue: [] },
                         { name: 'inferredType' },
                         { name: 'name' },
                         { name: 'parameters', defaultValue: [] },
-                        { name: 'returnType' },
-                        { name: 'wildcard', defaultValue: false }
+                        { name: 'returnType' }
                     ]
                 };
             }
@@ -1129,6 +1116,7 @@ export class LangiumGrammarAstReflection extends langium.AbstractAstReflection {
                         { name: 'feature' },
                         { name: 'lookahead' },
                         { name: 'operator' },
+                        { name: 'predicate' },
                         { name: 'terminal' }
                     ]
                 };
@@ -1172,7 +1160,8 @@ export class LangiumGrammarAstReflection extends langium.AbstractAstReflection {
                         { name: 'cardinality' },
                         { name: 'elements', defaultValue: [] },
                         { name: 'guardCondition' },
-                        { name: 'lookahead' }
+                        { name: 'lookahead' },
+                        { name: 'predicate' }
                     ]
                 };
             }
@@ -1182,6 +1171,7 @@ export class LangiumGrammarAstReflection extends langium.AbstractAstReflection {
                     properties: [
                         { name: 'cardinality' },
                         { name: 'lookahead' },
+                        { name: 'predicate' },
                         { name: 'value' }
                     ]
                 };
@@ -1213,6 +1203,7 @@ export class LangiumGrammarAstReflection extends langium.AbstractAstReflection {
                         { name: 'arguments', defaultValue: [] },
                         { name: 'cardinality' },
                         { name: 'lookahead' },
+                        { name: 'predicate' },
                         { name: 'rule' }
                     ]
                 };

@@ -7,14 +7,13 @@
 import type { Diagnostic } from 'vscode-languageserver';
 import { CodeActionKind } from 'vscode-languageserver';
 import type { CodeActionParams } from 'vscode-languageserver-protocol';
-import type { CodeAction, Command, Position, TextEdit } from 'vscode-languageserver-types';
+import type { CodeAction, Command, Position } from 'vscode-languageserver-types';
 import * as ast from '../../languages/generated/ast.js';
 import type { CodeActionProvider } from '../../lsp/code-action.js';
 import type { LangiumServices } from '../../lsp/lsp-services.js';
 import type { AstReflection, Reference, ReferenceInfo } from '../../syntax-tree.js';
 import { getContainerOfType } from '../../utils/ast-utils.js';
 import { findLeafNodeAtOffset } from '../../utils/cst-utils.js';
-import { findNodeForProperty } from '../../utils/grammar-utils.js';
 import type { MaybePromise } from '../../utils/promise-utils.js';
 import { escapeRegExp } from '../../utils/regexp-utils.js';
 import type { URI } from '../../utils/uri-utils.js';
@@ -50,9 +49,6 @@ export class LangiumGrammarCodeActionProvider implements CodeActionProvider {
             case IssueCodes.GrammarNameUppercase:
             case IssueCodes.RuleNameUppercase:
                 accept(this.makeUpperCase(diagnostic, document));
-                break;
-            case IssueCodes.HiddenGrammarTokens:
-                accept(this.fixHiddenTerminals(diagnostic, document));
                 break;
             case IssueCodes.UseRegexTokens:
                 accept(this.fixRegexTokens(diagnostic, document));
@@ -188,7 +184,7 @@ export class LangiumGrammarCodeActionProvider implements CodeActionProvider {
          * - supported are only Alternatives (recursively) and "infers"
          * - "returns" is not relevant, since cross-references would not refer to the parser rule, but to its "return type" instead
          */
-        return !rule.fragment && !rule.entry && rule.parameters.length === 0 && !rule.definesHiddenTokens && !rule.wildcard && !rule.returnType && !rule.dataType;
+        return !rule.fragment && !rule.entry && rule.parameters.length === 0 && !rule.returnType && !rule.dataType;
     }
     private replaceRule(rule: ast.ParserRule): string {
         const type = rule.inferredType ?? rule;
@@ -348,49 +344,6 @@ export class LangiumGrammarCodeActionProvider implements CodeActionProvider {
                         range: diagnostic.range,
                         newText: ':'
                     }]
-                }
-            }
-        };
-    }
-
-    private fixHiddenTerminals(diagnostic: Diagnostic, document: LangiumDocument): CodeAction {
-        const grammar = document.parseResult.value as ast.Grammar;
-        const hiddenTokens = grammar.hiddenTokens;
-        const changes: TextEdit[] = [];
-        const hiddenNode = findNodeForProperty(grammar.$cstNode, 'definesHiddenTokens');
-        if (hiddenNode) {
-            const start = hiddenNode.range.start;
-            const offset = hiddenNode.offset;
-            const end = grammar.$cstNode!.text.indexOf(')', offset) + 1;
-            changes.push({
-                newText: '',
-                range: {
-                    start,
-                    end: document.textDocument.positionAt(end)
-                }
-            });
-        }
-        for (const terminal of hiddenTokens) {
-            const ref = terminal.ref;
-            if (ref && ast.isTerminalRule(ref) && !ref.hidden && ref.$cstNode) {
-                const start = ref.$cstNode.range.start;
-                changes.push({
-                    newText: 'hidden ',
-                    range: {
-                        start,
-                        end: start
-                    }
-                });
-            }
-        }
-        return {
-            title: 'Fix hidden terminals',
-            kind: CodeActionKind.QuickFix,
-            diagnostics: [diagnostic],
-            isPreferred: true,
-            edit: {
-                changes: {
-                    [document.textDocument.uri]: changes
                 }
             }
         };
