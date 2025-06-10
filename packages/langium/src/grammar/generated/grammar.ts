@@ -42,141 +42,6 @@ export const LangiumGrammarGrammar = (): Grammar => loadedLangiumGrammarGrammar 
                   },
                   "arguments": []
                 }
-              },
-              {
-                "$type": "Group",
-                "elements": [
-                  {
-                    "$type": "Keyword",
-                    "value": "with"
-                  },
-                  {
-                    "$type": "Assignment",
-                    "feature": "usedGrammars",
-                    "operator": "+=",
-                    "terminal": {
-                      "$type": "CrossReference",
-                      "type": {
-                        "$ref": "#/rules@0"
-                      },
-                      "terminal": {
-                        "$type": "RuleCall",
-                        "rule": {
-                          "$ref": "#/rules@67"
-                        },
-                        "arguments": []
-                      },
-                      "deprecatedSyntax": false
-                    }
-                  },
-                  {
-                    "$type": "Group",
-                    "elements": [
-                      {
-                        "$type": "Keyword",
-                        "value": ","
-                      },
-                      {
-                        "$type": "Assignment",
-                        "feature": "usedGrammars",
-                        "operator": "+=",
-                        "terminal": {
-                          "$type": "CrossReference",
-                          "type": {
-                            "$ref": "#/rules@0"
-                          },
-                          "terminal": {
-                            "$type": "RuleCall",
-                            "rule": {
-                              "$ref": "#/rules@67"
-                            },
-                            "arguments": []
-                          },
-                          "deprecatedSyntax": false
-                        }
-                      }
-                    ],
-                    "cardinality": "*"
-                  }
-                ],
-                "cardinality": "?"
-              },
-              {
-                "$type": "Group",
-                "elements": [
-                  {
-                    "$type": "Assignment",
-                    "feature": "definesHiddenTokens",
-                    "operator": "?=",
-                    "terminal": {
-                      "$type": "Keyword",
-                      "value": "hidden"
-                    }
-                  },
-                  {
-                    "$type": "Keyword",
-                    "value": "("
-                  },
-                  {
-                    "$type": "Group",
-                    "elements": [
-                      {
-                        "$type": "Assignment",
-                        "feature": "hiddenTokens",
-                        "operator": "+=",
-                        "terminal": {
-                          "$type": "CrossReference",
-                          "type": {
-                            "$ref": "#/rules@15"
-                          },
-                          "terminal": {
-                            "$type": "RuleCall",
-                            "rule": {
-                              "$ref": "#/rules@67"
-                            },
-                            "arguments": []
-                          },
-                          "deprecatedSyntax": false
-                        }
-                      },
-                      {
-                        "$type": "Group",
-                        "elements": [
-                          {
-                            "$type": "Keyword",
-                            "value": ","
-                          },
-                          {
-                            "$type": "Assignment",
-                            "feature": "hiddenTokens",
-                            "operator": "+=",
-                            "terminal": {
-                              "$type": "CrossReference",
-                              "type": {
-                                "$ref": "#/rules@15"
-                              },
-                              "terminal": {
-                                "$type": "RuleCall",
-                                "rule": {
-                                  "$ref": "#/rules@67"
-                                },
-                                "arguments": []
-                              },
-                              "deprecatedSyntax": false
-                            }
-                          }
-                        ],
-                        "cardinality": "*"
-                      }
-                    ],
-                    "cardinality": "?"
-                  },
-                  {
-                    "$type": "Keyword",
-                    "value": ")"
-                  }
-                ],
-                "cardinality": "?"
               }
             ],
             "cardinality": "?"
@@ -238,11 +103,8 @@ export const LangiumGrammarGrammar = (): Grammar => loadedLangiumGrammarGrammar 
           }
         ]
       },
-      "definesHiddenTokens": false,
       "fragment": false,
-      "hiddenTokens": [],
-      "parameters": [],
-      "wildcard": false
+      "parameters": []
     },
     {
       "$type": "ParserRule",
@@ -352,12 +214,9 @@ export const LangiumGrammarGrammar = (): Grammar => loadedLangiumGrammarGrammar 
           }
         ]
       },
-      "definesHiddenTokens": false,
       "entry": false,
       "fragment": false,
-      "hiddenTokens": [],
-      "parameters": [],
-      "wildcard": false
+      "parameters": []
     },
     {
       "$type": "ParserRule",
@@ -432,12 +291,9 @@ export const LangiumGrammarGrammar = (): Grammar => loadedLangiumGrammarGrammar 
           }
         ]
       },
-      "definesHiddenTokens": false,
       "entry": false,
       "fragment": false,
-      "hiddenTokens": [],
-      "parameters": [],
-      "wildcard": false
+      "parameters": []
     },
     {
       "$type": "ParserRule",
@@ -475,12 +331,9 @@ export const LangiumGrammarGrammar = (): Grammar => loadedLangiumGrammarGrammar 
           }
         ]
       },
-      "definesHiddenTokens": false,
       "entry": false,
       "fragment": false,
-      "hiddenTokens": [],
-      "parameters": [],
-      "wildcard": false
+      "parameters": []
     },
     {
       "$type": "ParserRule",
@@ -497,12 +350,9 @@ export const LangiumGrammarGrammar = (): Grammar => loadedLangiumGrammarGrammar 
           "arguments": []
         }
       },
-      "definesHiddenTokens": false,
       "entry": false,
       "fragment": false,
-      "hiddenTokens": [],
-      "parameters": [],
-      "wildcard": false
+      "parameters": []
     },
     {
       "$type": "ParserRule",
@@ -519,12 +369,9 @@ export const LangiumGrammarGrammar = (): Grammar => loadedLangiumGrammarGrammar 
           "arguments": []
         }
       },
-      "definesHiddenTokens": false,
       "entry": false,
       "fragment": false,
-      "hiddenTokens": [],
-      "parameters": [],
-      "wildcard": false
+      "parameters": []
     },
     {
       "$type": "ParserRule",
@@ -547,12 +394,9 @@ export const LangiumGrammarGrammar = (): Grammar => loadedLangiumGrammarGrammar 
           }
         ]
       },
-      "definesHiddenTokens": false,
       "entry": false,
       "fragment": false,
-      "hiddenTokens": [],
-      "parameters": [],
-      "wildcard": false
+      "parameters": []
     },
     {
       "$type": "ParserRule",
@@ -610,12 +454,9 @@ export const LangiumGrammarGrammar = (): Grammar => loadedLangiumGrammarGrammar 
           }
         ]
       },
-      "definesHiddenTokens": false,
       "entry": false,
       "fragment": false,
-      "hiddenTokens": [],
-      "parameters": [],
-      "wildcard": false
+      "parameters": []
     },
     {
       "$type": "ParserRule",
@@ -627,12 +468,9 @@ export const LangiumGrammarGrammar = (): Grammar => loadedLangiumGrammarGrammar 
         },
         "arguments": []
       },
-      "definesHiddenTokens": false,
       "entry": false,
       "fragment": false,
-      "hiddenTokens": [],
-      "parameters": [],
-      "wildcard": false
+      "parameters": []
     },
     {
       "$type": "ParserRule",
@@ -690,12 +528,9 @@ export const LangiumGrammarGrammar = (): Grammar => loadedLangiumGrammarGrammar 
           }
         ]
       },
-      "definesHiddenTokens": false,
       "entry": false,
       "fragment": false,
-      "hiddenTokens": [],
-      "parameters": [],
-      "wildcard": false
+      "parameters": []
     },
     {
       "$type": "ParserRule",
@@ -739,12 +574,9 @@ export const LangiumGrammarGrammar = (): Grammar => loadedLangiumGrammarGrammar 
           }
         ]
       },
-      "definesHiddenTokens": false,
       "entry": false,
       "fragment": false,
-      "hiddenTokens": [],
-      "parameters": [],
-      "wildcard": false
+      "parameters": []
     },
     {
       "$type": "ParserRule",
@@ -793,12 +625,9 @@ export const LangiumGrammarGrammar = (): Grammar => loadedLangiumGrammarGrammar 
           }
         ]
       },
-      "definesHiddenTokens": false,
       "entry": false,
       "fragment": false,
-      "hiddenTokens": [],
-      "parameters": [],
-      "wildcard": false
+      "parameters": []
     },
     {
       "$type": "ParserRule",
@@ -892,12 +721,9 @@ export const LangiumGrammarGrammar = (): Grammar => loadedLangiumGrammarGrammar 
           }
         ]
       },
-      "definesHiddenTokens": false,
       "entry": false,
       "fragment": false,
-      "hiddenTokens": [],
-      "parameters": [],
-      "wildcard": false
+      "parameters": []
     },
     {
       "$type": "ParserRule",
@@ -928,12 +754,9 @@ export const LangiumGrammarGrammar = (): Grammar => loadedLangiumGrammarGrammar 
           }
         ]
       },
-      "definesHiddenTokens": false,
       "entry": false,
       "fragment": false,
-      "hiddenTokens": [],
-      "parameters": [],
-      "wildcard": false
+      "parameters": []
     },
     {
       "$type": "ParserRule",
@@ -980,12 +803,9 @@ export const LangiumGrammarGrammar = (): Grammar => loadedLangiumGrammarGrammar 
           }
         ]
       },
-      "definesHiddenTokens": false,
       "entry": false,
       "fragment": false,
-      "hiddenTokens": [],
-      "parameters": [],
-      "wildcard": false
+      "parameters": []
     },
     {
       "$type": "ParserRule",
@@ -1016,12 +836,9 @@ export const LangiumGrammarGrammar = (): Grammar => loadedLangiumGrammarGrammar 
           }
         ]
       },
-      "definesHiddenTokens": false,
       "entry": false,
       "fragment": false,
-      "hiddenTokens": [],
-      "parameters": [],
-      "wildcard": false
+      "parameters": []
     },
     {
       "$type": "ParserRule",
@@ -1052,12 +869,9 @@ export const LangiumGrammarGrammar = (): Grammar => loadedLangiumGrammarGrammar 
           }
         ]
       },
-      "definesHiddenTokens": false,
       "entry": false,
       "fragment": false,
-      "hiddenTokens": [],
-      "parameters": [],
-      "wildcard": false
+      "parameters": []
     },
     {
       "$type": "ParserRule",
@@ -1099,15 +913,6 @@ export const LangiumGrammarGrammar = (): Grammar => loadedLangiumGrammarGrammar 
           {
             "$type": "Alternatives",
             "elements": [
-              {
-                "$type": "Assignment",
-                "feature": "wildcard",
-                "operator": "?=",
-                "terminal": {
-                  "$type": "Keyword",
-                  "value": "*"
-                }
-              },
               {
                 "$type": "Group",
                 "elements": [
@@ -1178,83 +983,6 @@ export const LangiumGrammarGrammar = (): Grammar => loadedLangiumGrammarGrammar 
             "cardinality": "?"
           },
           {
-            "$type": "Group",
-            "elements": [
-              {
-                "$type": "Assignment",
-                "feature": "definesHiddenTokens",
-                "operator": "?=",
-                "terminal": {
-                  "$type": "Keyword",
-                  "value": "hidden"
-                }
-              },
-              {
-                "$type": "Keyword",
-                "value": "("
-              },
-              {
-                "$type": "Group",
-                "elements": [
-                  {
-                    "$type": "Assignment",
-                    "feature": "hiddenTokens",
-                    "operator": "+=",
-                    "terminal": {
-                      "$type": "CrossReference",
-                      "type": {
-                        "$ref": "#/rules@15"
-                      },
-                      "terminal": {
-                        "$type": "RuleCall",
-                        "rule": {
-                          "$ref": "#/rules@67"
-                        },
-                        "arguments": []
-                      },
-                      "deprecatedSyntax": false
-                    }
-                  },
-                  {
-                    "$type": "Group",
-                    "elements": [
-                      {
-                        "$type": "Keyword",
-                        "value": ","
-                      },
-                      {
-                        "$type": "Assignment",
-                        "feature": "hiddenTokens",
-                        "operator": "+=",
-                        "terminal": {
-                          "$type": "CrossReference",
-                          "type": {
-                            "$ref": "#/rules@15"
-                          },
-                          "terminal": {
-                            "$type": "RuleCall",
-                            "rule": {
-                              "$ref": "#/rules@67"
-                            },
-                            "arguments": []
-                          },
-                          "deprecatedSyntax": false
-                        }
-                      }
-                    ],
-                    "cardinality": "*"
-                  }
-                ],
-                "cardinality": "?"
-              },
-              {
-                "$type": "Keyword",
-                "value": ")"
-              }
-            ],
-            "cardinality": "?"
-          },
-          {
             "$type": "Keyword",
             "value": ":"
           },
@@ -1276,12 +1004,9 @@ export const LangiumGrammarGrammar = (): Grammar => loadedLangiumGrammarGrammar 
           }
         ]
       },
-      "definesHiddenTokens": false,
       "entry": false,
       "fragment": false,
-      "hiddenTokens": [],
-      "parameters": [],
-      "wildcard": false
+      "parameters": []
     },
     {
       "$type": "ParserRule",
@@ -1338,12 +1063,9 @@ export const LangiumGrammarGrammar = (): Grammar => loadedLangiumGrammarGrammar 
           }
         ]
       },
-      "definesHiddenTokens": false,
       "entry": false,
       "fragment": false,
-      "hiddenTokens": [],
-      "parameters": [],
-      "wildcard": false
+      "parameters": []
     },
     {
       "$type": "ParserRule",
@@ -1387,12 +1109,9 @@ export const LangiumGrammarGrammar = (): Grammar => loadedLangiumGrammarGrammar 
           }
         ]
       },
-      "definesHiddenTokens": false,
       "entry": false,
       "fragment": false,
-      "hiddenTokens": [],
-      "parameters": [],
-      "wildcard": false
+      "parameters": []
     },
     {
       "$type": "ParserRule",
@@ -1458,12 +1177,9 @@ export const LangiumGrammarGrammar = (): Grammar => loadedLangiumGrammarGrammar 
           }
         ]
       },
-      "definesHiddenTokens": false,
       "entry": false,
       "fragment": false,
-      "hiddenTokens": [],
-      "parameters": [],
-      "wildcard": false
+      "parameters": []
     },
     {
       "$type": "ParserRule",
@@ -1482,12 +1198,9 @@ export const LangiumGrammarGrammar = (): Grammar => loadedLangiumGrammarGrammar 
           }
         ]
       },
-      "definesHiddenTokens": false,
       "entry": false,
       "fragment": false,
-      "hiddenTokens": [],
-      "parameters": [],
-      "wildcard": false
+      "parameters": []
     },
     {
       "$type": "ParserRule",
@@ -1553,11 +1266,8 @@ export const LangiumGrammarGrammar = (): Grammar => loadedLangiumGrammarGrammar 
           }
         ]
       },
-      "definesHiddenTokens": false,
       "entry": false,
-      "fragment": false,
-      "hiddenTokens": [],
-      "wildcard": false
+      "fragment": false
     },
     {
       "$type": "ParserRule",
@@ -1634,11 +1344,8 @@ export const LangiumGrammarGrammar = (): Grammar => loadedLangiumGrammarGrammar 
           }
         ]
       },
-      "definesHiddenTokens": false,
       "entry": false,
-      "hiddenTokens": [],
-      "parameters": [],
-      "wildcard": false
+      "parameters": []
     },
     {
       "$type": "ParserRule",
@@ -1655,12 +1362,9 @@ export const LangiumGrammarGrammar = (): Grammar => loadedLangiumGrammarGrammar 
           "arguments": []
         }
       },
-      "definesHiddenTokens": false,
       "entry": false,
       "fragment": false,
-      "hiddenTokens": [],
-      "parameters": [],
-      "wildcard": false
+      "parameters": []
     },
     {
       "$type": "ParserRule",
@@ -1718,12 +1422,9 @@ export const LangiumGrammarGrammar = (): Grammar => loadedLangiumGrammarGrammar 
           }
         ]
       },
-      "definesHiddenTokens": false,
       "entry": false,
       "fragment": false,
-      "hiddenTokens": [],
-      "parameters": [],
-      "wildcard": false
+      "parameters": []
     },
     {
       "$type": "ParserRule",
@@ -1789,12 +1490,9 @@ export const LangiumGrammarGrammar = (): Grammar => loadedLangiumGrammarGrammar 
           }
         ]
       },
-      "definesHiddenTokens": false,
       "entry": false,
       "fragment": false,
-      "hiddenTokens": [],
-      "parameters": [],
-      "wildcard": false
+      "parameters": []
     },
     {
       "$type": "ParserRule",
@@ -1852,12 +1550,9 @@ export const LangiumGrammarGrammar = (): Grammar => loadedLangiumGrammarGrammar 
           }
         ]
       },
-      "definesHiddenTokens": false,
       "entry": false,
       "fragment": false,
-      "hiddenTokens": [],
-      "parameters": [],
-      "wildcard": false
+      "parameters": []
     },
     {
       "$type": "ParserRule",
@@ -1906,12 +1601,9 @@ export const LangiumGrammarGrammar = (): Grammar => loadedLangiumGrammarGrammar 
           }
         ]
       },
-      "definesHiddenTokens": false,
       "entry": false,
       "fragment": false,
-      "hiddenTokens": [],
-      "parameters": [],
-      "wildcard": false
+      "parameters": []
     },
     {
       "$type": "ParserRule",
@@ -1939,12 +1631,9 @@ export const LangiumGrammarGrammar = (): Grammar => loadedLangiumGrammarGrammar 
           }
         ]
       },
-      "definesHiddenTokens": false,
       "entry": false,
       "fragment": false,
-      "hiddenTokens": [],
-      "parameters": [],
-      "wildcard": false
+      "parameters": []
     },
     {
       "$type": "ParserRule",
@@ -2000,12 +1689,9 @@ export const LangiumGrammarGrammar = (): Grammar => loadedLangiumGrammarGrammar 
           }
         ]
       },
-      "definesHiddenTokens": false,
       "entry": false,
       "fragment": false,
-      "hiddenTokens": [],
-      "parameters": [],
-      "wildcard": false
+      "parameters": []
     },
     {
       "$type": "ParserRule",
@@ -2123,12 +1809,9 @@ export const LangiumGrammarGrammar = (): Grammar => loadedLangiumGrammarGrammar 
           }
         ]
       },
-      "definesHiddenTokens": false,
       "entry": false,
       "fragment": false,
-      "hiddenTokens": [],
-      "parameters": [],
-      "wildcard": false
+      "parameters": []
     },
     {
       "$type": "ParserRule",
@@ -2191,12 +1874,9 @@ export const LangiumGrammarGrammar = (): Grammar => loadedLangiumGrammarGrammar 
           }
         ]
       },
-      "definesHiddenTokens": false,
       "entry": false,
       "fragment": false,
-      "hiddenTokens": [],
-      "parameters": [],
-      "wildcard": false
+      "parameters": []
     },
     {
       "$type": "ParserRule",
@@ -2217,12 +1897,9 @@ export const LangiumGrammarGrammar = (): Grammar => loadedLangiumGrammarGrammar 
           }
         ]
       },
-      "definesHiddenTokens": false,
       "entry": false,
       "fragment": false,
-      "hiddenTokens": [],
-      "parameters": [],
-      "wildcard": false
+      "parameters": []
     },
     {
       "$type": "ParserRule",
@@ -2239,12 +1916,9 @@ export const LangiumGrammarGrammar = (): Grammar => loadedLangiumGrammarGrammar 
           "arguments": []
         }
       },
-      "definesHiddenTokens": false,
       "entry": false,
       "fragment": false,
-      "hiddenTokens": [],
-      "parameters": [],
-      "wildcard": false
+      "parameters": []
     },
     {
       "$type": "ParserRule",
@@ -2321,12 +1995,9 @@ export const LangiumGrammarGrammar = (): Grammar => loadedLangiumGrammarGrammar 
           }
         ]
       },
-      "definesHiddenTokens": false,
       "entry": false,
       "fragment": false,
-      "hiddenTokens": [],
-      "parameters": [],
-      "wildcard": false
+      "parameters": []
     },
     {
       "$type": "ParserRule",
@@ -2382,12 +2053,9 @@ export const LangiumGrammarGrammar = (): Grammar => loadedLangiumGrammarGrammar 
           }
         ]
       },
-      "definesHiddenTokens": false,
       "entry": false,
       "fragment": false,
-      "hiddenTokens": [],
-      "parameters": [],
-      "wildcard": false
+      "parameters": []
     },
     {
       "$type": "ParserRule",
@@ -2439,12 +2107,9 @@ export const LangiumGrammarGrammar = (): Grammar => loadedLangiumGrammarGrammar 
           }
         ]
       },
-      "definesHiddenTokens": false,
       "entry": false,
       "fragment": false,
-      "hiddenTokens": [],
-      "parameters": [],
-      "wildcard": false
+      "parameters": []
     },
     {
       "$type": "ParserRule",
@@ -2496,12 +2161,9 @@ export const LangiumGrammarGrammar = (): Grammar => loadedLangiumGrammarGrammar 
           }
         ]
       },
-      "definesHiddenTokens": false,
       "entry": false,
       "fragment": false,
-      "hiddenTokens": [],
-      "parameters": [],
-      "wildcard": false
+      "parameters": []
     },
     {
       "$type": "ParserRule",
@@ -2550,12 +2212,9 @@ export const LangiumGrammarGrammar = (): Grammar => loadedLangiumGrammarGrammar 
           }
         ]
       },
-      "definesHiddenTokens": false,
       "entry": false,
       "fragment": false,
-      "hiddenTokens": [],
-      "parameters": [],
-      "wildcard": false
+      "parameters": []
     },
     {
       "$type": "ParserRule",
@@ -2590,12 +2249,9 @@ export const LangiumGrammarGrammar = (): Grammar => loadedLangiumGrammarGrammar 
           }
         ]
       },
-      "definesHiddenTokens": false,
       "entry": false,
       "fragment": false,
-      "hiddenTokens": [],
-      "parameters": [],
-      "wildcard": false
+      "parameters": []
     },
     {
       "$type": "ParserRule",
@@ -2624,12 +2280,9 @@ export const LangiumGrammarGrammar = (): Grammar => loadedLangiumGrammarGrammar 
           }
         ]
       },
-      "definesHiddenTokens": false,
       "entry": false,
       "fragment": false,
-      "hiddenTokens": [],
-      "parameters": [],
-      "wildcard": false
+      "parameters": []
     },
     {
       "$type": "ParserRule",
@@ -2653,12 +2306,9 @@ export const LangiumGrammarGrammar = (): Grammar => loadedLangiumGrammarGrammar 
           "deprecatedSyntax": false
         }
       },
-      "definesHiddenTokens": false,
       "entry": false,
       "fragment": false,
-      "hiddenTokens": [],
-      "parameters": [],
-      "wildcard": false
+      "parameters": []
     },
     {
       "$type": "ParserRule",
@@ -2671,17 +2321,22 @@ export const LangiumGrammarGrammar = (): Grammar => loadedLangiumGrammarGrammar 
         "$type": "Group",
         "elements": [
           {
-            "$type": "Alternatives",
-            "elements": [
-              {
-                "$type": "Keyword",
-                "value": "=>"
-              },
-              {
-                "$type": "Keyword",
-                "value": "->"
-              }
-            ]
+            "$type": "Assignment",
+            "feature": "predicate",
+            "operator": "=",
+            "terminal": {
+              "$type": "Alternatives",
+              "elements": [
+                {
+                  "$type": "Keyword",
+                  "value": "=>"
+                },
+                {
+                  "$type": "Keyword",
+                  "value": "->"
+                }
+              ]
+            }
           },
           {
             "$type": "Assignment",
@@ -2697,12 +2352,9 @@ export const LangiumGrammarGrammar = (): Grammar => loadedLangiumGrammarGrammar 
           }
         ]
       },
-      "definesHiddenTokens": false,
       "entry": false,
       "fragment": false,
-      "hiddenTokens": [],
-      "parameters": [],
-      "wildcard": false
+      "parameters": []
     },
     {
       "$type": "ParserRule",
@@ -2715,17 +2367,22 @@ export const LangiumGrammarGrammar = (): Grammar => loadedLangiumGrammarGrammar 
         "$type": "Group",
         "elements": [
           {
-            "$type": "Alternatives",
-            "elements": [
-              {
-                "$type": "Keyword",
-                "value": "=>"
-              },
-              {
-                "$type": "Keyword",
-                "value": "->"
-              }
-            ]
+            "$type": "Assignment",
+            "feature": "predicate",
+            "operator": "=",
+            "terminal": {
+              "$type": "Alternatives",
+              "elements": [
+                {
+                  "$type": "Keyword",
+                  "value": "=>"
+                },
+                {
+                  "$type": "Keyword",
+                  "value": "->"
+                }
+              ]
+            }
           },
           {
             "$type": "Assignment",
@@ -2796,12 +2453,9 @@ export const LangiumGrammarGrammar = (): Grammar => loadedLangiumGrammarGrammar 
           }
         ]
       },
-      "definesHiddenTokens": false,
       "entry": false,
       "fragment": false,
-      "hiddenTokens": [],
-      "parameters": [],
-      "wildcard": false
+      "parameters": []
     },
     {
       "$type": "ParserRule",
@@ -2821,17 +2475,22 @@ export const LangiumGrammarGrammar = (): Grammar => loadedLangiumGrammarGrammar 
             }
           },
           {
-            "$type": "Alternatives",
-            "elements": [
-              {
-                "$type": "Keyword",
-                "value": "=>"
-              },
-              {
-                "$type": "Keyword",
-                "value": "->"
-              }
-            ],
+            "$type": "Assignment",
+            "feature": "predicate",
+            "operator": "=",
+            "terminal": {
+              "$type": "Alternatives",
+              "elements": [
+                {
+                  "$type": "Keyword",
+                  "value": "=>"
+                },
+                {
+                  "$type": "Keyword",
+                  "value": "->"
+                }
+              ]
+            },
             "cardinality": "?"
           },
           {
@@ -2882,12 +2541,9 @@ export const LangiumGrammarGrammar = (): Grammar => loadedLangiumGrammarGrammar 
           }
         ]
       },
-      "definesHiddenTokens": false,
       "entry": false,
       "fragment": false,
-      "hiddenTokens": [],
-      "parameters": [],
-      "wildcard": false
+      "parameters": []
     },
     {
       "$type": "ParserRule",
@@ -2929,12 +2585,9 @@ export const LangiumGrammarGrammar = (): Grammar => loadedLangiumGrammarGrammar 
           }
         ]
       },
-      "definesHiddenTokens": false,
       "entry": false,
       "fragment": false,
-      "hiddenTokens": [],
-      "parameters": [],
-      "wildcard": false
+      "parameters": []
     },
     {
       "$type": "ParserRule",
@@ -2963,12 +2616,9 @@ export const LangiumGrammarGrammar = (): Grammar => loadedLangiumGrammarGrammar 
           }
         ]
       },
-      "definesHiddenTokens": false,
       "entry": false,
       "fragment": false,
-      "hiddenTokens": [],
-      "parameters": [],
-      "wildcard": false
+      "parameters": []
     },
     {
       "$type": "ParserRule",
@@ -3026,12 +2676,9 @@ export const LangiumGrammarGrammar = (): Grammar => loadedLangiumGrammarGrammar 
           }
         ]
       },
-      "definesHiddenTokens": false,
       "entry": false,
       "fragment": false,
-      "hiddenTokens": [],
-      "parameters": [],
-      "wildcard": false
+      "parameters": []
     },
     {
       "$type": "ParserRule",
@@ -3108,12 +2755,9 @@ export const LangiumGrammarGrammar = (): Grammar => loadedLangiumGrammarGrammar 
           }
         ]
       },
-      "definesHiddenTokens": false,
       "entry": false,
       "fragment": false,
-      "hiddenTokens": [],
-      "parameters": [],
-      "wildcard": false
+      "parameters": []
     },
     {
       "$type": "ParserRule",
@@ -3141,12 +2785,9 @@ export const LangiumGrammarGrammar = (): Grammar => loadedLangiumGrammarGrammar 
           }
         ]
       },
-      "definesHiddenTokens": false,
       "entry": false,
       "fragment": false,
-      "hiddenTokens": [],
-      "parameters": [],
-      "wildcard": false
+      "parameters": []
     },
     {
       "$type": "ParserRule",
@@ -3175,12 +2816,9 @@ export const LangiumGrammarGrammar = (): Grammar => loadedLangiumGrammarGrammar 
           }
         ]
       },
-      "definesHiddenTokens": false,
       "entry": false,
       "fragment": false,
-      "hiddenTokens": [],
-      "parameters": [],
-      "wildcard": false
+      "parameters": []
     },
     {
       "$type": "ParserRule",
@@ -3193,17 +2831,22 @@ export const LangiumGrammarGrammar = (): Grammar => loadedLangiumGrammarGrammar 
         "$type": "Group",
         "elements": [
           {
-            "$type": "Alternatives",
-            "elements": [
-              {
-                "$type": "Keyword",
-                "value": "=>"
-              },
-              {
-                "$type": "Keyword",
-                "value": "->"
-              }
-            ]
+            "$type": "Assignment",
+            "feature": "predicate",
+            "operator": "=",
+            "terminal": {
+              "$type": "Alternatives",
+              "elements": [
+                {
+                  "$type": "Keyword",
+                  "value": "=>"
+                },
+                {
+                  "$type": "Keyword",
+                  "value": "->"
+                }
+              ]
+            }
           },
           {
             "$type": "Keyword",
@@ -3227,12 +2870,9 @@ export const LangiumGrammarGrammar = (): Grammar => loadedLangiumGrammarGrammar 
           }
         ]
       },
-      "definesHiddenTokens": false,
       "entry": false,
       "fragment": false,
-      "hiddenTokens": [],
-      "parameters": [],
-      "wildcard": false
+      "parameters": []
     },
     {
       "$type": "ParserRule",
@@ -3261,12 +2901,9 @@ export const LangiumGrammarGrammar = (): Grammar => loadedLangiumGrammarGrammar 
           ]
         }
       },
-      "definesHiddenTokens": false,
       "entry": false,
       "fragment": false,
-      "hiddenTokens": [],
-      "parameters": [],
-      "wildcard": false
+      "parameters": []
     },
     {
       "$type": "ParserRule",
@@ -3380,12 +3017,9 @@ export const LangiumGrammarGrammar = (): Grammar => loadedLangiumGrammarGrammar 
           }
         ]
       },
-      "definesHiddenTokens": false,
       "entry": false,
       "fragment": false,
-      "hiddenTokens": [],
-      "parameters": [],
-      "wildcard": false
+      "parameters": []
     },
     {
       "$type": "ParserRule",
@@ -3437,12 +3071,9 @@ export const LangiumGrammarGrammar = (): Grammar => loadedLangiumGrammarGrammar 
           }
         ]
       },
-      "definesHiddenTokens": false,
       "entry": false,
       "fragment": false,
-      "hiddenTokens": [],
-      "parameters": [],
-      "wildcard": false
+      "parameters": []
     },
     {
       "$type": "ParserRule",
@@ -3491,12 +3122,9 @@ export const LangiumGrammarGrammar = (): Grammar => loadedLangiumGrammarGrammar 
           }
         ]
       },
-      "definesHiddenTokens": false,
       "entry": false,
       "fragment": false,
-      "hiddenTokens": [],
-      "parameters": [],
-      "wildcard": false
+      "parameters": []
     },
     {
       "$type": "ParserRule",
@@ -3540,12 +3168,9 @@ export const LangiumGrammarGrammar = (): Grammar => loadedLangiumGrammarGrammar 
           }
         ]
       },
-      "definesHiddenTokens": false,
       "entry": false,
       "fragment": false,
-      "hiddenTokens": [],
-      "parameters": [],
-      "wildcard": false
+      "parameters": []
     },
     {
       "$type": "ParserRule",
@@ -3608,12 +3233,9 @@ export const LangiumGrammarGrammar = (): Grammar => loadedLangiumGrammarGrammar 
           }
         ]
       },
-      "definesHiddenTokens": false,
       "entry": false,
       "fragment": false,
-      "hiddenTokens": [],
-      "parameters": [],
-      "wildcard": false
+      "parameters": []
     },
     {
       "$type": "ParserRule",
@@ -3669,12 +3291,9 @@ export const LangiumGrammarGrammar = (): Grammar => loadedLangiumGrammarGrammar 
           }
         ]
       },
-      "definesHiddenTokens": false,
       "entry": false,
       "fragment": false,
-      "hiddenTokens": [],
-      "parameters": [],
-      "wildcard": false
+      "parameters": []
     },
     {
       "$type": "ParserRule",
@@ -3714,12 +3333,9 @@ export const LangiumGrammarGrammar = (): Grammar => loadedLangiumGrammarGrammar 
           }
         ]
       },
-      "definesHiddenTokens": false,
       "entry": false,
       "fragment": false,
-      "hiddenTokens": [],
-      "parameters": [],
-      "wildcard": false
+      "parameters": []
     },
     {
       "$type": "ParserRule",
@@ -3756,12 +3372,9 @@ export const LangiumGrammarGrammar = (): Grammar => loadedLangiumGrammarGrammar 
           }
         ]
       },
-      "definesHiddenTokens": false,
       "entry": false,
       "fragment": false,
-      "hiddenTokens": [],
-      "parameters": [],
-      "wildcard": false
+      "parameters": []
     },
     {
       "$type": "ParserRule",
@@ -3798,12 +3411,9 @@ export const LangiumGrammarGrammar = (): Grammar => loadedLangiumGrammarGrammar 
           }
         ]
       },
-      "definesHiddenTokens": false,
       "entry": false,
       "fragment": false,
-      "hiddenTokens": [],
-      "parameters": [],
-      "wildcard": false
+      "parameters": []
     },
     {
       "$type": "ParserRule",
@@ -3836,12 +3446,9 @@ export const LangiumGrammarGrammar = (): Grammar => loadedLangiumGrammarGrammar 
           }
         ]
       },
-      "definesHiddenTokens": false,
       "entry": false,
       "fragment": false,
-      "hiddenTokens": [],
-      "parameters": [],
-      "wildcard": false
+      "parameters": []
     },
     {
       "$type": "ParserRule",
@@ -3866,12 +3473,9 @@ export const LangiumGrammarGrammar = (): Grammar => loadedLangiumGrammarGrammar 
           }
         ]
       },
-      "definesHiddenTokens": false,
       "entry": false,
       "fragment": false,
-      "hiddenTokens": [],
-      "parameters": [],
-      "wildcard": false
+      "parameters": []
     },
     {
       "$type": "ParserRule",
@@ -3926,12 +3530,9 @@ export const LangiumGrammarGrammar = (): Grammar => loadedLangiumGrammarGrammar 
           }
         ]
       },
-      "definesHiddenTokens": false,
       "entry": false,
       "fragment": false,
-      "hiddenTokens": [],
-      "parameters": [],
-      "wildcard": false
+      "parameters": []
     },
     {
       "$type": "ParserRule",
@@ -4040,12 +3641,9 @@ export const LangiumGrammarGrammar = (): Grammar => loadedLangiumGrammarGrammar 
           }
         ]
       },
-      "definesHiddenTokens": false,
       "entry": false,
       "fragment": false,
-      "hiddenTokens": [],
-      "parameters": [],
-      "wildcard": false
+      "parameters": []
     },
     {
       "$type": "TerminalRule",
@@ -4167,9 +3765,6 @@ export const LangiumGrammarGrammar = (): Grammar => loadedLangiumGrammarGrammar 
       }
     }
   ],
-  "definesHiddenTokens": false,
-  "hiddenTokens": [],
   "imports": [],
-  "interfaces": [],
-  "usedGrammars": []
+  "interfaces": []
 }`));

@@ -37,7 +37,8 @@ export function registerValidationChecks(services: LangiumGrammarServices): void
             validator.checkAssignmentWithFeatureName,
             validator.checkAssignmentToFragmentRule,
             validator.checkAssignmentTypes,
-            validator.checkAssignmentReservedName
+            validator.checkAssignmentReservedName,
+            validator.checkPredicateNotSupported
         ],
         ParserRule: [
             validator.checkParserRuleDataType,
@@ -52,7 +53,10 @@ export function registerValidationChecks(services: LangiumGrammarServices): void
             validator.checkEmptyTerminalRule
         ],
         InferredType: validator.checkTypeReservedName,
-        Keyword: validator.checkKeyword,
+        Keyword: [
+            validator.checkKeyword,
+            validator.checkPredicateNotSupported
+        ],
         UnorderedGroup: validator.checkUnorderedGroup,
         Grammar: [
             validator.checkGrammarName,
@@ -61,7 +65,6 @@ export function registerValidationChecks(services: LangiumGrammarServices): void
             validator.checkUniqueTypeName,
             validator.checkUniqueImportedRules,
             validator.checkDuplicateImportedGrammar,
-            validator.checkGrammarHiddenTokens,
             validator.checkGrammarForUnusedRules,
             validator.checkGrammarTypeInfer,
             validator.checkClashingTerminalNames,
@@ -80,7 +83,8 @@ export function registerValidationChecks(services: LangiumGrammarServices): void
             validator.checkUsedHiddenTerminalRule,
             validator.checkUsedFragmentTerminalRule,
             validator.checkRuleCallParameters,
-            validator.checkMultiRuleCallsAreAssigned
+            validator.checkMultiRuleCallsAreAssigned,
+            validator.checkPredicateNotSupported
         ],
         TerminalRuleCall: validator.checkUsedHiddenTerminalRule,
         CrossReference: [
@@ -95,7 +99,8 @@ export function registerValidationChecks(services: LangiumGrammarServices): void
         RegexToken: [
             validator.checkInvalidRegexFlags,
             validator.checkDirectlyUsedRegexFlags
-        ]
+        ],
+        Group: validator.checkPredicateNotSupported
     };
     registry.register(checks, validator);
 }
@@ -103,7 +108,6 @@ export function registerValidationChecks(services: LangiumGrammarServices): void
 export namespace IssueCodes {
     export const GrammarNameUppercase = 'grammar-name-uppercase';
     export const RuleNameUppercase = 'rule-name-uppercase';
-    export const HiddenGrammarTokens = 'hidden-grammar-tokens';
     export const UseRegexTokens = 'use-regex-tokens';
     export const EntryRuleTokenSyntax = 'entry-rule-token-syntax';
     export const CrossRefTokenSyntax = 'cross-ref-token-syntax';
@@ -387,16 +391,6 @@ export class LangiumGrammarValidator {
             return rule.inferredType;
         }
         return undefined;
-    }
-
-    checkGrammarHiddenTokens(grammar: ast.Grammar, accept: ValidationAcceptor): void {
-        if (grammar.definesHiddenTokens) {
-            accept('error', 'Hidden terminals are declared at the terminal definition.', {
-                node: grammar,
-                property: 'definesHiddenTokens',
-                data: diagnosticData(IssueCodes.HiddenGrammarTokens)
-            });
-        }
     }
 
     checkHiddenTerminalRule(terminalRule: ast.TerminalRule, accept: ValidationAcceptor): void {
@@ -1102,6 +1096,12 @@ export class LangiumGrammarValidator {
     checkAssignmentWithFeatureName(assignment: ast.Assignment, accept: ValidationAcceptor): void {
         if (assignment.feature === 'name' && ast.isCrossReference(assignment.terminal)) {
             accept('warning', 'The "name" property is not recommended for cross-references.', { node: assignment, property: 'feature' });
+        }
+    }
+
+    checkPredicateNotSupported(node: ast.Assignment | ast.Group | ast.Keyword | ast.RuleCall, accept: ValidationAcceptor): void {
+        if (node.predicate) {
+            accept('error', 'Predicates are currently not supported.', { node, property: 'predicate' });
         }
     }
 }
