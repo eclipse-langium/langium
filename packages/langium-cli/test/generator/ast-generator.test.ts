@@ -179,15 +179,13 @@ describe('Ast generator', () => {
             value: '\\\'test\\\'';
         }
 
-        /** @deprecated Use \`$Test.$type\` instead. */
-        export const Test = 'Test';
-        export const $Test = {
+        export const Test = {
             $type: 'Test',
             value: 'value'
         } as const;
 
         export function isTest(item: unknown): item is Test {
-            return reflection.isInstance(item, $Test.$type);
+            return reflection.isInstance(item, Test.$type);
         }
     `);
 
@@ -226,15 +224,13 @@ describe('Ast generator', () => {
             num: A;
         }
 
-        /** @deprecated Use \`$Node.$type\` instead. */
-        export const Node = 'Node';
-        export const $Node = {
+        export const Node = {
             $type: 'Node',
             num: 'num'
         } as const;
 
         export function isNode(item: unknown): item is Node {
-            return reflection.isInstance(item, $Node.$type);
+            return reflection.isInstance(item, Node.$type);
         }
     `);
 
@@ -258,15 +254,13 @@ describe('Ast generator', () => {
             num: Array<A>;
         }
 
-        /** @deprecated Use \`$Node.$type\` instead. */
-        export const Node = 'Node';
-        export const $Node = {
+        export const Node = {
             $type: 'Node',
             num: 'num'
         } as const;
 
         export function isNode(item: unknown): item is Node {
-            return reflection.isInstance(item, $Node.$type);
+            return reflection.isInstance(item, Node.$type);
         }
     `);
 
@@ -394,7 +388,7 @@ describe('Ast generator', () => {
         export class testAstReflection extends langium.AbstractAstReflection {
             override readonly types = {
                 DeclaredArray: {
-                    name: $DeclaredArray.$type,
+                    name: DeclaredArray.$type,
                     properties: {
                         elements: {
                             name: 'elements',
@@ -404,7 +398,7 @@ describe('Ast generator', () => {
                     superTypes: ['IAmArray']
                 },
                 IAmArray: {
-                    name: $IAmArray.$type,
+                    name: IAmArray.$type,
                     properties: {
                         elements: {
                             name: 'elements',
@@ -433,7 +427,7 @@ describe('Ast generator', () => {
         export class testAstReflection extends langium.AbstractAstReflection {
             override readonly types = {
                 Test: {
-                    name: $Test.$type,
+                    name: Test.$type,
                     properties: {
                         value: {
                             name: 'value',
@@ -466,7 +460,7 @@ describe('Ast generator', () => {
         export class testAstReflection extends langium.AbstractAstReflection {
             override readonly types = {
                 A: {
-                    name: $A.$type,
+                    name: A.$type,
                     properties: {
                         refA1: {
                             name: 'refA1',
@@ -480,7 +474,7 @@ describe('Ast generator', () => {
                     superTypes: []
                 },
                 B: {
-                    name: $B.$type,
+                    name: B.$type,
                     properties: {
                         refA1: {
                             name: 'refA1',
@@ -498,7 +492,7 @@ describe('Ast generator', () => {
                     superTypes: ['A']
                 },
                 C: {
-                    name: $C.$type,
+                    name: C.$type,
                     properties: {
                         refA1: {
                             name: 'refA1',
@@ -520,7 +514,7 @@ describe('Ast generator', () => {
                     superTypes: ['A', 'B']
                 },
                 D: {
-                    name: $D.$type,
+                    name: D.$type,
                     properties: {
                         refA1: {
                             name: 'refA1',

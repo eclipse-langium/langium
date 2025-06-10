@@ -97,7 +97,7 @@ describe('WorkerThreadAsyncParser', () => {
         // Assert that the CST node has a reference to the correct AST node
         const astNode = node?.astNode as GrammarAST.ParserRule;
         expect(astNode).toBeDefined();
-        expect(astNode.$type).toBe(GrammarAST.$ParserRule.$type);
+        expect(astNode.$type).toBe(GrammarAST.ParserRule.$type);
         expect(astNode.name).toBe('TestRule0');
     });
 

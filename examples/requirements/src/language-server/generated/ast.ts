@@ -37,15 +37,13 @@ export interface Contact extends langium.AstNode {
     user_name: string;
 }
 
-/** @deprecated Use `$Contact.$type` instead. */
-export const Contact = 'Contact';
-export const $Contact = {
+export const Contact = {
     $type: 'Contact',
     user_name: 'user_name'
 } as const;
 
 export function isContact(item: unknown): item is Contact {
-    return reflection.isInstance(item, $Contact.$type);
+    return reflection.isInstance(item, Contact.$type);
 }
 
 export interface Environment extends langium.AstNode {
@@ -55,16 +53,14 @@ export interface Environment extends langium.AstNode {
     name: string;
 }
 
-/** @deprecated Use `$Environment.$type` instead. */
-export const Environment = 'Environment';
-export const $Environment = {
+export const Environment = {
     $type: 'Environment',
     description: 'description',
     name: 'name'
 } as const;
 
 export function isEnvironment(item: unknown): item is Environment {
-    return reflection.isInstance(item, $Environment.$type);
+    return reflection.isInstance(item, Environment.$type);
 }
 
 export interface Requirement extends langium.AstNode {
@@ -75,9 +71,7 @@ export interface Requirement extends langium.AstNode {
     text: string;
 }
 
-/** @deprecated Use `$Requirement.$type` instead. */
-export const Requirement = 'Requirement';
-export const $Requirement = {
+export const Requirement = {
     $type: 'Requirement',
     environments: 'environments',
     name: 'name',
@@ -85,7 +79,7 @@ export const $Requirement = {
 } as const;
 
 export function isRequirement(item: unknown): item is Requirement {
-    return reflection.isInstance(item, $Requirement.$type);
+    return reflection.isInstance(item, Requirement.$type);
 }
 
 export interface RequirementModel extends langium.AstNode {
@@ -95,9 +89,7 @@ export interface RequirementModel extends langium.AstNode {
     requirements: Array<Requirement>;
 }
 
-/** @deprecated Use `$RequirementModel.$type` instead. */
-export const RequirementModel = 'RequirementModel';
-export const $RequirementModel = {
+export const RequirementModel = {
     $type: 'RequirementModel',
     contact: 'contact',
     environments: 'environments',
@@ -105,7 +97,7 @@ export const $RequirementModel = {
 } as const;
 
 export function isRequirementModel(item: unknown): item is RequirementModel {
-    return reflection.isInstance(item, $RequirementModel.$type);
+    return reflection.isInstance(item, RequirementModel.$type);
 }
 
 export interface Test extends langium.AstNode {
@@ -117,9 +109,7 @@ export interface Test extends langium.AstNode {
     testFile?: string;
 }
 
-/** @deprecated Use `$Test.$type` instead. */
-export const Test = 'Test';
-export const $Test = {
+export const Test = {
     $type: 'Test',
     environments: 'environments',
     name: 'name',
@@ -128,7 +118,7 @@ export const $Test = {
 } as const;
 
 export function isTest(item: unknown): item is Test {
-    return reflection.isInstance(item, $Test.$type);
+    return reflection.isInstance(item, Test.$type);
 }
 
 export interface TestModel extends langium.AstNode {
@@ -137,16 +127,14 @@ export interface TestModel extends langium.AstNode {
     tests: Array<Test>;
 }
 
-/** @deprecated Use `$TestModel.$type` instead. */
-export const TestModel = 'TestModel';
-export const $TestModel = {
+export const TestModel = {
     $type: 'TestModel',
     contact: 'contact',
     tests: 'tests'
 } as const;
 
 export function isTestModel(item: unknown): item is TestModel {
-    return reflection.isInstance(item, $TestModel.$type);
+    return reflection.isInstance(item, TestModel.$type);
 }
 
 export type RequirementsAndTestsAstType = {
@@ -161,7 +149,7 @@ export type RequirementsAndTestsAstType = {
 export class RequirementsAndTestsAstReflection extends langium.AbstractAstReflection {
     override readonly types = {
         Contact: {
-            name: $Contact.$type,
+            name: Contact.$type,
             properties: {
                 user_name: {
                     name: 'user_name'
@@ -170,7 +158,7 @@ export class RequirementsAndTestsAstReflection extends langium.AbstractAstReflec
             superTypes: []
         },
         Environment: {
-            name: $Environment.$type,
+            name: Environment.$type,
             properties: {
                 description: {
                     name: 'description'
@@ -182,7 +170,7 @@ export class RequirementsAndTestsAstReflection extends langium.AbstractAstReflec
             superTypes: []
         },
         Requirement: {
-            name: $Requirement.$type,
+            name: Requirement.$type,
             properties: {
                 environments: {
                     name: 'environments',
@@ -199,7 +187,7 @@ export class RequirementsAndTestsAstReflection extends langium.AbstractAstReflec
             superTypes: []
         },
         RequirementModel: {
-            name: $RequirementModel.$type,
+            name: RequirementModel.$type,
             properties: {
                 contact: {
                     name: 'contact'
@@ -216,7 +204,7 @@ export class RequirementsAndTestsAstReflection extends langium.AbstractAstReflec
             superTypes: []
         },
         Test: {
-            name: $Test.$type,
+            name: Test.$type,
             properties: {
                 environments: {
                     name: 'environments',
@@ -238,7 +226,7 @@ export class RequirementsAndTestsAstReflection extends langium.AbstractAstReflec
             superTypes: []
         },
         TestModel: {
-            name: $TestModel.$type,
+            name: TestModel.$type,
             properties: {
                 contact: {
                     name: 'contact'

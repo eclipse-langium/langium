@@ -52,7 +52,7 @@ function generateAstReflection(config: LangiumConfig, astTypes: AstTypes): Gener
                         const superTypes = typeHierarchy.superTypes.get(typeName) || [];
                         return expandToNode`
                             ${typeName}: {
-                                name: $${typeName}.$type,
+                                name: ${typeName}.$type,
                                 properties: {
                                     ${buildPropertyMetaData(props)}
                                 },

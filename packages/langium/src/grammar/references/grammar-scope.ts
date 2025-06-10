@@ -17,7 +17,7 @@ import { DefaultScopeProvider } from '../../references/scope-provider.js';
 import { findRootNode, getContainerOfType, getDocument, streamAllContents } from '../../utils/ast-utils.js';
 import { toDocumentSegment } from '../../utils/cst-utils.js';
 import { stream } from '../../utils/stream.js';
-import { $AbstractType, $InferredType, $Interface, $NamedArgument, $Type, isAction, isGrammar, isInfixRule, isParserRule, isReturnType, isRuleCall } from '../../languages/generated/ast.js';
+import { AbstractType, InferredType, Interface, NamedArgument, Type, isAction, isGrammar, isInfixRule, isParserRule, isReturnType, isRuleCall } from '../../languages/generated/ast.js';
 import { resolveImportUri } from '../internal-grammar-util.js';
 
 export class LangiumGrammarScopeProvider extends DefaultScopeProvider {
@@ -30,11 +30,11 @@ export class LangiumGrammarScopeProvider extends DefaultScopeProvider {
     }
 
     override getScope(context: ReferenceInfo): Scope {
-        if (context.container.$type === $NamedArgument.$type && context.property === 'parameter') {
+        if (context.container.$type === NamedArgument.$type && context.property === 'parameter') {
             return this.getNamedArgumentScope(context);
         }
         const referenceType = this.reflection.getReferenceType(context);
-        if (referenceType === $AbstractType.$type) {
+        if (referenceType === AbstractType.$type) {
             return this.getTypeScope(referenceType, context);
         } else {
             return super.getScope(context);
@@ -60,7 +60,7 @@ export class LangiumGrammarScopeProvider extends DefaultScopeProvider {
         if (precomputed && rootNode) {
             const allDescriptions = precomputed.get(rootNode);
             if (allDescriptions.length > 0) {
-                localScope = stream(allDescriptions).filter(des => des.type === $Interface.$type || des.type === $Type.$type || des.type === $InferredType.$type);
+                localScope = stream(allDescriptions).filter(des => des.type === Interface.$type || des.type === Type.$type || des.type === InferredType.$type);
             }
         }
 
@@ -80,8 +80,8 @@ export class LangiumGrammarScopeProvider extends DefaultScopeProvider {
         const importedUris = new Set<string>();
         this.gatherImports(grammar, importedUris);
         let importedElements = this.indexManager.allElements(referenceType, importedUris);
-        if (referenceType === $AbstractType.$type) {
-            importedElements = importedElements.filter(des => des.type === $Interface.$type || des.type === $Type.$type || des.type === $InferredType.$type);
+        if (referenceType === AbstractType.$type) {
+            importedElements = importedElements.filter(des => des.type === Interface.$type || des.type === Type.$type || des.type === InferredType.$type);
         }
         return new MapScope(importedElements);
     }
@@ -190,7 +190,7 @@ export class LangiumGrammarScopeComputation extends DefaultScopeComputation {
                 return nameSegmentGetter();
             },
             selectionSegment: toDocumentSegment(node.$cstNode),
-            type: $InferredType.$type,
+            type: InferredType.$type,
             documentUri: document.uri,
             path: this.astNodeLocator.getAstNodePath(node)
         };

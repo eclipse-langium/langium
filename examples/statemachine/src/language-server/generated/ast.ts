@@ -35,15 +35,13 @@ export interface Command extends langium.AstNode {
     name: string;
 }
 
-/** @deprecated Use `$Command.$type` instead. */
-export const Command = 'Command';
-export const $Command = {
+export const Command = {
     $type: 'Command',
     name: 'name'
 } as const;
 
 export function isCommand(item: unknown): item is Command {
-    return reflection.isInstance(item, $Command.$type);
+    return reflection.isInstance(item, Command.$type);
 }
 
 /** An event is the trigger for a transition */
@@ -53,15 +51,13 @@ export interface Event extends langium.AstNode {
     name: string;
 }
 
-/** @deprecated Use `$Event.$type` instead. */
-export const Event = 'Event';
-export const $Event = {
+export const Event = {
     $type: 'Event',
     name: 'name'
 } as const;
 
 export function isEvent(item: unknown): item is Event {
-    return reflection.isInstance(item, $Event.$type);
+    return reflection.isInstance(item, Event.$type);
 }
 
 /** A description of the status of a system */
@@ -74,9 +70,7 @@ export interface State extends langium.AstNode {
     transitions: Array<Transition>;
 }
 
-/** @deprecated Use `$State.$type` instead. */
-export const State = 'State';
-export const $State = {
+export const State = {
     $type: 'State',
     actions: 'actions',
     name: 'name',
@@ -84,7 +78,7 @@ export const $State = {
 } as const;
 
 export function isState(item: unknown): item is State {
-    return reflection.isInstance(item, $State.$type);
+    return reflection.isInstance(item, State.$type);
 }
 
 /** A textual represntation of a state machine */
@@ -101,9 +95,7 @@ export interface Statemachine extends langium.AstNode {
     states: Array<State>;
 }
 
-/** @deprecated Use `$Statemachine.$type` instead. */
-export const Statemachine = 'Statemachine';
-export const $Statemachine = {
+export const Statemachine = {
     $type: 'Statemachine',
     commands: 'commands',
     events: 'events',
@@ -113,7 +105,7 @@ export const $Statemachine = {
 } as const;
 
 export function isStatemachine(item: unknown): item is Statemachine {
-    return reflection.isInstance(item, $Statemachine.$type);
+    return reflection.isInstance(item, Statemachine.$type);
 }
 
 /** A change from one state to another */
@@ -126,16 +118,14 @@ export interface Transition extends langium.AstNode {
     state: langium.Reference<State>;
 }
 
-/** @deprecated Use `$Transition.$type` instead. */
-export const Transition = 'Transition';
-export const $Transition = {
+export const Transition = {
     $type: 'Transition',
     event: 'event',
     state: 'state'
 } as const;
 
 export function isTransition(item: unknown): item is Transition {
-    return reflection.isInstance(item, $Transition.$type);
+    return reflection.isInstance(item, Transition.$type);
 }
 
 export type StatemachineAstType = {
@@ -149,7 +139,7 @@ export type StatemachineAstType = {
 export class StatemachineAstReflection extends langium.AbstractAstReflection {
     override readonly types = {
         Command: {
-            name: $Command.$type,
+            name: Command.$type,
             properties: {
                 name: {
                     name: 'name'
@@ -158,7 +148,7 @@ export class StatemachineAstReflection extends langium.AbstractAstReflection {
             superTypes: []
         },
         Event: {
-            name: $Event.$type,
+            name: Event.$type,
             properties: {
                 name: {
                     name: 'name'
@@ -167,7 +157,7 @@ export class StatemachineAstReflection extends langium.AbstractAstReflection {
             superTypes: []
         },
         State: {
-            name: $State.$type,
+            name: State.$type,
             properties: {
                 actions: {
                     name: 'actions',
@@ -185,7 +175,7 @@ export class StatemachineAstReflection extends langium.AbstractAstReflection {
             superTypes: []
         },
         Statemachine: {
-            name: $Statemachine.$type,
+            name: Statemachine.$type,
             properties: {
                 commands: {
                     name: 'commands',
@@ -210,7 +200,7 @@ export class StatemachineAstReflection extends langium.AbstractAstReflection {
             superTypes: []
         },
         Transition: {
-            name: $Transition.$type,
+            name: Transition.$type,
             properties: {
                 event: {
                     name: 'event',
