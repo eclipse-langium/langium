@@ -462,6 +462,10 @@ export class LangiumParser extends AbstractLangiumParser {
             // Simply return the expression as is.
             return obj.parts[0];
         }
+        if (obj.parts.length === 0) {
+            // This can happen if the expression is incomplete
+            return undefined;
+        }
         // Find the operator with the lowest precedence (highest value in precedence map)
         let lowestPrecedenceIdx = 0;
         let lowestPrecedenceValue = -1;
