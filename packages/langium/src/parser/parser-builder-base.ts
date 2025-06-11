@@ -189,16 +189,35 @@ function buildRuleCall(ctx: RuleContext, ruleCall: RuleCall): Method {
 }
 
 function buildRuleCallPredicate(rule: ParserRule | InfixRule, namedArgs: NamedArgument[]): (args: Args) => Args {
-    const predicates = namedArgs.map(e => buildPredicate(e.value));
-    return (args) => {
-        const ruleArgs: Args = {};
-        for (let i = 0; i < predicates.length; i++) {
-            const ruleTarget = rule.parameters[i];
-            const predicate = predicates[i];
-            ruleArgs[ruleTarget.name] = predicate(args);
-        }
-        return ruleArgs;
-    };
+    const hasNamedArguments = namedArgs.some(arg => arg.calledByName);
+    if (hasNamedArguments) {
+        const namedPredicates = namedArgs.map(arg => ({
+            parameterName: arg.parameter?.ref?.name,
+            predicate: buildPredicate(arg.value)
+        }));
+        return (args) => {
+            const ruleArgs: Args = {};
+            for (const { parameterName, predicate } of namedPredicates) {
+                if (parameterName) {
+                    ruleArgs[parameterName] = predicate(args);
+                }
+            }
+            return ruleArgs;
+        };
+    } else {
+        const predicates = namedArgs.map(arg => buildPredicate(arg.value));
+        return (args) => {
+            const ruleArgs: Args = {};
+            for (let i = 0; i < predicates.length; i++) {
+                if (i < rule.parameters.length) {
+                    const parameterName = rule.parameters[i].name;
+                    const predicate = predicates[i];
+                    ruleArgs[parameterName] = predicate(args);
+                }
+            }
+            return ruleArgs;
+        };
+    }
 }
 
 interface PredicatedMethod {

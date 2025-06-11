@@ -160,6 +160,53 @@ describe('Predicated groups', () => {
 
 });
 
+describe('Named arguments', () => {
+
+    const content = `
+    grammar TestGrammar
+
+    entry Main:
+        'test1' TestRule<A=true, B=false> |
+        'test2' TestRule<B=false, A=true> |
+        'test3' TestRule<A=false, B=true> |
+        'test4' TestRule<B=true, A=false>
+    ;
+
+    TestRule<A, B>: <A> a=ID | <B> b=ID;
+
+    terminal ID: 'x';
+    hidden terminal WS: /\\s+/;
+    `;
+
+    let parser: LangiumParser;
+
+    beforeAll(async () => {
+        parser = await parserFromGrammar(content);
+    });
+
+    function expectCorrectParse(text: string, expectedProp: string): void {
+        const result = parser.parse(text);
+        expect(result.parserErrors.length).toBe(0);
+        const main = result.value as { a?: string, b?: string };
+        expect(main).toHaveProperty(expectedProp, 'x');
+        // Ensure no other properties are set
+        const props = ['a', 'b'];
+        props.forEach(prop => {
+            if (prop !== expectedProp) {
+                expect(main).not.toHaveProperty(prop);
+            }
+        });
+    }
+
+    test('Should parse named arguments in different orders', () => {
+        expectCorrectParse('test1 x', 'a'); // A=true, B=false
+        expectCorrectParse('test2 x', 'a'); // B=false, A=true (same as test1, different order)
+        expectCorrectParse('test3 x', 'b'); // A=false, B=true
+        expectCorrectParse('test4 x', 'b'); // B=true, A=false (same as test3, different order)
+    });
+
+});
+
 describe('Handle unordered group', () => {
 
     const content = `
@@ -737,9 +784,9 @@ describe('Fragment rules', () => {
                     Def: 'def' name=ID;
                     MemberCall:
                         Start ({infer MemberCall.previous=current} "." element=[Def])*;
-    
+
                     ${content}
-    
+
                     terminal ID: /[_a-zA-Z][\\w_]*/;
                     hidden terminal WS: /\\s+/;
                 `, module: {
@@ -946,7 +993,7 @@ describe('Unassigned subrules', () => {
         B: 'B' value1=INT (C | D)?;
         C: 'C' value2=INT;
         D: 'D' value2=INT;
-        
+
         terminal ID: /\\^?[_a-zA-Z][\\w_]*/;
         terminal INT returns number: /\\d+/;
         hidden terminal WS: /\\s+/;
