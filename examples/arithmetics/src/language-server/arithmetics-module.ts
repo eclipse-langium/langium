@@ -9,6 +9,7 @@ import { createDefaultModule, createDefaultSharedModule, type DefaultSharedModul
 import { ArithmeticsScopeProvider } from './arithmetics-scope-provider.js';
 import { ArithmeticsValidator, registerValidationChecks } from './arithmetics-validator.js';
 import { ArithmeticsGeneratedModule, ArithmeticsGeneratedSharedModule } from './generated/module.js';
+import { ArithmeticsCodeActionProvider } from './lsp/arithmetics-code-actions.js';
 
 /**
  * Declaration of custom services - add your own service classes here.
@@ -36,6 +37,9 @@ export const ArithmeticsModule: Module<ArithmeticsServices, PartialLangiumServic
     },
     validation: {
         ArithmeticsValidator: () => new ArithmeticsValidator()
+    },
+    lsp: {
+        CodeActionProvider: () => new ArithmeticsCodeActionProvider()
     }
 };
 

@@ -18,11 +18,15 @@ export function registerValidationChecks(services: ArithmeticsServices): void {
     const validator = services.validation.ArithmeticsValidator;
     const checks: ValidationChecks<ArithmeticsAstType> = {
         BinaryExpression: validator.checkDivByZero,
-        Definition: [validator.checkUniqueParameters, validator.checkNormalisable],
+        Definition: [validator.checkUniqueParameters, validator.checkNormalizable],
         Module: [validator.checkUniqueDefinitions, validator.checkFunctionRecursion],
         FunctionCall: validator.checkMatchingParameters,
     };
     registry.register(checks, validator);
+}
+
+export namespace IssueCodes {
+    export const ExpressionNormalizable = 'expression-normalizable';
 }
 
 export class ArithmeticsValidator {
@@ -32,7 +36,7 @@ export class ArithmeticsValidator {
         }
     }
 
-    checkNormalisable(def: Definition, accept: ValidationAcceptor): void {
+    checkNormalizable(def: Definition, accept: ValidationAcceptor): void {
         const context = new Map<Expression, number>();
 
         const makeOp = (expr: BinaryExpression, op: (x: number, y: number) => number): void => {
@@ -54,7 +58,13 @@ export class ArithmeticsValidator {
         evalExpr(def.expr);
         for (const [expr, result] of context) {
             if (result) {
-                accept('warning', 'Expression could be normalized to constant ' + result, { node: expr });
+                accept('info', 'Expression could be normalized to constant ' + result, {
+                    node: expr,
+                    data: {
+                        code: IssueCodes.ExpressionNormalizable,
+                        constant: result
+                    }
+                });
             }
         }
     }

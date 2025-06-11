@@ -162,15 +162,21 @@ describe('Infix operator parsing', async () => {
         await expectExpr('1 = 2 = 3', '(1 = (2 = 3))');
     });
 
-    async function expectExpr(text: string, expected: string): Promise<void> {
+    test('Should parse incomplete infix operator', async () => {
+        await expectExpr('1 + 2 -', '((1 + 2) - undefined)', 1);
+    });
+
+    async function expectExpr(text: string, expected: string, errors: number = 0): Promise<void> {
         const document = await parse(text);
-        expect(document.parseResult.parserErrors.length).toBe(0);
+        expect(document.parseResult.parserErrors.length).toBe(errors);
         const expr = document.parseResult.value as ExprModel;
         expect(stringifyExpr(expr.expr)).toEqual(expected);
     }
 
     function stringifyExpr(expr: Expr): string {
-        if (expr.$type === 'BinaryExpr') {
+        if (expr === undefined) {
+            return 'undefined';
+        } else if (expr.$type === 'BinaryExpr') {
             const bin = expr as BinaryExpr;
             return `(${stringifyExpr(bin.left)} ${bin.operator} ${stringifyExpr(bin.right)})`;
         } else if (expr.$type === 'PrimaryExpr') {
