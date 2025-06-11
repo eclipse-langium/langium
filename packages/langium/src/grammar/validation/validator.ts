@@ -41,7 +41,7 @@ export function registerValidationChecks(services: LangiumGrammarServices): void
         ],
         ParserRule: [
             validator.checkParserRuleDataType,
-            validator.checkRuleParametersUsed,
+            validator.checkRuleParameters,
             validator.checkEmptyParserRule,
             validator.checkParserRuleReservedName,
             validator.checkOperatorMultiplicitiesForMultiAssignments,
@@ -823,9 +823,26 @@ export class LangiumGrammarValidator {
         });
     }
 
-    checkRuleParametersUsed(rule: ast.ParserRule, accept: ValidationAcceptor): void {
+    checkRuleParameters(rule: ast.ParserRule, accept: ValidationAcceptor): void {
         const parameters = rule.parameters;
         if (parameters.length > 0) {
+            // Check for duplicate parameter names
+            const parameterNames = new MultiMap<string, ast.Parameter>();
+            for (const parameter of parameters) {
+                parameterNames.add(parameter.name, parameter);
+            }
+            for (const [name, params] of parameterNames.entriesGroupedByKey()) {
+                if (params.length > 1) {
+                    params.forEach(param => {
+                        accept('error', `Parameter '${name}' is declared multiple times.`, {
+                            node: param,
+                            property: 'name'
+                        });
+                    });
+                }
+            }
+
+            // Check for unused parameters
             const allReferences = streamAllContents(rule).filter(ast.isParameterReference);
             for (const parameter of parameters) {
                 if (!allReferences.some(e => e.parameter.ref === parameter)) {
@@ -1030,14 +1047,51 @@ export class LangiumGrammarValidator {
 
     checkRuleCallParameters(ruleCall: ast.RuleCall, accept: ValidationAcceptor): void {
         const rule = ruleCall.rule.ref;
-        if (ast.isParserRule(rule)) {
+        if (ast.isParserRule(rule) || ast.isInfixRule(rule)) {
             const expected = rule.parameters.length;
             const given = ruleCall.arguments.length;
-            if (expected !== given) {
-                accept('error', `Rule '${rule.name}' expects ${expected} arguments, but got ${given}.`, { node: ruleCall });
+            if (expected > 0 && given === 0) {
+                accept('error', `Rule '${rule.name}' expects ${expected} argument${expected > 1 ? 's' : ''}.`, { node: ruleCall });
+            } else if (expected === 0 && given > 0) {
+                accept('error', `Rule '${rule.name}' does not accept any arguments.`, { node: ruleCall });
+            } else if (expected > 0 && given > 0) {
+                const namedArgs = ruleCall.arguments.filter(arg => arg.calledByName);
+                const unnamedArgs = ruleCall.arguments.filter(arg => !arg.calledByName);
+                if (namedArgs.length > 0 && unnamedArgs.length > 0) {
+                    accept('error', 'Cannot mix named and unnamed arguments in rule call.', { node: ruleCall });
+                } else if (unnamedArgs.length > 0) {
+                    if (expected !== given) {
+                        accept('error', `Rule '${rule.name}' expects ${expected} argument${expected > 1 ? 's' : ''}, but got ${given}.`, { node: ruleCall });
+                    }
+                } else {
+                    this.checkNamedArguments(ruleCall, rule, accept);
+                }
             }
         } else if (ast.isTerminalRule(rule) && ruleCall.arguments.length > 0) {
             accept('error', 'Terminal rules do not accept any arguments', { node: ruleCall });
+        }
+    }
+
+    private checkNamedArguments(ruleCall: ast.RuleCall, rule: ast.ParserRule | ast.InfixRule, accept: ValidationAcceptor): void {
+        const assignedParams = new Set<string>();
+
+        // Check for duplicate assignments
+        for (const arg of ruleCall.arguments) {
+            const paramName = arg.parameter?.ref?.name;
+            if (paramName) {
+                if (assignedParams.has(paramName)) {
+                    accept('error', `Parameter '${paramName}' is assigned multiple times.`, { node: arg, property: 'parameter' });
+                } else {
+                    assignedParams.add(paramName);
+                }
+            }
+        }
+
+        // Check for completeness - all parameters must be assigned
+        for (const param of rule.parameters) {
+            if (!assignedParams.has(param.name)) {
+                accept('error', `Parameter '${param.name}' is not assigned in rule call.`, { node: ruleCall });
+            }
         }
     }
 

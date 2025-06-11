@@ -158,13 +158,13 @@ describe('Langium grammar validation', () => {
             Exp+;
         List4:
             elems += (Minus | Div);
-        
+
         Mult: content=ID;
         Plus: content=ID;
         Minus: '-' variable=ID;
         Div: 'div' variable=ID;
         fragment Exp: content+=ID;
-        
+
         terminal ID: /[_a-zA-Z][\\w_]*/;
         `.trim();
 
@@ -193,7 +193,7 @@ describe('Langium grammar validation', () => {
             value+='test';
         FQN returns string:
             ID ('.' ID)*;
-        
+
         terminal ID: /[_a-zA-Z][\\w_]*/;
         `.trim();
 
@@ -1448,6 +1448,195 @@ describe('Prohibit empty parser rules', async () => {
         const validationResult = await validate(specialGrammar);
         detectEmptyRules(validationResult, 'EmptyItem');
     });
+});
+
+describe('Rule call parameters validation', () => {
+
+    test('Rule with expected arguments but no arguments given', async () => {
+        const grammar = `
+        grammar Test
+        entry Main:
+            Rule;
+        Rule<Param1, Param2>:
+            <Param1>value=ID | <Param2>'foo';
+        terminal ID: /[a-zA-Z]+/;
+        `;
+        const validationResult = await validate(grammar);
+        const ruleCall = AstUtils.streamAllContents(validationResult.document.parseResult.value).find(GrammarAST.isRuleCall)!;
+        expectError(validationResult, "Rule 'Rule' expects 2 arguments.", {
+            node: ruleCall
+        });
+    });
+
+    test('Rule with no parameters but arguments given', async () => {
+        const grammar = `
+        grammar Test
+        entry Main:
+            Rule<true>;
+        Rule:
+            <Param1>value=ID | <Param2>'foo';
+        terminal ID: /[a-zA-Z]+/;
+        `;
+        const validationResult = await validate(grammar);
+        const ruleCall = AstUtils.streamAllContents(validationResult.document.parseResult.value).find(GrammarAST.isRuleCall)!;
+        expectError(validationResult, "Rule 'Rule' does not accept any arguments.", {
+            node: ruleCall
+        });
+    });
+
+    test('Rule with mismatched number of unnamed arguments', async () => {
+        const grammar = `
+        grammar Test
+        entry Main:
+            Rule<true>;
+        Rule<Param1, Param2>:
+            <Param1>value=ID | <Param2>'foo';
+        terminal ID: /[a-zA-Z]+/;
+        `;
+        const validationResult = await validate(grammar);
+        const ruleCall = AstUtils.streamAllContents(validationResult.document.parseResult.value).find(GrammarAST.isRuleCall)!;
+        expectError(validationResult, "Rule 'Rule' expects 2 arguments, but got 1.", {
+            node: ruleCall
+        });
+    });
+
+    test('Rule with correct number of unnamed arguments - should pass', async () => {
+        const grammar = `
+        grammar Test
+        entry Main:
+            Rule<true, false>;
+        Rule<Param1, Param2>:
+            <Param1>value=ID | <Param2>'foo';
+        terminal ID: /[a-zA-Z]+/;
+        `;
+        const validationResult = await validate(grammar);
+        expectNoIssues(validationResult);
+    });
+
+    test('Mixing named and unnamed arguments', async () => {
+        const grammar = `
+        grammar Test
+        entry Main:
+            Rule<true, Param2=false>;
+        Rule<Param1, Param2>:
+            <Param1>value=ID | <Param2>'foo';
+        terminal ID: /[a-zA-Z]+/;
+        `;
+        const validationResult = await validate(grammar);
+        const ruleCall = AstUtils.streamAllContents(validationResult.document.parseResult.value).find(GrammarAST.isRuleCall)!;
+        expectError(validationResult, 'Cannot mix named and unnamed arguments in rule call.', {
+            node: ruleCall
+        });
+    });
+
+    test('Duplicate named arguments', async () => {
+        const grammar = `
+        grammar Test
+        entry Main:
+            Rule<Param1=true, Param1=false>;
+        Rule<Param1, Param2>:
+            <Param1>value=ID | <Param2>'foo';
+        terminal ID: /[a-zA-Z]+/;
+        `;
+        const validationResult = await validate(grammar);
+        const namedArg = AstUtils.streamAllContents(validationResult.document.parseResult.value).filter(GrammarAST.isNamedArgument).toArray()[1];
+        expectError(validationResult, "Parameter 'Param1' is assigned multiple times.", {
+            node: namedArg,
+            property: 'parameter'
+        });
+    });
+
+    test('Incomplete named arguments - missing parameter', async () => {
+        const grammar = `
+        grammar Test
+        entry Main:
+            Rule<Param1=true>;
+        Rule<Param1, Param2>:
+            <Param1>value=ID | <Param2>'foo';
+        terminal ID: /[a-zA-Z]+/;
+        `;
+        const validationResult = await validate(grammar);
+        const ruleCall = AstUtils.streamAllContents(validationResult.document.parseResult.value).find(GrammarAST.isRuleCall)!;
+        expectError(validationResult, "Parameter 'Param2' is not assigned in rule call.", {
+            node: ruleCall
+        });
+    });
+
+    test('Complete named arguments - should pass', async () => {
+        const grammar = `
+        grammar Test
+        entry Main:
+            Rule<Param1=true, Param2=false>;
+        Rule<Param1, Param2>:
+            <Param1>value=ID | <Param2>'foo';
+        terminal ID: /[a-zA-Z]+/;
+        `;
+        const validationResult = await validate(grammar);
+        expectNoIssues(validationResult);
+    });
+
+    test('Terminal rule with arguments should error', async () => {
+        const grammar = `
+        grammar Test
+        entry Main:
+            ID<true>;
+        terminal ID: /[a-zA-Z]+/;
+        `;
+        const validationResult = await validate(grammar);
+        const ruleCall = AstUtils.streamAllContents(validationResult.document.parseResult.value).find(GrammarAST.isRuleCall)!;
+        expectError(validationResult, 'Terminal rules do not accept any arguments', {
+            node: ruleCall
+        });
+    });
+
+});
+
+describe('Rule parameter validation', () => {
+
+    test('Duplicate parameter names should error', async () => {
+        const grammar = `
+        grammar Test
+        entry Main:
+            Rule<true, false>;
+        Rule<Param1, Param1>:
+            <Param1>value=ID;
+        terminal ID: /[a-zA-Z]+/;
+        `;
+        const validationResult = await validate(grammar);
+        expect(validationResult.diagnostics.filter(d => d.severity === DiagnosticSeverity.Error)).toHaveLength(2);
+        const parameters = AstUtils.streamAllContents(validationResult.document.parseResult.value)
+            .filter(GrammarAST.isParameter).toArray();
+        expectError(validationResult, "Parameter 'Param1' is declared multiple times.", {
+            node: parameters[0],
+            property: 'name'
+        });
+        expectError(validationResult, "Parameter 'Param1' is declared multiple times.", {
+            node: parameters[1],
+            property: 'name'
+        });
+    });
+
+    test('Unused parameters should show hint', async () => {
+        const grammar = `
+        grammar Test
+        entry Main:
+            Rule<true, false>;
+        Rule<UsedParam, UnusedParam>:
+            <UsedParam>value=ID;
+        terminal ID: /[a-zA-Z]+/;
+        `;
+        const validationResult = await validate(grammar);
+        expect(validationResult.diagnostics).toHaveLength(1);
+        const unusedParam = AstUtils.streamAllContents(validationResult.document.parseResult.value)
+            .filter(GrammarAST.isParameter)
+            .find(p => p.name === 'UnusedParam')!;
+        expectIssue(validationResult, {
+            node: unusedParam,
+            severity: DiagnosticSeverity.Hint,
+            message: "Parameter 'UnusedParam' is unused."
+        });
+    });
+
 });
 
 describe('Check validation is not crashing', async () => {

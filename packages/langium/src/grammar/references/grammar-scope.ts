@@ -17,7 +17,7 @@ import { DefaultScopeProvider } from '../../references/scope-provider.js';
 import { findRootNode, getContainerOfType, getDocument, streamAllContents } from '../../utils/ast-utils.js';
 import { toDocumentSegment } from '../../utils/cst-utils.js';
 import { stream } from '../../utils/stream.js';
-import { AbstractType, InferredType, Interface, isAction, isGrammar, isParserRule, isReturnType, Type } from '../../languages/generated/ast.js';
+import { AbstractType, InferredType, Interface, isAction, isGrammar, isInfixRule, isParserRule, isReturnType, isRuleCall, NamedArgument, Type } from '../../languages/generated/ast.js';
 import { resolveImportUri } from '../internal-grammar-util.js';
 
 export class LangiumGrammarScopeProvider extends DefaultScopeProvider {
@@ -30,12 +30,27 @@ export class LangiumGrammarScopeProvider extends DefaultScopeProvider {
     }
 
     override getScope(context: ReferenceInfo): Scope {
+        if (context.container.$type === NamedArgument && context.property === 'parameter') {
+            return this.getNamedArgumentScope(context);
+        }
         const referenceType = this.reflection.getReferenceType(context);
         if (referenceType === AbstractType) {
             return this.getTypeScope(referenceType, context);
         } else {
             return super.getScope(context);
         }
+    }
+
+    private getNamedArgumentScope(context: ReferenceInfo): Scope {
+        const ruleCall = context.container.$container;
+        if (!isRuleCall(ruleCall)) {
+            return EMPTY_SCOPE;
+        }
+        const rule = ruleCall.rule.ref;
+        if (!isParserRule(rule) && !isInfixRule(rule)) {
+            return EMPTY_SCOPE;
+        }
+        return this.createScopeForNodes(rule.parameters);
     }
 
     private getTypeScope(referenceType: string, context: ReferenceInfo): Scope {
