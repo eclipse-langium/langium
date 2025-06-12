@@ -87,9 +87,9 @@ export class DefaultConfigurationProvider implements ConfigurationProvider {
 
     protected readonly serviceRegistry: ServiceRegistry;
     protected readonly _ready = new Deferred<void>();
+    protected readonly onConfigurationSectionUpdateEmitter = new Emitter<ConfigurationSectionUpdate>();
     protected settings: Record<string, Record<string, any>> = {};
     protected workspaceConfig = false;
-    protected onConfigurationSectionUpdateEmitter = new Emitter<ConfigurationSectionUpdate>();
 
     constructor(services: LangiumSharedCoreServices) {
         this.serviceRegistry = services.ServiceRegistry;
@@ -141,11 +141,10 @@ export class DefaultConfigurationProvider implements ConfigurationProvider {
      * `settings` property of the change object could be expressed as `Record<string, Record<string, any>>`
      */
     updateConfiguration(change: DidChangeConfigurationParams): void {
-        if (!change.settings) {
+        if (typeof change.settings !== 'object' || change.settings === null) {
             return;
         }
-        Object.keys(change.settings).forEach(section => {
-            const configuration = change.settings[section];
+        Object.entries(change.settings).forEach(([section, configuration]) => {
             this.updateSectionConfiguration(section, configuration);
             this.onConfigurationSectionUpdateEmitter.fire({ section, configuration });
         });

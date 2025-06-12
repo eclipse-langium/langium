@@ -5,6 +5,7 @@
  ******************************************************************************/
 
 import type { Module } from '../dependency-injection.js';
+import type { DeepPartial } from '../services.js';
 import type { LangiumServices, LangiumSharedServices, PartialLangiumServices, PartialLangiumSharedServices } from '../lsp/lsp-services.js';
 import { LangiumGrammarTypeHierarchyProvider } from './lsp/grammar-type-hierarchy.js';
 import type { LangiumGrammarDocument } from './workspace/documents.js';
@@ -71,7 +72,7 @@ export const LangiumGrammarModule: Module<LangiumGrammarServices, PartialLangium
  */
 export function createLangiumGrammarServices(context: DefaultSharedModuleContext,
     sharedModule?: Module<LangiumSharedServices, PartialLangiumSharedServices>,
-    module?: Module<LangiumServices, PartialLangiumServices>): {
+    module?: Module<LangiumGrammarServices, DeepPartial<LangiumServices & LangiumGrammarAddedServices>>): {
         shared: LangiumSharedServices,
         grammar: LangiumGrammarServices
     } {

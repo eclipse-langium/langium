@@ -1654,3 +1654,80 @@ describe('Check validation is not crashing', async () => {
         expect(validationResult).toBeDefined();
     });
 });
+
+describe('Strict type validation', () => {
+    const strictModeServices = createLangiumGrammarServices(EmptyFileSystem);
+    strictModeServices.grammar.validation.LangiumGrammarValidator.options = { types: 'strict' };
+    const validateStrict = validationHelper<GrammarAST.Grammar>(strictModeServices.grammar);
+
+    test('Inferred parser rules should error in strict mode', async () => {
+        const grammar = `
+        grammar Test
+        entry InferredRule infers InferredRule: name=ID;
+        terminal ID: /[a-zA-Z]+/;
+        `;
+
+        const validationResult = await validateStrict(grammar);
+        const parserRule = validationResult.document.parseResult.value.rules[0] as GrammarAST.ParserRule;
+        const inferredType = parserRule.inferredType;
+        expectError(validationResult, 'Inferred types are not allowed in strict mode.', {
+            node: inferredType,
+            property: 'name',
+            data: {
+                code: IssueCodes.InvalidInfers
+            }
+        });
+    });
+
+    test('Implicitly inferred parser rules should error in strict mode', async () => {
+        const grammar = `
+        grammar Test
+        entry InferredRule: name=ID;
+        terminal ID: /[a-zA-Z]+/;
+        `;
+
+        const validationResult = await validateStrict(grammar);
+        const parserRule = validationResult.document.parseResult.value.rules[0];
+        expectError(validationResult, 'Inferred types are not allowed in strict mode.', {
+            node: parserRule,
+            property: 'name',
+            data: {
+                code: IssueCodes.InvalidInfers
+            }
+        });
+    });
+
+    test('Inferred actions should error in strict mode', async () => {
+        const grammar = `
+        grammar Test
+        entry Rule: {infer InferredAction} name=ID;
+        terminal ID: /[a-zA-Z]+/;
+        `;
+
+        const validationResult = await validateStrict(grammar);
+        const parserRule = validationResult.document.parseResult.value.rules[0] as GrammarAST.ParserRule;
+        const group = parserRule.definition as GrammarAST.Group;
+        const action = group.elements[0] as GrammarAST.Action;
+        expectError(validationResult, 'Inferred types are not allowed in strict mode.', {
+            node: action.inferredType!,
+            property: 'name',
+            data: {
+                code: IssueCodes.InvalidInfers
+            }
+        });
+    });
+
+    test('Declared types should work in strict mode', async () => {
+        const grammar = `
+        grammar Test
+        interface DeclaredType {
+            name: string
+        }
+        entry Rule returns DeclaredType: name=ID;
+        terminal ID: /[a-zA-Z]+/;
+        `;
+
+        const validationResult = await validateStrict(grammar);
+        expectNoIssues(validationResult);
+    });
+});

@@ -25,6 +25,15 @@ import type { LangiumGrammarServices } from '../langium-grammar-module.js';
 import { typeDefinitionToPropertyType } from '../type-system/type-collector/declared-types.js';
 import { flattenPlainType, isPlainReferenceType } from '../type-system/type-collector/plain-types.js';
 
+export interface LangiumGrammarValidationOptions {
+    /**
+     * Handling of type definitions and inference in the grammar.
+     *
+     * `normal` allows both inferred and declared types, `strict` only allows declared types.
+     */
+    types?: 'normal' | 'strict'
+}
+
 export function registerValidationChecks(services: LangiumGrammarServices): void {
     const registry = services.validation.ValidationRegistry;
     const validator = services.validation.LangiumGrammarValidator;
@@ -117,12 +126,15 @@ export namespace IssueCodes {
     export const InvalidInfers = 'invalid-infers';
     export const MissingInfer = 'missing-infer';
     export const MissingReturns = 'missing-returns';
+    export const MissingCrossRefTerminal = 'missing-cross-ref-terminal';
     export const SuperfluousInfer = 'superfluous-infer';
     export const OptionalUnorderedGroup = 'optional-unordered-group';
     export const ParsingRuleEmpty = 'parsing-rule-empty';
 }
 
 export class LangiumGrammarValidator {
+
+    options: LangiumGrammarValidationOptions = {};
 
     protected readonly references: References;
     protected readonly nodeLocator: AstNodeLocator;
@@ -283,6 +295,7 @@ export class LangiumGrammarValidator {
     }
 
     checkGrammarTypeInfer(grammar: ast.Grammar, accept: ValidationAcceptor): void {
+        const typesOption = this.options.types || 'normal';
         const types = new Set<string>();
         for (const type of grammar.types) {
             types.add(type.name);
@@ -304,7 +317,13 @@ export class LangiumGrammarValidator {
             const isDataType = isDataTypeRule(rule);
             const isInfers = !rule.returnType && !rule.dataType;
             const ruleTypeName = getTypeNameWithoutError(rule);
-            if (!isDataType && ruleTypeName && types.has(ruleTypeName) === isInfers) {
+            if (typesOption === 'strict' && isInfers) {
+                accept('error', 'Inferred types are not allowed in strict mode.', {
+                    node: rule.inferredType ?? rule,
+                    property: 'name',
+                    data: diagnosticData(IssueCodes.InvalidInfers)
+                });
+            } else if (!isDataType && ruleTypeName && types.has(ruleTypeName) === isInfers) {
                 if ((isInfers || rule.returnType?.ref !== undefined) && rule.inferredType === undefined) {
                     // report missing returns (a type of the same name is declared)
                     accept('error', getMessage(ruleTypeName, isInfers), {
@@ -339,9 +358,15 @@ export class LangiumGrammarValidator {
         for (const action of streamAllContents(grammar).filter(ast.isAction)) {
             const actionType = this.getActionType(action);
             if (actionType) {
-                const isInfers = Boolean(action.inferredType);
+                const isInfers = action.inferredType !== undefined;
                 const typeName = getTypeNameWithoutError(action);
-                if (action.type && typeName && types.has(typeName) === isInfers) {
+                if (typesOption === 'strict' && isInfers) {
+                    accept('error', 'Inferred types are not allowed in strict mode.', {
+                        node: action.inferredType!,
+                        property: 'name',
+                        data: diagnosticData(IssueCodes.InvalidInfers)
+                    });
+                } else if (action.type && typeName && types.has(typeName) === isInfers) {
                     const keywordNode = isInfers ? findNodeForKeyword(action.$cstNode, 'infer') : findNodeForKeyword(action.$cstNode, '{');
                     accept('error', getMessage(typeName, isInfers), {
                         node: action,
@@ -1091,7 +1116,11 @@ export class LangiumGrammarValidator {
 
     checkCrossRefNameAssignment(reference: ast.CrossReference, accept: ValidationAcceptor): void {
         if (!reference.terminal && reference.type.ref && !findNameAssignment(reference.type.ref)) {
-            accept('error', 'Cannot infer terminal or data type rule for cross-reference.', { node: reference, property: 'type' });
+            accept('error', 'Cannot infer terminal or data type rule for cross-reference.', {
+                node: reference,
+                property: 'type',
+                data: diagnosticData(IssueCodes.MissingCrossRefTerminal)
+            });
         }
     }
 
