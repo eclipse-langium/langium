@@ -73,6 +73,11 @@
           "type": "string",
           "default": "node_modules, out",
           "description": "Specifies the exclusion patterns during initial workspace indexing. You will need to reload your extension afterwards."
+        },
+        "langium.config": {
+          "type": "string",
+          "default": "langium-config.json",
+          "description": "Path to the Langium configuration file, relative to the workspace root. This is used to control validation options."
         }
       }
     }

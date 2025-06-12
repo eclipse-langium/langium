@@ -15,9 +15,9 @@ program
     .version(cliVersion)
     .command('generate')
     .description('Generate code for a Langium grammar')
-    .option('-f, --file <file>', 'the configuration file or package.json setting up the generator')
-    .option('-w, --watch', 'enables watch mode', false)
-    .addOption(new Option('-m, --mode <mode>', 'used mode for optimized builds for your current environment').choices(['development', 'production']))
+    .option('-f, --file <file>', 'The configuration file or package.json setting up the generator')
+    .option('-w, --watch', 'Enable watch mode to regenerate when a grammar file is changed', false)
+    .addOption(new Option('-m, --mode <mode>', 'Mode for optimized builds for your current environment').choices(['development', 'production']))
     .action((options: GenerateOptions) => {
         generate(options)
             .then(success => {
@@ -34,9 +34,9 @@ program
     });
 
 program.command('extract-types')
-    .argument('<file>', 'the langium grammar file to generate types for')
-    .option('-o, --output <file>', 'output file name. Default is types.langium next to the grammar file.')
-    .option('-f, --force', 'Force overwrite existing file.')
+    .argument('<file>', 'The langium grammar file to generate types for')
+    .option('-o, --output <file>', "Output file name; default is 'types.langium' next to the grammar file")
+    .option('-f, --force', 'Force overwriting any existing file')
     .action((file, options: ExtractTypesOptions) => {
         options.grammar = file;
         generateTypes(options).catch(err => {

@@ -508,9 +508,7 @@ export function addSemanticTokenHandler(connection: Connection, services: Langiu
 }
 export function addConfigurationChangeHandler(connection: Connection, services: LangiumSharedServices): void {
     connection.onDidChangeConfiguration(change => {
-        if (change.settings) {
-            services.workspace.ConfigurationProvider.updateConfiguration(change);
-        }
+        services.workspace.ConfigurationProvider.updateConfiguration(change);
     });
 }
 

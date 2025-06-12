@@ -255,6 +255,11 @@ export async function runGenerator(config: LangiumConfig, options: GenerateOptio
     if (options.mode) {
         config.mode = options.mode;
     }
+
+    if (config.validation) {
+        grammarServices.validation.LangiumGrammarValidator.options = config.validation;
+    }
+
     const all = await buildAll(config);
     const buildResult: (success: boolean) => GeneratorResult = (success: boolean) => ({
         success,

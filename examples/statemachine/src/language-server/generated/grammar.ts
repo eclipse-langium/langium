@@ -118,7 +118,7 @@ export const StatemachineGrammar = (): Grammar => loadedStatemachineGrammar ?? (
       },
       "fragment": false,
       "parameters": [],
-      "$comment": "/** A textual represntation of a state machine */"
+      "$comment": "/** A textual representation of a state machine */"
     },
     {
       "$type": "ParserRule",

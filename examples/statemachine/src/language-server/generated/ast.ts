@@ -70,7 +70,7 @@ export function isState(item: unknown): item is State {
     return reflection.isInstance(item, State);
 }
 
-/** A textual represntation of a state machine */
+/** A textual representation of a state machine */
 export interface Statemachine extends langium.AstNode {
     readonly $type: 'Statemachine';
     commands: Array<Command>;

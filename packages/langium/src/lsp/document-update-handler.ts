@@ -4,7 +4,9 @@
  * terms of the MIT License, which is available in the project root.
  ******************************************************************************/
 
-import type { TextDocumentWillSaveEvent, DidChangeWatchedFilesParams, DidChangeWatchedFilesRegistrationOptions, TextDocumentChangeEvent, TextEdit, FileSystemWatcher } from 'vscode-languageserver';
+import type {
+    DidChangeWatchedFilesParams, DidChangeWatchedFilesRegistrationOptions, Disposable, Event, TextDocumentChangeEvent, TextDocumentWillSaveEvent, TextEdit, FileSystemWatcher
+} from 'vscode-languageserver';
 import { DidChangeWatchedFilesNotification, FileChangeType } from 'vscode-languageserver';
 import { stream } from '../utils/stream.js';
 import { URI } from '../utils/uri-utils.js';
@@ -15,6 +17,7 @@ import type { LangiumSharedServices } from './lsp-services.js';
 import type { WorkspaceManager } from '../workspace/workspace-manager.js';
 import type { ServiceRegistry } from '../service-registry.js';
 import type { MaybePromise } from '../utils/promise-utils.js';
+import { Emitter } from '../utils/event.js';
 
 /**
  * Shared service for handling text document changes and watching relevant files.
@@ -64,6 +67,12 @@ export interface DocumentUpdateHandler {
      */
     didChangeWatchedFiles?(params: DidChangeWatchedFilesParams): void;
 
+    /**
+     * Register a listener for raw file system changes. Which changes are actually reported
+     * depends on the file system watcher configuration.
+     */
+    onWatchedFilesChange(callback: (params: DidChangeWatchedFilesParams) => void): Disposable;
+
 }
 
 export class DefaultDocumentUpdateHandler implements DocumentUpdateHandler {
@@ -72,6 +81,7 @@ export class DefaultDocumentUpdateHandler implements DocumentUpdateHandler {
     protected readonly documentBuilder: DocumentBuilder;
     protected readonly workspaceLock: WorkspaceLock;
     protected readonly serviceRegistry: ServiceRegistry;
+    protected readonly onWatchedFilesChangeEmitter = new Emitter<DidChangeWatchedFilesParams>();
 
     constructor(services: LangiumSharedServices) {
         this.workspaceManager = services.workspace.WorkspaceManager;
@@ -125,6 +135,7 @@ export class DefaultDocumentUpdateHandler implements DocumentUpdateHandler {
     }
 
     didChangeWatchedFiles(params: DidChangeWatchedFilesParams): void {
+        this.onWatchedFilesChangeEmitter.fire(params);
         const changedUris = stream(params.changes)
             .filter(c => c.type !== FileChangeType.Deleted)
             .distinct(c => c.uri)
@@ -136,5 +147,9 @@ export class DefaultDocumentUpdateHandler implements DocumentUpdateHandler {
             .map(c => URI.parse(c.uri))
             .toArray();
         this.fireDocumentUpdate(changedUris, deletedUris);
+    }
+
+    get onWatchedFilesChange(): Event<DidChangeWatchedFilesParams> {
+        return this.onWatchedFilesChangeEmitter.event;
     }
 }
