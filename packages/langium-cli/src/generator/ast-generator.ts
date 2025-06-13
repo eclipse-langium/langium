@@ -61,6 +61,17 @@ function generateAstReflection(config: LangiumConfig, astTypes: AstTypes): Gener
                             }
                         `;
                     }
+                    const unionType = astTypes.unions.find(t => t.name === typeName);
+                    if (unionType) {
+                        const superTypes = typeHierarchy.superTypes.get(typeName) || [];
+                        return expandToNode`
+                            ${typeName}: {
+                                name: ${typeName}.$type,
+                                properties: {},
+                                superTypes: [${superTypes.map(t => `'${t}'`).join(', ')}]
+                            }
+                        `;
+                    }
                     return undefined;
                 }, { separator: ',', appendNewLineIfNotEmpty: true })}
             } as const satisfies langium.AstMetaData

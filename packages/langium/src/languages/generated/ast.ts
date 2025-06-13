@@ -999,6 +999,21 @@ export class LangiumGrammarAstReflection extends langium.AbstractAstReflection {
             },
             superTypes: []
         },
+        AbstractParserRule: {
+            name: AbstractParserRule.$type,
+            properties: {},
+            superTypes: ['AbstractRule', 'AbstractType']
+        },
+        AbstractRule: {
+            name: AbstractRule.$type,
+            properties: {},
+            superTypes: []
+        },
+        AbstractType: {
+            name: AbstractType.$type,
+            properties: {},
+            superTypes: []
+        },
         Action: {
             name: Action.$type,
             properties: {
@@ -1105,6 +1120,11 @@ export class LangiumGrammarAstReflection extends langium.AbstractAstReflection {
                 }
             },
             superTypes: [TerminalElement.$type]
+        },
+        Condition: {
+            name: Condition.$type,
+            properties: {},
+            superTypes: []
         },
         Conjunction: {
             name: Conjunction.$type,
@@ -1637,6 +1657,11 @@ export class LangiumGrammarAstReflection extends langium.AbstractAstReflection {
             },
             superTypes: []
         },
+        TypeDefinition: {
+            name: TypeDefinition.$type,
+            properties: {},
+            superTypes: []
+        },
         UnionType: {
             name: UnionType.$type,
             properties: {
@@ -1678,6 +1703,11 @@ export class LangiumGrammarAstReflection extends langium.AbstractAstReflection {
                 }
             },
             superTypes: [TerminalElement.$type]
+        },
+        ValueLiteral: {
+            name: ValueLiteral.$type,
+            properties: {},
+            superTypes: []
         },
         Wildcard: {
             name: Wildcard.$type,
