@@ -16,7 +16,7 @@ import type { Assignment, CrossReference, Group, ParserRule } from '../../../src
 const grammarServices = createLangiumGrammarServices(EmptyFileSystem).grammar;
 const validate = validationHelper<GrammarAST.Grammar>(grammarServices);
 
-describe('validate params in types', () => {
+describe('Validate params in types', () => {
 
     // verifies that missing properties that are required are reported in the correct spot
     test('verify missing required property error, for single rule', async () => {
@@ -102,7 +102,7 @@ describe('validate params in types', () => {
 
 });
 
-describe('validate inferred types', () => {
+describe('Validate inferred types', () => {
     const prog = `
     A infers B: 'a' name=ID (otherA=[B])?;
     hidden terminal WS: /\\s+/;
@@ -158,7 +158,7 @@ describe('Work with imported declared types', () => {
     });
 });
 
-describe('validate declared types', () => {
+describe('Validate declared types', () => {
 
     test('use langium keywords as properties in declared types', async () => {
 
@@ -220,9 +220,9 @@ describe('validate declared types', () => {
             interface State {
                 type: StateType;
             }
-            
+
             type StateType = 'normal' | 'final';
-            
+
             State returns State: type=('normal' | 'final');
         `);
         expectNoIssues(validationResult);
@@ -233,9 +233,9 @@ describe('validate declared types', () => {
             interface State {
                 type: StateType;
             }
-            
+
             type StateType = 'normal' | 'final';
-            
+
             State returns State: type='default';
         `);
 
@@ -321,7 +321,7 @@ describe('validate declared types', () => {
     });
 });
 
-describe('validate declared default value properties', () => {
+describe('Validate declared default value properties', () => {
 
     test('Does not report false positive cyclic type definition', async () => {
         const validationResult = await validate(`
@@ -435,7 +435,7 @@ describe('validate declared default value properties', () => {
 
 });
 
-describe('validate actions that use declared types', () => {
+describe('Validate actions that use declared types', () => {
 
     test('verify extra properties in some actions', async () => {
         const prog = `
@@ -461,7 +461,7 @@ describe('validate actions that use declared types', () => {
 
 });
 
-describe('validate properties duplication in types hierarchy', () => {
+describe('Validate properties duplication in types hierarchy', () => {
 
     test('verify extra properties in some parser rules', async () => {
         const prog = `
@@ -826,5 +826,205 @@ describe('Property types validation takes in account types hierarchy', () => {
         ;`);
 
         expectNoIssues(validation);
+    });
+});
+
+describe('Validate InfixRule explicit return types', () => {
+
+    test('Missing operator property should produce error', async () => {
+        const validation = await validate(`
+            grammar Test
+            entry Model: Expression;
+
+            interface BinaryExpr {
+                left: Primary
+                right: Primary
+                // missing operator property
+            }
+
+            infix Expression on Primary returns BinaryExpr:
+                '+' | '-';
+
+            Primary: value=ID;
+            terminal ID: /[_a-zA-Z][\\w_]*/;
+        `);
+
+        const infixRule = validation.document.parseResult.value.rules[1] as GrammarAST.InfixRule;
+        expectError(validation, "Infix rule 'Expression' with explicit return type 'BinaryExpr' must have an 'operator' property.", {
+            node: infixRule,
+            property: 'returnType'
+        });
+    });
+
+    test('Missing left property should produce error', async () => {
+        const validation = await validate(`
+            grammar Test
+            entry Model: Expression;
+
+            interface BinaryExpr {
+                operator: string
+                right: Primary
+                // missing left property
+            }
+
+            infix Expression on Primary returns BinaryExpr:
+                '+' | '-';
+
+            Primary: value=ID;
+            terminal ID: /[_a-zA-Z][\\w_]*/;
+        `);
+
+        const infixRule = validation.document.parseResult.value.rules[1] as GrammarAST.InfixRule;
+        expectError(validation, "Infix rule 'Expression' with explicit return type 'BinaryExpr' must have a 'left' property.", {
+            node: infixRule,
+            property: 'returnType'
+        });
+    });
+
+    test('Missing right property should produce error', async () => {
+        const validation = await validate(`
+            grammar Test
+            entry Model: Expression;
+
+            interface BinaryExpr {
+                operator: string
+                left: Primary
+                // missing right property
+            }
+
+            infix Expression on Primary returns BinaryExpr:
+                '+' | '-';
+
+            Primary: value=ID;
+            terminal ID: /[_a-zA-Z][\\w_]*/;
+        `);
+
+        const infixRule = validation.document.parseResult.value.rules[1] as GrammarAST.InfixRule;
+        expectError(validation, "Infix rule 'Expression' with explicit return type 'BinaryExpr' must have a 'right' property.", {
+            node: infixRule,
+            property: 'returnType'
+        });
+    });
+
+    test('Invalid operator property type should produce error', async () => {
+        const validation = await validate(`
+            grammar Test
+            entry Model: Expression;
+
+            interface BinaryExpr {
+                operator: number  // should be string or enumeration of operators
+                left: Primary
+                right: Primary
+            }
+
+            infix Expression on Primary returns BinaryExpr:
+                '+' | '-';
+
+            Primary: value=ID;
+            terminal ID: /[_a-zA-Z][\\w_]*/;
+        `);
+
+        const infixRule = validation.document.parseResult.value.rules[1] as GrammarAST.InfixRule;
+        expectError(validation, "Property 'operator' must be of type 'string' or one of: '+', '-'.", {
+            node: infixRule,
+            property: 'returnType'
+        });
+    });
+
+    test('Invalid left property type should produce error', async () => {
+        const validation = await validate(`
+            grammar Test
+            entry Model: Expression;
+
+            interface BinaryExpr {
+                operator: string
+                left: string  // should be Primary or supertype
+                right: Primary
+            }
+
+            infix Expression on Primary returns BinaryExpr:
+                '+' | '-';
+
+            Primary: value=ID;
+            terminal ID: /[_a-zA-Z][\\w_]*/;
+        `);
+
+        const infixRule = validation.document.parseResult.value.rules[1] as GrammarAST.InfixRule;
+        expectError(validation, "Property 'left' must be of type 'Primary' or a supertype of it.", {
+            node: infixRule,
+            property: 'returnType'
+        });
+    });
+
+    test('Invalid right property type should produce error', async () => {
+        const validation = await validate(`
+            grammar Test
+            entry Model: Expression;
+
+            interface BinaryExpr {
+                operator: string
+                left: Primary
+                right: number  // should be Primary or supertype
+            }
+
+            infix Expression on Primary returns BinaryExpr:
+                '+' | '-';
+
+            Primary: value=ID;
+            terminal ID: /[_a-zA-Z][\\w_]*/;
+        `);
+
+        const infixRule = validation.document.parseResult.value.rules[1] as GrammarAST.InfixRule;
+        expectError(validation, "Property 'right' must be of type 'Primary' or a supertype of it.", {
+            node: infixRule,
+            property: 'returnType'
+        });
+    });
+
+    test('Valid InfixRule with explicit return type should not produce errors', async () => {
+        const validation = await validate(`
+            grammar Test
+            entry Model: Expression;
+
+            interface BinaryExpr {
+                operator: '+' | '-' | '*' | '/'
+                left: Literal
+                right: Literal
+            }
+
+            infix Expression on Primary returns BinaryExpr:
+                '+' | '-';
+
+            Primary infers Literal: value=ID;
+            terminal ID: /[_a-zA-Z][\\w_]*/;
+        `);
+
+        expectNoIssues(validation, {
+            severity: DiagnosticSeverity.Error
+        });
+    });
+
+    test('Valid InfixRule with supertype properties should not produce errors', async () => {
+        const validation = await validate(`
+            grammar Test
+            entry Model: Expression;
+
+            interface BinaryExpr {
+                operator: string
+                left: TestExpression
+                right: TestExpression
+            }
+            type TestExpression = BinaryExpr | Primary;
+
+            infix Expression on Primary returns BinaryExpr:
+                '+' | '-';
+
+            Primary: value=ID;
+            terminal ID: /[_a-zA-Z][\\w_]*/;
+        `);
+
+        expectNoIssues(validation, {
+            severity: DiagnosticSeverity.Error
+        });
     });
 });

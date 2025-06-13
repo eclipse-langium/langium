@@ -10,7 +10,7 @@ import type { BaseParser } from './langium-parser.js';
 import type { AstNode } from '../syntax-tree.js';
 import type { Cardinality } from '../utils/grammar-utils.js';
 import { EMPTY_ALT, EOF } from 'chevrotain';
-import { isAction, isAlternatives, isEndOfFile, isAssignment, isConjunction, isCrossReference, isDisjunction, isGroup, isKeyword, isNegation, isParameterReference, isParserRule, isRuleCall, isTerminalRule, isUnorderedGroup, isBooleanLiteral, isInfixRule } from '../languages/generated/ast.js';
+import { isAction, isAlternatives, isEndOfFile, isAssignment, isConjunction, isCrossReference, isDisjunction, isGroup, isKeyword, isNegation, isParameterReference, isParserRule, isRuleCall, isTerminalRule, isUnorderedGroup, isBooleanLiteral, isInfixRule, isAbstractParserRule } from '../languages/generated/ast.js';
 import { assertUnreachable, ErrorWithLocation } from '../utils/errors.js';
 import { stream } from '../utils/stream.js';
 import { findNameAssignment, getAllReachableRules, getTypeName } from '../utils/grammar-utils.js';
@@ -168,7 +168,7 @@ function buildAction(ctx: RuleContext, action: Action): Method {
 
 function buildRuleCall(ctx: RuleContext, ruleCall: RuleCall): Method {
     const rule = ruleCall.rule.ref;
-    if (isParserRule(rule) || isInfixRule(rule)) {
+    if (isAbstractParserRule(rule)) {
         const idx = ctx.subrule++;
         const fragment = isParserRule(rule) && rule.fragment;
         const predicate = ruleCall.arguments.length > 0 ? buildRuleCallPredicate(rule, ruleCall.arguments) : () => ({});
@@ -470,7 +470,7 @@ function getRule(ctx: ParserContext, element: ParserRule | InfixRule | AbstractE
 }
 
 function getRuleName(ctx: ParserContext, element: ParserRule | InfixRule | AbstractElement): string {
-    if (isParserRule(element) || isInfixRule(element)) {
+    if (isAbstractParserRule(element)) {
         return element.name;
     } else if (ctx.ruleNames.has(element)) {
         return ctx.ruleNames.get(element)!;
