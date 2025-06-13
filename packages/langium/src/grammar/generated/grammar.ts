@@ -149,7 +149,7 @@ export const LangiumGrammarGrammar = (): Grammar => loadedLangiumGrammarGrammar 
                 "terminal": {
                   "$type": "CrossReference",
                   "type": {
-                    "$ref": "#/types@1"
+                    "$ref": "#/types@2"
                   },
                   "terminal": {
                     "$type": "RuleCall",
@@ -176,7 +176,7 @@ export const LangiumGrammarGrammar = (): Grammar => loadedLangiumGrammarGrammar 
                     "terminal": {
                       "$type": "CrossReference",
                       "type": {
-                        "$ref": "#/types@1"
+                        "$ref": "#/types@2"
                       },
                       "terminal": {
                         "$type": "RuleCall",
@@ -311,7 +311,7 @@ export const LangiumGrammarGrammar = (): Grammar => loadedLangiumGrammarGrammar 
       "$type": "ParserRule",
       "name": "ValueLiteral",
       "returnType": {
-        "$ref": "#/types@7"
+        "$ref": "#/types@8"
       },
       "definition": {
         "$type": "Alternatives",
@@ -489,7 +489,7 @@ export const LangiumGrammarGrammar = (): Grammar => loadedLangiumGrammarGrammar 
       "$type": "ParserRule",
       "name": "TypeDefinition",
       "returnType": {
-        "$ref": "#/types@6"
+        "$ref": "#/types@7"
       },
       "definition": {
         "$type": "RuleCall",
@@ -506,7 +506,7 @@ export const LangiumGrammarGrammar = (): Grammar => loadedLangiumGrammarGrammar 
       "$type": "ParserRule",
       "name": "UnionType",
       "returnType": {
-        "$ref": "#/types@6"
+        "$ref": "#/types@7"
       },
       "definition": {
         "$type": "Group",
@@ -564,7 +564,7 @@ export const LangiumGrammarGrammar = (): Grammar => loadedLangiumGrammarGrammar 
       "$type": "ParserRule",
       "name": "ArrayType",
       "returnType": {
-        "$ref": "#/types@6"
+        "$ref": "#/types@7"
       },
       "definition": {
         "$type": "Group",
@@ -608,7 +608,7 @@ export const LangiumGrammarGrammar = (): Grammar => loadedLangiumGrammarGrammar 
       "$type": "ParserRule",
       "name": "ReferenceType",
       "returnType": {
-        "$ref": "#/types@6"
+        "$ref": "#/types@7"
       },
       "definition": {
         "$type": "Alternatives",
@@ -667,7 +667,7 @@ export const LangiumGrammarGrammar = (): Grammar => loadedLangiumGrammarGrammar 
       "$type": "ParserRule",
       "name": "SimpleType",
       "returnType": {
-        "$ref": "#/types@6"
+        "$ref": "#/types@7"
       },
       "definition": {
         "$type": "Alternatives",
@@ -711,7 +711,7 @@ export const LangiumGrammarGrammar = (): Grammar => loadedLangiumGrammarGrammar 
                     "terminal": {
                       "$type": "CrossReference",
                       "type": {
-                        "$ref": "#/types@1"
+                        "$ref": "#/types@2"
                       },
                       "terminal": {
                         "$type": "RuleCall",
@@ -975,7 +975,7 @@ export const LangiumGrammarGrammar = (): Grammar => loadedLangiumGrammarGrammar 
                         "terminal": {
                           "$type": "CrossReference",
                           "type": {
-                            "$ref": "#/types@1"
+                            "$ref": "#/types@2"
                           },
                           "terminal": {
                             "$type": "RuleCall",
@@ -1089,6 +1089,79 @@ export const LangiumGrammarGrammar = (): Grammar => loadedLangiumGrammarGrammar 
               },
               "arguments": []
             }
+          },
+          {
+            "$type": "Alternatives",
+            "elements": [
+              {
+                "$type": "Group",
+                "elements": [
+                  {
+                    "$type": "Keyword",
+                    "value": "returns"
+                  },
+                  {
+                    "$type": "Alternatives",
+                    "elements": [
+                      {
+                        "$type": "Assignment",
+                        "feature": "returnType",
+                        "operator": "=",
+                        "terminal": {
+                          "$type": "CrossReference",
+                          "type": {
+                            "$ref": "#/types@2"
+                          },
+                          "terminal": {
+                            "$type": "RuleCall",
+                            "rule": {
+                              "$ref": "#/rules@67"
+                            },
+                            "arguments": []
+                          },
+                          "deprecatedSyntax": false,
+                          "isMulti": false
+                        }
+                      },
+                      {
+                        "$type": "Assignment",
+                        "feature": "dataType",
+                        "operator": "=",
+                        "terminal": {
+                          "$type": "RuleCall",
+                          "rule": {
+                            "$ref": "#/rules@13"
+                          },
+                          "arguments": []
+                        }
+                      }
+                    ]
+                  }
+                ]
+              },
+              {
+                "$type": "Assignment",
+                "feature": "inferredType",
+                "operator": "=",
+                "terminal": {
+                  "$type": "RuleCall",
+                  "rule": {
+                    "$ref": "#/rules@22"
+                  },
+                  "arguments": [
+                    {
+                      "$type": "NamedArgument",
+                      "value": {
+                        "$type": "BooleanLiteral",
+                        "true": false
+                      },
+                      "calledByName": false
+                    }
+                  ]
+                }
+              }
+            ],
+            "cardinality": "?"
           },
           {
             "$type": "Keyword",
@@ -1773,7 +1846,7 @@ export const LangiumGrammarGrammar = (): Grammar => loadedLangiumGrammarGrammar 
                 "terminal": {
                   "$type": "CrossReference",
                   "type": {
-                    "$ref": "#/types@1"
+                    "$ref": "#/types@2"
                   },
                   "terminal": {
                     "$type": "RuleCall",
@@ -2123,7 +2196,7 @@ export const LangiumGrammarGrammar = (): Grammar => loadedLangiumGrammarGrammar 
       "$type": "ParserRule",
       "name": "Disjunction",
       "returnType": {
-        "$ref": "#/types@3"
+        "$ref": "#/types@4"
       },
       "definition": {
         "$type": "Group",
@@ -2175,7 +2248,7 @@ export const LangiumGrammarGrammar = (): Grammar => loadedLangiumGrammarGrammar 
       "$type": "ParserRule",
       "name": "Conjunction",
       "returnType": {
-        "$ref": "#/types@3"
+        "$ref": "#/types@4"
       },
       "definition": {
         "$type": "Group",
@@ -2227,7 +2300,7 @@ export const LangiumGrammarGrammar = (): Grammar => loadedLangiumGrammarGrammar 
       "$type": "ParserRule",
       "name": "Negation",
       "returnType": {
-        "$ref": "#/types@3"
+        "$ref": "#/types@4"
       },
       "definition": {
         "$type": "Alternatives",
@@ -2276,7 +2349,7 @@ export const LangiumGrammarGrammar = (): Grammar => loadedLangiumGrammarGrammar 
       "$type": "ParserRule",
       "name": "Atom",
       "returnType": {
-        "$ref": "#/types@3"
+        "$ref": "#/types@4"
       },
       "definition": {
         "$type": "Alternatives",
@@ -2312,7 +2385,7 @@ export const LangiumGrammarGrammar = (): Grammar => loadedLangiumGrammarGrammar 
       "$type": "ParserRule",
       "name": "ParenthesizedCondition",
       "returnType": {
-        "$ref": "#/types@3"
+        "$ref": "#/types@4"
       },
       "definition": {
         "$type": "Group",
@@ -2767,7 +2840,7 @@ export const LangiumGrammarGrammar = (): Grammar => loadedLangiumGrammarGrammar 
             "terminal": {
               "$type": "CrossReference",
               "type": {
-                "$ref": "#/types@1"
+                "$ref": "#/types@2"
               },
               "terminal": {
                 "$type": "RuleCall",
@@ -3834,7 +3907,7 @@ export const LangiumGrammarGrammar = (): Grammar => loadedLangiumGrammarGrammar 
           "type": {
             "$type": "SimpleType",
             "typeRef": {
-              "$ref": "#/types@4"
+              "$ref": "#/types@5"
             }
           }
         },
@@ -3876,7 +3949,7 @@ export const LangiumGrammarGrammar = (): Grammar => loadedLangiumGrammarGrammar 
             "referenceType": {
               "$type": "SimpleType",
               "typeRef": {
-                "$ref": "#/types@1"
+                "$ref": "#/types@2"
               }
             },
             "isMulti": false
@@ -3921,7 +3994,7 @@ export const LangiumGrammarGrammar = (): Grammar => loadedLangiumGrammarGrammar 
             "elementType": {
               "$type": "SimpleType",
               "typeRef": {
-                "$ref": "#/types@7"
+                "$ref": "#/types@8"
               }
             }
           },
@@ -3940,7 +4013,7 @@ export const LangiumGrammarGrammar = (): Grammar => loadedLangiumGrammarGrammar 
           "type": {
             "$type": "SimpleType",
             "typeRef": {
-              "$ref": "#/types@6"
+              "$ref": "#/types@7"
             }
           },
           "isOptional": false
@@ -3963,7 +4036,7 @@ export const LangiumGrammarGrammar = (): Grammar => loadedLangiumGrammarGrammar 
           "type": {
             "$type": "SimpleType",
             "typeRef": {
-              "$ref": "#/types@4"
+              "$ref": "#/types@5"
             }
           },
           "isOptional": false
@@ -4080,7 +4153,7 @@ export const LangiumGrammarGrammar = (): Grammar => loadedLangiumGrammarGrammar 
           "type": {
             "$type": "SimpleType",
             "typeRef": {
-              "$ref": "#/types@3"
+              "$ref": "#/types@4"
             }
           },
           "isOptional": false
@@ -4091,7 +4164,7 @@ export const LangiumGrammarGrammar = (): Grammar => loadedLangiumGrammarGrammar 
           "type": {
             "$type": "SimpleType",
             "typeRef": {
-              "$ref": "#/types@3"
+              "$ref": "#/types@4"
             }
           },
           "isOptional": false
@@ -4145,7 +4218,7 @@ export const LangiumGrammarGrammar = (): Grammar => loadedLangiumGrammarGrammar 
             "referenceType": {
               "$type": "SimpleType",
               "typeRef": {
-                "$ref": "#/types@1"
+                "$ref": "#/types@2"
               }
             },
             "isMulti": false
@@ -4164,7 +4237,7 @@ export const LangiumGrammarGrammar = (): Grammar => loadedLangiumGrammarGrammar 
           "type": {
             "$type": "SimpleType",
             "typeRef": {
-              "$ref": "#/types@3"
+              "$ref": "#/types@4"
             }
           },
           "isOptional": false
@@ -4175,7 +4248,7 @@ export const LangiumGrammarGrammar = (): Grammar => loadedLangiumGrammarGrammar 
           "type": {
             "$type": "SimpleType",
             "typeRef": {
-              "$ref": "#/types@3"
+              "$ref": "#/types@4"
             }
           },
           "isOptional": false
@@ -4320,7 +4393,7 @@ export const LangiumGrammarGrammar = (): Grammar => loadedLangiumGrammarGrammar 
           "type": {
             "$type": "SimpleType",
             "typeRef": {
-              "$ref": "#/types@3"
+              "$ref": "#/types@4"
             }
           }
         },
@@ -4377,6 +4450,28 @@ export const LangiumGrammarGrammar = (): Grammar => loadedLangiumGrammarGrammar 
         },
         {
           "$type": "TypeAttribute",
+          "name": "dataType",
+          "isOptional": true,
+          "type": {
+            "$type": "SimpleType",
+            "typeRef": {
+              "$ref": "#/types@6"
+            }
+          }
+        },
+        {
+          "$type": "TypeAttribute",
+          "name": "inferredType",
+          "isOptional": true,
+          "type": {
+            "$type": "SimpleType",
+            "typeRef": {
+              "$ref": "#/interfaces@15"
+            }
+          }
+        },
+        {
+          "$type": "TypeAttribute",
           "name": "name",
           "type": {
             "$type": "SimpleType",
@@ -4408,6 +4503,21 @@ export const LangiumGrammarGrammar = (): Grammar => loadedLangiumGrammarGrammar 
             }
           },
           "isOptional": false
+        },
+        {
+          "$type": "TypeAttribute",
+          "name": "returnType",
+          "isOptional": true,
+          "type": {
+            "$type": "ReferenceType",
+            "referenceType": {
+              "$type": "SimpleType",
+              "typeRef": {
+                "$ref": "#/types@2"
+              }
+            },
+            "isMulti": false
+          }
         }
       ],
       "superTypes": []
@@ -4423,7 +4533,7 @@ export const LangiumGrammarGrammar = (): Grammar => loadedLangiumGrammarGrammar 
           "type": {
             "$type": "SimpleType",
             "typeRef": {
-              "$ref": "#/types@2"
+              "$ref": "#/types@3"
             }
           }
         },
@@ -4502,7 +4612,7 @@ export const LangiumGrammarGrammar = (): Grammar => loadedLangiumGrammarGrammar 
               "referenceType": {
                 "$type": "SimpleType",
                 "typeRef": {
-                  "$ref": "#/types@1"
+                  "$ref": "#/types@2"
                 }
               },
               "isMulti": false
@@ -4585,7 +4695,7 @@ export const LangiumGrammarGrammar = (): Grammar => loadedLangiumGrammarGrammar 
           "type": {
             "$type": "SimpleType",
             "typeRef": {
-              "$ref": "#/types@3"
+              "$ref": "#/types@4"
             }
           },
           "isOptional": false
@@ -4625,7 +4735,7 @@ export const LangiumGrammarGrammar = (): Grammar => loadedLangiumGrammarGrammar 
           "type": {
             "$type": "SimpleType",
             "typeRef": {
-              "$ref": "#/types@3"
+              "$ref": "#/types@4"
             }
           },
           "isOptional": false
@@ -4698,7 +4808,7 @@ export const LangiumGrammarGrammar = (): Grammar => loadedLangiumGrammarGrammar 
           "type": {
             "$type": "SimpleType",
             "typeRef": {
-              "$ref": "#/types@5"
+              "$ref": "#/types@6"
             }
           }
         },
@@ -4774,7 +4884,7 @@ export const LangiumGrammarGrammar = (): Grammar => loadedLangiumGrammarGrammar 
             "referenceType": {
               "$type": "SimpleType",
               "typeRef": {
-                "$ref": "#/types@1"
+                "$ref": "#/types@2"
               }
             },
             "isMulti": false
@@ -4802,7 +4912,7 @@ export const LangiumGrammarGrammar = (): Grammar => loadedLangiumGrammarGrammar 
           "type": {
             "$type": "SimpleType",
             "typeRef": {
-              "$ref": "#/types@6"
+              "$ref": "#/types@7"
             }
           },
           "isOptional": false
@@ -4843,7 +4953,7 @@ export const LangiumGrammarGrammar = (): Grammar => loadedLangiumGrammarGrammar 
               {
                 "$type": "SimpleType",
                 "typeRef": {
-                  "$ref": "#/types@5"
+                  "$ref": "#/types@6"
                 }
               },
               {
@@ -4926,7 +5036,7 @@ export const LangiumGrammarGrammar = (): Grammar => loadedLangiumGrammarGrammar 
           "type": {
             "$type": "SimpleType",
             "typeRef": {
-              "$ref": "#/types@5"
+              "$ref": "#/types@6"
             }
           }
         },
@@ -4948,7 +5058,7 @@ export const LangiumGrammarGrammar = (): Grammar => loadedLangiumGrammarGrammar 
             "referenceType": {
               "$type": "SimpleType",
               "typeRef": {
-                "$ref": "#/types@1"
+                "$ref": "#/types@2"
               }
             },
             "isMulti": false
@@ -5170,7 +5280,7 @@ export const LangiumGrammarGrammar = (): Grammar => loadedLangiumGrammarGrammar 
           "type": {
             "$type": "SimpleType",
             "typeRef": {
-              "$ref": "#/types@6"
+              "$ref": "#/types@7"
             }
           },
           "isOptional": false
@@ -5189,7 +5299,7 @@ export const LangiumGrammarGrammar = (): Grammar => loadedLangiumGrammarGrammar 
           "type": {
             "$type": "SimpleType",
             "typeRef": {
-              "$ref": "#/types@7"
+              "$ref": "#/types@8"
             }
           }
         },
@@ -5208,7 +5318,7 @@ export const LangiumGrammarGrammar = (): Grammar => loadedLangiumGrammarGrammar 
           "type": {
             "$type": "SimpleType",
             "typeRef": {
-              "$ref": "#/types@4"
+              "$ref": "#/types@5"
             }
           },
           "isOptional": false
@@ -5219,7 +5329,7 @@ export const LangiumGrammarGrammar = (): Grammar => loadedLangiumGrammarGrammar 
           "type": {
             "$type": "SimpleType",
             "typeRef": {
-              "$ref": "#/types@6"
+              "$ref": "#/types@7"
             }
           },
           "isOptional": false
@@ -5239,7 +5349,7 @@ export const LangiumGrammarGrammar = (): Grammar => loadedLangiumGrammarGrammar 
             "elementType": {
               "$type": "SimpleType",
               "typeRef": {
-                "$ref": "#/types@6"
+                "$ref": "#/types@7"
               }
             }
           },
@@ -5316,6 +5426,27 @@ export const LangiumGrammarGrammar = (): Grammar => loadedLangiumGrammarGrammar 
           {
             "$type": "SimpleType",
             "typeRef": {
+              "$ref": "#/types@1"
+            }
+          },
+          {
+            "$type": "SimpleType",
+            "typeRef": {
+              "$ref": "#/interfaces@37"
+            }
+          }
+        ]
+      }
+    },
+    {
+      "$type": "Type",
+      "name": "AbstractParserRule",
+      "type": {
+        "$type": "UnionType",
+        "types": [
+          {
+            "$type": "SimpleType",
+            "typeRef": {
               "$ref": "#/interfaces@16"
             }
           },
@@ -5323,12 +5454,6 @@ export const LangiumGrammarGrammar = (): Grammar => loadedLangiumGrammarGrammar 
             "$type": "SimpleType",
             "typeRef": {
               "$ref": "#/interfaces@27"
-            }
-          },
-          {
-            "$type": "SimpleType",
-            "typeRef": {
-              "$ref": "#/interfaces@37"
             }
           }
         ]
@@ -5343,31 +5468,25 @@ export const LangiumGrammarGrammar = (): Grammar => loadedLangiumGrammarGrammar 
           {
             "$type": "SimpleType",
             "typeRef": {
-              "$ref": "#/interfaces@15"
-            }
-          },
-          {
-            "$type": "SimpleType",
-            "typeRef": {
-              "$ref": "#/interfaces@16"
-            }
-          },
-          {
-            "$type": "SimpleType",
-            "typeRef": {
               "$ref": "#/interfaces@19"
             }
           },
           {
             "$type": "SimpleType",
             "typeRef": {
-              "$ref": "#/interfaces@27"
+              "$ref": "#/interfaces@39"
             }
           },
           {
             "$type": "SimpleType",
             "typeRef": {
-              "$ref": "#/interfaces@39"
+              "$ref": "#/types@1"
+            }
+          },
+          {
+            "$type": "SimpleType",
+            "typeRef": {
+              "$ref": "#/interfaces@15"
             }
           }
         ]
@@ -5522,7 +5641,7 @@ export const LangiumGrammarGrammar = (): Grammar => loadedLangiumGrammarGrammar 
           {
             "$type": "SimpleType",
             "typeRef": {
-              "$ref": "#/types@5"
+              "$ref": "#/types@6"
             }
           },
           {
