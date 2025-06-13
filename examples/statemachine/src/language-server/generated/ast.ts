@@ -35,10 +35,13 @@ export interface Command extends langium.AstNode {
     name: string;
 }
 
-export const Command = 'Command';
+export const Command = {
+    $type: 'Command',
+    name: 'name'
+} as const;
 
 export function isCommand(item: unknown): item is Command {
-    return reflection.isInstance(item, Command);
+    return reflection.isInstance(item, Command.$type);
 }
 
 /** An event is the trigger for a transition */
@@ -48,10 +51,13 @@ export interface Event extends langium.AstNode {
     name: string;
 }
 
-export const Event = 'Event';
+export const Event = {
+    $type: 'Event',
+    name: 'name'
+} as const;
 
 export function isEvent(item: unknown): item is Event {
-    return reflection.isInstance(item, Event);
+    return reflection.isInstance(item, Event.$type);
 }
 
 /** A description of the status of a system */
@@ -64,10 +70,15 @@ export interface State extends langium.AstNode {
     transitions: Array<Transition>;
 }
 
-export const State = 'State';
+export const State = {
+    $type: 'State',
+    actions: 'actions',
+    name: 'name',
+    transitions: 'transitions'
+} as const;
 
 export function isState(item: unknown): item is State {
-    return reflection.isInstance(item, State);
+    return reflection.isInstance(item, State.$type);
 }
 
 /** A textual represntation of a state machine */
@@ -84,10 +95,17 @@ export interface Statemachine extends langium.AstNode {
     states: Array<State>;
 }
 
-export const Statemachine = 'Statemachine';
+export const Statemachine = {
+    $type: 'Statemachine',
+    commands: 'commands',
+    events: 'events',
+    init: 'init',
+    name: 'name',
+    states: 'states'
+} as const;
 
 export function isStatemachine(item: unknown): item is Statemachine {
-    return reflection.isInstance(item, Statemachine);
+    return reflection.isInstance(item, Statemachine.$type);
 }
 
 /** A change from one state to another */
@@ -100,10 +118,14 @@ export interface Transition extends langium.AstNode {
     state: langium.Reference<State>;
 }
 
-export const Transition = 'Transition';
+export const Transition = {
+    $type: 'Transition',
+    event: 'event',
+    state: 'state'
+} as const;
 
 export function isTransition(item: unknown): item is Transition {
-    return reflection.isInstance(item, Transition);
+    return reflection.isInstance(item, Transition.$type);
 }
 
 export type StatemachineAstType = {
@@ -115,95 +137,83 @@ export type StatemachineAstType = {
 }
 
 export class StatemachineAstReflection extends langium.AbstractAstReflection {
-
-    getAllTypes(): string[] {
-        return [Command, Event, State, Statemachine, Transition];
-    }
-
-    protected override computeIsSubtype(subtype: string, supertype: string): boolean {
-        switch (subtype) {
-            default: {
-                return false;
-            }
+    override readonly types = {
+        Command: {
+            name: Command.$type,
+            properties: {
+                name: {
+                    name: 'name'
+                }
+            },
+            superTypes: []
+        },
+        Event: {
+            name: Event.$type,
+            properties: {
+                name: {
+                    name: 'name'
+                }
+            },
+            superTypes: []
+        },
+        State: {
+            name: State.$type,
+            properties: {
+                actions: {
+                    name: 'actions',
+                    defaultValue: [],
+                    referenceType: 'Command'
+                },
+                name: {
+                    name: 'name'
+                },
+                transitions: {
+                    name: 'transitions',
+                    defaultValue: []
+                }
+            },
+            superTypes: []
+        },
+        Statemachine: {
+            name: Statemachine.$type,
+            properties: {
+                commands: {
+                    name: 'commands',
+                    defaultValue: []
+                },
+                events: {
+                    name: 'events',
+                    defaultValue: []
+                },
+                init: {
+                    name: 'init',
+                    referenceType: 'State'
+                },
+                name: {
+                    name: 'name'
+                },
+                states: {
+                    name: 'states',
+                    defaultValue: []
+                }
+            },
+            superTypes: []
+        },
+        Transition: {
+            name: Transition.$type,
+            properties: {
+                event: {
+                    name: 'event',
+                    referenceType: 'Event'
+                },
+                state: {
+                    name: 'state',
+                    referenceType: 'State'
+                }
+            },
+            superTypes: []
         }
-    }
-
-    getReferenceType(refInfo: langium.ReferenceInfo): string {
-        const referenceId = `${refInfo.container.$type}:${refInfo.property}`;
-        switch (referenceId) {
-            case 'State:actions': {
-                return Command;
-            }
-            case 'Statemachine:init':
-            case 'Transition:state': {
-                return State;
-            }
-            case 'Transition:event': {
-                return Event;
-            }
-            default: {
-                throw new Error(`${referenceId} is not a valid reference id.`);
-            }
-        }
-    }
-
-    getTypeMetaData(type: string): langium.TypeMetaData {
-        switch (type) {
-            case Command: {
-                return {
-                    name: Command,
-                    properties: [
-                        { name: 'name' }
-                    ]
-                };
-            }
-            case Event: {
-                return {
-                    name: Event,
-                    properties: [
-                        { name: 'name' }
-                    ]
-                };
-            }
-            case State: {
-                return {
-                    name: State,
-                    properties: [
-                        { name: 'actions', defaultValue: [] },
-                        { name: 'name' },
-                        { name: 'transitions', defaultValue: [] }
-                    ]
-                };
-            }
-            case Statemachine: {
-                return {
-                    name: Statemachine,
-                    properties: [
-                        { name: 'commands', defaultValue: [] },
-                        { name: 'events', defaultValue: [] },
-                        { name: 'init' },
-                        { name: 'name' },
-                        { name: 'states', defaultValue: [] }
-                    ]
-                };
-            }
-            case Transition: {
-                return {
-                    name: Transition,
-                    properties: [
-                        { name: 'event' },
-                        { name: 'state' }
-                    ]
-                };
-            }
-            default: {
-                return {
-                    name: type,
-                    properties: []
-                };
-            }
-        }
-    }
+    } as const satisfies langium.AstMetaData
 }
 
 export const reflection = new StatemachineAstReflection();

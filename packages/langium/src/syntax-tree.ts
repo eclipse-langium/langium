@@ -133,12 +133,13 @@ export function isLinkingError(obj: unknown): obj is LinkingError {
  * all involved languages, so it operates on the superset of types of these languages.
  */
 export interface AstReflection {
+    readonly types: AstMetaData
     getAllTypes(): string[]
-    getAllSubTypes(type: string): string[]
     getReferenceType(refInfo: ReferenceInfo): string
     getTypeMetaData(type: string): TypeMetaData
     isInstance(node: unknown, type: string): boolean
     isSubtype(subtype: string, supertype: string): boolean
+    getAllSubTypes(type: string): string[]
 }
 
 /**
@@ -147,13 +148,37 @@ export interface AstReflection {
  */
 export abstract class AbstractAstReflection implements AstReflection {
 
+    readonly types: AstMetaData;
     protected subtypes: Record<string, Record<string, boolean | undefined>> = {};
     protected allSubtypes: Record<string, string[] | undefined> = {};
 
-    abstract getAllTypes(): string[];
-    abstract getReferenceType(refInfo: ReferenceInfo): string;
-    abstract getTypeMetaData(type: string): TypeMetaData;
-    protected abstract computeIsSubtype(subtype: string, supertype: string): boolean;
+    getAllTypes(): string[] {
+        return Object.keys(this.types);
+    }
+
+    getReferenceType(refInfo: ReferenceInfo): string {
+        const metaData = this.types[refInfo.container.$type];
+        if (!metaData) {
+            throw new Error(`Type ${refInfo.container.$type || 'undefined'} not found.`);
+        }
+        const referenceType = metaData.properties[refInfo.property]?.referenceType;
+        if (!referenceType) {
+            throw new Error(`Property ${refInfo.property || 'undefined'} of type ${refInfo.container.$type} is not a reference.`);
+        }
+        return referenceType;
+    }
+
+    getTypeMetaData(type: string): TypeMetaData {
+        const result = this.types[type];
+        if (!result) {
+            return {
+                name: type,
+                properties: {},
+                superTypes: []
+            };
+        }
+        return result;
+    }
 
     isInstance(node: unknown, type: string): boolean {
         return isAstNode(node) && this.isSubtype(node.$type, type);
@@ -171,7 +196,8 @@ export abstract class AbstractAstReflection implements AstReflection {
         if (existing !== undefined) {
             return existing;
         } else {
-            const result = this.computeIsSubtype(subtype, supertype);
+            const metaData = this.types[subtype];
+            const result = metaData ? metaData.superTypes.some(s => this.isSubtype(s, supertype)) : false;
             nested[supertype] = result;
             return result;
         }
@@ -196,24 +222,44 @@ export abstract class AbstractAstReflection implements AstReflection {
 }
 
 /**
- * Represents runtime meta data about a meta model type.
+ * A map of all AST node types and their meta data.
+ */
+export interface AstMetaData {
+    [type: string]: TypeMetaData
+}
+
+/**
+ * Represents runtime meta data about an AST node type.
  */
 export interface TypeMetaData {
-    /** The name of this meta model type. Corresponds to the `AstNode.$type` value. */
+    /** The name of this AST node type. Corresponds to the `AstNode.$type` value. */
     name: string
-    /** A list of properties. They can contain default values for their respective property in the AST. */
-    properties: TypeProperty[]
+    /** A list of properties with their relevant meta data. */
+    properties: {
+        [name: string]: PropertyMetaData
+    }
+    /** The super types of this AST node type. */
+    superTypes: string[]
+    /** All property names of this AST node type, as a shortcut `_p` corresponding to `properties[p].name`. */
+    [name: `_${string}`]: string
 }
 
 /**
  * Describes the meta data of a property of an AST node.
- *
- * The optional `defaultValue` indicates that the property is mandatory in the AST node.
- * For example, if an AST node contains an array, but no elements of this array have been parsed, we still expect an empty array instead of `undefined`.
  */
-export interface TypeProperty {
+export interface PropertyMetaData {
+    /** The name of this property. */
     name: string
+    /**
+     * Indicates that the property is mandatory in the AST node.
+     * For example, if an AST node contains an array, but no elements of this array have been parsed,
+     * we still expect an empty array instead of `undefined`.
+     */
     defaultValue?: PropertyType
+    /**
+     * If the property is a reference, this is the type of the reference target.
+     */
+    referenceType?: string
 }
 
 /**

@@ -249,7 +249,7 @@ export class InterfaceType {
         if (reflectionInfo) {
             interfaceNode
                 .appendNewLine()
-                .append(addReflectionInfo(this.name));
+                .append(addReflectionInfo(this.name, this.superProperties));
         }
 
         return toString(interfaceNode);
@@ -451,12 +451,15 @@ export function isMandatoryPropertyType(propertyType: PropertyType): boolean {
     }
 }
 
-function addReflectionInfo(name: string): Generated {
+function addReflectionInfo(name: string, properties: Property[] = []): Generated {
     return expandToNode`
-        export const ${name} = '${name}';
+        export const ${name} = {
+            $type: '${name}'${properties.length > 0 ? ',' : ''}
+            ${joinToNode(properties.sort((a, b) => a.name.localeCompare(b.name)), prop => `${prop.name}: '${escapeQuotes(prop.name, "'")}'`, { separator: ',', appendNewLineIfNotEmpty: true })}
+        } as const;
 
         export function is${name}(item: unknown): item is ${name} {
-            return reflection.isInstance(item, ${name});
+            return reflection.isInstance(item, ${name}.$type);
         }
     `.appendNewLine();
 }
