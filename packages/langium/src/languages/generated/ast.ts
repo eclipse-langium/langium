@@ -77,7 +77,17 @@ export type LangiumGrammarKeywordNames =
 
 export type LangiumGrammarTokenNames = LangiumGrammarTerminalNames | LangiumGrammarKeywordNames;
 
-export type AbstractRule = InfixRule | ParserRule | TerminalRule;
+export type AbstractParserRule = InfixRule | ParserRule;
+
+export const AbstractParserRule = {
+    $type: 'AbstractParserRule'
+} as const;
+
+export function isAbstractParserRule(item: unknown): item is AbstractParserRule {
+    return reflection.isInstance(item, AbstractParserRule.$type);
+}
+
+export type AbstractRule = AbstractParserRule | TerminalRule;
 
 export const AbstractRule = {
     $type: 'AbstractRule'
@@ -87,7 +97,7 @@ export function isAbstractRule(item: unknown): item is AbstractRule {
     return reflection.isInstance(item, AbstractRule.$type);
 }
 
-export type AbstractType = InferredType | InfixRule | Interface | ParserRule | Type;
+export type AbstractType = AbstractParserRule | InferredType | Interface | Type;
 
 export const AbstractType = {
     $type: 'AbstractType'
@@ -280,7 +290,7 @@ export function isGrammarImport(item: unknown): item is GrammarImport {
 }
 
 export interface InferredType extends langium.AstNode {
-    readonly $container: Action | ParserRule;
+    readonly $container: Action | InfixRule | ParserRule;
     readonly $type: 'InferredType';
     name: string;
 }
@@ -298,17 +308,23 @@ export interface InfixRule extends langium.AstNode {
     readonly $container: Grammar;
     readonly $type: 'InfixRule';
     call: RuleCall;
+    dataType?: PrimitiveType;
+    inferredType?: InferredType;
     name: string;
     operators: InfixRuleOperators;
     parameters: Array<Parameter>;
+    returnType?: langium.Reference<AbstractType>;
 }
 
 export const InfixRule = {
     $type: 'InfixRule',
     call: 'call',
+    dataType: 'dataType',
+    inferredType: 'inferredType',
     name: 'name',
     operators: 'operators',
-    parameters: 'parameters'
+    parameters: 'parameters',
+    returnType: 'returnType'
 } as const;
 
 export function isInfixRule(item: unknown): item is InfixRule {
@@ -914,6 +930,7 @@ export function isWildcard(item: unknown): item is Wildcard {
 
 export type LangiumGrammarAstType = {
     AbstractElement: AbstractElement
+    AbstractParserRule: AbstractParserRule
     AbstractRule: AbstractRule
     AbstractType: AbstractType
     Action: Action
@@ -1224,6 +1241,12 @@ export class LangiumGrammarAstReflection extends langium.AbstractAstReflection {
                 call: {
                     name: 'call'
                 },
+                dataType: {
+                    name: 'dataType'
+                },
+                inferredType: {
+                    name: 'inferredType'
+                },
                 name: {
                     name: 'name'
                 },
@@ -1233,9 +1256,13 @@ export class LangiumGrammarAstReflection extends langium.AbstractAstReflection {
                 parameters: {
                     name: 'parameters',
                     defaultValue: []
+                },
+                returnType: {
+                    name: 'returnType',
+                    referenceType: 'AbstractType'
                 }
             },
-            superTypes: ['AbstractRule', 'AbstractType']
+            superTypes: ['AbstractParserRule']
         },
         InfixRuleOperatorList: {
             name: InfixRuleOperatorList.$type,
@@ -1397,7 +1424,7 @@ export class LangiumGrammarAstReflection extends langium.AbstractAstReflection {
                     referenceType: 'AbstractType'
                 }
             },
-            superTypes: ['AbstractRule', 'AbstractType']
+            superTypes: ['AbstractParserRule']
         },
         ReferenceType: {
             name: ReferenceType.$type,
