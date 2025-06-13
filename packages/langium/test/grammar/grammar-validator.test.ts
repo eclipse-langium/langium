@@ -1639,6 +1639,27 @@ describe('Rule parameter validation', () => {
 
 });
 
+describe('Infix rule type validation', () => {
+    test('Infix rule with data type should error', async () => {
+        const validation = await validate(`
+        grammar Test
+        entry Model: Expression;
+        infix Expression on Primary returns string:
+            '%'
+            > '^'
+            > '*' | '/'
+            > '+' | '-';
+        Primary: value=ID;
+        terminal ID: /[_a-zA-Z][\\w_]*/;
+        `);
+        const rule = validation.document.parseResult.value.rules[1] as GrammarTypes.InfixRule;
+        expectError(validation, 'Infix rules are not allowed to return a primitive value.', {
+            node: rule,
+            property: 'dataType'
+        });
+    });
+});
+
 describe('Check validation is not crashing', async () => {
 
     test('Calling missing terminal rule', async () => {

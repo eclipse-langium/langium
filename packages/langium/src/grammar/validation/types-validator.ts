@@ -7,13 +7,15 @@
 import type { AstNode } from '../../syntax-tree.js';
 import type { DiagnosticInfo, ValidationAcceptor, ValidationChecks } from '../../validation/validation-registry.js';
 import type { LangiumGrammarServices } from '../langium-grammar-module.js';
-import type { Property, PropertyType, ReferenceType } from '../type-system/type-collector/types.js';
+import type { Property, PropertyType, PropertyUnion, ReferenceType } from '../type-system/type-collector/types.js';
 import type { DeclaredInfo, InferredInfo, LangiumGrammarDocument, ValidationResources } from '../workspace/documents.js';
 import * as ast from '../../languages/generated/ast.js';
 import { MultiMap } from '../../utils/collections.js';
 import { extractAssignments } from '../internal-grammar-util.js';
+import { getExplicitRuleType } from '../../utils/grammar-utils.js';
 import { flattenPropertyUnion, InterfaceType, isArrayType, isInterfaceType, isMandatoryPropertyType, isPrimitiveType, isPropertyUnion, isReferenceType, isStringType, isTypeAssignable, isUnionType, isValueType, propertyTypeToString } from '../type-system/type-collector/types.js';
-import { isDeclared, isInferred, isInferredAndDeclared } from '../workspace/documents.js';
+import { getTypeOption, isDeclared, isInferred, isInferredAndDeclared } from '../workspace/documents.js';
+import { getDocument } from '../../utils/ast-utils.js';
 
 export function registerTypeValidationChecks(services: LangiumGrammarServices): void {
     const registry = services.validation.ValidationRegistry;
@@ -24,10 +26,13 @@ export function registerTypeValidationChecks(services: LangiumGrammarServices): 
         ],
         Grammar: [
             typesValidator.checkDeclaredTypesConsistency,
-            typesValidator.checkDeclaredAndInferredTypesConsistency,
-            typesValidator.checkAttributeDefaultValue
+            typesValidator.checkDeclaredAndInferredTypesConsistency
+        ],
+        InfixRule: [
+            typesValidator.checkInfixRuleExplicitReturnType,
         ],
         Interface: [
+            typesValidator.checkAttributeDefaultValue,
             typesValidator.checkCyclicInterface
         ],
         Type: [
@@ -39,20 +44,19 @@ export function registerTypeValidationChecks(services: LangiumGrammarServices): 
 
 export class LangiumGrammarTypesValidator {
 
-    checkAttributeDefaultValue(grammar: ast.Grammar, accept: ValidationAcceptor): void {
-        const validationResources = (grammar.$document as LangiumGrammarDocument)?.validationResources;
-        if (validationResources) {
-            for (const grammarInterface of grammar.interfaces) {
-                const matchedProperties = matchInterfaceAttributes(validationResources, grammarInterface);
-                for (const [grammarProperty, property] of matchedProperties) {
-                    const defaultType = getDefaultValueType(grammarProperty.defaultValue);
-                    if (defaultType && !isTypeAssignable(defaultType, property.type)) {
-                        accept('error', `Cannot assign default value of type '${propertyTypeToString(defaultType, 'DeclaredType')}' to type '${propertyTypeToString(property.type, 'DeclaredType')}'.`, {
-                            node: grammarProperty,
-                            property: 'defaultValue'
-                        });
-                    }
-                }
+    checkAttributeDefaultValue(grammarInterface: ast.Interface, accept: ValidationAcceptor): void {
+        const validationResources = (getDocument(grammarInterface) as LangiumGrammarDocument)?.validationResources;
+        if (!validationResources) {
+            return;
+        }
+        const matchedProperties = matchInterfaceAttributes(validationResources, grammarInterface);
+        for (const [grammarProperty, property] of matchedProperties) {
+            const defaultType = getDefaultValueType(grammarProperty.defaultValue);
+            if (defaultType && !isTypeAssignable(defaultType, property.type)) {
+                accept('error', `Cannot assign default value of type '${propertyTypeToString(defaultType, 'DeclaredType')}' to type '${propertyTypeToString(property.type, 'DeclaredType')}'.`, {
+                    node: grammarProperty,
+                    property: 'defaultValue'
+                });
             }
         }
     }
@@ -100,6 +104,86 @@ export class LangiumGrammarTypesValidator {
         if (ast.isType(action.type)) {
             accept('error', 'Actions cannot create union types.', { node: action, property: 'type' });
         }
+    }
+
+    checkInfixRuleExplicitReturnType(infixRule: ast.InfixRule, accept: ValidationAcceptor): void {
+        if (!infixRule.returnType?.ref) {
+            return;
+        }
+
+        const validationResources = (getDocument(infixRule) as LangiumGrammarDocument)?.validationResources;
+        if (!validationResources) {
+            return;
+        }
+        const returnTypeName = infixRule.returnType.ref.name;
+        const returnTypeProperties = validationResources.typeToSuperProperties.get(returnTypeName);
+        if (!returnTypeProperties) {
+            return;
+        }
+        const propertyMap = new Map(returnTypeProperties.map(prop => [prop.name, prop]));
+
+        // Check for 'operator' property
+        const operatorProp = propertyMap.get('operator');
+        if (!operatorProp) {
+            accept('error', `Infix rule '${infixRule.name}' with explicit return type '${returnTypeName}' must have an 'operator' property.`, {
+                node: infixRule,
+                property: 'returnType'
+            });
+        } else {
+            // Validate operator property type
+            const operatorKeywords = infixRule.operators.precedences.flatMap(prec => prec.operators.map(op => op.value));
+            const isValidOperatorType = this.isValidOperatorPropertyType(operatorProp.type, operatorKeywords);
+            if (!isValidOperatorType) {
+                const expectedType = operatorKeywords.length > 1
+                    ? `one of: ${operatorKeywords.map(op => `'${op}'`).join(', ')}`
+                    : `'${operatorKeywords[0]}'`;
+                accept('error', `Property 'operator' must be of type 'string' or ${expectedType}.`, {
+                    node: infixRule,
+                    property: 'returnType'
+                });
+            }
+        }
+
+        // Check for 'left' and 'right' properties
+        const callRule = infixRule.call.rule.ref;
+        if (!callRule) {
+            return;
+        }
+        const callRuleType = getExplicitRuleType(callRule) ?? callRule.name;
+        for (const propName of ['left', 'right']) {
+            const prop = propertyMap.get(propName);
+            if (!prop) {
+                accept('error', `Infix rule '${infixRule.name}' with explicit return type '${returnTypeName}' must have a '${propName}' property.`, {
+                    node: infixRule,
+                    property: 'returnType'
+                });
+            } else {
+                // Validate that the property type matches or is a supertype of the called rule
+                const isValidType = this.isValidLeftRightPropertyType(prop.type, callRuleType, validationResources);
+                if (!isValidType) {
+                    accept('error', `Property '${propName}' must be of type '${callRuleType}' or a supertype of it.`, {
+                        node: infixRule,
+                        property: 'returnType'
+                    });
+                }
+            }
+        }
+    }
+
+    private isValidOperatorPropertyType(propertyType: PropertyType, operatorKeywords: string[]): boolean {
+        const union: PropertyUnion = {
+            types: operatorKeywords.map(keyword => ({ string: keyword }))
+        };
+        return isTypeAssignable(union, propertyType);
+    }
+
+    private isValidLeftRightPropertyType(propertyType: PropertyType, callRuleTypeName: string, validationResources: ValidationResources): boolean {
+        const callRuleTypeInfo = validationResources.typeToValidationInfo.get(callRuleTypeName);
+        if (callRuleTypeInfo) {
+            const callRuleType = getTypeOption(callRuleTypeInfo);
+            return isTypeAssignable({ value: callRuleType }, propertyType);
+        }
+        return false;
     }
 }
 
