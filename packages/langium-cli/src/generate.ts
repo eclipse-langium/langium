@@ -161,7 +161,7 @@ function mapGrammarElements(grammars: Grammar[], visited: Set<string> = new Set(
                     .concat(grammar.types)
                     .concat(grammar.interfaces)
             );
-            const importedGrammars = grammar.imports.map(e => resolveImport(documents, e)).filter((e): e is Grammar => e !== undefined);
+            const importedGrammars = grammar.imports.map(e => resolveImport(documents, e)).filter(e => e !== undefined);
             mapGrammarElements(importedGrammars, visited, map);
         }
     }

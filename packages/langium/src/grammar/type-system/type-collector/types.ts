@@ -216,7 +216,7 @@ export class InterfaceType {
     }
 
     get interfaceSuperTypes(): InterfaceType[] {
-        return Array.from(this.superTypes).filter((e): e is InterfaceType => e instanceof InterfaceType);
+        return Array.from(this.superTypes).filter(e => e instanceof InterfaceType);
     }
 
     constructor(name: string, declared: boolean, abstract: boolean, comment?: string) {

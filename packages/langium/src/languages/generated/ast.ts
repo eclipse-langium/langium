@@ -483,6 +483,7 @@ export interface ReferenceType extends langium.AstNode {
 
 export const ReferenceType = {
     $type: 'ReferenceType',
+    isMulti: 'isMulti',
     referenceType: 'referenceType'
 } as const;
 
@@ -705,6 +706,7 @@ export const CrossReference = {
     $type: 'CrossReference',
     cardinality: 'cardinality',
     deprecatedSyntax: 'deprecatedSyntax',
+    isMulti: 'isMulti',
     lookahead: 'lookahead',
     terminal: 'terminal',
     type: 'type'
@@ -1114,6 +1116,10 @@ export class LangiumGrammarAstReflection extends langium.AbstractAstReflection {
                     name: 'deprecatedSyntax',
                     defaultValue: false
                 },
+                isMulti: {
+                    name: 'isMulti',
+                    defaultValue: false
+                },
                 lookahead: {
                     name: 'lookahead'
                 },
@@ -1404,6 +1410,10 @@ export class LangiumGrammarAstReflection extends langium.AbstractAstReflection {
         ReferenceType: {
             name: ReferenceType.$type,
             properties: {
+                isMulti: {
+                    name: 'isMulti',
+                    defaultValue: false
+                },
                 referenceType: {
                     name: 'referenceType'
                 }

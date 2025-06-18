@@ -136,7 +136,7 @@ export class DefaultReferenceDescriptionProvider implements ReferenceDescription
         if (isReference(reference) && reference.$nodeDescription) {
             items = [reference.$nodeDescription];
         } else if (isMultiReference(reference)) {
-            items = reference.items.map(e => e.$nodeDescription).filter((e): e is AstNodeDescription => !!e);
+            items = reference.items.map(e => e.$nodeDescription).filter(e => e !== undefined);
         }
         const sourceUri = getDocument(refInfo.container).uri;
         const sourcePath = this.nodeLocator.getAstNodePath(refInfo.container);

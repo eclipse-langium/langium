@@ -4,22 +4,23 @@
  * terms of the MIT License, which is available in the project root.
  ******************************************************************************/
 
-import { describe, test, expect } from 'vitest';
+import { describe, test, expect, afterEach } from 'vitest';
 import { createServicesForGrammar } from 'langium/grammar';
-import { parseHelper } from 'langium/test';
+import { clearDocuments, parseHelper } from 'langium/test';
 import { expandToString } from 'langium/generate';
-import type { MultiReference } from 'langium';
+import { AstUtils, type MultiReference } from 'langium';
 
 const languageService = await createServicesForGrammar({
     grammar: `
         grammar test
         entry Model: (persons+=Person | greetings+=Greeting)*;
         Person: 'person' name=ID;
-        Greeting: 'hello' person=[*Person:ID];
+        Greeting: 'hello' person=[+Person:ID];
         terminal ID: /[\\w]+/;
         hidden terminal WS :/\\s+/;
     `
 });
+const references = languageService.references.References;
 const parse = parseHelper(languageService);
 
 describe('Multi Reference', () => {
@@ -31,6 +32,10 @@ describe('Multi Reference', () => {
 
         hello Alice
     `.trim();
+
+    afterEach(() => {
+        clearDocuments(languageService);
+    });
 
     test('Can reference multiple elements', async () => {
         const document = await parse(text);
@@ -50,7 +55,6 @@ describe('Multi Reference', () => {
     });
 
     test('Can find multiple declarations for the reference', async () => {
-        const references = languageService.references.References;
         const document = await parse(text);
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
         const model = document.parseResult.value as any;
@@ -64,8 +68,23 @@ describe('Multi Reference', () => {
         }
     });
 
-    test('Can find sibling declarations for own declaration', async () => {
-        const references = languageService.references.References;
+    test('Can find multiple declarations within different documents', async ()=> {
+        const document1 = await parse('person Alice');
+        const document2 = await parse(text);
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        const model = document2.parseResult.value as any;
+        const aliceRef = model.greetings[0].person;
+        expect(aliceRef).toHaveProperty('$refText', 'Alice');
+        const declarations = references.findDeclarations(aliceRef.$refNode);
+        expect(declarations).toHaveLength(3);
+        // One declaration in document1, two in document2
+        const doc1Decl = declarations.filter(d => AstUtils.getDocument(d).uri.toString() === document1.uri.toString());
+        expect(doc1Decl).toHaveLength(1);
+        const doc2Decl = declarations.filter(d => AstUtils.getDocument(d).uri.toString() === document2.uri.toString());
+        expect(doc2Decl).toHaveLength(2);
+    });
+
+    test('Can find logical sibling declarations for own declaration', async () => {
         const nameProvider = languageService.references.NameProvider;
         const document = await parse(text);
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -83,19 +102,18 @@ describe('Multi Reference', () => {
     });
 
     test('Can find all references and declarations for a multi reference element', async () => {
-        const referencesService = languageService.references.References;
         const document = await parse(text);
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
         const model = document.parseResult.value as any;
         const alice2 = model.persons[2];
         expect(alice2).toHaveProperty('name', 'Alice');
-        const references = referencesService.findReferences(alice2, {
+        const refs = references.findReferences(alice2, {
             includeDeclaration: true
         }).toArray().sort((a, b) => a.segment.offset - b.segment.offset);
-        expect(references).toHaveLength(3);
-        for (let i = 0; i < references.length; i++) {
-            expect(references[i].segment.range.start.line).toBe(i * 2);
-            expect(text.substring(references[i].segment.offset, references[i].segment.end)).toBe('Alice');
+        expect(refs).toHaveLength(3);
+        for (let i = 0; i < refs.length; i++) {
+            expect(refs[i].segment.range.start.line).toBe(i * 2);
+            expect(text.substring(refs[i].segment.offset, refs[i].segment.end)).toBe('Alice');
         }
     });
 

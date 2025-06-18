@@ -4,11 +4,9 @@
 * terms of the MIT License, which is available in the project root.
 ******************************************************************************/
 
-import type { LangiumCoreServices } from '../../services.js';
 import type { AstNode, CstNode } from '../../syntax-tree.js';
 import type { Stream } from '../../utils/stream.js';
 import type { ReferenceDescription } from '../../workspace/ast-descriptions.js';
-import type { LangiumDocuments } from '../../workspace/documents.js';
 import type { Action, Assignment, Interface, ParserRule, Type, TypeAttribute } from '../../languages/generated/ast.js';
 import type { FindReferencesOptions } from '../../references/references.js';
 import { DefaultReferences } from '../../references/references.js';
@@ -22,12 +20,6 @@ import { extractAssignments } from '../internal-grammar-util.js';
 import { collectChildrenTypes, collectSuperTypes } from '../type-system/types-util.js';
 
 export class LangiumGrammarReferences extends DefaultReferences {
-    protected readonly documents: LangiumDocuments;
-
-    constructor(services: LangiumCoreServices) {
-        super(services);
-        this.documents = services.shared.workspace.LangiumDocuments;
-    }
 
     override findDeclarations(sourceCstNode: CstNode): AstNode[] {
         const nodeElem = sourceCstNode.astNode;

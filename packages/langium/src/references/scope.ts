@@ -23,6 +23,11 @@ export interface Scope {
      */
     getElement(name: string): AstNodeDescription | undefined;
 
+    /**
+     * Finds all target elements matching the given name. If no element is found, an empty stream is returned.
+     *
+     * @param name Name of the cross-reference target as it appears in the source text.
+     */
     getElements(name: string): Stream<AstNodeDescription>;
 
     /**
@@ -34,7 +39,16 @@ export interface Scope {
 }
 
 export interface ScopeOptions {
+    /**
+     * Whether the scope should be case insensitive.
+     * Defaults to `false`.
+     */
     caseInsensitive?: boolean;
+    /**
+     * Whether the outer scope should be concatenated with the local scope when calling `getElements`.
+     * Defaults to `true`.
+     */
+    concatOuterScope?: boolean;
 }
 
 /**
@@ -46,11 +60,13 @@ export class StreamScope implements Scope {
     readonly elements: Stream<AstNodeDescription>;
     readonly outerScope?: Scope;
     readonly caseInsensitive: boolean;
+    readonly concatOuterScope: boolean;
 
     constructor(elements: Stream<AstNodeDescription>, outerScope?: Scope, options?: ScopeOptions) {
         this.elements = elements;
         this.outerScope = outerScope;
         this.caseInsensitive = options?.caseInsensitive ?? false;
+        this.concatOuterScope = options?.concatOuterScope ?? true;
     }
 
     getAllElements(): Stream<AstNodeDescription> {
@@ -80,10 +96,10 @@ export class StreamScope implements Scope {
         const local = this.caseInsensitive
             ? this.elements.filter(e => e.name.toLowerCase() === lowerCaseName)
             : this.elements.filter(e => e.name === name);
-        if (!local.isEmpty()) {
-            return local;
+        if ((this.concatOuterScope || local.isEmpty()) && this.outerScope) {
+            return local.concat(this.outerScope.getElements(name));
         } else {
-            return this.outerScope ? this.outerScope.getElements(name) : EMPTY_STREAM;
+            return local;
         }
     }
 }
@@ -92,10 +108,12 @@ export class MapScope implements Scope {
     readonly elements: MultiMap<string, AstNodeDescription>;
     readonly outerScope?: Scope;
     readonly caseInsensitive: boolean;
+    readonly concatOuterScope: boolean;
 
     constructor(elements: Iterable<AstNodeDescription>, outerScope?: Scope, options?: ScopeOptions) {
         this.elements = new MultiMap();
         this.caseInsensitive = options?.caseInsensitive ?? false;
+        this.concatOuterScope = options?.concatOuterScope ?? true;
         for (const element of elements) {
             const name = this.caseInsensitive
                 ? element.name.toLowerCase()
@@ -120,10 +138,10 @@ export class MapScope implements Scope {
     getElements(name: string): Stream<AstNodeDescription> {
         const localName = this.caseInsensitive ? name.toLowerCase() : name;
         const local = this.elements.get(localName);
-        if (local.length > 0) {
-            return stream(local);
+        if ((this.concatOuterScope || local.length === 0) && this.outerScope) {
+            return stream(local).concat(this.outerScope.getElements(name));
         } else {
-            return this.outerScope ? this.outerScope.getElements(name) : EMPTY_STREAM;
+            return stream(local);
         }
     }
 
