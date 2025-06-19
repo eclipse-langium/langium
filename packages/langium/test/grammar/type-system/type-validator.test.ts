@@ -626,6 +626,41 @@ describe('Property type is not a mix of cross-ref and non-cross-ref types.', () 
             node: attribute
         });
     });
+
+    test('Interface declaration property single ref and multi ref mixed.', async () => {
+        const validation = await validate(`
+            interface Rule {
+                prop: @Rule | @Rule+;
+            }
+        `);
+        const attribute = validation.document.parseResult.value.interfaces[0].attributes[0];
+        expect(attribute).not.toBe(undefined);
+
+        expectError(validation, /Mixing a cross-reference with other types is not supported. Consider splitting property /, {
+            node: attribute
+        });
+    });
+
+    test('Inferred property single ref and multi ref mixed.', async () => {
+        const validation = await validate(`
+            Test1: ref=[Test1] | ref=[+Test1];
+            Test2: ref=[Test2] ref=[+Test2];
+        `);
+        const rule1Assignment = AstUtils.streamAllContents(validation.document.parseResult.value.rules[0])
+            .filter(node => GrammarAST.isAssignment(node)).head() as GrammarAST.Assignment;
+        expect(rule1Assignment).not.toBe(undefined);
+
+        const rule2Assignment = AstUtils.streamAllContents(validation.document.parseResult.value.rules[1])
+            .filter(node => GrammarAST.isAssignment(node)).head() as GrammarAST.Assignment;
+        expect(rule2Assignment).not.toBe(undefined);
+
+        expectError(validation, /Multi references and normal references cannot be mixed/, {
+            node: rule1Assignment
+        });
+        expectError(validation, /Multi references and normal references cannot be mixed/, {
+            node: rule2Assignment
+        });
+    });
 });
 
 // https://github.com/eclipse-langium/langium/issues/823

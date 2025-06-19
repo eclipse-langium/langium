@@ -31,7 +31,8 @@ describe('AST reflection interpreter', () => {
                 referenceType: {
                     value: superType
                 },
-                mode: 'single'
+                isMulti: false,
+                isSingle: true
             }
         });
 

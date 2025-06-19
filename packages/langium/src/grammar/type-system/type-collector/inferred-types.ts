@@ -24,7 +24,7 @@ interface TypePart {
     actionWithAssignment: boolean
 }
 
-type TypeAlternative = {
+interface TypeAlternative {
     name: string
     super: string[]
     properties: PlainProperty[]
@@ -32,9 +32,14 @@ type TypeAlternative = {
     comment?: string
 }
 
-type TypeCollection = {
+interface TypeCollection {
     types: Set<string>
-    reference: 'single' | 'multi' | false
+    reference?: ReferenceType
+}
+
+interface ReferenceType {
+    isMulti?: boolean
+    isSingle?: boolean
 }
 
 interface TypeCollectionContext {
@@ -506,7 +511,7 @@ function addAction(graph: TypeGraph, parent: TypePart, action: Action, services?
             optional: false,
             type: toPropertyType(
                 action.operator === '+=',
-                false,
+                undefined,
                 graph.root.ruleCalls.length !== 0 ? graph.root.ruleCalls : graph.getSuperTypes(typeNode)),
             astNodes: new Set([action]),
             comment: commentProvider?.getComment(action),
@@ -517,7 +522,7 @@ function addAction(graph: TypeGraph, parent: TypePart, action: Action, services?
 
 function addAssignment(current: TypePart, assignment: Assignment, services?: LangiumCoreServices): void {
     const commentProvider = services?.documentation.CommentProvider;
-    const typeItems: TypeCollection = { types: new Set(), reference: false };
+    const typeItems: TypeCollection = { types: new Set() };
     findTypes(assignment.terminal, typeItems);
 
     const type: PlainPropertyType = toPropertyType(
@@ -549,7 +554,12 @@ function findTypes(terminal: AbstractElement, types: TypeCollection): void {
         if (refTypeName) {
             types.types.add(refTypeName);
         }
-        types.reference = terminal.isMulti ? 'multi' : 'single';
+        types.reference ??= {};
+        if (terminal.isMulti) {
+            types.reference.isMulti = true;
+        } else {
+            types.reference.isSingle = true;
+        }
     }
 }
 
@@ -695,7 +705,7 @@ function buildSuperUnions(interfaces: PlainInterface[]): PlainUnion[] {
                 name: superType,
                 subTypes: new Set(),
                 superTypes: new Set(),
-                type: toPropertyType(false, false, types)
+                type: toPropertyType(false, undefined, types)
             };
             unions.push(union);
         }
@@ -733,7 +743,7 @@ function extractUnions(interfaces: PlainInterface[], unions: PlainUnion[], decla
                 interfaceType.abstract = true;
                 astTypes.interfaces.push(interfaceType);
             } else {
-                const interfaceTypeValue = toPropertyType(false, false, Array.from(interfaceSubTypes));
+                const interfaceTypeValue = toPropertyType(false, undefined, Array.from(interfaceSubTypes));
                 const existingUnion = unionTypes.get(interfaceType.name);
                 if (existingUnion) {
                     existingUnion.type = mergePropertyTypes(existingUnion.type, interfaceTypeValue);
@@ -761,15 +771,18 @@ function extractUnions(interfaces: PlainInterface[], unions: PlainUnion[], decla
     return astTypes;
 }
 
-function toPropertyType(array: boolean, reference: false | 'single' | 'multi', types: string[]): PlainPropertyType {
+function toPropertyType(array: boolean, reference: ReferenceType | undefined, types: string[]): PlainPropertyType {
     if (array) {
         return {
             elementType: toPropertyType(false, reference, types)
         };
     } else if (reference) {
+        const isMulti = reference.isMulti ?? false;
+        const isSingle = reference.isSingle ?? !isMulti;
         return {
-            referenceType: toPropertyType(false, false, types),
-            mode: reference
+            referenceType: toPropertyType(false, undefined, types),
+            isMulti,
+            isSingle
         };
     } else if (types.length === 1) {
         const type = types[0];
@@ -789,7 +802,7 @@ function toPropertyType(array: boolean, reference: false | 'single' | 'multi', t
         }
     } else {
         return {
-            types: types.map(e => toPropertyType(false, false, [e]))
+            types: types.map(e => toPropertyType(false, undefined, [e]))
         };
     }
 }

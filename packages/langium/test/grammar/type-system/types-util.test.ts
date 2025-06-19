@@ -21,7 +21,8 @@ describe('isAstType', () => {
             referenceType: {
                 value: new InterfaceType('Test', true, false)
             },
-            mode: 'single'
+            isSingle: true,
+            isMulti: false
         })).toBeFalsy();
     });
 

@@ -65,7 +65,8 @@ export type PlainPropertyType =
 
 export interface PlainReferenceType {
     referenceType: PlainPropertyType;
-    mode: 'single' | 'multi'
+    isMulti: boolean;
+    isSingle: boolean;
 }
 
 export function isPlainReferenceType(propertyType: PlainPropertyType): propertyType is PlainReferenceType {
@@ -183,7 +184,8 @@ function plainToPropertyType(type: PlainPropertyType, union: UnionType | undefin
     } else if (isPlainReferenceType(type)) {
         return {
             referenceType: plainToPropertyType(type.referenceType, undefined, interfaces, unions),
-            mode: type.mode
+            isMulti: type.isMulti,
+            isSingle: type.isSingle
         };
     } else if (isPlainPropertyUnion(type)) {
         return {
@@ -242,6 +244,13 @@ function mergeTypeUnion(first: PlainPropertyType[], second: PlainPropertyType[])
     for (const type of second) {
         if (!includesType(result, type)) {
             result.push(type);
+        } else if (isPlainReferenceType(type)) {
+            // Adjust the existing reference type to also include the multi/single flags of the new type
+            const existing = result.find((e): e is PlainReferenceType => isPlainReferenceType(e) && typeEquals(e.referenceType, type.referenceType));
+            if (existing) {
+                existing.isMulti ||= type.isMulti;
+                existing.isSingle ||= type.isSingle;
+            }
         }
     }
     return result;

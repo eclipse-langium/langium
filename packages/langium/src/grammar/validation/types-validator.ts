@@ -7,7 +7,7 @@
 import type { AstNode } from '../../syntax-tree.js';
 import type { DiagnosticInfo, ValidationAcceptor, ValidationChecks } from '../../validation/validation-registry.js';
 import type { LangiumGrammarServices } from '../langium-grammar-module.js';
-import type { Property, PropertyType } from '../type-system/type-collector/types.js';
+import type { Property, PropertyType, ReferenceType } from '../type-system/type-collector/types.js';
 import type { DeclaredInfo, InferredInfo, LangiumGrammarDocument, ValidationResources } from '../workspace/documents.js';
 import * as ast from '../../languages/generated/ast.js';
 import { MultiMap } from '../../utils/collections.js';
@@ -191,7 +191,7 @@ function validateInferredInterface(inferredInterface: InterfaceType, accept: Val
     inferredInterface.properties.forEach(prop => {
         const flattened = flattenPropertyUnion(prop.type);
         if (flattened.length > 1) {
-            const typeKind = (type: PropertyType) => isReferenceType(type) ? 'ref' : 'other';
+            const typeKind = (type: PropertyType) => isReferenceType(type) ? (type.isMulti ? 'multi-ref' : 'ref') : 'other';
             const firstKind = typeKind(flattened[0]);
             if (flattened.slice(1).some(type => typeKind(type) !== firstKind)) {
                 const targetNode = prop.astNodes.values().next()?.value;
@@ -204,7 +204,36 @@ function validateInferredInterface(inferredInterface: InterfaceType, accept: Val
                 }
             }
         }
+        const referenceTypes = collectReferenceTypes(prop.type);
+        for (const refType of referenceTypes) {
+            if (refType.isMulti && refType.isSingle) {
+                const targetNode = prop.astNodes.values().next()?.value;
+                if (targetNode) {
+                    accept(
+                        'error',
+                        `Multi references and normal references cannot be mixed. Consider splitting property "${prop.name}" into two or more different properties.`,
+                        { node: targetNode }
+                    );
+                }
+            }
+        }
     });
+}
+
+function collectReferenceTypes(type: PropertyType): Set<ReferenceType> {
+    const result = new Set<ReferenceType>();
+    if (isReferenceType(type)) {
+        result.add(type);
+    } else if (isArrayType(type) && type.elementType) {
+        const elementTypes = collectReferenceTypes(type.elementType);
+        elementTypes.forEach(e => result.add(e));
+    } else if (isPropertyUnion(type)) {
+        type.types.forEach(t => {
+            const subTypes = collectReferenceTypes(t);
+            subTypes.forEach(e => result.add(e));
+        });
+    }
+    return result;
 }
 
 function validateInterfaceSuperTypes(
@@ -377,9 +406,17 @@ function validatePropertiesConsistency(
     // The inferred props may not have full hierarchy information so try finding
     // a corresponding declared type
     const matchingProp = (type: PropertyType): PropertyType => {
-        if (isPropertyUnion(type)) return { types: type.types.map(t => matchingProp(t)) };
-        if (isReferenceType(type)) return { referenceType: matchingProp(type.referenceType), mode: type.mode };
-        if (isArrayType(type)) return { elementType: type.elementType && matchingProp(type.elementType) };
+        if (isPropertyUnion(type)) return {
+            types: type.types.map(t => matchingProp(t))
+        };
+        if (isReferenceType(type)) return {
+            referenceType: matchingProp(type.referenceType),
+            isMulti: type.isMulti,
+            isSingle: type.isSingle
+        };
+        if (isArrayType(type)) return {
+            elementType: type.elementType && matchingProp(type.elementType)
+        };
         if (isValueType(type)) {
             const resource = resources.typeToValidationInfo.get(type.value.name);
             if (!resource) return type;

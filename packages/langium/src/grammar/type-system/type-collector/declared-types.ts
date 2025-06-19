@@ -84,7 +84,8 @@ export function typeDefinitionToPropertyType(type: TypeDefinition): PlainPropert
     } else if (isReferenceType(type)) {
         return {
             referenceType: typeDefinitionToPropertyType(type.referenceType),
-            mode: type.isMulti ? 'multi' : 'single'
+            isMulti: type.isMulti,
+            isSingle: !type.isMulti
         };
     } else if (isUnionType(type)) {
         return {
