@@ -105,6 +105,58 @@ export class StreamScope implements Scope {
 }
 
 export class MapScope implements Scope {
+    readonly elements: Map<string, AstNodeDescription>;
+    readonly outerScope?: Scope;
+    readonly caseInsensitive: boolean;
+    readonly concatOuterScope: boolean;
+
+    constructor(elements: Iterable<AstNodeDescription>, outerScope?: Scope, options?: ScopeOptions) {
+        this.elements = new Map();
+        this.caseInsensitive = options?.caseInsensitive ?? false;
+        this.concatOuterScope = options?.concatOuterScope ?? true;
+        for (const element of elements) {
+            const name = this.caseInsensitive
+                ? element.name.toLowerCase()
+                : element.name;
+            this.elements.set(name, element);
+        }
+        this.outerScope = outerScope;
+    }
+
+    getElement(name: string): AstNodeDescription | undefined {
+        const localName = this.caseInsensitive ? name.toLowerCase() : name;
+        const local = this.elements.get(localName);
+        if (local) {
+            return local;
+        }
+        if (this.outerScope) {
+            return this.outerScope.getElement(name);
+        }
+        return undefined;
+    }
+
+    getElements(name: string): Stream<AstNodeDescription> {
+        const localName = this.caseInsensitive ? name.toLowerCase() : name;
+        const local = this.elements.get(localName);
+        const arr = local ? [local] : [];
+        if ((this.concatOuterScope || arr.length > 0) && this.outerScope) {
+            return stream(arr).concat(this.outerScope.getElements(name));
+        } else {
+            return stream(arr);
+        }
+    }
+
+    getAllElements(): Stream<AstNodeDescription> {
+        let elementStream = stream(this.elements.values());
+        if (this.outerScope) {
+            elementStream = elementStream.concat(this.outerScope.getAllElements());
+        }
+        return elementStream;
+    }
+
+}
+
+export class MultiMapScope implements Scope {
     readonly elements: MultiMap<string, AstNodeDescription>;
     readonly outerScope?: Scope;
     readonly caseInsensitive: boolean;
