@@ -5,16 +5,15 @@
  ******************************************************************************/
 
 import type { AstNode, Properties } from '../syntax-tree.js';
-import { type Generated, isGeneratorNode } from './generator-node.js';
+import { CompositeGeneratorNode, type Generated, isGeneratorNode, NewLineNode, traceToNode } from './generator-node.js';
 import type { SourceRegion } from './generator-tracing.js';
-import { CompositeGeneratorNode, traceToNode } from './generator-node.js';
 
 export interface JoinOptions<T> {
     filter?: (element: T, index: number, isLast: boolean) => boolean;
     prefix?: Generated | ((element: T, index: number, isLast: boolean) => Generated | undefined);
     suffix?: Generated | ((element: T, index: number, isLast: boolean) => Generated | undefined);
     separator?: Generated;
-    appendNewLineIfNotEmpty?: true;
+    appendNewLineIfNotEmpty?: true | NewLineNode.NoOfLineBreaks;
     skipNewLineAfterLastItem?: true;
 }
 
@@ -45,7 +44,7 @@ const defaultToGenerated = (e: unknown): Generated => e === undefined || typeof 
  * @param options optional config object for defining a `separator`, contributing specialized
  *  `prefix` and/or `suffix` providers, and activating conditional line-break insertion. In addition,
  *  a dedicated `filter` function can be provided that is required get provided with the original
- *  element indices in the aformentioned functions, if the list is to be filtered. If
+ *  element indices in the aforementioned functions, if the list is to be filtered. If
  *  {@link Array.filter} would be applied to the original list, the indices will be those of the
  *  filtered list during subsequent processing that in particular will cause confusion when using
  *  the tracing variant of this function named ({@link joinTracedToNode}).
@@ -122,7 +121,11 @@ export function joinToNode<T>(
                 //  the indentation is not properly applied to the first non-empty line of the (this) child node
                 // besides, append the newLine only if more lines are following, if appending a newline
                 //  is not suppressed for the final item
-                !node.isEmpty() && !!appendNewLineIfNotEmpty && (!isLast || !skipNewLineAfterLastItem)
+                !node.isEmpty() && (!isLast || !skipNewLineAfterLastItem) && (appendNewLineIfNotEmpty === true || appendNewLineIfNotEmpty === 1)
+            )
+            .appendIf(
+                !node.isEmpty() && (!isLast || !skipNewLineAfterLastItem) && (typeof appendNewLineIfNotEmpty === 'number' && appendNewLineIfNotEmpty > 1),
+                new NewLineNode(undefined, true, <NewLineNode.NoOfLineBreaks>appendNewLineIfNotEmpty)
             );
     });
 }
