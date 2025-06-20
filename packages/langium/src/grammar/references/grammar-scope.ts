@@ -9,7 +9,7 @@ import type { LangiumCoreServices } from '../../services.js';
 import type { AstNode, AstNodeDescription, ReferenceInfo } from '../../syntax-tree.js';
 import type { Stream } from '../../utils/stream.js';
 import type { AstNodeLocator } from '../../workspace/ast-node-locator.js';
-import type { DocumentSegment, LangiumDocument, LangiumDocuments, PrecomputedScopes } from '../../workspace/documents.js';
+import type { DocumentSegment, DocumentSymbols, LangiumDocument, LangiumDocuments } from '../../workspace/documents.js';
 import type { Grammar } from '../../languages/generated/ast.js';
 import { EMPTY_SCOPE, MapScope } from '../../references/scope.js';
 import { DefaultScopeComputation } from '../../references/scope-computation.js';
@@ -55,10 +55,10 @@ export class LangiumGrammarScopeProvider extends DefaultScopeProvider {
 
     private getTypeScope(referenceType: string, context: ReferenceInfo): Scope {
         let localScope: Stream<AstNodeDescription> | undefined;
-        const precomputed = getDocument(context.container).precomputedScopes;
+        const documentSymbols = getDocument(context.container).documentSymbols;
         const rootNode = findRootNode(context.container);
-        if (precomputed && rootNode) {
-            const allDescriptions = precomputed.get(rootNode);
+        if (documentSymbols && rootNode) {
+            const allDescriptions = documentSymbols.get(rootNode);
             if (allDescriptions.length > 0) {
                 localScope = stream(allDescriptions).filter(des => des.type === Interface.$type || des.type === Type.$type || des.type === InferredType.$type);
             }
@@ -146,25 +146,25 @@ export class LangiumGrammarScopeComputation extends DefaultScopeComputation {
         }
     }
 
-    protected override processNode(node: AstNode, document: LangiumDocument, scopes: PrecomputedScopes): void {
+    protected override processNode(node: AstNode, document: LangiumDocument, documentSymbols: DocumentSymbols): void {
         // for the precompution of the local scope
         if (isReturnType(node)) {
             return;
         }
-        this.processTypeNode(node, document, scopes);
-        this.processActionNode(node, document, scopes);
-        super.processNode(node, document, scopes);
+        this.processTypeNode(node, document, documentSymbols);
+        this.processActionNode(node, document, documentSymbols);
+        super.processNode(node, document, documentSymbols);
     }
 
     /**
      * Add synthetic type into the scope in case of explicitly or implicitly inferred type:<br>
      * cases: `ParserRule: ...;` or `ParserRule infers Type: ...;`
      */
-    protected processTypeNode(node: AstNode, document: LangiumDocument, scopes: PrecomputedScopes): void {
+    protected processTypeNode(node: AstNode, document: LangiumDocument, documentSymbols: DocumentSymbols): void {
         const container = node.$container;
         if (container && isParserRule(node) && !node.returnType && !node.dataType) {
             const typeNode = node.inferredType ?? node;
-            scopes.add(container, this.createInferredTypeDescription(typeNode, typeNode.name, document));
+            documentSymbols.add(container, this.createInferredTypeDescription(typeNode, typeNode.name, document));
         }
     }
 
@@ -173,10 +173,10 @@ export class LangiumGrammarScopeComputation extends DefaultScopeComputation {
      *
      * case: `{infer Action}`
      */
-    protected processActionNode(node: AstNode, document: LangiumDocument, scopes: PrecomputedScopes): void {
+    protected processActionNode(node: AstNode, document: LangiumDocument, documentSymbols: DocumentSymbols): void {
         const container = findRootNode(node);
         if (container && isAction(node) && node.inferredType) {
-            scopes.add(container, this.createInferredTypeDescription(node.inferredType, node.inferredType.name, document));
+            documentSymbols.add(container, this.createInferredTypeDescription(node.inferredType, node.inferredType.name, document));
         }
     }
 
