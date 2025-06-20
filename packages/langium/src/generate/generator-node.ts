@@ -1117,9 +1117,9 @@ export function traceToNodeIf<T extends AstNode>(condition: boolean, source: T |
  */
 export class IndentNode extends CompositeGeneratorNode {
 
-    indentation?: string;
-    indentImmediately = true;
-    indentEmptyLines = false;
+    readonly indentation?: string;
+    readonly indentImmediately;
+    readonly indentEmptyLines;
 
     constructor(indentation?: string | number, indentImmediately = true, indentEmptyLines = false) {
         super();
@@ -1133,19 +1133,22 @@ export class IndentNode extends CompositeGeneratorNode {
     }
 }
 
+export namespace NewLineNode {
+    /**
+     * Integer range type allowing to specify 1 to 6 consecutive line breaks, i.e. up to 5 empty lines with a single `NewLineNode`.
+     */
+    export type NoOfLineBreaks = 1 | 2 | 3 | 4 | 5 | 6;
+}
+
 /**
  * Implementation of @{link GeneratorNode} denoting linebreaks in the desired generated text.
  */
 export class NewLineNode {
-
-    lineDelimiter: string;
-
-    ifNotEmpty = false;
-
-    constructor(lineDelimiter?: string, ifNotEmpty = false) {
-        this.lineDelimiter = lineDelimiter ?? EOL;
-        this.ifNotEmpty = ifNotEmpty;
-    }
+    constructor(
+        public readonly lineDelimiter: string = EOL,
+        public readonly ifNotEmpty: boolean = false,
+        public readonly count: NewLineNode.NoOfLineBreaks = 1
+    ) {}
 }
 
 export const NL = new NewLineNode();

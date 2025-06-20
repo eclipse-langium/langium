@@ -1133,6 +1133,41 @@ describe('Joining lists', () => {
         `);
     });
 
+    test('ForEach loop with 3 line breaks if not empty', () => {
+        const node = n`
+            Data:
+              ${joinToNode(stream(['a', ' ', 'b']), String, { appendNewLineIfNotEmpty: 3})}
+        `;
+        const text = toString(node);
+        expect(text).toBe(s`
+            Data:
+              a
+            
+            
+              b
+            
+            
+            
+        `);
+    });
+    test('ForEach loop with 6 line breaks if not empty and skip line break after last line', () => {
+        const node = n`
+            Data:
+              ${joinToNode(stream(['a', '\t', 'b']), String, { appendNewLineIfNotEmpty: 6, skipNewLineAfterLastItem: true})}
+        `;
+        const text = toString(node);
+        expect(text).toBe(s`
+            Data:
+              a
+            
+            
+            
+            
+            
+              b
+        `);
+    });
+
 });
 
 describe('Appending templates to existing nodes', () => {
