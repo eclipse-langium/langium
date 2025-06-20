@@ -803,6 +803,25 @@ class MockFileSystemProvider implements FileSystemProvider {
         return Promise.resolve('');
     }
 
+    async exists(_uri: URI): Promise<boolean> {
+        return false;
+    }
+    existsSync(): boolean {
+        return false;
+    }
+    async readBinary(_uri: URI): Promise<Uint8Array> {
+        return new Uint8Array();
+    }
+    readBinarySync(_uri: URI): Uint8Array {
+        return new Uint8Array();
+    }
+    readFileSync(_uri: URI): string {
+        return '';
+    }
+    readDirectorySync(_uri: URI): FileSystemNode[] {
+        return [];
+    }
+
     // Return an empty array for any directory
     readDirectory(_uri: URI): Promise<[]> {
         return Promise.resolve([]);
