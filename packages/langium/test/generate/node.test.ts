@@ -21,7 +21,7 @@ describe('new lines', () => {
         expect(process(comp)).toBe(`First${EOL}Second`);
     });
 
-    test('should process with speicified line delimiter', () => {
+    test('should process with specified line delimiter', () => {
         const comp = new CompositeGeneratorNode();
         comp.append('First', new NewLineNode('/'), 'Second');
         expect(process(comp)).toBe('First/Second');
@@ -202,6 +202,30 @@ describe('composite', () => {
         const comp = new CompositeGeneratorNode();
         comp.append('Some ', node => node.append('more'), ' text');
         expect(process(comp)).toBe('Some more text');
+    });
+
+    test('should prepend strings', () => {
+        const comp = new CompositeGeneratorNode('Some content.');
+        comp.prepend('A', ' ', 'preamble', NL);
+        comp.append(NL, 'The', ' ', 'postamble');
+        expect(process(comp)).toBe(`A preamble${EOL}Some content.${EOL}The postamble`);
+    });
+
+    test('should prepend optional generator nodes', () => {
+        const prefix = [ new CompositeGeneratorNode('Preamble'), NL, undefined ];
+        const comp = new CompositeGeneratorNode('Some content.');
+        comp.prepend(...prefix);
+
+        expect(process(comp)).toBe(`Preamble${EOL}Some content.`);
+    });
+
+    test('should conditionally prepend optional generator nodes', () => {
+        const prefix = [ new CompositeGeneratorNode('Preamble'), NL, undefined ];
+        const comp = new CompositeGeneratorNode('Some content.').prependIf(false, ...prefix);
+        expect(process(comp)).toBe('Some content.');
+
+        comp.prependIf(true, ...prefix);
+        expect(process(comp)).toBe(`Preamble${EOL}Some content.`);
     });
 
     test('should indent without function argument', () => {
