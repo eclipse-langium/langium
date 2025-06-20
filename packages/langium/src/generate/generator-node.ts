@@ -198,6 +198,25 @@ export class CompositeGeneratorNode {
     }
 
     /**
+     * Prepends `strings` and instances of {@link GeneratorNode} to the content of `this` generator node.
+     *
+     * @param content a var arg mixture of `strings` or {@link GeneratorNode GeneratorNodes}.
+     *
+     * @returns `this` {@link CompositeGeneratorNode} for convenience.
+     *
+     * @example
+     *   generateSomeContent()?.prepend(
+     *      'Some preamble text:', NL
+     *   ).append(
+     *      'Some postamble text:', NL
+     *   );
+     */
+    prepend(...content: Generated[]): this {
+        this.contents.unshift(...content.filter(c => c !== undefined));
+        return this;
+    }
+
+    /**
      * Appends `strings` and instances of {@link GeneratorNode} to `this` generator node, if `condition` is equal to `true`.
      *
      * If `condition` is satisfied this method delegates to {@link append}, otherwise it returns just `this`.
@@ -218,6 +237,30 @@ export class CompositeGeneratorNode {
      */
     appendIf(condition: boolean, ...content: Array<Generated | ((node: CompositeGeneratorNode) => void)>): this {
         return condition ? this.append(...content) : this;
+    }
+
+    /**
+     * Prepends `strings` and instances of {@link GeneratorNode} to the content of `this` generator node, if `condition` is equal to `true`.
+     *
+     * If `condition` is satisfied this method delegates to {@link prepend}, otherwise it returns just `this`.
+     *
+     * @param condition a boolean value indicating whether to prepend the elements of `args` to the content of `this`.
+     *
+     * @param content a var arg mixture of `strings` or {@link GeneratorNode GeneratorNodes}.
+     *
+     * @returns `this` {@link CompositeGeneratorNode} for convenience.
+     *
+     * @example
+     *   generateSomeContent()?.prependIf(
+     *      generatePreamble === true,
+     *      'Some preamble', NL
+     *   ).appendIf(
+     *      generatePostamble === true,
+     *      'Some postamble', NL
+     *   );
+     */
+    prependIf(condition: boolean, ...content: Generated[]): this {
+        return condition ? this.prepend(...content) : this;
     }
 
     /**
