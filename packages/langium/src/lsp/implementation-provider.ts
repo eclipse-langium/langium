@@ -33,14 +33,18 @@ export abstract class AbstractGoToImplementationProvider implements Implementati
         this.grammarConfig = services.parser.GrammarConfig;
     }
 
-    getImplementation(document: LangiumDocument<AstNode>, params: ImplementationParams, cancelToken = CancellationToken.None): MaybePromise<LocationLink[] | undefined> {
+    async getImplementation(document: LangiumDocument<AstNode>, params: ImplementationParams, cancelToken = CancellationToken.None): Promise<LocationLink[] | undefined> {
         const rootNode = document.parseResult.value;
         if (rootNode.$cstNode) {
             const sourceCstNode = findDeclarationNodeAtOffset(rootNode.$cstNode, document.textDocument.offsetAt(params.position), this.grammarConfig.nameRegexp);
             if (sourceCstNode) {
-                const nodeDeclaration = this.references.findDeclaration(sourceCstNode);
-                if (nodeDeclaration) {
-                    return this.collectGoToImplementationLocationLinks(nodeDeclaration, cancelToken);
+                const nodeDeclarations = this.references.findDeclarations(sourceCstNode);
+                const links: LocationLink[] = [];
+                for (const node of nodeDeclarations) {
+                    const location = await this.collectGoToImplementationLocationLinks(node, cancelToken);
+                    if (location) {
+                        links.push(...location);
+                    }
                 }
             }
         }

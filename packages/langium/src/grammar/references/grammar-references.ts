@@ -4,11 +4,9 @@
 * terms of the MIT License, which is available in the project root.
 ******************************************************************************/
 
-import type { LangiumCoreServices } from '../../services.js';
 import type { AstNode, CstNode } from '../../syntax-tree.js';
 import type { Stream } from '../../utils/stream.js';
 import type { ReferenceDescription } from '../../workspace/ast-descriptions.js';
-import type { LangiumDocuments } from '../../workspace/documents.js';
 import type { Action, Assignment, Interface, ParserRule, Type, TypeAttribute } from '../../languages/generated/ast.js';
 import type { FindReferencesOptions } from '../../references/references.js';
 import { DefaultReferences } from '../../references/references.js';
@@ -22,25 +20,21 @@ import { extractAssignments } from '../internal-grammar-util.js';
 import { collectChildrenTypes, collectSuperTypes } from '../type-system/types-util.js';
 
 export class LangiumGrammarReferences extends DefaultReferences {
-    protected readonly documents: LangiumDocuments;
 
-    constructor(services: LangiumCoreServices) {
-        super(services);
-        this.documents = services.shared.workspace.LangiumDocuments;
-    }
-
-    override findDeclaration(sourceCstNode: CstNode): AstNode | undefined {
+    override findDeclarations(sourceCstNode: CstNode): AstNode[] {
         const nodeElem = sourceCstNode.astNode;
         const assignment = findAssignment(sourceCstNode);
         if (assignment && assignment.feature === 'feature') {
             // Only search for a special declaration if the cst node is the feature property of the action/assignment
             if (isAssignment(nodeElem)) {
-                return this.findAssignmentDeclaration(nodeElem);
+                const decl = this.findAssignmentDeclaration(nodeElem);
+                return decl ? [decl] : [];
             } else if (isAction(nodeElem)) {
-                return this.findActionDeclaration(nodeElem);
+                const decl = this.findActionDeclaration(nodeElem);
+                return decl ? [decl] : [];
             }
         }
-        return super.findDeclaration(sourceCstNode);
+        return super.findDeclarations(sourceCstNode);
     }
 
     override findReferences(targetNode: AstNode, options: FindReferencesOptions): Stream<ReferenceDescription> {
@@ -56,10 +50,7 @@ export class LangiumGrammarReferences extends DefaultReferences {
         const interfaceNode = getContainerOfType(targetNode, isInterface);
         if (interfaceNode) {
             if (includeDeclaration) {
-                const ref = this.getReferenceToSelf(targetNode);
-                if (ref) {
-                    refs.push(ref);
-                }
+                refs.push(...this.getSelfReferences(targetNode));
             }
             const interfaces = collectChildrenTypes(interfaceNode, this, this.documents, this.nodeLocator);
             const targetRules: Array<ParserRule | Action> = [];

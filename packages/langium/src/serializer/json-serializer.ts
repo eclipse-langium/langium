@@ -8,8 +8,8 @@ import { URI } from 'vscode-uri';
 import type { CommentProvider } from '../documentation/comment-provider.js';
 import type { NameProvider } from '../references/name-provider.js';
 import type { LangiumCoreServices } from '../services.js';
-import type { AstNode, CstNode, GenericAstNode, Mutable, Reference } from '../syntax-tree.js';
-import { isAstNode, isReference } from '../syntax-tree.js';
+import type { AstNode, CstNode, GenericAstNode, MultiReference, MultiReferenceItem, Mutable, Reference } from '../syntax-tree.js';
+import { isAstNode, isMultiReference, isReference } from '../syntax-tree.js';
 import { getDocument } from '../utils/ast-utils.js';
 import { findNodesForProperty } from '../utils/grammar-utils.js';
 import type { AstNodeLocator } from '../workspace/ast-node-locator.js';
@@ -29,7 +29,7 @@ export interface JsonSerializeOptions {
     /** The replacer parameter for `JSON.stringify`; the default replacer given as parameter should be used to apply basic replacements. */
     replacer?: (key: string, value: unknown, defaultReplacer: (key: string, value: unknown) => unknown) => unknown
     /** Used to convert and serialize URIs when the target of a cross-reference is in a different document. */
-    uriConverter?: (uri: URI, reference: Reference) => string
+    uriConverter?: (uri: URI, node: AstNode) => string
 }
 
 export interface JsonDeserializeOptions {
@@ -96,6 +96,8 @@ export interface JsonSerializer {
 interface IntermediateReference {
     /** URI pointing to the target element. This is either `#${path}` if the target is in the same document, or `${documentURI}#${path}` otherwise. */
     $ref?: string
+    /** URI pointing to the target elements. This is the multi reference equivalent for {@link $ref}. */
+    $refs?: string[]
     /** The actual text used to look up the reference target in the surrounding scope. */
     $refText?: string
     /** If any problem occurred while resolving the reference, it is described by this property. */
@@ -158,7 +160,7 @@ export class DefaultJsonSerializer implements JsonSerializer {
                 let targetUri = '';
                 if (this.currentDocument && this.currentDocument !== targetDocument) {
                     if (uriConverter) {
-                        targetUri = uriConverter(targetDocument.uri, value);
+                        targetUri = uriConverter(targetDocument.uri, refValue);
                     } else {
                         targetUri = targetDocument.uri.toString();
                     }
@@ -174,6 +176,27 @@ export class DefaultJsonSerializer implements JsonSerializer {
                     $refText
                 } satisfies IntermediateReference;
             }
+        } else if (isMultiReference(value)) {
+            const $refText = refText ? value.$refText : undefined;
+            const $refs: string[] = [];
+            for (const item of value.items) {
+                const refValue = item.ref;
+                const targetDocument = getDocument(item.ref);
+                let targetUri = '';
+                if (this.currentDocument && this.currentDocument !== targetDocument) {
+                    if (uriConverter) {
+                        targetUri = uriConverter(targetDocument.uri, refValue);
+                    } else {
+                        targetUri = targetDocument.uri.toString();
+                    }
+                }
+                const targetPath = this.astNodeLocator.getAstNodePath(refValue);
+                $refs.push(`${targetUri}#${targetPath}`);
+            }
+            return {
+                $refs,
+                $refText
+            } satisfies IntermediateReference;
         } else if (isAstNode(value)) {
             let astNode: AstNodeWithTextRegion | undefined = undefined;
             if (textRegions) {
@@ -247,32 +270,56 @@ export class DefaultJsonSerializer implements JsonSerializer {
         mutable.$containerIndex = containerIndex;
     }
 
-    protected reviveReference(container: AstNode, property: string, root: AstNode, reference: IntermediateReference, options: JsonDeserializeOptions): Reference | undefined {
+    protected reviveReference(container: AstNode, property: string, root: AstNode, reference: IntermediateReference, options: JsonDeserializeOptions): Reference | MultiReference | undefined {
         let refText = reference.$refText;
         let error = reference.$error;
+        let ref: Mutable<Reference> | Mutable<MultiReference> | undefined;
         if (reference.$ref) {
-            const ref = this.getRefNode(root, reference.$ref, options.uriConverter);
-            if (isAstNode(ref)) {
+            const refNode = this.getRefNode(root, reference.$ref, options.uriConverter);
+            if (isAstNode(refNode)) {
                 if (!refText) {
-                    refText = this.nameProvider.getName(ref);
+                    refText = this.nameProvider.getName(refNode);
                 }
                 return {
                     $refText: refText ?? '',
-                    ref
+                    ref: refNode
                 };
             } else {
-                error = ref;
+                error = refNode;
+            }
+        } else if (reference.$refs) {
+            const refs: MultiReferenceItem[] = [];
+            for (const refUri of reference.$refs) {
+                const refNode = this.getRefNode(root, refUri, options.uriConverter);
+                if (isAstNode(refNode)) {
+                    refs.push({ ref: refNode });
+                }
+            }
+            if (refs.length === 0) {
+                ref = {
+                    $refText: refText ?? '',
+                    items: refs
+                };
+                error ??= 'Could not resolve multi-reference';
+            } else {
+                return {
+                    $refText: refText ?? '',
+                    items: refs
+                };
             }
         }
         if (error) {
-            const ref: Mutable<Reference> = {
-                $refText: refText ?? ''
+            ref ??= {
+                $refText: refText ?? '',
+                ref: undefined
             };
             ref.error = {
-                container,
-                property,
-                message: error,
-                reference: ref
+                info: {
+                    container,
+                    property,
+                    reference: ref
+                },
+                message: error
             };
             return ref;
         } else {

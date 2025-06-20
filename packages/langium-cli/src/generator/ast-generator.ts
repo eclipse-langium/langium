@@ -3,6 +3,7 @@
  * This program and the accompanying materials are made available under the
  * terms of the MIT License, which is available in the project root.
  ******************************************************************************/
+
 import type { Grammar, LangiumCoreServices } from 'langium';
 import { EOL, type Generated, expandToNode, joinToNode, toString } from 'langium/generate';
 import type { AstTypes, Property, PropertyDefaultValue } from 'langium/grammar';

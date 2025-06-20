@@ -11,7 +11,7 @@ import type { AstNode, AstNodeDescription, ReferenceInfo } from '../syntax-tree.
 import type { AstNodeLocator } from './ast-node-locator.js';
 import type { DocumentSegment, LangiumDocument } from './documents.js';
 import { CancellationToken } from '../utils/cancellation.js';
-import { isLinkingError } from '../syntax-tree.js';
+import { isMultiReference, isReference } from '../syntax-tree.js';
 import { getDocument, streamAst, streamReferences } from '../utils/ast-utils.js';
 import { toDocumentSegment } from '../utils/cst-utils.js';
 import { interruptAndCheck } from '../utils/promise-utils.js';
@@ -118,32 +118,41 @@ export class DefaultReferenceDescriptionProvider implements ReferenceDescription
         const rootNode = document.parseResult.value;
         for (const astNode of streamAst(rootNode)) {
             await interruptAndCheck(cancelToken);
-            streamReferences(astNode).filter(refInfo => !isLinkingError(refInfo)).forEach(refInfo => {
-                // TODO: Consider logging a warning or throw an exception when DocumentState is < than Linked
-                const description = this.createDescription(refInfo);
-                if (description) {
-                    descr.push(description);
+            streamReferences(astNode).forEach(refInfo => {
+                if (!refInfo.reference.error) {
+                    descr.push(...this.createInfoDescriptions(refInfo));
                 }
             });
         }
         return descr;
     }
 
-    protected createDescription(refInfo: ReferenceInfo): ReferenceDescription | undefined {
-        const targetNodeDescr = refInfo.reference.$nodeDescription;
-        const refCstNode = refInfo.reference.$refNode;
-        if (!targetNodeDescr || !refCstNode) {
-            return undefined;
+    protected createInfoDescriptions(refInfo: ReferenceInfo): ReferenceDescription[] {
+        const reference = refInfo.reference;
+        if (reference.error || !reference.$refNode) {
+            return [];
         }
-        const docUri = getDocument(refInfo.container).uri;
-        return {
-            sourceUri: docUri,
-            sourcePath: this.nodeLocator.getAstNodePath(refInfo.container),
-            targetUri: targetNodeDescr.documentUri,
-            targetPath: targetNodeDescr.path,
-            segment: toDocumentSegment(refCstNode),
-            local: UriUtils.equals(targetNodeDescr.documentUri, docUri)
-        };
+        let items: AstNodeDescription[] = [];
+        if (isReference(reference) && reference.$nodeDescription) {
+            items = [reference.$nodeDescription];
+        } else if (isMultiReference(reference)) {
+            items = reference.items.map(e => e.$nodeDescription).filter(e => e !== undefined);
+        }
+        const sourceUri = getDocument(refInfo.container).uri;
+        const sourcePath = this.nodeLocator.getAstNodePath(refInfo.container);
+        const descriptions: ReferenceDescription[] = [];
+        const segment = toDocumentSegment(reference.$refNode);
+        for (const item of items) {
+            descriptions.push({
+                sourceUri,
+                sourcePath,
+                targetUri: item.documentUri,
+                targetPath: item.path,
+                segment,
+                local: UriUtils.equals(item.documentUri, sourceUri)
+            });
+        }
+        return descriptions;
     }
 
 }
