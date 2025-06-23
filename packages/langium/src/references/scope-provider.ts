@@ -13,7 +13,7 @@ import type { NameProvider } from './name-provider.js';
 import type { Scope, ScopeOptions} from './scope.js';
 import { MapScope, StreamScope } from './scope.js';
 import { getDocument } from '../utils/ast-utils.js';
-import { stream } from '../utils/stream.js';
+import { EMPTY_STREAM, stream } from '../utils/stream.js';
 import { WorkspaceCache } from '../utils/caching.js';
 
 /**
@@ -52,13 +52,13 @@ export class DefaultScopeProvider implements ScopeProvider {
         const scopes: Array<Stream<AstNodeDescription>> = [];
         const referenceType = this.reflection.getReferenceType(context);
 
-        const precomputed = getDocument(context.container).precomputedScopes;
-        if (precomputed) {
+        const documentSymbols = getDocument(context.container).documentSymbols;
+        if (documentSymbols) {
             let currentNode: AstNode | undefined = context.container;
             do {
-                const allDescriptions = precomputed.get(currentNode);
-                if (allDescriptions.length > 0) {
-                    scopes.push(stream(allDescriptions).filter(
+                const symbolStream = documentSymbols.getStream(currentNode);
+                if (symbolStream !== EMPTY_STREAM) {
+                    scopes.push(symbolStream.filter(
                         desc => this.reflection.isSubtype(desc.type, referenceType)));
                 }
                 currentNode = currentNode.$container;

@@ -69,7 +69,7 @@ export class JSDocDocumentationProvider implements DocumentationProvider {
 
     protected findNameInPrecomputedScopes(node: AstNode, name: string): AstNodeDescription | undefined {
         const document = getDocument(node);
-        const precomputed = document.precomputedScopes;
+        const precomputed = document.documentSymbols;
         if (!precomputed) {
             return undefined;
         }
