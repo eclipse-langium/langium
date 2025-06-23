@@ -34,6 +34,8 @@ const LANGUAGE_NAME = /<%= LanguageName %>/g;
 const LANGUAGE_ID = /<%= language-id %>/g;
 const LANGUAGE_PATH_ID = /language-id/g;
 
+const ENTRY_NAME = /<%= EntryName %>/g;
+
 const NEWLINES = /\r?\n/g;
 
 export interface Answers {
@@ -175,8 +177,8 @@ export class LangiumGenerator extends Generator {
                 ),
                 message: 'Entry name:',
                 default: 'Model',
-                when:
-            }
+                when: (answers) => !answers.includeExampleCode
+            } as PromptQuestion<Answers>
         ]);
     }
 
@@ -227,7 +229,7 @@ export class LangiumGenerator extends Generator {
         // .gitignore files don't get published to npm, so we need to copy it under a different name
         this.fs.copy(this.templatePath('gitignore.txt'), this._extensionPath('.gitignore'));
 
-        this.sourceRoot(path.join(__dirname, `${BASE_DIR}/${PACKAGE_LANGUAGE}`));
+        this.sourceRoot(path.join(__dirname, `${BASE_DIR}/${this.answers.includeExampleCode ? PACKAGE_LANGUAGE_EXAMPLE : PACKAGE_LANGUAGE_MINIMAL}`));
 
         const languageFiles = [
             'package.json',
@@ -391,6 +393,7 @@ export * from './generated/module.js';
             .replace(FILE_EXTENSION_GLOB, fileExtensionGlob)
             .replace(LANGUAGE_NAME, languageName)
             .replace(LANGUAGE_ID, languageId)
+            .replace(ENTRY_NAME, this.answers.entryName)
             .replace(NEWLINES, EOL);
     }
 

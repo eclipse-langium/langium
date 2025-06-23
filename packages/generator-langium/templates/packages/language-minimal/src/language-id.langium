@@ -11,7 +11,7 @@ terminal STRING: /"(\\.|[^"\\])*"|'(\\.|[^'\\])*'/;
 hidden terminal ML_COMMENT: /\/\*[\s\S]*?\*\//;
 hidden terminal SL_COMMENT: /\/\/[^\n\r]*/;
 
-entry Model: (persons+=Person | greetings+=Greeting)*;
+entry <%= EntryName %>: (persons+=Person | greetings+=Greeting)*;
 
 Person:
     'person' name=ID;
