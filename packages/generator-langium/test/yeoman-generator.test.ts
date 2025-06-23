@@ -20,7 +20,8 @@ const answersForCore: Answers & PostAnwers = {
     includeCLI: false,
     includeExampleCode: false,
     includeTest: false,
-    openWith: false
+    openWith: false,
+    entryName: 'Model'
 };
 
 describe('Check yeoman generator works', () => {
