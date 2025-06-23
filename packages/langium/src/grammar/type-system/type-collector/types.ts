@@ -309,7 +309,10 @@ function isTypeAssignableInternal(from: PropertyType | undefined, to: PropertyTy
             result = isTypeAssignableInternal(from, to.value.type, visited);
         }
     } else if (isReferenceType(from)) {
-        result = isReferenceType(to) && isTypeAssignableInternal(from.referenceType, to.referenceType, visited);
+        result = isReferenceType(to)
+            && from.isMulti === to.isMulti
+            && from.isSingle === to.isSingle
+            && isTypeAssignableInternal(from.referenceType, to.referenceType, visited);
     } else if (isArrayType(from)) {
         result = isArrayType(to) && isTypeAssignableInternal(from.elementType, to.elementType, visited);
     } else if (isValueType(from)) {
@@ -389,7 +392,7 @@ export function propertyTypeToString(type?: PropertyType, mode: 'AstType' | 'Dec
     }
     if (isReferenceType(type)) {
         const refType = propertyTypeToString(type.referenceType, mode);
-        return mode === 'AstType' ? `langium.${type.isMulti ? 'Multi' : ''}Reference<${refType}>` : `@${typeParenthesis(type.referenceType, refType)}${type.isMulti ? '*' : ''}`;
+        return mode === 'AstType' ? `langium.${type.isMulti ? 'Multi' : ''}Reference<${refType}>` : `@${typeParenthesis(type.referenceType, refType)}${type.isMulti ? '+' : ''}`;
     } else if (isArrayType(type)) {
         const arrayType = propertyTypeToString(type.elementType, mode);
         return mode === 'AstType' ? `Array<${arrayType}>` : `${type.elementType ? typeParenthesis(type.elementType, arrayType) : 'unknown'}[]`;

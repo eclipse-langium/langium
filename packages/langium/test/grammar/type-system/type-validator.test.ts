@@ -661,6 +661,27 @@ describe('Property type is not a mix of cross-ref and non-cross-ref types.', () 
             node: rule2Assignment
         });
     });
+
+    test('Inferred multi ref property with declared single ref property', async () => {
+        const validation = await validate(`
+            interface Entity {
+                type: @Entity
+            }
+
+            Entity returns Entity:
+                'entity' type=[+Entity:ID];
+            
+            terminal ID: /[a-zA-Z_][\\w_]*/;
+            `);
+
+        const ruleAssignment = AstUtils.streamAllContents(validation.document.parseResult.value.rules[0])
+            .filter(node => GrammarAST.isAssignment(node)).head() as GrammarAST.Assignment;
+
+        expectError(validation, /not compatible/, {
+            node: ruleAssignment,
+            property: 'feature'
+        });
+    });
 });
 
 // https://github.com/eclipse-langium/langium/issues/823
