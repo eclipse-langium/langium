@@ -44,6 +44,7 @@ export interface Answers {
     includeCLI: boolean;
     includeExampleCode: boolean;
     includeTest: boolean;
+    entryName: string;
 }
 
 export interface PostAnwers {
@@ -165,7 +166,17 @@ export class LangiumGenerator extends Generator {
                 ),
                 message: 'Include language tests?',
                 default: true,
-            } as PromptQuestion<Answers>
+            } as PromptQuestion<Answers>,
+            {
+                type: 'input',
+                name: 'entryName',
+                prefix: description(
+                    'The name of the "Entry" field in your grammar file.'
+                ),
+                message: 'Entry name:',
+                default: 'Model',
+                when:
+            }
         ]);
     }
 
@@ -216,13 +227,7 @@ export class LangiumGenerator extends Generator {
         // .gitignore files don't get published to npm, so we need to copy it under a different name
         this.fs.copy(this.templatePath('gitignore.txt'), this._extensionPath('.gitignore'));
 
-        // TODO ternary
-        if (this.answers.includeExampleCode) {
-            this.sourceRoot(path.join(__dirname, `${BASE_DIR}/${PACKAGE_LANGUAGE_EXAMPLE}`));
-        }
-        else {
-            this.sourceRoot(path.join(__dirname, `${BASE_DIR}/${PACKAGE_LANGUAGE_MINIMAL}`));
-        }
+        this.sourceRoot(path.join(__dirname, `${BASE_DIR}/${PACKAGE_LANGUAGE}`));
 
         const languageFiles = [
             'package.json',
