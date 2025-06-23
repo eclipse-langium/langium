@@ -11,7 +11,9 @@ export function registerValidationChecks(services: <%= LanguageName %>Services) 
     const checks: ValidationChecks<<%= LanguageName %>AstType> = {
         // TODO: Declare validators for your properties
         // See doc : https://langium.org/docs/learn/workflow/create_validations/
-
+        /*
+        Something: validator.checkSomething
+        */
     };
     registry.register(checks, validator);
 }
@@ -23,4 +25,9 @@ export class <%= LanguageName %>Validator {
 
     // TODO: Add logic here for validation checks of properties
     // See doc : https://langium.org/docs/learn/workflow/create_validations/
+    /*
+    checkSomething(something: any, accept: ValidationAcceptor): void {
+        // Always accepts
+    }
+    */
 }
