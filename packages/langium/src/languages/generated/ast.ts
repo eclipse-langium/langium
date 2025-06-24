@@ -260,6 +260,7 @@ export const CharacterRange = {
     cardinality: 'cardinality',
     left: 'left',
     lookahead: 'lookahead',
+    parenthesized: 'parenthesized',
     right: 'right'
 } as const;
 
@@ -526,6 +527,7 @@ export const NegatedToken = {
     $type: 'NegatedToken',
     cardinality: 'cardinality',
     lookahead: 'lookahead',
+    parenthesized: 'parenthesized',
     terminal: 'terminal'
 } as const;
 
@@ -648,6 +650,7 @@ export const RegexToken = {
     $type: 'RegexToken',
     cardinality: 'cardinality',
     lookahead: 'lookahead',
+    parenthesized: 'parenthesized',
     regex: 'regex'
 } as const;
 
@@ -733,7 +736,8 @@ export const TerminalAlternatives = {
     $type: 'TerminalAlternatives',
     cardinality: 'cardinality',
     elements: 'elements',
-    lookahead: 'lookahead'
+    lookahead: 'lookahead',
+    parenthesized: 'parenthesized'
 } as const;
 
 export function isTerminalAlternatives(item: unknown): item is TerminalAlternatives {
@@ -743,12 +747,14 @@ export function isTerminalAlternatives(item: unknown): item is TerminalAlternati
 export interface TerminalElement extends AbstractElement {
     readonly $type: 'CharacterRange' | 'NegatedToken' | 'RegexToken' | 'TerminalAlternatives' | 'TerminalElement' | 'TerminalGroup' | 'TerminalRuleCall' | 'UntilToken' | 'Wildcard';
     lookahead?: '?!' | '?<!' | '?<=' | '?=';
+    parenthesized: boolean;
 }
 
 export const TerminalElement = {
     $type: 'TerminalElement',
     cardinality: 'cardinality',
-    lookahead: 'lookahead'
+    lookahead: 'lookahead',
+    parenthesized: 'parenthesized'
 } as const;
 
 export function isTerminalElement(item: unknown): item is TerminalElement {
@@ -764,7 +770,8 @@ export const TerminalGroup = {
     $type: 'TerminalGroup',
     cardinality: 'cardinality',
     elements: 'elements',
-    lookahead: 'lookahead'
+    lookahead: 'lookahead',
+    parenthesized: 'parenthesized'
 } as const;
 
 export function isTerminalGroup(item: unknown): item is TerminalGroup {
@@ -803,6 +810,7 @@ export const TerminalRuleCall = {
     $type: 'TerminalRuleCall',
     cardinality: 'cardinality',
     lookahead: 'lookahead',
+    parenthesized: 'parenthesized',
     rule: 'rule'
 } as const;
 
@@ -887,6 +895,7 @@ export const UntilToken = {
     $type: 'UntilToken',
     cardinality: 'cardinality',
     lookahead: 'lookahead',
+    parenthesized: 'parenthesized',
     terminal: 'terminal'
 } as const;
 
@@ -901,7 +910,8 @@ export interface Wildcard extends TerminalElement {
 export const Wildcard = {
     $type: 'Wildcard',
     cardinality: 'cardinality',
-    lookahead: 'lookahead'
+    lookahead: 'lookahead',
+    parenthesized: 'parenthesized'
 } as const;
 
 export function isWildcard(item: unknown): item is Wildcard {
@@ -1068,6 +1078,10 @@ export class LangiumGrammarAstReflection extends langium.AbstractAstReflection {
                 },
                 lookahead: {
                     name: CharacterRange.lookahead
+                },
+                parenthesized: {
+                    name: CharacterRange.parenthesized,
+                    defaultValue: false
                 },
                 right: {
                     name: CharacterRange.right
@@ -1299,6 +1313,10 @@ export class LangiumGrammarAstReflection extends langium.AbstractAstReflection {
                 lookahead: {
                     name: NegatedToken.lookahead
                 },
+                parenthesized: {
+                    name: NegatedToken.parenthesized,
+                    defaultValue: false
+                },
                 terminal: {
                     name: NegatedToken.terminal
                 }
@@ -1398,6 +1416,10 @@ export class LangiumGrammarAstReflection extends langium.AbstractAstReflection {
                 lookahead: {
                     name: RegexToken.lookahead
                 },
+                parenthesized: {
+                    name: RegexToken.parenthesized,
+                    defaultValue: false
+                },
                 regex: {
                     name: RegexToken.regex
                 }
@@ -1470,6 +1492,10 @@ export class LangiumGrammarAstReflection extends langium.AbstractAstReflection {
                 },
                 lookahead: {
                     name: TerminalAlternatives.lookahead
+                },
+                parenthesized: {
+                    name: TerminalAlternatives.parenthesized,
+                    defaultValue: false
                 }
             },
             superTypes: [TerminalElement.$type]
@@ -1482,6 +1508,10 @@ export class LangiumGrammarAstReflection extends langium.AbstractAstReflection {
                 },
                 lookahead: {
                     name: TerminalElement.lookahead
+                },
+                parenthesized: {
+                    name: TerminalElement.parenthesized,
+                    defaultValue: false
                 }
             },
             superTypes: [AbstractElement.$type]
@@ -1498,6 +1528,10 @@ export class LangiumGrammarAstReflection extends langium.AbstractAstReflection {
                 },
                 lookahead: {
                     name: TerminalGroup.lookahead
+                },
+                parenthesized: {
+                    name: TerminalGroup.parenthesized,
+                    defaultValue: false
                 }
             },
             superTypes: [TerminalElement.$type]
@@ -1533,6 +1567,10 @@ export class LangiumGrammarAstReflection extends langium.AbstractAstReflection {
                 },
                 lookahead: {
                     name: TerminalRuleCall.lookahead
+                },
+                parenthesized: {
+                    name: TerminalRuleCall.parenthesized,
+                    defaultValue: false
                 },
                 rule: {
                     name: TerminalRuleCall.rule,
@@ -1604,6 +1642,10 @@ export class LangiumGrammarAstReflection extends langium.AbstractAstReflection {
                 lookahead: {
                     name: UntilToken.lookahead
                 },
+                parenthesized: {
+                    name: UntilToken.parenthesized,
+                    defaultValue: false
+                },
                 terminal: {
                     name: UntilToken.terminal
                 }
@@ -1618,6 +1660,10 @@ export class LangiumGrammarAstReflection extends langium.AbstractAstReflection {
                 },
                 lookahead: {
                     name: Wildcard.lookahead
+                },
+                parenthesized: {
+                    name: Wildcard.parenthesized,
+                    defaultValue: false
                 }
             },
             superTypes: [TerminalElement.$type]

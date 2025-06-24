@@ -535,7 +535,8 @@ function abstractElementToRegex(element: ast.AbstractElement, flags?: Flags): st
         }
         return withCardinality(abstractElementToRegex(rule.definition), {
             cardinality: element.cardinality,
-            lookahead: element.lookahead
+            lookahead: element.lookahead,
+            parenthesized: element.parenthesized
         });
     } else if (ast.isNegatedToken(element)) {
         return negateTokenToRegex(element);
@@ -553,12 +554,14 @@ function abstractElementToRegex(element: ast.AbstractElement, flags?: Flags): st
         return withCardinality(source, {
             cardinality: element.cardinality,
             lookahead: element.lookahead,
+            parenthesized: element.parenthesized,
             wrap: false
         });
     } else if (ast.isWildcard(element)) {
         return withCardinality(WILDCARD, {
             cardinality: element.cardinality,
-            lookahead: element.lookahead
+            lookahead: element.lookahead,
+            parenthesized: element.parenthesized
         });
     } else {
         throw new Error(`Invalid terminal element: ${element?.$type}`);
@@ -568,28 +571,34 @@ function abstractElementToRegex(element: ast.AbstractElement, flags?: Flags): st
 function terminalAlternativesToRegex(alternatives: ast.TerminalAlternatives): string {
     return withCardinality(alternatives.elements.map(e => abstractElementToRegex(e)).join('|'), {
         cardinality: alternatives.cardinality,
-        lookahead: alternatives.lookahead
+        lookahead: alternatives.lookahead,
+        parenthesized: alternatives.parenthesized,
+        wrap: false // wrapping is not required for top level alternatives, and nested alternatives are already parenthesized according to the grammar
     });
 }
 
 function terminalGroupToRegex(group: ast.TerminalGroup): string {
     return withCardinality(group.elements.map(e => abstractElementToRegex(e)).join(''), {
         cardinality: group.cardinality,
-        lookahead: group.lookahead
+        lookahead: group.lookahead,
+        parenthesized: group.parenthesized,
+        wrap: false // wrapping is not required for top level group, and nested group are already parenthesized according to the grammar
     });
 }
 
 function untilTokenToRegex(until: ast.UntilToken): string {
     return withCardinality(`${WILDCARD}*?${abstractElementToRegex(until.terminal)}`, {
         cardinality: until.cardinality,
-        lookahead: until.lookahead
+        lookahead: until.lookahead,
+        parenthesized: until.parenthesized
     });
 }
 
 function negateTokenToRegex(negate: ast.NegatedToken): string {
     return withCardinality(`(?!${abstractElementToRegex(negate.terminal)})${WILDCARD}*?`, {
         cardinality: negate.cardinality,
-        lookahead: negate.lookahead
+        lookahead: negate.lookahead,
+        parenthesized: negate.parenthesized
     });
 }
 
@@ -598,12 +607,14 @@ function characterRangeToRegex(range: ast.CharacterRange): string {
         return withCardinality(`[${keywordToRegex(range.left)}-${keywordToRegex(range.right)}]`, {
             cardinality: range.cardinality,
             lookahead: range.lookahead,
+            parenthesized: range.parenthesized,
             wrap: false
         });
     }
     return withCardinality(keywordToRegex(range.left), {
         cardinality: range.cardinality,
         lookahead: range.lookahead,
+        parenthesized: range.parenthesized,
         wrap: false
     });
 }
@@ -614,11 +625,13 @@ function keywordToRegex(keyword: ast.Keyword): string {
 
 function withCardinality(regex: string, options: {
     cardinality?: string
-    wrap?: boolean
+    parenthesized: boolean
     lookahead?: string
+    wrap?: boolean
 }): string {
-    if (options.wrap !== false || options.lookahead) {
-        regex = `(${options.lookahead ?? ''}${regex})`;
+    if (options.parenthesized || options.lookahead || options.wrap !== false) {
+        const groupConfig = options.lookahead ?? (options.parenthesized ? '' : '?:');
+        regex = `(${groupConfig}${regex})`;
     }
     if (options.cardinality) {
         return `${regex}${options.cardinality}`;

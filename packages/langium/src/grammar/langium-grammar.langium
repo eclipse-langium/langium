@@ -203,7 +203,7 @@ TerminalTokenElement returns TerminalElement:
     CharacterRange | TerminalRuleCall | ParenthesizedTerminalElement | NegatedToken | UntilToken | RegexToken | Wildcard;
 
 ParenthesizedTerminalElement returns TerminalElement:
-    '(' (lookahead=('?='|'?!'|'?<='|'?<!'))? TerminalAlternatives ')';
+    '(' (lookahead=('?='|'?!'|'?<='|'?<!'))? TerminalAlternatives parenthesized?=')';
 
 TerminalRuleCall returns TerminalElement:
     {TerminalRuleCall} rule=[TerminalRule:ID];

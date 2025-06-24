@@ -3349,8 +3349,13 @@ export const LangiumGrammarGrammar = (): Grammar => loadedLangiumGrammarGrammar 
             "arguments": []
           },
           {
-            "$type": "Keyword",
-            "value": ")"
+            "$type": "Assignment",
+            "feature": "parenthesized",
+            "operator": "?=",
+            "terminal": {
+              "$type": "Keyword",
+              "value": ")"
+            }
           }
         ]
       },
@@ -3702,7 +3707,8 @@ export const LangiumGrammarGrammar = (): Grammar => loadedLangiumGrammarGrammar 
       "name": "ID",
       "definition": {
         "$type": "RegexToken",
-        "regex": "/\\\\^?[_a-zA-Z][\\\\w_]*/"
+        "regex": "/\\\\^?[_a-zA-Z][\\\\w_]*/",
+        "parenthesized": false
       },
       "fragment": false,
       "hidden": false
@@ -3712,7 +3718,8 @@ export const LangiumGrammarGrammar = (): Grammar => loadedLangiumGrammarGrammar 
       "name": "STRING",
       "definition": {
         "$type": "RegexToken",
-        "regex": "/\\"(\\\\\\\\.|[^\\"\\\\\\\\])*\\"|'(\\\\\\\\.|[^'\\\\\\\\])*'/"
+        "regex": "/\\"(\\\\\\\\.|[^\\"\\\\\\\\])*\\"|'(\\\\\\\\.|[^'\\\\\\\\])*'/",
+        "parenthesized": false
       },
       "fragment": false,
       "hidden": false
@@ -3726,7 +3733,8 @@ export const LangiumGrammarGrammar = (): Grammar => loadedLangiumGrammarGrammar 
       },
       "definition": {
         "$type": "RegexToken",
-        "regex": "/NaN|-?((\\\\d*\\\\.\\\\d+|\\\\d+)([Ee][+-]?\\\\d+)?|Infinity)/"
+        "regex": "/NaN|-?((\\\\d*\\\\.\\\\d+|\\\\d+)([Ee][+-]?\\\\d+)?|Infinity)/",
+        "parenthesized": false
       },
       "fragment": false,
       "hidden": false
@@ -3740,7 +3748,8 @@ export const LangiumGrammarGrammar = (): Grammar => loadedLangiumGrammarGrammar 
       },
       "definition": {
         "$type": "RegexToken",
-        "regex": "/\\\\/(?![*+?])(?:[^\\\\r\\\\n\\\\[/\\\\\\\\]|\\\\\\\\.|\\\\[(?:[^\\\\r\\\\n\\\\]\\\\\\\\]|\\\\\\\\.)*\\\\])+\\\\/[a-z]*/"
+        "regex": "/\\\\/(?![*+?])(?:[^\\\\r\\\\n\\\\[/\\\\\\\\]|\\\\\\\\.|\\\\[(?:[^\\\\r\\\\n\\\\]\\\\\\\\]|\\\\\\\\.)*\\\\])+\\\\/[a-z]*/",
+        "parenthesized": false
       },
       "fragment": false,
       "hidden": false
@@ -3751,7 +3760,8 @@ export const LangiumGrammarGrammar = (): Grammar => loadedLangiumGrammarGrammar 
       "name": "WS",
       "definition": {
         "$type": "RegexToken",
-        "regex": "/\\\\s+/"
+        "regex": "/\\\\s+/",
+        "parenthesized": false
       },
       "fragment": false
     },
@@ -3761,7 +3771,8 @@ export const LangiumGrammarGrammar = (): Grammar => loadedLangiumGrammarGrammar 
       "name": "ML_COMMENT",
       "definition": {
         "$type": "RegexToken",
-        "regex": "/\\\\/\\\\*[\\\\s\\\\S]*?\\\\*\\\\//"
+        "regex": "/\\\\/\\\\*[\\\\s\\\\S]*?\\\\*\\\\//",
+        "parenthesized": false
       },
       "fragment": false
     },
@@ -3771,7 +3782,8 @@ export const LangiumGrammarGrammar = (): Grammar => loadedLangiumGrammarGrammar 
       "name": "SL_COMMENT",
       "definition": {
         "$type": "RegexToken",
-        "regex": "/\\\\/\\\\/[^\\\\n\\\\r]*/"
+        "regex": "/\\\\/\\\\/[^\\\\n\\\\r]*/",
+        "parenthesized": false
       },
       "fragment": false
     }
@@ -5019,6 +5031,15 @@ export const LangiumGrammarGrammar = (): Grammar => loadedLangiumGrammarGrammar 
                 "stringType": "?="
               }
             ]
+          }
+        },
+        {
+          "$type": "TypeAttribute",
+          "name": "parenthesized",
+          "isOptional": true,
+          "type": {
+            "$type": "SimpleType",
+            "primitiveType": "boolean"
           }
         }
       ]
