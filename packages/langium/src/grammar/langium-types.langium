@@ -218,6 +218,7 @@ interface TerminalAlternatives extends TerminalElement {
 
 interface TerminalElement extends AbstractElement {
     lookahead?: "?!" | "?<!" | "?<=" | "?=";
+    parenthesized: boolean;
 }
 
 interface TerminalGroup extends TerminalElement {

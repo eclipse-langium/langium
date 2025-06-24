@@ -143,7 +143,7 @@ describe('TerminalRule to regex', () => {
     test('Should create combined regexes', async () => {
         const terminal = await getTerminal('terminal X: /x/ /y/;');
         const regex = terminalRegex(terminal);
-        expect(regex).toEqual(/(xy)/);
+        expect(regex).toEqual(/xy/);
     });
 
     test('Should create optional alternatives with keywords', async () => {
@@ -155,31 +155,31 @@ describe('TerminalRule to regex', () => {
     test('Should create positive lookahead group with single element', async () => {
         const terminal = await getTerminal("terminal X: 'a' (?='b');");
         const regex = terminalRegex(terminal);
-        expect(regex).toEqual(/(a(?=b))/);
+        expect(regex).toEqual(/a(?=b)/);
     });
 
     test('Should create positive lookahead group with multiple elements', async () => {
         const terminal = await getTerminal("terminal X: 'a' (?='b' 'c' 'd');");
         const regex = terminalRegex(terminal);
-        expect(regex).toEqual(/(a(?=bcd))/);
+        expect(regex).toEqual(/a(?=bcd)/);
     });
 
     test('Should create negative lookahead group', async () => {
         const terminal = await getTerminal("terminal X: 'a' (?!'b');");
         const regex = terminalRegex(terminal);
-        expect(regex).toEqual(/(a(?!b))/);
+        expect(regex).toEqual(/a(?!b)/);
     });
 
     test('Should create negative lookbehind group', async () => {
         const terminal = await getTerminal("terminal X: 'a' (?<!'b');");
         const regex = terminalRegex(terminal);
-        expect(regex).toEqual(/(a(?<!b))/);
+        expect(regex).toEqual(/a(?<!b)/);
     });
 
     test('Should create positive lookbehind group', async () => {
         const terminal = await getTerminal("terminal X: 'a' (?<='b');");
         const regex = terminalRegex(terminal);
-        expect(regex).toEqual(/(a(?<=b))/);
+        expect(regex).toEqual(/a(?<=b)/);
     });
 
     test('Should create terminal reference in terminal definition', async () => {
@@ -188,7 +188,7 @@ describe('TerminalRule to regex', () => {
         terminal Y: 'a';
         `, 'X');
         const regex = terminalRegex(terminal);
-        expect(regex).toEqual(/((a)(a))/);
+        expect(regex).toEqual(/(?:a)(?:a)/);
     });
 
     test('Should create negated token', async () => {
