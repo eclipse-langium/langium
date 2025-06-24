@@ -9,7 +9,7 @@ import type { LangiumCoreServices } from '../../index.js';
 import type { AstTypes, InterfaceType, PropertyType, TypeOption, UnionType } from './type-collector/types.js';
 import type { ValidationAstTypes } from './type-collector/all-types.js';
 import type { PlainAstTypes, PlainInterface, PlainUnion } from './type-collector/plain-types.js';
-import { findAstTypes, sortInterfacesTopologically } from './types-util.js';
+import { findAstTypes } from './types-util.js';
 import { isInterfaceType, isPrimitiveType, isPropertyUnion, isStringType, isUnionType, isValueType } from './type-collector/types.js';
 import { collectTypeResources } from './type-collector/all-types.js';
 import { plainToTypes } from './type-collector/plain-types.js';
@@ -44,7 +44,7 @@ export function collectValidationAst(grammars: Grammar | Grammar[], services?: L
 
 export function createAstTypes(first: PlainAstTypes, second?: PlainAstTypes): AstTypes {
     const astTypes: PlainAstTypes = {
-        interfaces: sortInterfacesTopologically(mergeAndRemoveDuplicates<PlainInterface>(...first.interfaces, ...second?.interfaces ?? [])),
+        interfaces: mergeAndRemoveDuplicates<PlainInterface>(...first.interfaces, ...second?.interfaces ?? []),
         unions: mergeAndRemoveDuplicates<PlainUnion>(...first.unions, ...second?.unions ?? []),
     };
 

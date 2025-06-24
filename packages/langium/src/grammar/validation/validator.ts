@@ -558,7 +558,7 @@ export class LangiumGrammarValidator {
                 return;
             }
 
-            if (ruleCall.lookahead) {
+            if ('lookahead' in ruleCall && ruleCall.lookahead) {
                 return;
             }
 
