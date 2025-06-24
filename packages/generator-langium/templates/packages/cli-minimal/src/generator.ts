@@ -1,5 +1,5 @@
 import type { <%= EntryName %> } from '<%= language-id %>-language';
-import { expandToNode, joinToNode, toString } from 'langium/generate';
+import { expandToNode, toString } from 'langium/generate';
 import * as fs from 'node:fs';
 import * as path from 'node:path';
 import { extractDestinationAndName } from './util.js';
@@ -9,9 +9,7 @@ export function generateJavaScript(model: <%= EntryName %>, filePath: string, de
     const generatedFilePath = `${path.join(data.destination, data.name)}.js`;
 
     const fileNode = expandToNode`
-        "use strict";
-
-        ${joinToNode(model.greetings, greeting => `console.log('Hello, ${greeting.person.ref?.name}!');`, { appendNewLineIfNotEmpty: true })}
+        // TODO : place here generated code
     `.appendNewLineIfNotEmpty();
 
     if (!fs.existsSync(data.destination)) {
