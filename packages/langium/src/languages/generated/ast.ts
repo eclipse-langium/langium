@@ -99,10 +99,6 @@ export function isAbstractType(item: unknown): item is AbstractType {
 
 export type Associativity = 'left' | 'right';
 
-export function isAssociativity(item: unknown): item is Associativity {
-    return item === 'left' || item === 'right';
-}
-
 export type Condition = BooleanLiteral | Conjunction | Disjunction | Negation | ParameterReference;
 
 export const Condition = {
@@ -115,15 +111,7 @@ export function isCondition(item: unknown): item is Condition {
 
 export type FeatureName = 'assoc' | 'current' | 'entry' | 'extends' | 'false' | 'fragment' | 'grammar' | 'hidden' | 'import' | 'infer' | 'infers' | 'infix' | 'interface' | 'left' | 'on' | 'returns' | 'right' | 'terminal' | 'true' | 'type' | 'with' | PrimitiveType | string;
 
-export function isFeatureName(item: unknown): item is FeatureName {
-    return isPrimitiveType(item) || item === 'infix' || item === 'on' || item === 'right' || item === 'left' || item === 'assoc' || item === 'current' || item === 'entry' || item === 'extends' || item === 'false' || item === 'fragment' || item === 'grammar' || item === 'hidden' || item === 'import' || item === 'interface' || item === 'returns' || item === 'terminal' || item === 'true' || item === 'type' || item === 'infer' || item === 'infers' || item === 'with' || (typeof item === 'string' && (/\^?[_a-zA-Z][\w_]*/.test(item)));
-}
-
 export type PrimitiveType = 'Date' | 'bigint' | 'boolean' | 'number' | 'string';
-
-export function isPrimitiveType(item: unknown): item is PrimitiveType {
-    return item === 'string' || item === 'number' || item === 'boolean' || item === 'Date' || item === 'bigint';
-}
 
 export type TypeDefinition = ArrayType | ReferenceType | SimpleType | UnionType;
 
@@ -146,15 +134,13 @@ export function isValueLiteral(item: unknown): item is ValueLiteral {
 }
 
 export interface AbstractElement extends langium.AstNode {
-    readonly $type: 'AbstractElement' | 'Action' | 'Alternatives' | 'Assignment' | 'CharacterRange' | 'CrossReference' | 'EndOfFile' | 'Group' | 'Keyword' | 'NegatedToken' | 'RegexToken' | 'RuleCall' | 'TerminalAlternatives' | 'TerminalGroup' | 'TerminalRuleCall' | 'UnorderedGroup' | 'UntilToken' | 'Wildcard';
+    readonly $type: 'AbstractElement' | 'Action' | 'Alternatives' | 'Assignment' | 'CharacterRange' | 'CrossReference' | 'EndOfFile' | 'Group' | 'Keyword' | 'NegatedToken' | 'RegexToken' | 'RuleCall' | 'TerminalAlternatives' | 'TerminalElement' | 'TerminalGroup' | 'TerminalRuleCall' | 'UnorderedGroup' | 'UntilToken' | 'Wildcard';
     cardinality?: '*' | '+' | '?';
-    lookahead?: '?!' | '?<!' | '?<=' | '?=';
 }
 
 export const AbstractElement = {
     $type: 'AbstractElement',
-    cardinality: 'cardinality',
-    lookahead: 'lookahead'
+    cardinality: 'cardinality'
 } as const;
 
 export function isAbstractElement(item: unknown): item is AbstractElement {
@@ -541,7 +527,7 @@ export function isStringLiteral(item: unknown): item is StringLiteral {
 export interface TerminalRule extends langium.AstNode {
     readonly $container: Grammar;
     readonly $type: 'TerminalRule';
-    definition: AbstractElement;
+    definition: TerminalElement;
     fragment: boolean;
     hidden: boolean;
     name: string;
@@ -627,7 +613,6 @@ export const Action = {
     cardinality: 'cardinality',
     feature: 'feature',
     inferredType: 'inferredType',
-    lookahead: 'lookahead',
     operator: 'operator',
     type: 'type'
 } as const;
@@ -644,8 +629,7 @@ export interface Alternatives extends AbstractElement {
 export const Alternatives = {
     $type: 'Alternatives',
     cardinality: 'cardinality',
-    elements: 'elements',
-    lookahead: 'lookahead'
+    elements: 'elements'
 } as const;
 
 export function isAlternatives(item: unknown): item is Alternatives {
@@ -664,7 +648,6 @@ export const Assignment = {
     $type: 'Assignment',
     cardinality: 'cardinality',
     feature: 'feature',
-    lookahead: 'lookahead',
     operator: 'operator',
     predicate: 'predicate',
     terminal: 'terminal'
@@ -672,24 +655,6 @@ export const Assignment = {
 
 export function isAssignment(item: unknown): item is Assignment {
     return reflection.isInstance(item, Assignment.$type);
-}
-
-export interface CharacterRange extends AbstractElement {
-    readonly $type: 'CharacterRange';
-    left: Keyword;
-    right?: Keyword;
-}
-
-export const CharacterRange = {
-    $type: 'CharacterRange',
-    cardinality: 'cardinality',
-    left: 'left',
-    lookahead: 'lookahead',
-    right: 'right'
-} as const;
-
-export function isCharacterRange(item: unknown): item is CharacterRange {
-    return reflection.isInstance(item, CharacterRange.$type);
 }
 
 export interface CrossReference extends AbstractElement {
@@ -703,7 +668,6 @@ export const CrossReference = {
     $type: 'CrossReference',
     cardinality: 'cardinality',
     deprecatedSyntax: 'deprecatedSyntax',
-    lookahead: 'lookahead',
     terminal: 'terminal',
     type: 'type'
 } as const;
@@ -718,8 +682,7 @@ export interface EndOfFile extends AbstractElement {
 
 export const EndOfFile = {
     $type: 'EndOfFile',
-    cardinality: 'cardinality',
-    lookahead: 'lookahead'
+    cardinality: 'cardinality'
 } as const;
 
 export function isEndOfFile(item: unknown): item is EndOfFile {
@@ -738,7 +701,6 @@ export const Group = {
     cardinality: 'cardinality',
     elements: 'elements',
     guardCondition: 'guardCondition',
-    lookahead: 'lookahead',
     predicate: 'predicate'
 } as const;
 
@@ -756,45 +718,12 @@ export interface Keyword extends AbstractElement {
 export const Keyword = {
     $type: 'Keyword',
     cardinality: 'cardinality',
-    lookahead: 'lookahead',
     predicate: 'predicate',
     value: 'value'
 } as const;
 
 export function isKeyword(item: unknown): item is Keyword {
     return reflection.isInstance(item, Keyword.$type);
-}
-
-export interface NegatedToken extends AbstractElement {
-    readonly $type: 'NegatedToken';
-    terminal: AbstractElement;
-}
-
-export const NegatedToken = {
-    $type: 'NegatedToken',
-    cardinality: 'cardinality',
-    lookahead: 'lookahead',
-    terminal: 'terminal'
-} as const;
-
-export function isNegatedToken(item: unknown): item is NegatedToken {
-    return reflection.isInstance(item, NegatedToken.$type);
-}
-
-export interface RegexToken extends AbstractElement {
-    readonly $type: 'RegexToken';
-    regex: string;
-}
-
-export const RegexToken = {
-    $type: 'RegexToken',
-    cardinality: 'cardinality',
-    lookahead: 'lookahead',
-    regex: 'regex'
-} as const;
-
-export function isRegexToken(item: unknown): item is RegexToken {
-    return reflection.isInstance(item, RegexToken.$type);
 }
 
 export interface RuleCall extends AbstractElement {
@@ -809,7 +738,6 @@ export const RuleCall = {
     $type: 'RuleCall',
     arguments: 'arguments',
     cardinality: 'cardinality',
-    lookahead: 'lookahead',
     predicate: 'predicate',
     rule: 'rule'
 } as const;
@@ -818,7 +746,77 @@ export function isRuleCall(item: unknown): item is RuleCall {
     return reflection.isInstance(item, RuleCall.$type);
 }
 
-export interface TerminalAlternatives extends AbstractElement {
+export interface TerminalElement extends AbstractElement {
+    readonly $type: 'CharacterRange' | 'NegatedToken' | 'RegexToken' | 'TerminalAlternatives' | 'TerminalElement' | 'TerminalGroup' | 'TerminalRuleCall' | 'UnorderedGroup' | 'UntilToken' | 'Wildcard';
+    lookahead?: '?!' | '?<!' | '?<=' | '?=';
+    parenthesized: boolean;
+}
+
+export const TerminalElement = {
+    $type: 'TerminalElement',
+    cardinality: 'cardinality',
+    lookahead: 'lookahead',
+    parenthesized: 'parenthesized'
+} as const;
+
+export function isTerminalElement(item: unknown): item is TerminalElement {
+    return reflection.isInstance(item, TerminalElement.$type);
+}
+
+export interface CharacterRange extends TerminalElement {
+    readonly $type: 'CharacterRange';
+    left: Keyword;
+    right?: Keyword;
+}
+
+export const CharacterRange = {
+    $type: 'CharacterRange',
+    cardinality: 'cardinality',
+    left: 'left',
+    lookahead: 'lookahead',
+    parenthesized: 'parenthesized',
+    right: 'right'
+} as const;
+
+export function isCharacterRange(item: unknown): item is CharacterRange {
+    return reflection.isInstance(item, CharacterRange.$type);
+}
+
+export interface NegatedToken extends TerminalElement {
+    readonly $type: 'NegatedToken';
+    terminal: AbstractElement;
+}
+
+export const NegatedToken = {
+    $type: 'NegatedToken',
+    cardinality: 'cardinality',
+    lookahead: 'lookahead',
+    parenthesized: 'parenthesized',
+    terminal: 'terminal'
+} as const;
+
+export function isNegatedToken(item: unknown): item is NegatedToken {
+    return reflection.isInstance(item, NegatedToken.$type);
+}
+
+export interface RegexToken extends TerminalElement {
+    readonly $type: 'RegexToken';
+    regex: string;
+}
+
+export const RegexToken = {
+    $type: 'RegexToken',
+    cardinality: 'cardinality',
+    lookahead: 'lookahead',
+    parenthesized: 'parenthesized',
+    regex: 'regex'
+} as const;
+
+export function isRegexToken(item: unknown): item is RegexToken {
+    return reflection.isInstance(item, RegexToken.$type);
+}
+
+export interface TerminalAlternatives extends TerminalElement {
     readonly $type: 'TerminalAlternatives';
     elements: Array<AbstractElement>;
 }
@@ -827,14 +825,15 @@ export const TerminalAlternatives = {
     $type: 'TerminalAlternatives',
     cardinality: 'cardinality',
     elements: 'elements',
-    lookahead: 'lookahead'
+    lookahead: 'lookahead',
+    parenthesized: 'parenthesized'
 } as const;
 
 export function isTerminalAlternatives(item: unknown): item is TerminalAlternatives {
     return reflection.isInstance(item, TerminalAlternatives.$type);
 }
 
-export interface TerminalGroup extends AbstractElement {
+export interface TerminalGroup extends TerminalElement {
     readonly $type: 'TerminalGroup';
     elements: Array<AbstractElement>;
 }
@@ -843,14 +842,15 @@ export const TerminalGroup = {
     $type: 'TerminalGroup',
     cardinality: 'cardinality',
     elements: 'elements',
-    lookahead: 'lookahead'
+    lookahead: 'lookahead',
+    parenthesized: 'parenthesized'
 } as const;
 
 export function isTerminalGroup(item: unknown): item is TerminalGroup {
     return reflection.isInstance(item, TerminalGroup.$type);
 }
 
-export interface TerminalRuleCall extends AbstractElement {
+export interface TerminalRuleCall extends TerminalElement {
     readonly $type: 'TerminalRuleCall';
     rule: langium.Reference<TerminalRule>;
 }
@@ -859,6 +859,7 @@ export const TerminalRuleCall = {
     $type: 'TerminalRuleCall',
     cardinality: 'cardinality',
     lookahead: 'lookahead',
+    parenthesized: 'parenthesized',
     rule: 'rule'
 } as const;
 
@@ -866,7 +867,7 @@ export function isTerminalRuleCall(item: unknown): item is TerminalRuleCall {
     return reflection.isInstance(item, TerminalRuleCall.$type);
 }
 
-export interface UnorderedGroup extends AbstractElement {
+export interface UnorderedGroup extends TerminalElement {
     readonly $type: 'UnorderedGroup';
     elements: Array<AbstractElement>;
 }
@@ -875,14 +876,15 @@ export const UnorderedGroup = {
     $type: 'UnorderedGroup',
     cardinality: 'cardinality',
     elements: 'elements',
-    lookahead: 'lookahead'
+    lookahead: 'lookahead',
+    parenthesized: 'parenthesized'
 } as const;
 
 export function isUnorderedGroup(item: unknown): item is UnorderedGroup {
     return reflection.isInstance(item, UnorderedGroup.$type);
 }
 
-export interface UntilToken extends AbstractElement {
+export interface UntilToken extends TerminalElement {
     readonly $type: 'UntilToken';
     terminal: AbstractElement;
 }
@@ -891,6 +893,7 @@ export const UntilToken = {
     $type: 'UntilToken',
     cardinality: 'cardinality',
     lookahead: 'lookahead',
+    parenthesized: 'parenthesized',
     terminal: 'terminal'
 } as const;
 
@@ -898,14 +901,15 @@ export function isUntilToken(item: unknown): item is UntilToken {
     return reflection.isInstance(item, UntilToken.$type);
 }
 
-export interface Wildcard extends AbstractElement {
+export interface Wildcard extends TerminalElement {
     readonly $type: 'Wildcard';
 }
 
 export const Wildcard = {
     $type: 'Wildcard',
     cardinality: 'cardinality',
-    lookahead: 'lookahead'
+    lookahead: 'lookahead',
+    parenthesized: 'parenthesized'
 } as const;
 
 export function isWildcard(item: unknown): item is Wildcard {
@@ -951,6 +955,7 @@ export type LangiumGrammarAstType = {
     SimpleType: SimpleType
     StringLiteral: StringLiteral
     TerminalAlternatives: TerminalAlternatives
+    TerminalElement: TerminalElement
     TerminalGroup: TerminalGroup
     TerminalRule: TerminalRule
     TerminalRuleCall: TerminalRuleCall
@@ -971,9 +976,6 @@ export class LangiumGrammarAstReflection extends langium.AbstractAstReflection {
             properties: {
                 cardinality: {
                     name: 'cardinality'
-                },
-                lookahead: {
-                    name: 'lookahead'
                 }
             },
             superTypes: []
@@ -989,9 +991,6 @@ export class LangiumGrammarAstReflection extends langium.AbstractAstReflection {
                 },
                 inferredType: {
                     name: 'inferredType'
-                },
-                lookahead: {
-                    name: 'lookahead'
                 },
                 operator: {
                     name: 'operator'
@@ -1012,9 +1011,6 @@ export class LangiumGrammarAstReflection extends langium.AbstractAstReflection {
                 elements: {
                     name: 'elements',
                     defaultValue: []
-                },
-                lookahead: {
-                    name: 'lookahead'
                 }
             },
             superTypes: ['AbstractElement']
@@ -1046,9 +1042,6 @@ export class LangiumGrammarAstReflection extends langium.AbstractAstReflection {
                 },
                 feature: {
                     name: 'feature'
-                },
-                lookahead: {
-                    name: 'lookahead'
                 },
                 operator: {
                     name: 'operator'
@@ -1084,11 +1077,15 @@ export class LangiumGrammarAstReflection extends langium.AbstractAstReflection {
                 lookahead: {
                     name: 'lookahead'
                 },
+                parenthesized: {
+                    name: 'parenthesized',
+                    defaultValue: false
+                },
                 right: {
                     name: 'right'
                 }
             },
-            superTypes: ['AbstractElement']
+            superTypes: ['TerminalElement']
         },
         Conjunction: {
             name: Conjunction.$type,
@@ -1111,9 +1108,6 @@ export class LangiumGrammarAstReflection extends langium.AbstractAstReflection {
                 deprecatedSyntax: {
                     name: 'deprecatedSyntax',
                     defaultValue: false
-                },
-                lookahead: {
-                    name: 'lookahead'
                 },
                 terminal: {
                     name: 'terminal'
@@ -1142,9 +1136,6 @@ export class LangiumGrammarAstReflection extends langium.AbstractAstReflection {
             properties: {
                 cardinality: {
                     name: 'cardinality'
-                },
-                lookahead: {
-                    name: 'lookahead'
                 }
             },
             superTypes: ['AbstractElement']
@@ -1199,9 +1190,6 @@ export class LangiumGrammarAstReflection extends langium.AbstractAstReflection {
                 },
                 guardCondition: {
                     name: 'guardCondition'
-                },
-                lookahead: {
-                    name: 'lookahead'
                 },
                 predicate: {
                     name: 'predicate'
@@ -1284,9 +1272,6 @@ export class LangiumGrammarAstReflection extends langium.AbstractAstReflection {
                 cardinality: {
                     name: 'cardinality'
                 },
-                lookahead: {
-                    name: 'lookahead'
-                },
                 predicate: {
                     name: 'predicate'
                 },
@@ -1322,11 +1307,15 @@ export class LangiumGrammarAstReflection extends langium.AbstractAstReflection {
                 lookahead: {
                     name: 'lookahead'
                 },
+                parenthesized: {
+                    name: 'parenthesized',
+                    defaultValue: false
+                },
                 terminal: {
                     name: 'terminal'
                 }
             },
-            superTypes: ['AbstractElement']
+            superTypes: ['TerminalElement']
         },
         Negation: {
             name: Negation.$type,
@@ -1417,11 +1406,15 @@ export class LangiumGrammarAstReflection extends langium.AbstractAstReflection {
                 lookahead: {
                     name: 'lookahead'
                 },
+                parenthesized: {
+                    name: 'parenthesized',
+                    defaultValue: false
+                },
                 regex: {
                     name: 'regex'
                 }
             },
-            superTypes: ['AbstractElement']
+            superTypes: ['TerminalElement']
         },
         ReturnType: {
             name: ReturnType.$type,
@@ -1441,9 +1434,6 @@ export class LangiumGrammarAstReflection extends langium.AbstractAstReflection {
                 },
                 cardinality: {
                     name: 'cardinality'
-                },
-                lookahead: {
-                    name: 'lookahead'
                 },
                 predicate: {
                     name: 'predicate'
@@ -1492,6 +1482,26 @@ export class LangiumGrammarAstReflection extends langium.AbstractAstReflection {
                 },
                 lookahead: {
                     name: 'lookahead'
+                },
+                parenthesized: {
+                    name: 'parenthesized',
+                    defaultValue: false
+                }
+            },
+            superTypes: ['TerminalElement']
+        },
+        TerminalElement: {
+            name: TerminalElement.$type,
+            properties: {
+                cardinality: {
+                    name: 'cardinality'
+                },
+                lookahead: {
+                    name: 'lookahead'
+                },
+                parenthesized: {
+                    name: 'parenthesized',
+                    defaultValue: false
                 }
             },
             superTypes: ['AbstractElement']
@@ -1508,9 +1518,13 @@ export class LangiumGrammarAstReflection extends langium.AbstractAstReflection {
                 },
                 lookahead: {
                     name: 'lookahead'
+                },
+                parenthesized: {
+                    name: 'parenthesized',
+                    defaultValue: false
                 }
             },
-            superTypes: ['AbstractElement']
+            superTypes: ['TerminalElement']
         },
         TerminalRule: {
             name: TerminalRule.$type,
@@ -1544,12 +1558,16 @@ export class LangiumGrammarAstReflection extends langium.AbstractAstReflection {
                 lookahead: {
                     name: 'lookahead'
                 },
+                parenthesized: {
+                    name: 'parenthesized',
+                    defaultValue: false
+                },
                 rule: {
                     name: 'rule',
                     referenceType: 'TerminalRule'
                 }
             },
-            superTypes: ['AbstractElement']
+            superTypes: ['TerminalElement']
         },
         Type: {
             name: Type.$type,
@@ -1604,9 +1622,13 @@ export class LangiumGrammarAstReflection extends langium.AbstractAstReflection {
                 },
                 lookahead: {
                     name: 'lookahead'
+                },
+                parenthesized: {
+                    name: 'parenthesized',
+                    defaultValue: false
                 }
             },
-            superTypes: ['AbstractElement']
+            superTypes: ['TerminalElement']
         },
         UntilToken: {
             name: UntilToken.$type,
@@ -1617,11 +1639,15 @@ export class LangiumGrammarAstReflection extends langium.AbstractAstReflection {
                 lookahead: {
                     name: 'lookahead'
                 },
+                parenthesized: {
+                    name: 'parenthesized',
+                    defaultValue: false
+                },
                 terminal: {
                     name: 'terminal'
                 }
             },
-            superTypes: ['AbstractElement']
+            superTypes: ['TerminalElement']
         },
         Wildcard: {
             name: Wildcard.$type,
@@ -1631,9 +1657,13 @@ export class LangiumGrammarAstReflection extends langium.AbstractAstReflection {
                 },
                 lookahead: {
                     name: 'lookahead'
+                },
+                parenthesized: {
+                    name: 'parenthesized',
+                    defaultValue: false
                 }
             },
-            superTypes: ['AbstractElement']
+            superTypes: ['TerminalElement']
         }
     } as const satisfies langium.AstMetaData
 }

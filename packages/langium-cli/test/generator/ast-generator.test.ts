@@ -354,7 +354,7 @@ describe('Ast generator', () => {
     `, expandToString`
         export const TestTerminals = {
             WS: /\\s+/,
-            NUMBER: /([0-9])+/,
+            NUMBER: /(?:[0-9])+/,
         };
     `));
 

@@ -11,11 +11,15 @@ export const LangiumGrammarGrammar = (): Grammar => loadedLangiumGrammarGrammar 
   "$type": "Grammar",
   "isDeclared": true,
   "name": "LangiumGrammar",
+  "imports": [],
   "rules": [
     {
       "$type": "ParserRule",
       "entry": true,
       "name": "Grammar",
+      "returnType": {
+        "$ref": "#/interfaces@6"
+      },
       "definition": {
         "$type": "Group",
         "elements": [
@@ -109,6 +113,9 @@ export const LangiumGrammarGrammar = (): Grammar => loadedLangiumGrammarGrammar 
     {
       "$type": "ParserRule",
       "name": "Interface",
+      "returnType": {
+        "$ref": "#/interfaces@12"
+      },
       "definition": {
         "$type": "Group",
         "elements": [
@@ -142,7 +149,7 @@ export const LangiumGrammarGrammar = (): Grammar => loadedLangiumGrammarGrammar 
                 "terminal": {
                   "$type": "CrossReference",
                   "type": {
-                    "$ref": "#/types@0"
+                    "$ref": "#/types@1"
                   },
                   "terminal": {
                     "$type": "RuleCall",
@@ -168,7 +175,7 @@ export const LangiumGrammarGrammar = (): Grammar => loadedLangiumGrammarGrammar 
                     "terminal": {
                       "$type": "CrossReference",
                       "type": {
-                        "$ref": "#/types@0"
+                        "$ref": "#/types@1"
                       },
                       "terminal": {
                         "$type": "RuleCall",
@@ -221,6 +228,9 @@ export const LangiumGrammarGrammar = (): Grammar => loadedLangiumGrammarGrammar 
     {
       "$type": "ParserRule",
       "name": "TypeAttribute",
+      "returnType": {
+        "$ref": "#/interfaces@25"
+      },
       "definition": {
         "$type": "Group",
         "elements": [
@@ -298,6 +308,9 @@ export const LangiumGrammarGrammar = (): Grammar => loadedLangiumGrammarGrammar 
     {
       "$type": "ParserRule",
       "name": "ValueLiteral",
+      "returnType": {
+        "$ref": "#/types@7"
+      },
       "definition": {
         "$type": "Alternatives",
         "elements": [
@@ -338,6 +351,9 @@ export const LangiumGrammarGrammar = (): Grammar => loadedLangiumGrammarGrammar 
     {
       "$type": "ParserRule",
       "name": "StringLiteral",
+      "returnType": {
+        "$ref": "#/interfaces@22"
+      },
       "definition": {
         "$type": "Assignment",
         "feature": "value",
@@ -357,6 +373,9 @@ export const LangiumGrammarGrammar = (): Grammar => loadedLangiumGrammarGrammar 
     {
       "$type": "ParserRule",
       "name": "NumberLiteral",
+      "returnType": {
+        "$ref": "#/interfaces@15"
+      },
       "definition": {
         "$type": "Assignment",
         "feature": "value",
@@ -376,6 +395,9 @@ export const LangiumGrammarGrammar = (): Grammar => loadedLangiumGrammarGrammar 
     {
       "$type": "ParserRule",
       "name": "BooleanLiteral",
+      "returnType": {
+        "$ref": "#/interfaces@3"
+      },
       "definition": {
         "$type": "Alternatives",
         "elements": [
@@ -401,6 +423,9 @@ export const LangiumGrammarGrammar = (): Grammar => loadedLangiumGrammarGrammar 
     {
       "$type": "ParserRule",
       "name": "ArrayLiteral",
+      "returnType": {
+        "$ref": "#/interfaces@1"
+      },
       "definition": {
         "$type": "Group",
         "elements": [
@@ -461,6 +486,9 @@ export const LangiumGrammarGrammar = (): Grammar => loadedLangiumGrammarGrammar 
     {
       "$type": "ParserRule",
       "name": "TypeDefinition",
+      "returnType": {
+        "$ref": "#/types@6"
+      },
       "definition": {
         "$type": "RuleCall",
         "rule": {
@@ -475,9 +503,8 @@ export const LangiumGrammarGrammar = (): Grammar => loadedLangiumGrammarGrammar 
     {
       "$type": "ParserRule",
       "name": "UnionType",
-      "inferredType": {
-        "$type": "InferredType",
-        "name": "TypeDefinition"
+      "returnType": {
+        "$ref": "#/types@6"
       },
       "definition": {
         "$type": "Group",
@@ -494,9 +521,8 @@ export const LangiumGrammarGrammar = (): Grammar => loadedLangiumGrammarGrammar 
             "elements": [
               {
                 "$type": "Action",
-                "inferredType": {
-                  "$type": "InferredType",
-                  "name": "UnionType"
+                "type": {
+                  "$ref": "#/interfaces@26"
                 },
                 "feature": "types",
                 "operator": "+="
@@ -535,9 +561,8 @@ export const LangiumGrammarGrammar = (): Grammar => loadedLangiumGrammarGrammar 
     {
       "$type": "ParserRule",
       "name": "ArrayType",
-      "inferredType": {
-        "$type": "InferredType",
-        "name": "TypeDefinition"
+      "returnType": {
+        "$ref": "#/types@6"
       },
       "definition": {
         "$type": "Group",
@@ -554,9 +579,8 @@ export const LangiumGrammarGrammar = (): Grammar => loadedLangiumGrammarGrammar 
             "elements": [
               {
                 "$type": "Action",
-                "inferredType": {
-                  "$type": "InferredType",
-                  "name": "ArrayType"
+                "type": {
+                  "$ref": "#/interfaces@2"
                 },
                 "feature": "elementType",
                 "operator": "="
@@ -581,9 +605,8 @@ export const LangiumGrammarGrammar = (): Grammar => loadedLangiumGrammarGrammar 
     {
       "$type": "ParserRule",
       "name": "ReferenceType",
-      "inferredType": {
-        "$type": "InferredType",
-        "name": "TypeDefinition"
+      "returnType": {
+        "$ref": "#/types@6"
       },
       "definition": {
         "$type": "Alternatives",
@@ -600,9 +623,8 @@ export const LangiumGrammarGrammar = (): Grammar => loadedLangiumGrammarGrammar 
             "elements": [
               {
                 "$type": "Action",
-                "inferredType": {
-                  "$type": "InferredType",
-                  "name": "ReferenceType"
+                "type": {
+                  "$ref": "#/interfaces@19"
                 }
               },
               {
@@ -632,9 +654,8 @@ export const LangiumGrammarGrammar = (): Grammar => loadedLangiumGrammarGrammar 
     {
       "$type": "ParserRule",
       "name": "SimpleType",
-      "inferredType": {
-        "$type": "InferredType",
-        "name": "TypeDefinition"
+      "returnType": {
+        "$ref": "#/types@6"
       },
       "definition": {
         "$type": "Alternatives",
@@ -664,9 +685,8 @@ export const LangiumGrammarGrammar = (): Grammar => loadedLangiumGrammarGrammar 
             "elements": [
               {
                 "$type": "Action",
-                "inferredType": {
-                  "$type": "InferredType",
-                  "name": "SimpleType"
+                "type": {
+                  "$ref": "#/interfaces@21"
                 }
               },
               {
@@ -679,7 +699,7 @@ export const LangiumGrammarGrammar = (): Grammar => loadedLangiumGrammarGrammar 
                     "terminal": {
                       "$type": "CrossReference",
                       "type": {
-                        "$ref": "#/types@0"
+                        "$ref": "#/types@1"
                       },
                       "terminal": {
                         "$type": "RuleCall",
@@ -761,6 +781,9 @@ export const LangiumGrammarGrammar = (): Grammar => loadedLangiumGrammarGrammar 
     {
       "$type": "ParserRule",
       "name": "Type",
+      "returnType": {
+        "$ref": "#/interfaces@24"
+      },
       "definition": {
         "$type": "Group",
         "elements": [
@@ -810,6 +833,9 @@ export const LangiumGrammarGrammar = (): Grammar => loadedLangiumGrammarGrammar 
     {
       "$type": "ParserRule",
       "name": "AbstractRule",
+      "returnType": {
+        "$ref": "#/types@0"
+      },
       "definition": {
         "$type": "Alternatives",
         "elements": [
@@ -843,6 +869,9 @@ export const LangiumGrammarGrammar = (): Grammar => loadedLangiumGrammarGrammar 
     {
       "$type": "ParserRule",
       "name": "GrammarImport",
+      "returnType": {
+        "$ref": "#/interfaces@7"
+      },
       "definition": {
         "$type": "Group",
         "elements": [
@@ -876,6 +905,9 @@ export const LangiumGrammarGrammar = (): Grammar => loadedLangiumGrammarGrammar 
     {
       "$type": "ParserRule",
       "name": "ParserRule",
+      "returnType": {
+        "$ref": "#/interfaces@18"
+      },
       "definition": {
         "$type": "Group",
         "elements": [
@@ -930,7 +962,7 @@ export const LangiumGrammarGrammar = (): Grammar => loadedLangiumGrammarGrammar 
                         "terminal": {
                           "$type": "CrossReference",
                           "type": {
-                            "$ref": "#/types@0"
+                            "$ref": "#/types@1"
                           },
                           "terminal": {
                             "$type": "RuleCall",
@@ -1011,6 +1043,9 @@ export const LangiumGrammarGrammar = (): Grammar => loadedLangiumGrammarGrammar 
     {
       "$type": "ParserRule",
       "name": "InfixRule",
+      "returnType": {
+        "$ref": "#/interfaces@9"
+      },
       "definition": {
         "$type": "Group",
         "elements": [
@@ -1070,6 +1105,9 @@ export const LangiumGrammarGrammar = (): Grammar => loadedLangiumGrammarGrammar 
     {
       "$type": "ParserRule",
       "name": "InfixRuleOperators",
+      "returnType": {
+        "$ref": "#/interfaces@11"
+      },
       "definition": {
         "$type": "Group",
         "elements": [
@@ -1116,6 +1154,9 @@ export const LangiumGrammarGrammar = (): Grammar => loadedLangiumGrammarGrammar 
     {
       "$type": "ParserRule",
       "name": "InfixRuleOperatorList",
+      "returnType": {
+        "$ref": "#/interfaces@10"
+      },
       "definition": {
         "$type": "Group",
         "elements": [
@@ -1211,6 +1252,9 @@ export const LangiumGrammarGrammar = (): Grammar => loadedLangiumGrammarGrammar 
           "name": "imperative"
         }
       ],
+      "returnType": {
+        "$ref": "#/interfaces@8"
+      },
       "definition": {
         "$type": "Group",
         "elements": [
@@ -1350,6 +1394,9 @@ export const LangiumGrammarGrammar = (): Grammar => loadedLangiumGrammarGrammar 
     {
       "$type": "ParserRule",
       "name": "Parameter",
+      "returnType": {
+        "$ref": "#/interfaces@16"
+      },
       "definition": {
         "$type": "Assignment",
         "feature": "name",
@@ -1369,9 +1416,8 @@ export const LangiumGrammarGrammar = (): Grammar => loadedLangiumGrammarGrammar 
     {
       "$type": "ParserRule",
       "name": "Alternatives",
-      "inferredType": {
-        "$type": "InferredType",
-        "name": "AbstractElement"
+      "returnType": {
+        "$ref": "#/interfaces@0"
       },
       "definition": {
         "$type": "Group",
@@ -1388,9 +1434,8 @@ export const LangiumGrammarGrammar = (): Grammar => loadedLangiumGrammarGrammar 
             "elements": [
               {
                 "$type": "Action",
-                "inferredType": {
-                  "$type": "InferredType",
-                  "name": "Alternatives"
+                "type": {
+                  "$ref": "#/interfaces@28"
                 },
                 "feature": "elements",
                 "operator": "+="
@@ -1429,9 +1474,8 @@ export const LangiumGrammarGrammar = (): Grammar => loadedLangiumGrammarGrammar 
     {
       "$type": "ParserRule",
       "name": "ConditionalBranch",
-      "inferredType": {
-        "$type": "InferredType",
-        "name": "AbstractElement"
+      "returnType": {
+        "$ref": "#/interfaces@0"
       },
       "definition": {
         "$type": "Alternatives",
@@ -1448,9 +1492,8 @@ export const LangiumGrammarGrammar = (): Grammar => loadedLangiumGrammarGrammar 
             "elements": [
               {
                 "$type": "Action",
-                "inferredType": {
-                  "$type": "InferredType",
-                  "name": "Group"
+                "type": {
+                  "$ref": "#/interfaces@33"
                 }
               },
               {
@@ -1497,9 +1540,8 @@ export const LangiumGrammarGrammar = (): Grammar => loadedLangiumGrammarGrammar 
     {
       "$type": "ParserRule",
       "name": "UnorderedGroup",
-      "inferredType": {
-        "$type": "InferredType",
-        "name": "AbstractElement"
+      "returnType": {
+        "$ref": "#/interfaces@0"
       },
       "definition": {
         "$type": "Group",
@@ -1516,9 +1558,8 @@ export const LangiumGrammarGrammar = (): Grammar => loadedLangiumGrammarGrammar 
             "elements": [
               {
                 "$type": "Action",
-                "inferredType": {
-                  "$type": "InferredType",
-                  "name": "UnorderedGroup"
+                "type": {
+                  "$ref": "#/interfaces@42"
                 },
                 "feature": "elements",
                 "operator": "+="
@@ -1557,9 +1598,8 @@ export const LangiumGrammarGrammar = (): Grammar => loadedLangiumGrammarGrammar 
     {
       "$type": "ParserRule",
       "name": "Group",
-      "inferredType": {
-        "$type": "InferredType",
-        "name": "AbstractElement"
+      "returnType": {
+        "$ref": "#/interfaces@0"
       },
       "definition": {
         "$type": "Group",
@@ -1576,9 +1616,8 @@ export const LangiumGrammarGrammar = (): Grammar => loadedLangiumGrammarGrammar 
             "elements": [
               {
                 "$type": "Action",
-                "inferredType": {
-                  "$type": "InferredType",
-                  "name": "Group"
+                "type": {
+                  "$ref": "#/interfaces@33"
                 },
                 "feature": "elements",
                 "operator": "+="
@@ -1608,9 +1647,8 @@ export const LangiumGrammarGrammar = (): Grammar => loadedLangiumGrammarGrammar 
     {
       "$type": "ParserRule",
       "name": "AbstractToken",
-      "inferredType": {
-        "$type": "InferredType",
-        "name": "AbstractElement"
+      "returnType": {
+        "$ref": "#/interfaces@0"
       },
       "definition": {
         "$type": "Alternatives",
@@ -1638,9 +1676,8 @@ export const LangiumGrammarGrammar = (): Grammar => loadedLangiumGrammarGrammar 
     {
       "$type": "ParserRule",
       "name": "AbstractTokenWithCardinality",
-      "inferredType": {
-        "$type": "InferredType",
-        "name": "AbstractElement"
+      "returnType": {
+        "$ref": "#/interfaces@0"
       },
       "definition": {
         "$type": "Group",
@@ -1696,18 +1733,16 @@ export const LangiumGrammarGrammar = (): Grammar => loadedLangiumGrammarGrammar 
     {
       "$type": "ParserRule",
       "name": "Action",
-      "inferredType": {
-        "$type": "InferredType",
-        "name": "AbstractElement"
+      "returnType": {
+        "$ref": "#/interfaces@0"
       },
       "definition": {
         "$type": "Group",
         "elements": [
           {
             "$type": "Action",
-            "inferredType": {
-              "$type": "InferredType",
-              "name": "Action"
+            "type": {
+              "$ref": "#/interfaces@27"
             }
           },
           {
@@ -1724,7 +1759,7 @@ export const LangiumGrammarGrammar = (): Grammar => loadedLangiumGrammarGrammar 
                 "terminal": {
                   "$type": "CrossReference",
                   "type": {
-                    "$ref": "#/types@0"
+                    "$ref": "#/types@1"
                   },
                   "terminal": {
                     "$type": "RuleCall",
@@ -1816,9 +1851,8 @@ export const LangiumGrammarGrammar = (): Grammar => loadedLangiumGrammarGrammar 
     {
       "$type": "ParserRule",
       "name": "AbstractTerminal",
-      "inferredType": {
-        "$type": "InferredType",
-        "name": "AbstractElement"
+      "returnType": {
+        "$ref": "#/interfaces@0"
       },
       "definition": {
         "$type": "Alternatives",
@@ -1881,14 +1915,16 @@ export const LangiumGrammarGrammar = (): Grammar => loadedLangiumGrammarGrammar 
     {
       "$type": "ParserRule",
       "name": "EndOfFile",
+      "returnType": {
+        "$ref": "#/interfaces@32"
+      },
       "definition": {
         "$type": "Group",
         "elements": [
           {
             "$type": "Action",
-            "inferredType": {
-              "$type": "InferredType",
-              "name": "EndOfFile"
+            "type": {
+              "$ref": "#/interfaces@32"
             }
           },
           {
@@ -1904,6 +1940,9 @@ export const LangiumGrammarGrammar = (): Grammar => loadedLangiumGrammarGrammar 
     {
       "$type": "ParserRule",
       "name": "Keyword",
+      "returnType": {
+        "$ref": "#/interfaces@34"
+      },
       "definition": {
         "$type": "Assignment",
         "feature": "value",
@@ -1923,6 +1962,9 @@ export const LangiumGrammarGrammar = (): Grammar => loadedLangiumGrammarGrammar 
     {
       "$type": "ParserRule",
       "name": "RuleCall",
+      "returnType": {
+        "$ref": "#/interfaces@37"
+      },
       "definition": {
         "$type": "Group",
         "elements": [
@@ -1933,7 +1975,7 @@ export const LangiumGrammarGrammar = (): Grammar => loadedLangiumGrammarGrammar 
             "terminal": {
               "$type": "CrossReference",
               "type": {
-                "$ref": "#/rules@15"
+                "$ref": "#/types@0"
               },
               "terminal": {
                 "$type": "RuleCall",
@@ -2002,6 +2044,9 @@ export const LangiumGrammarGrammar = (): Grammar => loadedLangiumGrammarGrammar 
     {
       "$type": "ParserRule",
       "name": "NamedArgument",
+      "returnType": {
+        "$ref": "#/interfaces@13"
+      },
       "definition": {
         "$type": "Group",
         "elements": [
@@ -2015,7 +2060,7 @@ export const LangiumGrammarGrammar = (): Grammar => loadedLangiumGrammarGrammar 
                 "terminal": {
                   "$type": "CrossReference",
                   "type": {
-                    "$ref": "#/rules@24"
+                    "$ref": "#/interfaces@16"
                   },
                   "terminal": {
                     "$type": "RuleCall",
@@ -2060,9 +2105,8 @@ export const LangiumGrammarGrammar = (): Grammar => loadedLangiumGrammarGrammar 
     {
       "$type": "ParserRule",
       "name": "Disjunction",
-      "inferredType": {
-        "$type": "InferredType",
-        "name": "Condition"
+      "returnType": {
+        "$ref": "#/types@3"
       },
       "definition": {
         "$type": "Group",
@@ -2079,9 +2123,8 @@ export const LangiumGrammarGrammar = (): Grammar => loadedLangiumGrammarGrammar 
             "elements": [
               {
                 "$type": "Action",
-                "inferredType": {
-                  "$type": "InferredType",
-                  "name": "Disjunction"
+                "type": {
+                  "$ref": "#/interfaces@5"
                 },
                 "feature": "left",
                 "operator": "="
@@ -2114,9 +2157,8 @@ export const LangiumGrammarGrammar = (): Grammar => loadedLangiumGrammarGrammar 
     {
       "$type": "ParserRule",
       "name": "Conjunction",
-      "inferredType": {
-        "$type": "InferredType",
-        "name": "Condition"
+      "returnType": {
+        "$ref": "#/types@3"
       },
       "definition": {
         "$type": "Group",
@@ -2133,9 +2175,8 @@ export const LangiumGrammarGrammar = (): Grammar => loadedLangiumGrammarGrammar 
             "elements": [
               {
                 "$type": "Action",
-                "inferredType": {
-                  "$type": "InferredType",
-                  "name": "Conjunction"
+                "type": {
+                  "$ref": "#/interfaces@4"
                 },
                 "feature": "left",
                 "operator": "="
@@ -2168,9 +2209,8 @@ export const LangiumGrammarGrammar = (): Grammar => loadedLangiumGrammarGrammar 
     {
       "$type": "ParserRule",
       "name": "Negation",
-      "inferredType": {
-        "$type": "InferredType",
-        "name": "Condition"
+      "returnType": {
+        "$ref": "#/types@3"
       },
       "definition": {
         "$type": "Alternatives",
@@ -2187,9 +2227,8 @@ export const LangiumGrammarGrammar = (): Grammar => loadedLangiumGrammarGrammar 
             "elements": [
               {
                 "$type": "Action",
-                "inferredType": {
-                  "$type": "InferredType",
-                  "name": "Negation"
+                "type": {
+                  "$ref": "#/interfaces@14"
                 }
               },
               {
@@ -2219,9 +2258,8 @@ export const LangiumGrammarGrammar = (): Grammar => loadedLangiumGrammarGrammar 
     {
       "$type": "ParserRule",
       "name": "Atom",
-      "inferredType": {
-        "$type": "InferredType",
-        "name": "Condition"
+      "returnType": {
+        "$ref": "#/types@3"
       },
       "definition": {
         "$type": "Alternatives",
@@ -2256,9 +2294,8 @@ export const LangiumGrammarGrammar = (): Grammar => loadedLangiumGrammarGrammar 
     {
       "$type": "ParserRule",
       "name": "ParenthesizedCondition",
-      "inferredType": {
-        "$type": "InferredType",
-        "name": "Condition"
+      "returnType": {
+        "$ref": "#/types@3"
       },
       "definition": {
         "$type": "Group",
@@ -2287,6 +2324,9 @@ export const LangiumGrammarGrammar = (): Grammar => loadedLangiumGrammarGrammar 
     {
       "$type": "ParserRule",
       "name": "ParameterReference",
+      "returnType": {
+        "$ref": "#/interfaces@17"
+      },
       "definition": {
         "$type": "Assignment",
         "feature": "parameter",
@@ -2294,7 +2334,7 @@ export const LangiumGrammarGrammar = (): Grammar => loadedLangiumGrammarGrammar 
         "terminal": {
           "$type": "CrossReference",
           "type": {
-            "$ref": "#/rules@24"
+            "$ref": "#/interfaces@16"
           },
           "terminal": {
             "$type": "RuleCall",
@@ -2313,9 +2353,8 @@ export const LangiumGrammarGrammar = (): Grammar => loadedLangiumGrammarGrammar 
     {
       "$type": "ParserRule",
       "name": "PredicatedKeyword",
-      "inferredType": {
-        "$type": "InferredType",
-        "name": "Keyword"
+      "returnType": {
+        "$ref": "#/interfaces@34"
       },
       "definition": {
         "$type": "Group",
@@ -2359,9 +2398,8 @@ export const LangiumGrammarGrammar = (): Grammar => loadedLangiumGrammarGrammar 
     {
       "$type": "ParserRule",
       "name": "PredicatedRuleCall",
-      "inferredType": {
-        "$type": "InferredType",
-        "name": "RuleCall"
+      "returnType": {
+        "$ref": "#/interfaces@37"
       },
       "definition": {
         "$type": "Group",
@@ -2391,7 +2429,7 @@ export const LangiumGrammarGrammar = (): Grammar => loadedLangiumGrammarGrammar 
             "terminal": {
               "$type": "CrossReference",
               "type": {
-                "$ref": "#/rules@15"
+                "$ref": "#/types@0"
               },
               "terminal": {
                 "$type": "RuleCall",
@@ -2460,18 +2498,16 @@ export const LangiumGrammarGrammar = (): Grammar => loadedLangiumGrammarGrammar 
     {
       "$type": "ParserRule",
       "name": "Assignment",
-      "inferredType": {
-        "$type": "InferredType",
-        "name": "AbstractElement"
+      "returnType": {
+        "$ref": "#/interfaces@0"
       },
       "definition": {
         "$type": "Group",
         "elements": [
           {
             "$type": "Action",
-            "inferredType": {
-              "$type": "InferredType",
-              "name": "Assignment"
+            "type": {
+              "$ref": "#/interfaces@29"
             }
           },
           {
@@ -2548,9 +2584,8 @@ export const LangiumGrammarGrammar = (): Grammar => loadedLangiumGrammarGrammar 
     {
       "$type": "ParserRule",
       "name": "AssignableTerminal",
-      "inferredType": {
-        "$type": "InferredType",
-        "name": "AbstractElement"
+      "returnType": {
+        "$ref": "#/interfaces@0"
       },
       "definition": {
         "$type": "Alternatives",
@@ -2592,9 +2627,8 @@ export const LangiumGrammarGrammar = (): Grammar => loadedLangiumGrammarGrammar 
     {
       "$type": "ParserRule",
       "name": "ParenthesizedAssignableElement",
-      "inferredType": {
-        "$type": "InferredType",
-        "name": "AbstractElement"
+      "returnType": {
+        "$ref": "#/interfaces@0"
       },
       "definition": {
         "$type": "Group",
@@ -2623,9 +2657,8 @@ export const LangiumGrammarGrammar = (): Grammar => loadedLangiumGrammarGrammar 
     {
       "$type": "ParserRule",
       "name": "AssignableAlternatives",
-      "inferredType": {
-        "$type": "InferredType",
-        "name": "AbstractElement"
+      "returnType": {
+        "$ref": "#/interfaces@0"
       },
       "definition": {
         "$type": "Group",
@@ -2642,9 +2675,8 @@ export const LangiumGrammarGrammar = (): Grammar => loadedLangiumGrammarGrammar 
             "elements": [
               {
                 "$type": "Action",
-                "inferredType": {
-                  "$type": "InferredType",
-                  "name": "Alternatives"
+                "type": {
+                  "$ref": "#/interfaces@28"
                 },
                 "feature": "elements",
                 "operator": "+="
@@ -2683,18 +2715,16 @@ export const LangiumGrammarGrammar = (): Grammar => loadedLangiumGrammarGrammar 
     {
       "$type": "ParserRule",
       "name": "CrossReference",
-      "inferredType": {
-        "$type": "InferredType",
-        "name": "AbstractElement"
+      "returnType": {
+        "$ref": "#/interfaces@0"
       },
       "definition": {
         "$type": "Group",
         "elements": [
           {
             "$type": "Action",
-            "inferredType": {
-              "$type": "InferredType",
-              "name": "CrossReference"
+            "type": {
+              "$ref": "#/interfaces@31"
             }
           },
           {
@@ -2708,7 +2738,14 @@ export const LangiumGrammarGrammar = (): Grammar => loadedLangiumGrammarGrammar 
             "terminal": {
               "$type": "CrossReference",
               "type": {
-                "$ref": "#/types@0"
+                "$ref": "#/types@1"
+              },
+              "terminal": {
+                "$type": "RuleCall",
+                "rule": {
+                  "$ref": "#/rules@67"
+                },
+                "arguments": []
               },
               "deprecatedSyntax": false
             }
@@ -2762,9 +2799,8 @@ export const LangiumGrammarGrammar = (): Grammar => loadedLangiumGrammarGrammar 
     {
       "$type": "ParserRule",
       "name": "CrossReferenceableTerminal",
-      "inferredType": {
-        "$type": "InferredType",
-        "name": "AbstractElement"
+      "returnType": {
+        "$ref": "#/interfaces@0"
       },
       "definition": {
         "$type": "Alternatives",
@@ -2792,9 +2828,8 @@ export const LangiumGrammarGrammar = (): Grammar => loadedLangiumGrammarGrammar 
     {
       "$type": "ParserRule",
       "name": "ParenthesizedElement",
-      "inferredType": {
-        "$type": "InferredType",
-        "name": "AbstractElement"
+      "returnType": {
+        "$ref": "#/interfaces@0"
       },
       "definition": {
         "$type": "Group",
@@ -2823,9 +2858,8 @@ export const LangiumGrammarGrammar = (): Grammar => loadedLangiumGrammarGrammar 
     {
       "$type": "ParserRule",
       "name": "PredicatedGroup",
-      "inferredType": {
-        "$type": "InferredType",
-        "name": "Group"
+      "returnType": {
+        "$ref": "#/interfaces@33"
       },
       "definition": {
         "$type": "Group",
@@ -2877,6 +2911,9 @@ export const LangiumGrammarGrammar = (): Grammar => loadedLangiumGrammarGrammar 
     {
       "$type": "ParserRule",
       "name": "ReturnType",
+      "returnType": {
+        "$ref": "#/interfaces@20"
+      },
       "definition": {
         "$type": "Assignment",
         "feature": "name",
@@ -2908,6 +2945,9 @@ export const LangiumGrammarGrammar = (): Grammar => loadedLangiumGrammarGrammar 
     {
       "$type": "ParserRule",
       "name": "TerminalRule",
+      "returnType": {
+        "$ref": "#/interfaces@23"
+      },
       "definition": {
         "$type": "Group",
         "elements": [
@@ -3024,9 +3064,8 @@ export const LangiumGrammarGrammar = (): Grammar => loadedLangiumGrammarGrammar 
     {
       "$type": "ParserRule",
       "name": "TerminalAlternatives",
-      "inferredType": {
-        "$type": "InferredType",
-        "name": "AbstractElement"
+      "returnType": {
+        "$ref": "#/interfaces@39"
       },
       "definition": {
         "$type": "Group",
@@ -3043,9 +3082,8 @@ export const LangiumGrammarGrammar = (): Grammar => loadedLangiumGrammarGrammar 
             "elements": [
               {
                 "$type": "Action",
-                "inferredType": {
-                  "$type": "InferredType",
-                  "name": "TerminalAlternatives"
+                "type": {
+                  "$ref": "#/interfaces@38"
                 },
                 "feature": "elements",
                 "operator": "+="
@@ -3078,9 +3116,8 @@ export const LangiumGrammarGrammar = (): Grammar => loadedLangiumGrammarGrammar 
     {
       "$type": "ParserRule",
       "name": "TerminalGroup",
-      "inferredType": {
-        "$type": "InferredType",
-        "name": "AbstractElement"
+      "returnType": {
+        "$ref": "#/interfaces@39"
       },
       "definition": {
         "$type": "Group",
@@ -3097,9 +3134,8 @@ export const LangiumGrammarGrammar = (): Grammar => loadedLangiumGrammarGrammar 
             "elements": [
               {
                 "$type": "Action",
-                "inferredType": {
-                  "$type": "InferredType",
-                  "name": "TerminalGroup"
+                "type": {
+                  "$ref": "#/interfaces@40"
                 },
                 "feature": "elements",
                 "operator": "+="
@@ -3129,9 +3165,8 @@ export const LangiumGrammarGrammar = (): Grammar => loadedLangiumGrammarGrammar 
     {
       "$type": "ParserRule",
       "name": "TerminalToken",
-      "inferredType": {
-        "$type": "InferredType",
-        "name": "AbstractElement"
+      "returnType": {
+        "$ref": "#/interfaces@39"
       },
       "definition": {
         "$type": "Group",
@@ -3175,9 +3210,8 @@ export const LangiumGrammarGrammar = (): Grammar => loadedLangiumGrammarGrammar 
     {
       "$type": "ParserRule",
       "name": "TerminalTokenElement",
-      "inferredType": {
-        "$type": "InferredType",
-        "name": "AbstractElement"
+      "returnType": {
+        "$ref": "#/interfaces@39"
       },
       "definition": {
         "$type": "Alternatives",
@@ -3240,9 +3274,8 @@ export const LangiumGrammarGrammar = (): Grammar => loadedLangiumGrammarGrammar 
     {
       "$type": "ParserRule",
       "name": "ParenthesizedTerminalElement",
-      "inferredType": {
-        "$type": "InferredType",
-        "name": "AbstractElement"
+      "returnType": {
+        "$ref": "#/interfaces@39"
       },
       "definition": {
         "$type": "Group",
@@ -3286,8 +3319,13 @@ export const LangiumGrammarGrammar = (): Grammar => loadedLangiumGrammarGrammar 
             "arguments": []
           },
           {
-            "$type": "Keyword",
-            "value": ")"
+            "$type": "Assignment",
+            "feature": "parenthesized",
+            "operator": "?=",
+            "terminal": {
+              "$type": "Keyword",
+              "value": ")"
+            }
           }
         ]
       },
@@ -3298,18 +3336,16 @@ export const LangiumGrammarGrammar = (): Grammar => loadedLangiumGrammarGrammar 
     {
       "$type": "ParserRule",
       "name": "TerminalRuleCall",
-      "inferredType": {
-        "$type": "InferredType",
-        "name": "AbstractElement"
+      "returnType": {
+        "$ref": "#/interfaces@39"
       },
       "definition": {
         "$type": "Group",
         "elements": [
           {
             "$type": "Action",
-            "inferredType": {
-              "$type": "InferredType",
-              "name": "TerminalRuleCall"
+            "type": {
+              "$ref": "#/interfaces@41"
             }
           },
           {
@@ -3319,7 +3355,7 @@ export const LangiumGrammarGrammar = (): Grammar => loadedLangiumGrammarGrammar 
             "terminal": {
               "$type": "CrossReference",
               "type": {
-                "$ref": "#/rules@54"
+                "$ref": "#/interfaces@23"
               },
               "terminal": {
                 "$type": "RuleCall",
@@ -3340,18 +3376,16 @@ export const LangiumGrammarGrammar = (): Grammar => loadedLangiumGrammarGrammar 
     {
       "$type": "ParserRule",
       "name": "NegatedToken",
-      "inferredType": {
-        "$type": "InferredType",
-        "name": "AbstractElement"
+      "returnType": {
+        "$ref": "#/interfaces@39"
       },
       "definition": {
         "$type": "Group",
         "elements": [
           {
             "$type": "Action",
-            "inferredType": {
-              "$type": "InferredType",
-              "name": "NegatedToken"
+            "type": {
+              "$ref": "#/interfaces@35"
             }
           },
           {
@@ -3379,18 +3413,16 @@ export const LangiumGrammarGrammar = (): Grammar => loadedLangiumGrammarGrammar 
     {
       "$type": "ParserRule",
       "name": "UntilToken",
-      "inferredType": {
-        "$type": "InferredType",
-        "name": "AbstractElement"
+      "returnType": {
+        "$ref": "#/interfaces@39"
       },
       "definition": {
         "$type": "Group",
         "elements": [
           {
             "$type": "Action",
-            "inferredType": {
-              "$type": "InferredType",
-              "name": "UntilToken"
+            "type": {
+              "$ref": "#/interfaces@43"
             }
           },
           {
@@ -3418,18 +3450,16 @@ export const LangiumGrammarGrammar = (): Grammar => loadedLangiumGrammarGrammar 
     {
       "$type": "ParserRule",
       "name": "RegexToken",
-      "inferredType": {
-        "$type": "InferredType",
-        "name": "AbstractElement"
+      "returnType": {
+        "$ref": "#/interfaces@39"
       },
       "definition": {
         "$type": "Group",
         "elements": [
           {
             "$type": "Action",
-            "inferredType": {
-              "$type": "InferredType",
-              "name": "RegexToken"
+            "type": {
+              "$ref": "#/interfaces@36"
             }
           },
           {
@@ -3453,18 +3483,16 @@ export const LangiumGrammarGrammar = (): Grammar => loadedLangiumGrammarGrammar 
     {
       "$type": "ParserRule",
       "name": "Wildcard",
-      "inferredType": {
-        "$type": "InferredType",
-        "name": "AbstractElement"
+      "returnType": {
+        "$ref": "#/interfaces@39"
       },
       "definition": {
         "$type": "Group",
         "elements": [
           {
             "$type": "Action",
-            "inferredType": {
-              "$type": "InferredType",
-              "name": "Wildcard"
+            "type": {
+              "$ref": "#/interfaces@44"
             }
           },
           {
@@ -3480,18 +3508,16 @@ export const LangiumGrammarGrammar = (): Grammar => loadedLangiumGrammarGrammar 
     {
       "$type": "ParserRule",
       "name": "CharacterRange",
-      "inferredType": {
-        "$type": "InferredType",
-        "name": "AbstractElement"
+      "returnType": {
+        "$ref": "#/interfaces@39"
       },
       "definition": {
         "$type": "Group",
         "elements": [
           {
             "$type": "Action",
-            "inferredType": {
-              "$type": "InferredType",
-              "name": "CharacterRange"
+            "type": {
+              "$ref": "#/interfaces@30"
             }
           },
           {
@@ -3650,7 +3676,8 @@ export const LangiumGrammarGrammar = (): Grammar => loadedLangiumGrammarGrammar 
       "name": "ID",
       "definition": {
         "$type": "RegexToken",
-        "regex": "/\\\\^?[_a-zA-Z][\\\\w_]*/"
+        "regex": "/\\\\^?[_a-zA-Z][\\\\w_]*/",
+        "parenthesized": false
       },
       "fragment": false,
       "hidden": false
@@ -3660,7 +3687,8 @@ export const LangiumGrammarGrammar = (): Grammar => loadedLangiumGrammarGrammar 
       "name": "STRING",
       "definition": {
         "$type": "RegexToken",
-        "regex": "/\\"(\\\\\\\\.|[^\\"\\\\\\\\])*\\"|'(\\\\\\\\.|[^'\\\\\\\\])*'/"
+        "regex": "/\\"(\\\\\\\\.|[^\\"\\\\\\\\])*\\"|'(\\\\\\\\.|[^'\\\\\\\\])*'/",
+        "parenthesized": false
       },
       "fragment": false,
       "hidden": false
@@ -3674,7 +3702,8 @@ export const LangiumGrammarGrammar = (): Grammar => loadedLangiumGrammarGrammar 
       },
       "definition": {
         "$type": "RegexToken",
-        "regex": "/NaN|-?((\\\\d*\\\\.\\\\d+|\\\\d+)([Ee][+-]?\\\\d+)?|Infinity)/"
+        "regex": "/NaN|-?((\\\\d*\\\\.\\\\d+|\\\\d+)([Ee][+-]?\\\\d+)?|Infinity)/",
+        "parenthesized": false
       },
       "fragment": false,
       "hidden": false
@@ -3688,7 +3717,8 @@ export const LangiumGrammarGrammar = (): Grammar => loadedLangiumGrammarGrammar 
       },
       "definition": {
         "$type": "RegexToken",
-        "regex": "/\\\\/(?![*+?])(?:[^\\\\r\\\\n\\\\[/\\\\\\\\]|\\\\\\\\.|\\\\[(?:[^\\\\r\\\\n\\\\]\\\\\\\\]|\\\\\\\\.)*\\\\])+\\\\/[a-z]*/"
+        "regex": "/\\\\/(?![*+?])(?:[^\\\\r\\\\n\\\\[/\\\\\\\\]|\\\\\\\\.|\\\\[(?:[^\\\\r\\\\n\\\\]\\\\\\\\]|\\\\\\\\.)*\\\\])+\\\\/[a-z]*/",
+        "parenthesized": false
       },
       "fragment": false,
       "hidden": false
@@ -3699,7 +3729,8 @@ export const LangiumGrammarGrammar = (): Grammar => loadedLangiumGrammarGrammar 
       "name": "WS",
       "definition": {
         "$type": "RegexToken",
-        "regex": "/\\\\s+/"
+        "regex": "/\\\\s+/",
+        "parenthesized": false
       },
       "fragment": false
     },
@@ -3709,7 +3740,8 @@ export const LangiumGrammarGrammar = (): Grammar => loadedLangiumGrammarGrammar 
       "name": "ML_COMMENT",
       "definition": {
         "$type": "RegexToken",
-        "regex": "/\\\\/\\\\*[\\\\s\\\\S]*?\\\\*\\\\//"
+        "regex": "/\\\\/\\\\*[\\\\s\\\\S]*?\\\\*\\\\//",
+        "parenthesized": false
       },
       "fragment": false
     },
@@ -3719,12 +3751,1531 @@ export const LangiumGrammarGrammar = (): Grammar => loadedLangiumGrammarGrammar 
       "name": "SL_COMMENT",
       "definition": {
         "$type": "RegexToken",
-        "regex": "/\\\\/\\\\/[^\\\\n\\\\r]*/"
+        "regex": "/\\\\/\\\\/[^\\\\n\\\\r]*/",
+        "parenthesized": false
       },
       "fragment": false
     }
   ],
+  "interfaces": [
+    {
+      "$type": "Interface",
+      "name": "AbstractElement",
+      "attributes": [
+        {
+          "$type": "TypeAttribute",
+          "name": "cardinality",
+          "isOptional": true,
+          "type": {
+            "$type": "UnionType",
+            "types": [
+              {
+                "$type": "SimpleType",
+                "stringType": "*"
+              },
+              {
+                "$type": "SimpleType",
+                "stringType": "+"
+              },
+              {
+                "$type": "SimpleType",
+                "stringType": "?"
+              }
+            ]
+          }
+        }
+      ],
+      "superTypes": []
+    },
+    {
+      "$type": "Interface",
+      "name": "ArrayLiteral",
+      "attributes": [
+        {
+          "$type": "TypeAttribute",
+          "name": "elements",
+          "type": {
+            "$type": "ArrayType",
+            "elementType": {
+              "$type": "SimpleType",
+              "typeRef": {
+                "$ref": "#/types@7"
+              }
+            }
+          },
+          "isOptional": false
+        }
+      ],
+      "superTypes": []
+    },
+    {
+      "$type": "Interface",
+      "name": "ArrayType",
+      "attributes": [
+        {
+          "$type": "TypeAttribute",
+          "name": "elementType",
+          "type": {
+            "$type": "SimpleType",
+            "typeRef": {
+              "$ref": "#/types@6"
+            }
+          },
+          "isOptional": false
+        }
+      ],
+      "superTypes": []
+    },
+    {
+      "$type": "Interface",
+      "name": "BooleanLiteral",
+      "attributes": [
+        {
+          "$type": "TypeAttribute",
+          "name": "true",
+          "type": {
+            "$type": "SimpleType",
+            "primitiveType": "boolean"
+          },
+          "isOptional": false
+        }
+      ],
+      "superTypes": []
+    },
+    {
+      "$type": "Interface",
+      "name": "Conjunction",
+      "attributes": [
+        {
+          "$type": "TypeAttribute",
+          "name": "left",
+          "type": {
+            "$type": "SimpleType",
+            "typeRef": {
+              "$ref": "#/types@3"
+            }
+          },
+          "isOptional": false
+        },
+        {
+          "$type": "TypeAttribute",
+          "name": "right",
+          "type": {
+            "$type": "SimpleType",
+            "typeRef": {
+              "$ref": "#/types@3"
+            }
+          },
+          "isOptional": false
+        }
+      ],
+      "superTypes": []
+    },
+    {
+      "$type": "Interface",
+      "name": "Disjunction",
+      "attributes": [
+        {
+          "$type": "TypeAttribute",
+          "name": "left",
+          "type": {
+            "$type": "SimpleType",
+            "typeRef": {
+              "$ref": "#/types@3"
+            }
+          },
+          "isOptional": false
+        },
+        {
+          "$type": "TypeAttribute",
+          "name": "right",
+          "type": {
+            "$type": "SimpleType",
+            "typeRef": {
+              "$ref": "#/types@3"
+            }
+          },
+          "isOptional": false
+        }
+      ],
+      "superTypes": []
+    },
+    {
+      "$type": "Interface",
+      "name": "Grammar",
+      "attributes": [
+        {
+          "$type": "TypeAttribute",
+          "name": "imports",
+          "type": {
+            "$type": "ArrayType",
+            "elementType": {
+              "$type": "SimpleType",
+              "typeRef": {
+                "$ref": "#/interfaces@7"
+              }
+            }
+          },
+          "isOptional": false
+        },
+        {
+          "$type": "TypeAttribute",
+          "name": "interfaces",
+          "type": {
+            "$type": "ArrayType",
+            "elementType": {
+              "$type": "SimpleType",
+              "typeRef": {
+                "$ref": "#/interfaces@12"
+              }
+            }
+          },
+          "isOptional": false
+        },
+        {
+          "$type": "TypeAttribute",
+          "name": "isDeclared",
+          "type": {
+            "$type": "SimpleType",
+            "primitiveType": "boolean"
+          },
+          "isOptional": false
+        },
+        {
+          "$type": "TypeAttribute",
+          "name": "name",
+          "isOptional": true,
+          "type": {
+            "$type": "SimpleType",
+            "primitiveType": "string"
+          }
+        },
+        {
+          "$type": "TypeAttribute",
+          "name": "rules",
+          "type": {
+            "$type": "ArrayType",
+            "elementType": {
+              "$type": "SimpleType",
+              "typeRef": {
+                "$ref": "#/types@0"
+              }
+            }
+          },
+          "isOptional": false
+        },
+        {
+          "$type": "TypeAttribute",
+          "name": "types",
+          "type": {
+            "$type": "ArrayType",
+            "elementType": {
+              "$type": "SimpleType",
+              "typeRef": {
+                "$ref": "#/interfaces@24"
+              }
+            }
+          },
+          "isOptional": false
+        }
+      ],
+      "superTypes": []
+    },
+    {
+      "$type": "Interface",
+      "name": "GrammarImport",
+      "attributes": [
+        {
+          "$type": "TypeAttribute",
+          "name": "path",
+          "type": {
+            "$type": "SimpleType",
+            "primitiveType": "string"
+          },
+          "isOptional": false
+        }
+      ],
+      "superTypes": []
+    },
+    {
+      "$type": "Interface",
+      "name": "InferredType",
+      "attributes": [
+        {
+          "$type": "TypeAttribute",
+          "name": "name",
+          "type": {
+            "$type": "SimpleType",
+            "primitiveType": "string"
+          },
+          "isOptional": false
+        }
+      ],
+      "superTypes": []
+    },
+    {
+      "$type": "Interface",
+      "name": "InfixRule",
+      "attributes": [
+        {
+          "$type": "TypeAttribute",
+          "name": "call",
+          "type": {
+            "$type": "SimpleType",
+            "typeRef": {
+              "$ref": "#/interfaces@37"
+            }
+          },
+          "isOptional": false
+        },
+        {
+          "$type": "TypeAttribute",
+          "name": "name",
+          "type": {
+            "$type": "SimpleType",
+            "primitiveType": "string"
+          },
+          "isOptional": false
+        },
+        {
+          "$type": "TypeAttribute",
+          "name": "operators",
+          "type": {
+            "$type": "SimpleType",
+            "typeRef": {
+              "$ref": "#/interfaces@11"
+            }
+          },
+          "isOptional": false
+        },
+        {
+          "$type": "TypeAttribute",
+          "name": "parameters",
+          "type": {
+            "$type": "ArrayType",
+            "elementType": {
+              "$type": "SimpleType",
+              "typeRef": {
+                "$ref": "#/interfaces@16"
+              }
+            }
+          },
+          "isOptional": false
+        }
+      ],
+      "superTypes": []
+    },
+    {
+      "$type": "Interface",
+      "name": "InfixRuleOperatorList",
+      "attributes": [
+        {
+          "$type": "TypeAttribute",
+          "name": "associativity",
+          "isOptional": true,
+          "type": {
+            "$type": "SimpleType",
+            "typeRef": {
+              "$ref": "#/types@2"
+            }
+          }
+        },
+        {
+          "$type": "TypeAttribute",
+          "name": "operators",
+          "type": {
+            "$type": "ArrayType",
+            "elementType": {
+              "$type": "SimpleType",
+              "typeRef": {
+                "$ref": "#/interfaces@34"
+              }
+            }
+          },
+          "isOptional": false
+        }
+      ],
+      "superTypes": []
+    },
+    {
+      "$type": "Interface",
+      "name": "InfixRuleOperators",
+      "attributes": [
+        {
+          "$type": "TypeAttribute",
+          "name": "precedences",
+          "type": {
+            "$type": "ArrayType",
+            "elementType": {
+              "$type": "SimpleType",
+              "typeRef": {
+                "$ref": "#/interfaces@10"
+              }
+            }
+          },
+          "isOptional": false
+        }
+      ],
+      "superTypes": []
+    },
+    {
+      "$type": "Interface",
+      "name": "Interface",
+      "attributes": [
+        {
+          "$type": "TypeAttribute",
+          "name": "attributes",
+          "type": {
+            "$type": "ArrayType",
+            "elementType": {
+              "$type": "SimpleType",
+              "typeRef": {
+                "$ref": "#/interfaces@25"
+              }
+            }
+          },
+          "isOptional": false
+        },
+        {
+          "$type": "TypeAttribute",
+          "name": "name",
+          "type": {
+            "$type": "SimpleType",
+            "primitiveType": "string"
+          },
+          "isOptional": false
+        },
+        {
+          "$type": "TypeAttribute",
+          "name": "superTypes",
+          "type": {
+            "$type": "ArrayType",
+            "elementType": {
+              "$type": "ReferenceType",
+              "referenceType": {
+                "$type": "SimpleType",
+                "typeRef": {
+                  "$ref": "#/types@1"
+                }
+              }
+            }
+          },
+          "isOptional": false
+        }
+      ],
+      "superTypes": []
+    },
+    {
+      "$type": "Interface",
+      "name": "NamedArgument",
+      "attributes": [
+        {
+          "$type": "TypeAttribute",
+          "name": "calledByName",
+          "type": {
+            "$type": "SimpleType",
+            "primitiveType": "boolean"
+          },
+          "isOptional": false
+        },
+        {
+          "$type": "TypeAttribute",
+          "name": "parameter",
+          "isOptional": true,
+          "type": {
+            "$type": "ReferenceType",
+            "referenceType": {
+              "$type": "SimpleType",
+              "typeRef": {
+                "$ref": "#/interfaces@16"
+              }
+            }
+          }
+        },
+        {
+          "$type": "TypeAttribute",
+          "name": "value",
+          "type": {
+            "$type": "SimpleType",
+            "typeRef": {
+              "$ref": "#/types@3"
+            }
+          },
+          "isOptional": false
+        }
+      ],
+      "superTypes": []
+    },
+    {
+      "$type": "Interface",
+      "name": "Negation",
+      "attributes": [
+        {
+          "$type": "TypeAttribute",
+          "name": "value",
+          "type": {
+            "$type": "SimpleType",
+            "typeRef": {
+              "$ref": "#/types@3"
+            }
+          },
+          "isOptional": false
+        }
+      ],
+      "superTypes": []
+    },
+    {
+      "$type": "Interface",
+      "name": "NumberLiteral",
+      "attributes": [
+        {
+          "$type": "TypeAttribute",
+          "name": "value",
+          "type": {
+            "$type": "SimpleType",
+            "primitiveType": "number"
+          },
+          "isOptional": false
+        }
+      ],
+      "superTypes": []
+    },
+    {
+      "$type": "Interface",
+      "name": "Parameter",
+      "attributes": [
+        {
+          "$type": "TypeAttribute",
+          "name": "name",
+          "type": {
+            "$type": "SimpleType",
+            "primitiveType": "string"
+          },
+          "isOptional": false
+        }
+      ],
+      "superTypes": []
+    },
+    {
+      "$type": "Interface",
+      "name": "ParameterReference",
+      "attributes": [
+        {
+          "$type": "TypeAttribute",
+          "name": "parameter",
+          "type": {
+            "$type": "ReferenceType",
+            "referenceType": {
+              "$type": "SimpleType",
+              "typeRef": {
+                "$ref": "#/interfaces@16"
+              }
+            }
+          },
+          "isOptional": false
+        }
+      ],
+      "superTypes": []
+    },
+    {
+      "$type": "Interface",
+      "name": "ParserRule",
+      "attributes": [
+        {
+          "$type": "TypeAttribute",
+          "name": "dataType",
+          "isOptional": true,
+          "type": {
+            "$type": "SimpleType",
+            "typeRef": {
+              "$ref": "#/types@5"
+            }
+          }
+        },
+        {
+          "$type": "TypeAttribute",
+          "name": "definition",
+          "type": {
+            "$type": "SimpleType",
+            "typeRef": {
+              "$ref": "#/interfaces@0"
+            }
+          },
+          "isOptional": false
+        },
+        {
+          "$type": "TypeAttribute",
+          "name": "entry",
+          "type": {
+            "$type": "SimpleType",
+            "primitiveType": "boolean"
+          },
+          "isOptional": false
+        },
+        {
+          "$type": "TypeAttribute",
+          "name": "fragment",
+          "type": {
+            "$type": "SimpleType",
+            "primitiveType": "boolean"
+          },
+          "isOptional": false
+        },
+        {
+          "$type": "TypeAttribute",
+          "name": "inferredType",
+          "isOptional": true,
+          "type": {
+            "$type": "SimpleType",
+            "typeRef": {
+              "$ref": "#/interfaces@8"
+            }
+          }
+        },
+        {
+          "$type": "TypeAttribute",
+          "name": "name",
+          "type": {
+            "$type": "SimpleType",
+            "primitiveType": "string"
+          },
+          "isOptional": false
+        },
+        {
+          "$type": "TypeAttribute",
+          "name": "parameters",
+          "type": {
+            "$type": "ArrayType",
+            "elementType": {
+              "$type": "SimpleType",
+              "typeRef": {
+                "$ref": "#/interfaces@16"
+              }
+            }
+          },
+          "isOptional": false
+        },
+        {
+          "$type": "TypeAttribute",
+          "name": "returnType",
+          "isOptional": true,
+          "type": {
+            "$type": "ReferenceType",
+            "referenceType": {
+              "$type": "SimpleType",
+              "typeRef": {
+                "$ref": "#/types@1"
+              }
+            }
+          }
+        }
+      ],
+      "superTypes": []
+    },
+    {
+      "$type": "Interface",
+      "name": "ReferenceType",
+      "attributes": [
+        {
+          "$type": "TypeAttribute",
+          "name": "referenceType",
+          "type": {
+            "$type": "SimpleType",
+            "typeRef": {
+              "$ref": "#/types@6"
+            }
+          },
+          "isOptional": false
+        }
+      ],
+      "superTypes": []
+    },
+    {
+      "$type": "Interface",
+      "name": "ReturnType",
+      "attributes": [
+        {
+          "$type": "TypeAttribute",
+          "name": "name",
+          "type": {
+            "$type": "UnionType",
+            "types": [
+              {
+                "$type": "SimpleType",
+                "typeRef": {
+                  "$ref": "#/types@5"
+                }
+              },
+              {
+                "$type": "SimpleType",
+                "primitiveType": "string"
+              }
+            ]
+          },
+          "isOptional": false
+        }
+      ],
+      "superTypes": []
+    },
+    {
+      "$type": "Interface",
+      "name": "SimpleType",
+      "attributes": [
+        {
+          "$type": "TypeAttribute",
+          "name": "primitiveType",
+          "isOptional": true,
+          "type": {
+            "$type": "SimpleType",
+            "typeRef": {
+              "$ref": "#/types@5"
+            }
+          }
+        },
+        {
+          "$type": "TypeAttribute",
+          "name": "stringType",
+          "isOptional": true,
+          "type": {
+            "$type": "SimpleType",
+            "primitiveType": "string"
+          }
+        },
+        {
+          "$type": "TypeAttribute",
+          "name": "typeRef",
+          "isOptional": true,
+          "type": {
+            "$type": "ReferenceType",
+            "referenceType": {
+              "$type": "SimpleType",
+              "typeRef": {
+                "$ref": "#/types@1"
+              }
+            }
+          }
+        }
+      ],
+      "superTypes": []
+    },
+    {
+      "$type": "Interface",
+      "name": "StringLiteral",
+      "attributes": [
+        {
+          "$type": "TypeAttribute",
+          "name": "value",
+          "type": {
+            "$type": "SimpleType",
+            "primitiveType": "string"
+          },
+          "isOptional": false
+        }
+      ],
+      "superTypes": []
+    },
+    {
+      "$type": "Interface",
+      "name": "TerminalRule",
+      "attributes": [
+        {
+          "$type": "TypeAttribute",
+          "name": "definition",
+          "type": {
+            "$type": "SimpleType",
+            "typeRef": {
+              "$ref": "#/interfaces@39"
+            }
+          },
+          "isOptional": false
+        },
+        {
+          "$type": "TypeAttribute",
+          "name": "fragment",
+          "type": {
+            "$type": "SimpleType",
+            "primitiveType": "boolean"
+          },
+          "isOptional": false
+        },
+        {
+          "$type": "TypeAttribute",
+          "name": "hidden",
+          "type": {
+            "$type": "SimpleType",
+            "primitiveType": "boolean"
+          },
+          "isOptional": false
+        },
+        {
+          "$type": "TypeAttribute",
+          "name": "name",
+          "type": {
+            "$type": "SimpleType",
+            "primitiveType": "string"
+          },
+          "isOptional": false
+        },
+        {
+          "$type": "TypeAttribute",
+          "name": "type",
+          "isOptional": true,
+          "type": {
+            "$type": "SimpleType",
+            "typeRef": {
+              "$ref": "#/interfaces@20"
+            }
+          }
+        }
+      ],
+      "superTypes": []
+    },
+    {
+      "$type": "Interface",
+      "name": "Type",
+      "attributes": [
+        {
+          "$type": "TypeAttribute",
+          "name": "name",
+          "type": {
+            "$type": "SimpleType",
+            "primitiveType": "string"
+          },
+          "isOptional": false
+        },
+        {
+          "$type": "TypeAttribute",
+          "name": "type",
+          "type": {
+            "$type": "SimpleType",
+            "typeRef": {
+              "$ref": "#/types@6"
+            }
+          },
+          "isOptional": false
+        }
+      ],
+      "superTypes": []
+    },
+    {
+      "$type": "Interface",
+      "name": "TypeAttribute",
+      "attributes": [
+        {
+          "$type": "TypeAttribute",
+          "name": "defaultValue",
+          "isOptional": true,
+          "type": {
+            "$type": "SimpleType",
+            "typeRef": {
+              "$ref": "#/types@7"
+            }
+          }
+        },
+        {
+          "$type": "TypeAttribute",
+          "name": "isOptional",
+          "type": {
+            "$type": "SimpleType",
+            "primitiveType": "boolean"
+          },
+          "isOptional": false
+        },
+        {
+          "$type": "TypeAttribute",
+          "name": "name",
+          "type": {
+            "$type": "SimpleType",
+            "typeRef": {
+              "$ref": "#/types@4"
+            }
+          },
+          "isOptional": false
+        },
+        {
+          "$type": "TypeAttribute",
+          "name": "type",
+          "type": {
+            "$type": "SimpleType",
+            "typeRef": {
+              "$ref": "#/types@6"
+            }
+          },
+          "isOptional": false
+        }
+      ],
+      "superTypes": []
+    },
+    {
+      "$type": "Interface",
+      "name": "UnionType",
+      "attributes": [
+        {
+          "$type": "TypeAttribute",
+          "name": "types",
+          "type": {
+            "$type": "ArrayType",
+            "elementType": {
+              "$type": "SimpleType",
+              "typeRef": {
+                "$ref": "#/types@6"
+              }
+            }
+          },
+          "isOptional": false
+        }
+      ],
+      "superTypes": []
+    },
+    {
+      "$type": "Interface",
+      "name": "Action",
+      "superTypes": [
+        {
+          "$ref": "#/interfaces@0"
+        }
+      ],
+      "attributes": [
+        {
+          "$type": "TypeAttribute",
+          "name": "feature",
+          "isOptional": true,
+          "type": {
+            "$type": "SimpleType",
+            "typeRef": {
+              "$ref": "#/types@4"
+            }
+          }
+        },
+        {
+          "$type": "TypeAttribute",
+          "name": "inferredType",
+          "isOptional": true,
+          "type": {
+            "$type": "SimpleType",
+            "typeRef": {
+              "$ref": "#/interfaces@8"
+            }
+          }
+        },
+        {
+          "$type": "TypeAttribute",
+          "name": "operator",
+          "isOptional": true,
+          "type": {
+            "$type": "UnionType",
+            "types": [
+              {
+                "$type": "SimpleType",
+                "stringType": "+="
+              },
+              {
+                "$type": "SimpleType",
+                "stringType": "="
+              }
+            ]
+          }
+        },
+        {
+          "$type": "TypeAttribute",
+          "name": "type",
+          "isOptional": true,
+          "type": {
+            "$type": "ReferenceType",
+            "referenceType": {
+              "$type": "SimpleType",
+              "typeRef": {
+                "$ref": "#/types@1"
+              }
+            }
+          }
+        }
+      ]
+    },
+    {
+      "$type": "Interface",
+      "name": "Alternatives",
+      "superTypes": [
+        {
+          "$ref": "#/interfaces@0"
+        }
+      ],
+      "attributes": [
+        {
+          "$type": "TypeAttribute",
+          "name": "elements",
+          "type": {
+            "$type": "ArrayType",
+            "elementType": {
+              "$type": "SimpleType",
+              "typeRef": {
+                "$ref": "#/interfaces@0"
+              }
+            }
+          },
+          "isOptional": false
+        }
+      ]
+    },
+    {
+      "$type": "Interface",
+      "name": "Assignment",
+      "superTypes": [
+        {
+          "$ref": "#/interfaces@0"
+        }
+      ],
+      "attributes": [
+        {
+          "$type": "TypeAttribute",
+          "name": "feature",
+          "type": {
+            "$type": "SimpleType",
+            "typeRef": {
+              "$ref": "#/types@4"
+            }
+          },
+          "isOptional": false
+        },
+        {
+          "$type": "TypeAttribute",
+          "name": "operator",
+          "type": {
+            "$type": "UnionType",
+            "types": [
+              {
+                "$type": "SimpleType",
+                "stringType": "+="
+              },
+              {
+                "$type": "SimpleType",
+                "stringType": "="
+              },
+              {
+                "$type": "SimpleType",
+                "stringType": "?="
+              }
+            ]
+          },
+          "isOptional": false
+        },
+        {
+          "$type": "TypeAttribute",
+          "name": "predicate",
+          "isOptional": true,
+          "type": {
+            "$type": "UnionType",
+            "types": [
+              {
+                "$type": "SimpleType",
+                "stringType": "->"
+              },
+              {
+                "$type": "SimpleType",
+                "stringType": "=>"
+              }
+            ]
+          }
+        },
+        {
+          "$type": "TypeAttribute",
+          "name": "terminal",
+          "type": {
+            "$type": "SimpleType",
+            "typeRef": {
+              "$ref": "#/interfaces@0"
+            }
+          },
+          "isOptional": false
+        }
+      ]
+    },
+    {
+      "$type": "Interface",
+      "name": "CharacterRange",
+      "superTypes": [
+        {
+          "$ref": "#/interfaces@39"
+        }
+      ],
+      "attributes": [
+        {
+          "$type": "TypeAttribute",
+          "name": "left",
+          "type": {
+            "$type": "SimpleType",
+            "typeRef": {
+              "$ref": "#/interfaces@34"
+            }
+          },
+          "isOptional": false
+        },
+        {
+          "$type": "TypeAttribute",
+          "name": "right",
+          "isOptional": true,
+          "type": {
+            "$type": "SimpleType",
+            "typeRef": {
+              "$ref": "#/interfaces@34"
+            }
+          }
+        }
+      ]
+    },
+    {
+      "$type": "Interface",
+      "name": "CrossReference",
+      "superTypes": [
+        {
+          "$ref": "#/interfaces@0"
+        }
+      ],
+      "attributes": [
+        {
+          "$type": "TypeAttribute",
+          "name": "deprecatedSyntax",
+          "type": {
+            "$type": "SimpleType",
+            "primitiveType": "boolean"
+          },
+          "isOptional": false
+        },
+        {
+          "$type": "TypeAttribute",
+          "name": "terminal",
+          "isOptional": true,
+          "type": {
+            "$type": "SimpleType",
+            "typeRef": {
+              "$ref": "#/interfaces@0"
+            }
+          }
+        },
+        {
+          "$type": "TypeAttribute",
+          "name": "type",
+          "type": {
+            "$type": "ReferenceType",
+            "referenceType": {
+              "$type": "SimpleType",
+              "typeRef": {
+                "$ref": "#/types@1"
+              }
+            }
+          },
+          "isOptional": false
+        }
+      ]
+    },
+    {
+      "$type": "Interface",
+      "name": "EndOfFile",
+      "superTypes": [
+        {
+          "$ref": "#/interfaces@0"
+        }
+      ],
+      "attributes": []
+    },
+    {
+      "$type": "Interface",
+      "name": "Group",
+      "superTypes": [
+        {
+          "$ref": "#/interfaces@0"
+        }
+      ],
+      "attributes": [
+        {
+          "$type": "TypeAttribute",
+          "name": "elements",
+          "type": {
+            "$type": "ArrayType",
+            "elementType": {
+              "$type": "SimpleType",
+              "typeRef": {
+                "$ref": "#/interfaces@0"
+              }
+            }
+          },
+          "isOptional": false
+        },
+        {
+          "$type": "TypeAttribute",
+          "name": "guardCondition",
+          "isOptional": true,
+          "type": {
+            "$type": "SimpleType",
+            "typeRef": {
+              "$ref": "#/types@3"
+            }
+          }
+        },
+        {
+          "$type": "TypeAttribute",
+          "name": "predicate",
+          "isOptional": true,
+          "type": {
+            "$type": "UnionType",
+            "types": [
+              {
+                "$type": "SimpleType",
+                "stringType": "->"
+              },
+              {
+                "$type": "SimpleType",
+                "stringType": "=>"
+              }
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "$type": "Interface",
+      "name": "Keyword",
+      "superTypes": [
+        {
+          "$ref": "#/interfaces@0"
+        }
+      ],
+      "attributes": [
+        {
+          "$type": "TypeAttribute",
+          "name": "predicate",
+          "isOptional": true,
+          "type": {
+            "$type": "UnionType",
+            "types": [
+              {
+                "$type": "SimpleType",
+                "stringType": "->"
+              },
+              {
+                "$type": "SimpleType",
+                "stringType": "=>"
+              }
+            ]
+          }
+        },
+        {
+          "$type": "TypeAttribute",
+          "name": "value",
+          "type": {
+            "$type": "SimpleType",
+            "primitiveType": "string"
+          },
+          "isOptional": false
+        }
+      ]
+    },
+    {
+      "$type": "Interface",
+      "name": "NegatedToken",
+      "superTypes": [
+        {
+          "$ref": "#/interfaces@39"
+        }
+      ],
+      "attributes": [
+        {
+          "$type": "TypeAttribute",
+          "name": "terminal",
+          "type": {
+            "$type": "SimpleType",
+            "typeRef": {
+              "$ref": "#/interfaces@0"
+            }
+          },
+          "isOptional": false
+        }
+      ]
+    },
+    {
+      "$type": "Interface",
+      "name": "RegexToken",
+      "superTypes": [
+        {
+          "$ref": "#/interfaces@39"
+        }
+      ],
+      "attributes": [
+        {
+          "$type": "TypeAttribute",
+          "name": "regex",
+          "type": {
+            "$type": "SimpleType",
+            "primitiveType": "string"
+          },
+          "isOptional": false
+        }
+      ]
+    },
+    {
+      "$type": "Interface",
+      "name": "RuleCall",
+      "superTypes": [
+        {
+          "$ref": "#/interfaces@0"
+        }
+      ],
+      "attributes": [
+        {
+          "$type": "TypeAttribute",
+          "name": "arguments",
+          "type": {
+            "$type": "ArrayType",
+            "elementType": {
+              "$type": "SimpleType",
+              "typeRef": {
+                "$ref": "#/interfaces@13"
+              }
+            }
+          },
+          "isOptional": false
+        },
+        {
+          "$type": "TypeAttribute",
+          "name": "predicate",
+          "isOptional": true,
+          "type": {
+            "$type": "UnionType",
+            "types": [
+              {
+                "$type": "SimpleType",
+                "stringType": "->"
+              },
+              {
+                "$type": "SimpleType",
+                "stringType": "=>"
+              }
+            ]
+          }
+        },
+        {
+          "$type": "TypeAttribute",
+          "name": "rule",
+          "type": {
+            "$type": "ReferenceType",
+            "referenceType": {
+              "$type": "SimpleType",
+              "typeRef": {
+                "$ref": "#/types@0"
+              }
+            }
+          },
+          "isOptional": false
+        }
+      ]
+    },
+    {
+      "$type": "Interface",
+      "name": "TerminalAlternatives",
+      "superTypes": [
+        {
+          "$ref": "#/interfaces@39"
+        }
+      ],
+      "attributes": [
+        {
+          "$type": "TypeAttribute",
+          "name": "elements",
+          "type": {
+            "$type": "ArrayType",
+            "elementType": {
+              "$type": "SimpleType",
+              "typeRef": {
+                "$ref": "#/interfaces@0"
+              }
+            }
+          },
+          "isOptional": false
+        }
+      ]
+    },
+    {
+      "$type": "Interface",
+      "name": "TerminalElement",
+      "superTypes": [
+        {
+          "$ref": "#/interfaces@0"
+        }
+      ],
+      "attributes": [
+        {
+          "$type": "TypeAttribute",
+          "name": "lookahead",
+          "isOptional": true,
+          "type": {
+            "$type": "UnionType",
+            "types": [
+              {
+                "$type": "SimpleType",
+                "stringType": "?!"
+              },
+              {
+                "$type": "SimpleType",
+                "stringType": "?<!"
+              },
+              {
+                "$type": "SimpleType",
+                "stringType": "?<="
+              },
+              {
+                "$type": "SimpleType",
+                "stringType": "?="
+              }
+            ]
+          }
+        },
+        {
+          "$type": "TypeAttribute",
+          "name": "parenthesized",
+          "type": {
+            "$type": "SimpleType",
+            "primitiveType": "boolean"
+          },
+          "isOptional": false
+        }
+      ]
+    },
+    {
+      "$type": "Interface",
+      "name": "TerminalGroup",
+      "superTypes": [
+        {
+          "$ref": "#/interfaces@39"
+        }
+      ],
+      "attributes": [
+        {
+          "$type": "TypeAttribute",
+          "name": "elements",
+          "type": {
+            "$type": "ArrayType",
+            "elementType": {
+              "$type": "SimpleType",
+              "typeRef": {
+                "$ref": "#/interfaces@0"
+              }
+            }
+          },
+          "isOptional": false
+        }
+      ]
+    },
+    {
+      "$type": "Interface",
+      "name": "TerminalRuleCall",
+      "superTypes": [
+        {
+          "$ref": "#/interfaces@39"
+        }
+      ],
+      "attributes": [
+        {
+          "$type": "TypeAttribute",
+          "name": "rule",
+          "type": {
+            "$type": "ReferenceType",
+            "referenceType": {
+              "$type": "SimpleType",
+              "typeRef": {
+                "$ref": "#/interfaces@23"
+              }
+            }
+          },
+          "isOptional": false
+        }
+      ]
+    },
+    {
+      "$type": "Interface",
+      "name": "UnorderedGroup",
+      "superTypes": [
+        {
+          "$ref": "#/interfaces@39"
+        }
+      ],
+      "attributes": [
+        {
+          "$type": "TypeAttribute",
+          "name": "elements",
+          "type": {
+            "$type": "ArrayType",
+            "elementType": {
+              "$type": "SimpleType",
+              "typeRef": {
+                "$ref": "#/interfaces@0"
+              }
+            }
+          },
+          "isOptional": false
+        }
+      ]
+    },
+    {
+      "$type": "Interface",
+      "name": "UntilToken",
+      "superTypes": [
+        {
+          "$ref": "#/interfaces@39"
+        }
+      ],
+      "attributes": [
+        {
+          "$type": "TypeAttribute",
+          "name": "terminal",
+          "type": {
+            "$type": "SimpleType",
+            "typeRef": {
+              "$ref": "#/interfaces@0"
+            }
+          },
+          "isOptional": false
+        }
+      ]
+    },
+    {
+      "$type": "Interface",
+      "name": "Wildcard",
+      "superTypes": [
+        {
+          "$ref": "#/interfaces@39"
+        }
+      ],
+      "attributes": []
+    }
+  ],
   "types": [
+    {
+      "$type": "Type",
+      "name": "AbstractRule",
+      "type": {
+        "$type": "UnionType",
+        "types": [
+          {
+            "$type": "SimpleType",
+            "typeRef": {
+              "$ref": "#/interfaces@9"
+            }
+          },
+          {
+            "$type": "SimpleType",
+            "typeRef": {
+              "$ref": "#/interfaces@18"
+            }
+          },
+          {
+            "$type": "SimpleType",
+            "typeRef": {
+              "$ref": "#/interfaces@23"
+            }
+          }
+        ]
+      }
+    },
     {
       "$type": "Type",
       "name": "AbstractType",
@@ -3734,37 +5285,289 @@ export const LangiumGrammarGrammar = (): Grammar => loadedLangiumGrammarGrammar 
           {
             "$type": "SimpleType",
             "typeRef": {
-              "$ref": "#/rules@1"
+              "$ref": "#/interfaces@8"
             }
           },
           {
             "$type": "SimpleType",
             "typeRef": {
-              "$ref": "#/rules@14"
+              "$ref": "#/interfaces@9"
             }
           },
           {
             "$type": "SimpleType",
             "typeRef": {
-              "$ref": "#/rules@17"
+              "$ref": "#/interfaces@12"
             }
           },
           {
             "$type": "SimpleType",
             "typeRef": {
-              "$ref": "#/rules@18"
+              "$ref": "#/interfaces@18"
             }
           },
           {
             "$type": "SimpleType",
             "typeRef": {
-              "$ref": "#/rules@22"
+              "$ref": "#/interfaces@24"
+            }
+          }
+        ]
+      }
+    },
+    {
+      "$type": "Type",
+      "name": "Associativity",
+      "type": {
+        "$type": "UnionType",
+        "types": [
+          {
+            "$type": "SimpleType",
+            "stringType": "left"
+          },
+          {
+            "$type": "SimpleType",
+            "stringType": "right"
+          }
+        ]
+      }
+    },
+    {
+      "$type": "Type",
+      "name": "Condition",
+      "type": {
+        "$type": "UnionType",
+        "types": [
+          {
+            "$type": "SimpleType",
+            "typeRef": {
+              "$ref": "#/interfaces@3"
+            }
+          },
+          {
+            "$type": "SimpleType",
+            "typeRef": {
+              "$ref": "#/interfaces@4"
+            }
+          },
+          {
+            "$type": "SimpleType",
+            "typeRef": {
+              "$ref": "#/interfaces@5"
+            }
+          },
+          {
+            "$type": "SimpleType",
+            "typeRef": {
+              "$ref": "#/interfaces@14"
+            }
+          },
+          {
+            "$type": "SimpleType",
+            "typeRef": {
+              "$ref": "#/interfaces@17"
+            }
+          }
+        ]
+      }
+    },
+    {
+      "$type": "Type",
+      "name": "FeatureName",
+      "type": {
+        "$type": "UnionType",
+        "types": [
+          {
+            "$type": "SimpleType",
+            "stringType": "assoc"
+          },
+          {
+            "$type": "SimpleType",
+            "stringType": "current"
+          },
+          {
+            "$type": "SimpleType",
+            "stringType": "entry"
+          },
+          {
+            "$type": "SimpleType",
+            "stringType": "extends"
+          },
+          {
+            "$type": "SimpleType",
+            "stringType": "false"
+          },
+          {
+            "$type": "SimpleType",
+            "stringType": "fragment"
+          },
+          {
+            "$type": "SimpleType",
+            "stringType": "grammar"
+          },
+          {
+            "$type": "SimpleType",
+            "stringType": "hidden"
+          },
+          {
+            "$type": "SimpleType",
+            "stringType": "import"
+          },
+          {
+            "$type": "SimpleType",
+            "stringType": "infer"
+          },
+          {
+            "$type": "SimpleType",
+            "stringType": "infers"
+          },
+          {
+            "$type": "SimpleType",
+            "stringType": "infix"
+          },
+          {
+            "$type": "SimpleType",
+            "stringType": "interface"
+          },
+          {
+            "$type": "SimpleType",
+            "stringType": "left"
+          },
+          {
+            "$type": "SimpleType",
+            "stringType": "on"
+          },
+          {
+            "$type": "SimpleType",
+            "stringType": "returns"
+          },
+          {
+            "$type": "SimpleType",
+            "stringType": "right"
+          },
+          {
+            "$type": "SimpleType",
+            "stringType": "terminal"
+          },
+          {
+            "$type": "SimpleType",
+            "stringType": "true"
+          },
+          {
+            "$type": "SimpleType",
+            "stringType": "type"
+          },
+          {
+            "$type": "SimpleType",
+            "stringType": "with"
+          },
+          {
+            "$type": "SimpleType",
+            "typeRef": {
+              "$ref": "#/types@5"
+            }
+          },
+          {
+            "$type": "SimpleType",
+            "primitiveType": "string"
+          }
+        ]
+      }
+    },
+    {
+      "$type": "Type",
+      "name": "PrimitiveType",
+      "type": {
+        "$type": "UnionType",
+        "types": [
+          {
+            "$type": "SimpleType",
+            "stringType": "Date"
+          },
+          {
+            "$type": "SimpleType",
+            "stringType": "bigint"
+          },
+          {
+            "$type": "SimpleType",
+            "stringType": "boolean"
+          },
+          {
+            "$type": "SimpleType",
+            "stringType": "number"
+          },
+          {
+            "$type": "SimpleType",
+            "stringType": "string"
+          }
+        ]
+      }
+    },
+    {
+      "$type": "Type",
+      "name": "TypeDefinition",
+      "type": {
+        "$type": "UnionType",
+        "types": [
+          {
+            "$type": "SimpleType",
+            "typeRef": {
+              "$ref": "#/interfaces@2"
+            }
+          },
+          {
+            "$type": "SimpleType",
+            "typeRef": {
+              "$ref": "#/interfaces@19"
+            }
+          },
+          {
+            "$type": "SimpleType",
+            "typeRef": {
+              "$ref": "#/interfaces@21"
+            }
+          },
+          {
+            "$type": "SimpleType",
+            "typeRef": {
+              "$ref": "#/interfaces@26"
+            }
+          }
+        ]
+      }
+    },
+    {
+      "$type": "Type",
+      "name": "ValueLiteral",
+      "type": {
+        "$type": "UnionType",
+        "types": [
+          {
+            "$type": "SimpleType",
+            "typeRef": {
+              "$ref": "#/interfaces@1"
+            }
+          },
+          {
+            "$type": "SimpleType",
+            "typeRef": {
+              "$ref": "#/interfaces@3"
+            }
+          },
+          {
+            "$type": "SimpleType",
+            "typeRef": {
+              "$ref": "#/interfaces@15"
+            }
+          },
+          {
+            "$type": "SimpleType",
+            "typeRef": {
+              "$ref": "#/interfaces@22"
             }
           }
         ]
       }
     }
-  ],
-  "imports": [],
-  "interfaces": []
+  ]
 }`));
