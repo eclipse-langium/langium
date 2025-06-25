@@ -21,7 +21,7 @@ describe('new lines', () => {
         expect(process(comp)).toBe(`First${EOL}Second`);
     });
 
-    test('should process with speicified line delimiter', () => {
+    test('should process with specified line delimiter', () => {
         const comp = new CompositeGeneratorNode();
         comp.append('First', new NewLineNode('/'), 'Second');
         expect(process(comp)).toBe('First/Second');
@@ -45,10 +45,28 @@ describe('new lines', () => {
         expect(process(comp)).toBe(`First${EOL}${EOL}Second`);
     });
 
+    test('should create 3 line breaks', () => {
+        const comp = new CompositeGeneratorNode();
+        comp.append('First', new NewLineNode(undefined, false, 3), 'Second');
+        expect(process(comp)).toBe(`First${EOL}${EOL}${EOL}Second`);
+    });
+
+    test('should create 5 line breaks after previous non-empty line', () => {
+        const comp = new CompositeGeneratorNode();
+        comp.append('First', new NewLineNode(undefined, true, 5), 'Second');
+        expect(process(comp)).toBe(`First${EOL}${EOL}${EOL}${EOL}${EOL}Second`);
+    });
+
     test('should not create multiple new lines on previous empty line', () => {
         const comp = new CompositeGeneratorNode();
         comp.append('First', NL, NLEmpty, 'Second');
         expect(process(comp)).toBe(`First${EOL}Second`);
+    });
+
+    test('should not create 5 line breaks after previous empty line', () => {
+        const comp = new CompositeGeneratorNode();
+        comp.append('', new NewLineNode(undefined, true, 5), 'Second');
+        expect(process(comp)).toBe('Second');
     });
 
 });
@@ -135,10 +153,9 @@ describe('indentation', () => {
     test('should indent 2 spaces by default after new line if specified', () => {
         const comp = new CompositeGeneratorNode();
         comp.append('No indent', NL);
-        const indent = new IndentNode();
+        const indent = new IndentNode('  ');
         indent.append('Indent');
         comp.append(indent);
-        indent.indentation = '  ';
         expect(process(comp)).toBe(`No indent${EOL}  Indent`);
     });
 
@@ -202,6 +219,30 @@ describe('composite', () => {
         const comp = new CompositeGeneratorNode();
         comp.append('Some ', node => node.append('more'), ' text');
         expect(process(comp)).toBe('Some more text');
+    });
+
+    test('should prepend strings', () => {
+        const comp = new CompositeGeneratorNode('Some content.');
+        comp.prepend('A', ' ', 'preamble', NL);
+        comp.append(NL, 'The', ' ', 'postamble');
+        expect(process(comp)).toBe(`A preamble${EOL}Some content.${EOL}The postamble`);
+    });
+
+    test('should prepend optional generator nodes', () => {
+        const prefix = [ new CompositeGeneratorNode('Preamble'), NL, undefined ];
+        const comp = new CompositeGeneratorNode('Some content.');
+        comp.prepend(...prefix);
+
+        expect(process(comp)).toBe(`Preamble${EOL}Some content.`);
+    });
+
+    test('should conditionally prepend optional generator nodes', () => {
+        const prefix = [ new CompositeGeneratorNode('Preamble'), NL, undefined ];
+        const comp = new CompositeGeneratorNode('Some content.').prependIf(false, ...prefix);
+        expect(process(comp)).toBe('Some content.');
+
+        comp.prependIf(true, ...prefix);
+        expect(process(comp)).toBe(`Preamble${EOL}Some content.`);
     });
 
     test('should indent without function argument', () => {
