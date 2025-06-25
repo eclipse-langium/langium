@@ -17,7 +17,7 @@ import { DefaultScopeProvider } from '../../references/scope-provider.js';
 import { findRootNode, getContainerOfType, getDocument, streamAllContents } from '../../utils/ast-utils.js';
 import { toDocumentSegment } from '../../utils/cst-utils.js';
 import { stream } from '../../utils/stream.js';
-import { AbstractType, InferredType, Interface, NamedArgument, Type, isAction, isGrammar, isInfixRule, isParserRule, isReturnType, isRuleCall } from '../../languages/generated/ast.js';
+import { AbstractType, InferredType, Interface, NamedArgument, Type, isAbstractParserRule, isAction, isGrammar, isParserRule, isReturnType, isRuleCall } from '../../languages/generated/ast.js';
 import { resolveImportUri } from '../internal-grammar-util.js';
 
 export class LangiumGrammarScopeProvider extends DefaultScopeProvider {
@@ -47,7 +47,7 @@ export class LangiumGrammarScopeProvider extends DefaultScopeProvider {
             return EMPTY_SCOPE;
         }
         const rule = ruleCall.rule.ref;
-        if (!isParserRule(rule) && !isInfixRule(rule)) {
+        if (!isAbstractParserRule(rule)) {
             return EMPTY_SCOPE;
         }
         return this.createScopeForNodes(rule.parameters);
@@ -131,7 +131,7 @@ export class LangiumGrammarScopeComputation extends DefaultScopeComputation {
         super.exportNode(node, exports, document);
 
         // additionally, export inferred types:
-        if (isParserRule(node)) {
+        if (isAbstractParserRule(node)) {
             if (!node.returnType && !node.dataType) {
                 // Export implicitly and explicitly inferred type from parser rule
                 const typeNode = node.inferredType ?? node;

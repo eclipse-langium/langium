@@ -56,6 +56,9 @@ export function registerValidationChecks(services: LangiumGrammarServices): void
             validator.checkParserRuleReservedName,
             validator.checkOperatorMultiplicitiesForMultiAssignments,
         ],
+        InfixRule: [
+            validator.checkInfixRuleDataType,
+        ],
         TerminalRule: [
             validator.checkTerminalRuleReturnType,
             validator.checkHiddenTerminalRule,
@@ -309,12 +312,12 @@ export class LangiumGrammarValidator {
             importedGrammar.interfaces.forEach(iface => types.add(iface.name));
         }
 
-        for (const rule of grammar.rules.filter(ast.isParserRule)) {
+        for (const rule of grammar.rules.filter(ast.isAbstractParserRule)) {
             if (isEmptyRule(rule)) {
                 continue;
             }
 
-            const isDataType = isDataTypeRule(rule);
+            const isDataType = ast.isParserRule(rule) && isDataTypeRule(rule);
             const isInfers = !rule.returnType && !rule.dataType;
             const ruleTypeName = getTypeNameWithoutError(rule);
             if (typesOption === 'strict' && isInfers) {
@@ -662,7 +665,7 @@ export class LangiumGrammarValidator {
             if (ast.isTerminalRule(rule) && rule.name) {
                 localTerminals.add(rule.name, rule);
             }
-            if (ast.isParserRule(rule)) {
+            if (ast.isAbstractParserRule(rule)) {
                 const keywords = streamAllContents(rule).filter(ast.isKeyword);
                 keywords.forEach(e => localKeywords.add(e.value));
             }
@@ -678,7 +681,7 @@ export class LangiumGrammarValidator {
                 for (const rule of importedGrammar.rules) {
                     if (ast.isTerminalRule(rule) && rule.name) {
                         importedTerminals.add(rule.name, importNode);
-                    } else if (ast.isParserRule(rule) && rule.name) {
+                    } else if (ast.isAbstractParserRule(rule) && rule.name) {
                         const keywords = streamAllContents(rule).filter(ast.isKeyword);
                         keywords.forEach(e => importedKeywords.add(e.value, importNode));
                     }
@@ -820,7 +823,7 @@ export class LangiumGrammarValidator {
     }
 
     checkKeyword(keyword: ast.Keyword, accept: ValidationAcceptor): void {
-        if (getContainerOfType(keyword, ast.isParserRule)) {
+        if (getContainerOfType(keyword, ast.isAbstractParserRule)) {
             if (keyword.value.length === 0) {
                 accept('error', 'Keywords cannot be empty.', { node: keyword });
             } else if (keyword.value.trim().length === 0) {
@@ -884,6 +887,12 @@ export class LangiumGrammarValidator {
             accept('error', 'This parser rule does not create an object. Add a primitive return type or an action to the start of the rule to force object instantiation.', { node: rule, property: 'name' });
         } else if (hasDatatypeReturnType && !dataTypeRule) {
             accept('error', 'Normal parser rules are not allowed to return a primitive value. Use a datatype rule for that.', { node: rule, property: rule.dataType ? 'dataType' : 'returnType' });
+        }
+    }
+
+    checkInfixRuleDataType(rule: ast.InfixRule, accept: ValidationAcceptor): void {
+        if (rule.dataType) {
+            accept('error', 'Infix rules are not allowed to return a primitive value.', { node: rule, property: 'dataType' });
         }
     }
 
@@ -1066,7 +1075,7 @@ export class LangiumGrammarValidator {
 
     checkRuleCallParameters(ruleCall: ast.RuleCall, accept: ValidationAcceptor): void {
         const rule = ruleCall.rule.ref;
-        if (ast.isParserRule(rule) || ast.isInfixRule(rule)) {
+        if (ast.isAbstractParserRule(rule)) {
             const expected = rule.parameters.length;
             const given = ruleCall.arguments.length;
             if (expected > 0 && given === 0) {
@@ -1128,7 +1137,7 @@ export class LangiumGrammarValidator {
         const refTerminal = reference.terminal;
         if (ast.isRuleCall(refTerminal)) {
             const rule = refTerminal.rule.ref;
-            if (ast.isParserRule(rule) && !isDataTypeRule(rule)) {
+            if (ast.isParserRule(rule) && !isDataTypeRule(rule) || ast.isInfixRule(rule)) {
                 accept('error', 'Parser rules cannot be used for cross-references.', { node: refTerminal, property: 'rule' });
             } else if (ast.isParserRule(rule) && !isStringGrammarType(rule)) {
                 accept('error', 'Data type rules for cross-references must be of type string.', { node: refTerminal, property: 'rule' });
@@ -1167,7 +1176,7 @@ export class LangiumGrammarValidator {
     }
 
     protected checkReferenceToRuleButNotType(type: Reference<ast.AbstractType>): string | undefined {
-        if (type && ast.isParserRule(type.ref) && !isDataTypeRule(type.ref) && (type.ref.returnType || type.ref.inferredType)) {
+        if (type && (ast.isParserRule(type.ref) && !isDataTypeRule(type.ref) || ast.isInfixRule(type.ref)) && (type.ref.returnType || type.ref.inferredType)) {
             const typeName = getTypeNameWithoutError(type.ref);
             if (typeName) {
                 return `Use the rule type '${typeName}' instead of the typed rule name '${type.ref.name}' for cross-references.`;

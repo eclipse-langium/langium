@@ -12,12 +12,12 @@ import { SymbolKind } from 'vscode-languageserver';
 import { AbstractCallHierarchyProvider } from '../../lsp/call-hierarchy-provider.js';
 import { getContainerOfType, getDocument, streamAllContents } from '../../utils/ast-utils.js';
 import { findLeafNodeAtOffset } from '../../utils/cst-utils.js';
-import { isParserRule, isRuleCall } from '../../languages/generated/ast.js';
+import { isAbstractParserRule, isInfixRule, isParserRule, isRuleCall } from '../../languages/generated/ast.js';
 
 export class LangiumGrammarCallHierarchyProvider extends AbstractCallHierarchyProvider {
 
     protected getIncomingCalls(node: AstNode, references: Stream<ReferenceDescription>): CallHierarchyIncomingCall[] | undefined {
-        if (!isParserRule(node)) {
+        if (!isAbstractParserRule(node)) {
             return undefined;
         }
         // This map is used to group incoming calls to avoid duplicates.
@@ -35,7 +35,7 @@ export class LangiumGrammarCallHierarchyProvider extends AbstractCallHierarchyPr
             if (!targetNode) {
                 return;
             }
-            const parserRule = getContainerOfType(targetNode.astNode, isParserRule);
+            const parserRule = getContainerOfType(targetNode.astNode, isAbstractParserRule);
             if (!parserRule || !parserRule.$cstNode) {
                 return;
             }
@@ -66,44 +66,70 @@ export class LangiumGrammarCallHierarchyProvider extends AbstractCallHierarchyPr
     }
 
     protected getOutgoingCalls(node: AstNode): CallHierarchyOutgoingCall[] | undefined {
-        if (!isParserRule(node)) {
-            return undefined;
-        }
-        const ruleCalls = streamAllContents(node).filter(isRuleCall).toArray();
-        // This map is used to group outgoing calls to avoid duplicates.
-        const uniqueRules = new Map<string, { refCstNode: CstNode, to: CstNode, from: Range[], docUri: string }>();
-        ruleCalls.forEach(ruleCall => {
+        if (isParserRule(node)) {
+            const ruleCalls = streamAllContents(node).filter(isRuleCall).toArray();
+            // This map is used to group outgoing calls to avoid duplicates.
+            const uniqueRules = new Map<string, { refCstNode: CstNode, to: CstNode, from: Range[], docUri: string }>();
+            ruleCalls.forEach(ruleCall => {
+                const cstNode = ruleCall.$cstNode;
+                if (!cstNode) {
+                    return;
+                }
+                const refCstNode = ruleCall.rule.ref?.$cstNode;
+                if (!refCstNode) {
+                    return;
+                }
+                const refNameNode = this.nameProvider.getNameNode(refCstNode.astNode);
+                if (!refNameNode) {
+                    return;
+                }
+                const refDocUri = getDocument(refCstNode.astNode).uri.toString();
+                const ruleId = refDocUri + '@' + refNameNode.text;
+
+                uniqueRules.has(ruleId) ?
+                    uniqueRules.set(ruleId, { refCstNode: refCstNode, to: refNameNode, from: [...uniqueRules.get(ruleId)!.from, cstNode.range], docUri: refDocUri })
+                    : uniqueRules.set(ruleId, { refCstNode: refCstNode, to: refNameNode, from: [cstNode.range], docUri: refDocUri });
+            });
+            if (uniqueRules.size === 0) {
+                return undefined;
+            }
+            return Array.from(uniqueRules.values()).map(rule => ({
+                to: {
+                    kind: SymbolKind.Method,
+                    name: rule.to.text,
+                    range: rule.refCstNode.range,
+                    selectionRange: rule.to.range,
+                    uri: rule.docUri
+                },
+                fromRanges: rule.from
+            }));
+        } else if (isInfixRule(node)) {
+            const ruleCall = node.call;
             const cstNode = ruleCall.$cstNode;
             if (!cstNode) {
-                return;
+                return undefined;
             }
             const refCstNode = ruleCall.rule.ref?.$cstNode;
             if (!refCstNode) {
-                return;
+                return undefined;
             }
             const refNameNode = this.nameProvider.getNameNode(refCstNode.astNode);
             if (!refNameNode) {
-                return;
+                return undefined;
             }
             const refDocUri = getDocument(refCstNode.astNode).uri.toString();
-            const ruleId = refDocUri + '@' + refNameNode.text;
-
-            uniqueRules.has(ruleId) ?
-                uniqueRules.set(ruleId, { refCstNode: refCstNode, to: refNameNode, from: [...uniqueRules.get(ruleId)!.from, cstNode.range], docUri: refDocUri })
-                : uniqueRules.set(ruleId, { refCstNode: refCstNode, to: refNameNode, from: [cstNode.range], docUri: refDocUri });
-        });
-        if (uniqueRules.size === 0) {
+            return [{
+                to: {
+                    kind: SymbolKind.Method,
+                    name: refNameNode.text,
+                    range: refCstNode.range,
+                    selectionRange: refNameNode.range,
+                    uri: refDocUri
+                },
+                fromRanges: [cstNode.range]
+            }];
+        } else {
             return undefined;
         }
-        return Array.from(uniqueRules.values()).map(rule => ({
-            to: {
-                kind: SymbolKind.Method,
-                name: rule.to.text,
-                range: rule.refCstNode.range,
-                selectionRange: rule.to.range,
-                uri: rule.docUri
-            },
-            fromRanges: rule.from
-        }));
     }
 }
