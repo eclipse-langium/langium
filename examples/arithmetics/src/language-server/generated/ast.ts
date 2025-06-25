@@ -161,53 +161,43 @@ export type ArithmeticsAstType = {
 
 export const properties: langium.AstTypeProperties<ArithmeticsAstType> = langium.deepFreeze({
     AbstractDefinition: {
-        $name: AbstractDefinition,
         args: 'args',
         expr: 'expr',
         name: 'name',
     },
     BinaryExpression: {
-        $name: BinaryExpression,
         left: 'left',
         operator: 'operator',
         right: 'right',
     },
     DeclaredParameter: {
-        $name: DeclaredParameter,
         name: 'name',
     },
     Definition: {
-        $name: Definition,
         args: 'args',
         expr: 'expr',
         name: 'name',
     },
     Evaluation: {
-        $name: Evaluation,
         expression: 'expression',
     },
     Expression: {
-        $name: Expression,
         left: 'left',
         operator: 'operator',
         right: 'right',
     },
     FunctionCall: {
-        $name: FunctionCall,
         args: 'args',
         func: 'func',
     },
     Module: {
-        $name: Module,
         name: 'name',
         statements: 'statements',
     },
     NumberLiteral: {
-        $name: NumberLiteral,
         value: 'value',
     },
     Statement: {
-        $name: Statement,
         args: 'args',
         expr: 'expr',
         name: 'name',

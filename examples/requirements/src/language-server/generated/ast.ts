@@ -121,35 +121,29 @@ export type RequirementsAndTestsAstType = {
 
 export const properties: langium.AstTypeProperties<RequirementsAndTestsAstType> = langium.deepFreeze({
     Contact: {
-        $name: Contact,
         user_name: 'user_name',
     },
     Environment: {
-        $name: Environment,
         description: 'description',
         name: 'name',
     },
     Requirement: {
-        $name: Requirement,
         environments: 'environments',
         name: 'name',
         text: 'text',
     },
     RequirementModel: {
-        $name: RequirementModel,
         contact: 'contact',
         environments: 'environments',
         requirements: 'requirements',
     },
     Test: {
-        $name: Test,
         environments: 'environments',
         name: 'name',
         requirements: 'requirements',
         testFile: 'testFile',
     },
     TestModel: {
-        $name: TestModel,
         contact: 'contact',
         tests: 'tests',
     },

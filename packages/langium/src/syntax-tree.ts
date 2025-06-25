@@ -35,7 +35,7 @@ export interface GenericAstNode extends AstNode {
     [key: string]: unknown
 }
 
-type SpecificNodeProperties<N extends AstNode> = keyof Omit<N, keyof AstNode | number | string | symbol>;
+type SpecificNodeProperties<N extends AstNode> = keyof Omit<N, keyof AstNode | number | symbol>;
 
 /**
  * The property names of a given AST node type.
@@ -233,11 +233,9 @@ export type PropertyType = number | string | boolean | PropertyType[];
 
 
 export type SpecificPropertiesToString<T extends AstNode> = {
-    [K in keyof SpecificNodeProperties<T>]: string;
-} & {
-    $name: string; // $type value of the AstNode, TODO weg damit
+    [K in SpecificNodeProperties<T>]: string;
 };
-export type AstTypeProperties<T extends object> = { // Record<string, langium.AstNode>
+export type AstTypeProperties<T extends object> = {
     [K in keyof T]: T[K] extends AstNode ? SpecificPropertiesToString<T[K]> : never;
 };
 

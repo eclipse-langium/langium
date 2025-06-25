@@ -97,7 +97,6 @@ function buildTypeMetaDataProperties(astTypes: AstTypes): Generated {
         types,
         typeWithProperties => expandToNode`
             ${typeWithProperties.name}: {
-                $name: ${typeWithProperties.name},
                 ${joinToNode(
                     typeWithProperties.properties,
                     property => `${property.name}: '${property.name}',`,

@@ -126,37 +126,30 @@ export type DomainModelAstType = {
 
 export const properties: langium.AstTypeProperties<DomainModelAstType> = langium.deepFreeze({
     AbstractElement: {
-        $name: AbstractElement,
         elements: 'elements',
         name: 'name',
     },
     DataType: {
-        $name: DataType,
         name: 'name',
     },
     Domainmodel: {
-        $name: Domainmodel,
         elements: 'elements',
     },
     Entity: {
-        $name: Entity,
         features: 'features',
         name: 'name',
         superType: 'superType',
     },
     Feature: {
-        $name: Feature,
         many: 'many',
         name: 'name',
         type: 'type',
     },
     PackageDeclaration: {
-        $name: PackageDeclaration,
         elements: 'elements',
         name: 'name',
     },
     Type: {
-        $name: Type,
         name: 'name',
     },
 });

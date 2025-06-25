@@ -727,17 +727,14 @@ export type LangiumGrammarAstType = {
 
 export const properties: langium.AstTypeProperties<LangiumGrammarAstType> = langium.deepFreeze({
     A: {
-        $name: A,
         a: 'a',
         joint: 'joint',
     },
     AbstractElement: {
-        $name: AbstractElement,
         cardinality: 'cardinality',
         lookahead: 'lookahead',
     },
     AbstractRule: {
-        $name: AbstractRule,
         dataType: 'dataType',
         definesHiddenTokens: 'definesHiddenTokens',
         definition: 'definition',
@@ -751,13 +748,11 @@ export const properties: langium.AstTypeProperties<LangiumGrammarAstType> = lang
         wildcard: 'wildcard',
     },
     AbstractType: {
-        $name: AbstractType,
         attributes: 'attributes',
         name: 'name',
         superTypes: 'superTypes',
     },
     Action: {
-        $name: Action,
         feature: 'feature',
         inferredType: 'inferredType',
         operator: 'operator',
@@ -766,21 +761,17 @@ export const properties: langium.AstTypeProperties<LangiumGrammarAstType> = lang
         lookahead: 'lookahead',
     },
     Alternatives: {
-        $name: Alternatives,
         elements: 'elements',
         cardinality: 'cardinality',
         lookahead: 'lookahead',
     },
     ArrayLiteral: {
-        $name: ArrayLiteral,
         elements: 'elements',
     },
     ArrayType: {
-        $name: ArrayType,
         elementType: 'elementType',
     },
     Assignment: {
-        $name: Assignment,
         feature: 'feature',
         operator: 'operator',
         terminal: 'terminal',
@@ -788,37 +779,30 @@ export const properties: langium.AstTypeProperties<LangiumGrammarAstType> = lang
         lookahead: 'lookahead',
     },
     B: {
-        $name: B,
         b: 'b',
         joint: 'joint',
     },
     BooleanLiteral: {
-        $name: BooleanLiteral,
         true: 'true',
     },
     C: {
-        $name: C,
         a: 'a',
         joint: 'joint',
     },
     CharacterRange: {
-        $name: CharacterRange,
         left: 'left',
         right: 'right',
         cardinality: 'cardinality',
         lookahead: 'lookahead',
     },
     Condition: {
-        $name: Condition,
         true: 'true',
     },
     Conjunction: {
-        $name: Conjunction,
         left: 'left',
         right: 'right',
     },
     CrossReference: {
-        $name: CrossReference,
         deprecatedSyntax: 'deprecatedSyntax',
         terminal: 'terminal',
         type: 'type',
@@ -826,17 +810,14 @@ export const properties: langium.AstTypeProperties<LangiumGrammarAstType> = lang
         lookahead: 'lookahead',
     },
     Disjunction: {
-        $name: Disjunction,
         left: 'left',
         right: 'right',
     },
     EndOfFile: {
-        $name: EndOfFile,
         cardinality: 'cardinality',
         lookahead: 'lookahead',
     },
     Grammar: {
-        $name: Grammar,
         definesHiddenTokens: 'definesHiddenTokens',
         hiddenTokens: 'hiddenTokens',
         imports: 'imports',
@@ -848,62 +829,50 @@ export const properties: langium.AstTypeProperties<LangiumGrammarAstType> = lang
         usedGrammars: 'usedGrammars',
     },
     GrammarImport: {
-        $name: GrammarImport,
         path: 'path',
     },
     Group: {
-        $name: Group,
         elements: 'elements',
         guardCondition: 'guardCondition',
         cardinality: 'cardinality',
         lookahead: 'lookahead',
     },
     InferredType: {
-        $name: InferredType,
         name: 'name',
     },
     Interface: {
-        $name: Interface,
         attributes: 'attributes',
         name: 'name',
         superTypes: 'superTypes',
     },
     Keyword: {
-        $name: Keyword,
         value: 'value',
         cardinality: 'cardinality',
         lookahead: 'lookahead',
     },
     NamedArgument: {
-        $name: NamedArgument,
         calledByName: 'calledByName',
         parameter: 'parameter',
         value: 'value',
     },
     NegatedToken: {
-        $name: NegatedToken,
         terminal: 'terminal',
         cardinality: 'cardinality',
         lookahead: 'lookahead',
     },
     Negation: {
-        $name: Negation,
         value: 'value',
     },
     NumberLiteral: {
-        $name: NumberLiteral,
         value: 'value',
     },
     Parameter: {
-        $name: Parameter,
         name: 'name',
     },
     ParameterReference: {
-        $name: ParameterReference,
         parameter: 'parameter',
     },
     ParserRule: {
-        $name: ParserRule,
         dataType: 'dataType',
         definesHiddenTokens: 'definesHiddenTokens',
         definition: 'definition',
@@ -917,50 +886,41 @@ export const properties: langium.AstTypeProperties<LangiumGrammarAstType> = lang
         wildcard: 'wildcard',
     },
     ReferenceType: {
-        $name: ReferenceType,
         referenceType: 'referenceType',
     },
     RegexToken: {
-        $name: RegexToken,
         regex: 'regex',
         cardinality: 'cardinality',
         lookahead: 'lookahead',
     },
     ReturnType: {
-        $name: ReturnType,
         name: 'name',
     },
     RuleCall: {
-        $name: RuleCall,
         arguments: 'arguments',
         rule: 'rule',
         cardinality: 'cardinality',
         lookahead: 'lookahead',
     },
     SimpleType: {
-        $name: SimpleType,
         primitiveType: 'primitiveType',
         stringType: 'stringType',
         typeRef: 'typeRef',
     },
     StringLiteral: {
-        $name: StringLiteral,
         value: 'value',
     },
     TerminalAlternatives: {
-        $name: TerminalAlternatives,
         elements: 'elements',
         cardinality: 'cardinality',
         lookahead: 'lookahead',
     },
     TerminalGroup: {
-        $name: TerminalGroup,
         elements: 'elements',
         cardinality: 'cardinality',
         lookahead: 'lookahead',
     },
     TerminalRule: {
-        $name: TerminalRule,
         definition: 'definition',
         fragment: 'fragment',
         hidden: 'hidden',
@@ -968,49 +928,40 @@ export const properties: langium.AstTypeProperties<LangiumGrammarAstType> = lang
         type: 'type',
     },
     TerminalRuleCall: {
-        $name: TerminalRuleCall,
         rule: 'rule',
         cardinality: 'cardinality',
         lookahead: 'lookahead',
     },
     Type: {
-        $name: Type,
         name: 'name',
         type: 'type',
     },
     TypeAttribute: {
-        $name: TypeAttribute,
         defaultValue: 'defaultValue',
         isOptional: 'isOptional',
         name: 'name',
         type: 'type',
     },
     TypeDefinition: {
-        $name: TypeDefinition,
         types: 'types',
     },
     UnionType: {
-        $name: UnionType,
         types: 'types',
     },
     UnorderedGroup: {
-        $name: UnorderedGroup,
         elements: 'elements',
         cardinality: 'cardinality',
         lookahead: 'lookahead',
     },
     UntilToken: {
-        $name: UntilToken,
         terminal: 'terminal',
         cardinality: 'cardinality',
         lookahead: 'lookahead',
     },
     ValueLiteral: {
-        $name: ValueLiteral,
         value: 'value',
     },
     Wildcard: {
-        $name: Wildcard,
         cardinality: 'cardinality',
         lookahead: 'lookahead',
     },

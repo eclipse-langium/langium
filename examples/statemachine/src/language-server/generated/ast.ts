@@ -116,21 +116,17 @@ export type StatemachineAstType = {
 
 export const properties: langium.AstTypeProperties<StatemachineAstType> = langium.deepFreeze({
     Command: {
-        $name: Command,
         name: 'name',
     },
     Event: {
-        $name: Event,
         name: 'name',
     },
     State: {
-        $name: State,
         actions: 'actions',
         name: 'name',
         transitions: 'transitions',
     },
     Statemachine: {
-        $name: Statemachine,
         commands: 'commands',
         events: 'events',
         init: 'init',
@@ -138,7 +134,6 @@ export const properties: langium.AstTypeProperties<StatemachineAstType> = langiu
         states: 'states',
     },
     Transition: {
-        $name: Transition,
         event: 'event',
         state: 'state',
     },
