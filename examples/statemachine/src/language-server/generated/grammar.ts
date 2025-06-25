@@ -116,8 +116,11 @@ export const StatemachineGrammar = (): Grammar => loadedStatemachineGrammar ?? (
           }
         ]
       },
+      "definesHiddenTokens": false,
       "fragment": false,
+      "hiddenTokens": [],
       "parameters": [],
+      "wildcard": false,
       "$comment": "/** A textual representation of a state machine */"
     },
     {
@@ -135,9 +138,12 @@ export const StatemachineGrammar = (): Grammar => loadedStatemachineGrammar ?? (
           "arguments": []
         }
       },
+      "definesHiddenTokens": false,
       "entry": false,
       "fragment": false,
+      "hiddenTokens": [],
       "parameters": [],
+      "wildcard": false,
       "$comment": "/** An event is the trigger for a transition */"
     },
     {
@@ -155,9 +161,12 @@ export const StatemachineGrammar = (): Grammar => loadedStatemachineGrammar ?? (
           "arguments": []
         }
       },
+      "definesHiddenTokens": false,
       "entry": false,
       "fragment": false,
-      "parameters": []
+      "hiddenTokens": [],
+      "parameters": [],
+      "wildcard": false
     },
     {
       "$type": "ParserRule",
@@ -232,9 +241,12 @@ export const StatemachineGrammar = (): Grammar => loadedStatemachineGrammar ?? (
           }
         ]
       },
+      "definesHiddenTokens": false,
       "entry": false,
       "fragment": false,
+      "hiddenTokens": [],
       "parameters": [],
+      "wildcard": false,
       "$comment": "/** A description of the status of a system */"
     },
     {
@@ -276,9 +288,12 @@ export const StatemachineGrammar = (): Grammar => loadedStatemachineGrammar ?? (
         ],
         "$comment": "/** The event triggering the transition */"
       },
+      "definesHiddenTokens": false,
       "entry": false,
       "fragment": false,
+      "hiddenTokens": [],
       "parameters": [],
+      "wildcard": false,
       "$comment": "/** A change from one state to another */"
     },
     {
@@ -322,7 +337,10 @@ export const StatemachineGrammar = (): Grammar => loadedStatemachineGrammar ?? (
       "fragment": false
     }
   ],
+  "definesHiddenTokens": false,
+  "hiddenTokens": [],
   "imports": [],
   "interfaces": [],
-  "types": []
+  "types": [],
+  "usedGrammars": []
 }`));

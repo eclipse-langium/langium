@@ -37,13 +37,10 @@ export interface Contact extends langium.AstNode {
     user_name: string;
 }
 
-export const Contact = {
-    $type: 'Contact',
-    user_name: 'user_name'
-} as const;
+export const Contact = 'Contact';
 
 export function isContact(item: unknown): item is Contact {
-    return reflection.isInstance(item, Contact.$type);
+    return reflection.isInstance(item, Contact);
 }
 
 export interface Environment extends langium.AstNode {
@@ -53,14 +50,10 @@ export interface Environment extends langium.AstNode {
     name: string;
 }
 
-export const Environment = {
-    $type: 'Environment',
-    description: 'description',
-    name: 'name'
-} as const;
+export const Environment = 'Environment';
 
 export function isEnvironment(item: unknown): item is Environment {
-    return reflection.isInstance(item, Environment.$type);
+    return reflection.isInstance(item, Environment);
 }
 
 export interface Requirement extends langium.AstNode {
@@ -71,15 +64,10 @@ export interface Requirement extends langium.AstNode {
     text: string;
 }
 
-export const Requirement = {
-    $type: 'Requirement',
-    environments: 'environments',
-    name: 'name',
-    text: 'text'
-} as const;
+export const Requirement = 'Requirement';
 
 export function isRequirement(item: unknown): item is Requirement {
-    return reflection.isInstance(item, Requirement.$type);
+    return reflection.isInstance(item, Requirement);
 }
 
 export interface RequirementModel extends langium.AstNode {
@@ -89,15 +77,10 @@ export interface RequirementModel extends langium.AstNode {
     requirements: Array<Requirement>;
 }
 
-export const RequirementModel = {
-    $type: 'RequirementModel',
-    contact: 'contact',
-    environments: 'environments',
-    requirements: 'requirements'
-} as const;
+export const RequirementModel = 'RequirementModel';
 
 export function isRequirementModel(item: unknown): item is RequirementModel {
-    return reflection.isInstance(item, RequirementModel.$type);
+    return reflection.isInstance(item, RequirementModel);
 }
 
 export interface Test extends langium.AstNode {
@@ -109,16 +92,10 @@ export interface Test extends langium.AstNode {
     testFile?: string;
 }
 
-export const Test = {
-    $type: 'Test',
-    environments: 'environments',
-    name: 'name',
-    requirements: 'requirements',
-    testFile: 'testFile'
-} as const;
+export const Test = 'Test';
 
 export function isTest(item: unknown): item is Test {
-    return reflection.isInstance(item, Test.$type);
+    return reflection.isInstance(item, Test);
 }
 
 export interface TestModel extends langium.AstNode {
@@ -127,14 +104,10 @@ export interface TestModel extends langium.AstNode {
     tests: Array<Test>;
 }
 
-export const TestModel = {
-    $type: 'TestModel',
-    contact: 'contact',
-    tests: 'tests'
-} as const;
+export const TestModel = 'TestModel';
 
 export function isTestModel(item: unknown): item is TestModel {
-    return reflection.isInstance(item, TestModel.$type);
+    return reflection.isInstance(item, TestModel);
 }
 
 export type RequirementsAndTestsAstType = {
@@ -147,98 +120,102 @@ export type RequirementsAndTestsAstType = {
 }
 
 export class RequirementsAndTestsAstReflection extends langium.AbstractAstReflection {
-    override readonly types = {
-        Contact: {
-            name: Contact.$type,
-            properties: {
-                user_name: {
-                    name: 'user_name'
-                }
-            },
-            superTypes: []
-        },
-        Environment: {
-            name: Environment.$type,
-            properties: {
-                description: {
-                    name: 'description'
-                },
-                name: {
-                    name: 'name'
-                }
-            },
-            superTypes: []
-        },
-        Requirement: {
-            name: Requirement.$type,
-            properties: {
-                environments: {
-                    name: 'environments',
-                    defaultValue: [],
-                    referenceType: 'Environment'
-                },
-                name: {
-                    name: 'name'
-                },
-                text: {
-                    name: 'text'
-                }
-            },
-            superTypes: []
-        },
-        RequirementModel: {
-            name: RequirementModel.$type,
-            properties: {
-                contact: {
-                    name: 'contact'
-                },
-                environments: {
-                    name: 'environments',
-                    defaultValue: []
-                },
-                requirements: {
-                    name: 'requirements',
-                    defaultValue: []
-                }
-            },
-            superTypes: []
-        },
-        Test: {
-            name: Test.$type,
-            properties: {
-                environments: {
-                    name: 'environments',
-                    defaultValue: [],
-                    referenceType: 'Environment'
-                },
-                name: {
-                    name: 'name'
-                },
-                requirements: {
-                    name: 'requirements',
-                    defaultValue: [],
-                    referenceType: 'Requirement'
-                },
-                testFile: {
-                    name: 'testFile'
-                }
-            },
-            superTypes: []
-        },
-        TestModel: {
-            name: TestModel.$type,
-            properties: {
-                contact: {
-                    name: 'contact'
-                },
-                tests: {
-                    name: 'tests',
-                    defaultValue: []
-                }
-            },
-            superTypes: []
+
+    getAllTypes(): string[] {
+        return [Contact, Environment, Requirement, RequirementModel, Test, TestModel];
+    }
+
+    protected override computeIsSubtype(subtype: string, supertype: string): boolean {
+        switch (subtype) {
+            default: {
+                return false;
+            }
         }
-    } as const satisfies langium.AstMetaData
+    }
+
+    getReferenceType(refInfo: langium.ReferenceInfo): string {
+        const referenceId = `${refInfo.container.$type}:${refInfo.property}`;
+        switch (referenceId) {
+            case 'Requirement:environments':
+            case 'Test:environments': {
+                return Environment;
+            }
+            case 'Test:requirements': {
+                return Requirement;
+            }
+            default: {
+                throw new Error(`${referenceId} is not a valid reference id.`);
+            }
+        }
+    }
+
+    getTypeMetaData(type: string): langium.TypeMetaData {
+        switch (type) {
+            case Contact: {
+                return {
+                    name: Contact,
+                    properties: [
+                        { name: 'user_name' }
+                    ]
+                };
+            }
+            case Environment: {
+                return {
+                    name: Environment,
+                    properties: [
+                        { name: 'description' },
+                        { name: 'name' }
+                    ]
+                };
+            }
+            case Requirement: {
+                return {
+                    name: Requirement,
+                    properties: [
+                        { name: 'environments', defaultValue: [] },
+                        { name: 'name' },
+                        { name: 'text' }
+                    ]
+                };
+            }
+            case RequirementModel: {
+                return {
+                    name: RequirementModel,
+                    properties: [
+                        { name: 'contact' },
+                        { name: 'environments', defaultValue: [] },
+                        { name: 'requirements', defaultValue: [] }
+                    ]
+                };
+            }
+            case Test: {
+                return {
+                    name: Test,
+                    properties: [
+                        { name: 'environments', defaultValue: [] },
+                        { name: 'name' },
+                        { name: 'requirements', defaultValue: [] },
+                        { name: 'testFile' }
+                    ]
+                };
+            }
+            case TestModel: {
+                return {
+                    name: TestModel,
+                    properties: [
+                        { name: 'contact' },
+                        { name: 'tests', defaultValue: [] }
+                    ]
+                };
+            }
+            default: {
+                return {
+                    name: type,
+                    properties: []
+                };
+            }
+        }
+    }
 }
 
 export const reflection = new RequirementsAndTestsAstReflection();

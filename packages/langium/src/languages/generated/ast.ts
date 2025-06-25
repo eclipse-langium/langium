@@ -79,22 +79,18 @@ export type LangiumGrammarTokenNames = LangiumGrammarTerminalNames | LangiumGram
 
 export type AbstractRule = InfixRule | ParserRule | TerminalRule;
 
-export const AbstractRule = {
-    $type: 'AbstractRule'
-} as const;
+export const AbstractRule = 'AbstractRule';
 
 export function isAbstractRule(item: unknown): item is AbstractRule {
-    return reflection.isInstance(item, AbstractRule.$type);
+    return reflection.isInstance(item, AbstractRule);
 }
 
 export type AbstractType = InferredType | InfixRule | Interface | ParserRule | Type;
 
-export const AbstractType = {
-    $type: 'AbstractType'
-} as const;
+export const AbstractType = 'AbstractType';
 
 export function isAbstractType(item: unknown): item is AbstractType {
-    return reflection.isInstance(item, AbstractType.$type);
+    return reflection.isInstance(item, AbstractType);
 }
 
 export type Associativity = 'left' | 'right';
@@ -105,12 +101,10 @@ export function isAssociativity(item: unknown): item is Associativity {
 
 export type Condition = BooleanLiteral | Conjunction | Disjunction | Negation | ParameterReference;
 
-export const Condition = {
-    $type: 'Condition'
-} as const;
+export const Condition = 'Condition';
 
 export function isCondition(item: unknown): item is Condition {
-    return reflection.isInstance(item, Condition.$type);
+    return reflection.isInstance(item, Condition);
 }
 
 export type FeatureName = 'assoc' | 'current' | 'entry' | 'extends' | 'false' | 'fragment' | 'grammar' | 'hidden' | 'import' | 'infer' | 'infers' | 'infix' | 'interface' | 'left' | 'on' | 'returns' | 'right' | 'terminal' | 'true' | 'type' | 'with' | PrimitiveType | string;
@@ -127,22 +121,18 @@ export function isPrimitiveType(item: unknown): item is PrimitiveType {
 
 export type TypeDefinition = ArrayType | ReferenceType | SimpleType | UnionType;
 
-export const TypeDefinition = {
-    $type: 'TypeDefinition'
-} as const;
+export const TypeDefinition = 'TypeDefinition';
 
 export function isTypeDefinition(item: unknown): item is TypeDefinition {
-    return reflection.isInstance(item, TypeDefinition.$type);
+    return reflection.isInstance(item, TypeDefinition);
 }
 
 export type ValueLiteral = ArrayLiteral | BooleanLiteral | NumberLiteral | StringLiteral;
 
-export const ValueLiteral = {
-    $type: 'ValueLiteral'
-} as const;
+export const ValueLiteral = 'ValueLiteral';
 
 export function isValueLiteral(item: unknown): item is ValueLiteral {
-    return reflection.isInstance(item, ValueLiteral.$type);
+    return reflection.isInstance(item, ValueLiteral);
 }
 
 export interface AbstractElement extends langium.AstNode {
@@ -151,14 +141,10 @@ export interface AbstractElement extends langium.AstNode {
     lookahead?: '?!' | '?<!' | '?<=' | '?=';
 }
 
-export const AbstractElement = {
-    $type: 'AbstractElement',
-    cardinality: 'cardinality',
-    lookahead: 'lookahead'
-} as const;
+export const AbstractElement = 'AbstractElement';
 
 export function isAbstractElement(item: unknown): item is AbstractElement {
-    return reflection.isInstance(item, AbstractElement.$type);
+    return reflection.isInstance(item, AbstractElement);
 }
 
 export interface ArrayLiteral extends langium.AstNode {
@@ -167,13 +153,10 @@ export interface ArrayLiteral extends langium.AstNode {
     elements: Array<ValueLiteral>;
 }
 
-export const ArrayLiteral = {
-    $type: 'ArrayLiteral',
-    elements: 'elements'
-} as const;
+export const ArrayLiteral = 'ArrayLiteral';
 
 export function isArrayLiteral(item: unknown): item is ArrayLiteral {
-    return reflection.isInstance(item, ArrayLiteral.$type);
+    return reflection.isInstance(item, ArrayLiteral);
 }
 
 export interface ArrayType extends langium.AstNode {
@@ -182,13 +165,10 @@ export interface ArrayType extends langium.AstNode {
     elementType: TypeDefinition;
 }
 
-export const ArrayType = {
-    $type: 'ArrayType',
-    elementType: 'elementType'
-} as const;
+export const ArrayType = 'ArrayType';
 
 export function isArrayType(item: unknown): item is ArrayType {
-    return reflection.isInstance(item, ArrayType.$type);
+    return reflection.isInstance(item, ArrayType);
 }
 
 export interface BooleanLiteral extends langium.AstNode {
@@ -197,13 +177,10 @@ export interface BooleanLiteral extends langium.AstNode {
     true: boolean;
 }
 
-export const BooleanLiteral = {
-    $type: 'BooleanLiteral',
-    true: 'true'
-} as const;
+export const BooleanLiteral = 'BooleanLiteral';
 
 export function isBooleanLiteral(item: unknown): item is BooleanLiteral {
-    return reflection.isInstance(item, BooleanLiteral.$type);
+    return reflection.isInstance(item, BooleanLiteral);
 }
 
 export interface Conjunction extends langium.AstNode {
@@ -213,14 +190,10 @@ export interface Conjunction extends langium.AstNode {
     right: Condition;
 }
 
-export const Conjunction = {
-    $type: 'Conjunction',
-    left: 'left',
-    right: 'right'
-} as const;
+export const Conjunction = 'Conjunction';
 
 export function isConjunction(item: unknown): item is Conjunction {
-    return reflection.isInstance(item, Conjunction.$type);
+    return reflection.isInstance(item, Conjunction);
 }
 
 export interface Disjunction extends langium.AstNode {
@@ -230,14 +203,10 @@ export interface Disjunction extends langium.AstNode {
     right: Condition;
 }
 
-export const Disjunction = {
-    $type: 'Disjunction',
-    left: 'left',
-    right: 'right'
-} as const;
+export const Disjunction = 'Disjunction';
 
 export function isDisjunction(item: unknown): item is Disjunction {
-    return reflection.isInstance(item, Disjunction.$type);
+    return reflection.isInstance(item, Disjunction);
 }
 
 export interface Grammar extends langium.AstNode {
@@ -250,18 +219,10 @@ export interface Grammar extends langium.AstNode {
     types: Array<Type>;
 }
 
-export const Grammar = {
-    $type: 'Grammar',
-    imports: 'imports',
-    interfaces: 'interfaces',
-    isDeclared: 'isDeclared',
-    name: 'name',
-    rules: 'rules',
-    types: 'types'
-} as const;
+export const Grammar = 'Grammar';
 
 export function isGrammar(item: unknown): item is Grammar {
-    return reflection.isInstance(item, Grammar.$type);
+    return reflection.isInstance(item, Grammar);
 }
 
 export interface GrammarImport extends langium.AstNode {
@@ -270,13 +231,10 @@ export interface GrammarImport extends langium.AstNode {
     path: string;
 }
 
-export const GrammarImport = {
-    $type: 'GrammarImport',
-    path: 'path'
-} as const;
+export const GrammarImport = 'GrammarImport';
 
 export function isGrammarImport(item: unknown): item is GrammarImport {
-    return reflection.isInstance(item, GrammarImport.$type);
+    return reflection.isInstance(item, GrammarImport);
 }
 
 export interface InferredType extends langium.AstNode {
@@ -285,13 +243,10 @@ export interface InferredType extends langium.AstNode {
     name: string;
 }
 
-export const InferredType = {
-    $type: 'InferredType',
-    name: 'name'
-} as const;
+export const InferredType = 'InferredType';
 
 export function isInferredType(item: unknown): item is InferredType {
-    return reflection.isInstance(item, InferredType.$type);
+    return reflection.isInstance(item, InferredType);
 }
 
 export interface InfixRule extends langium.AstNode {
@@ -303,16 +258,10 @@ export interface InfixRule extends langium.AstNode {
     parameters: Array<Parameter>;
 }
 
-export const InfixRule = {
-    $type: 'InfixRule',
-    call: 'call',
-    name: 'name',
-    operators: 'operators',
-    parameters: 'parameters'
-} as const;
+export const InfixRule = 'InfixRule';
 
 export function isInfixRule(item: unknown): item is InfixRule {
-    return reflection.isInstance(item, InfixRule.$type);
+    return reflection.isInstance(item, InfixRule);
 }
 
 export interface InfixRuleOperatorList extends langium.AstNode {
@@ -322,14 +271,10 @@ export interface InfixRuleOperatorList extends langium.AstNode {
     operators: Array<Keyword>;
 }
 
-export const InfixRuleOperatorList = {
-    $type: 'InfixRuleOperatorList',
-    associativity: 'associativity',
-    operators: 'operators'
-} as const;
+export const InfixRuleOperatorList = 'InfixRuleOperatorList';
 
 export function isInfixRuleOperatorList(item: unknown): item is InfixRuleOperatorList {
-    return reflection.isInstance(item, InfixRuleOperatorList.$type);
+    return reflection.isInstance(item, InfixRuleOperatorList);
 }
 
 export interface InfixRuleOperators extends langium.AstNode {
@@ -338,13 +283,10 @@ export interface InfixRuleOperators extends langium.AstNode {
     precedences: Array<InfixRuleOperatorList>;
 }
 
-export const InfixRuleOperators = {
-    $type: 'InfixRuleOperators',
-    precedences: 'precedences'
-} as const;
+export const InfixRuleOperators = 'InfixRuleOperators';
 
 export function isInfixRuleOperators(item: unknown): item is InfixRuleOperators {
-    return reflection.isInstance(item, InfixRuleOperators.$type);
+    return reflection.isInstance(item, InfixRuleOperators);
 }
 
 export interface Interface extends langium.AstNode {
@@ -355,15 +297,10 @@ export interface Interface extends langium.AstNode {
     superTypes: Array<langium.Reference<AbstractType>>;
 }
 
-export const Interface = {
-    $type: 'Interface',
-    attributes: 'attributes',
-    name: 'name',
-    superTypes: 'superTypes'
-} as const;
+export const Interface = 'Interface';
 
 export function isInterface(item: unknown): item is Interface {
-    return reflection.isInstance(item, Interface.$type);
+    return reflection.isInstance(item, Interface);
 }
 
 export interface NamedArgument extends langium.AstNode {
@@ -374,15 +311,10 @@ export interface NamedArgument extends langium.AstNode {
     value: Condition;
 }
 
-export const NamedArgument = {
-    $type: 'NamedArgument',
-    calledByName: 'calledByName',
-    parameter: 'parameter',
-    value: 'value'
-} as const;
+export const NamedArgument = 'NamedArgument';
 
 export function isNamedArgument(item: unknown): item is NamedArgument {
-    return reflection.isInstance(item, NamedArgument.$type);
+    return reflection.isInstance(item, NamedArgument);
 }
 
 export interface Negation extends langium.AstNode {
@@ -391,13 +323,10 @@ export interface Negation extends langium.AstNode {
     value: Condition;
 }
 
-export const Negation = {
-    $type: 'Negation',
-    value: 'value'
-} as const;
+export const Negation = 'Negation';
 
 export function isNegation(item: unknown): item is Negation {
-    return reflection.isInstance(item, Negation.$type);
+    return reflection.isInstance(item, Negation);
 }
 
 export interface NumberLiteral extends langium.AstNode {
@@ -406,13 +335,10 @@ export interface NumberLiteral extends langium.AstNode {
     value: number;
 }
 
-export const NumberLiteral = {
-    $type: 'NumberLiteral',
-    value: 'value'
-} as const;
+export const NumberLiteral = 'NumberLiteral';
 
 export function isNumberLiteral(item: unknown): item is NumberLiteral {
-    return reflection.isInstance(item, NumberLiteral.$type);
+    return reflection.isInstance(item, NumberLiteral);
 }
 
 export interface Parameter extends langium.AstNode {
@@ -421,13 +347,10 @@ export interface Parameter extends langium.AstNode {
     name: string;
 }
 
-export const Parameter = {
-    $type: 'Parameter',
-    name: 'name'
-} as const;
+export const Parameter = 'Parameter';
 
 export function isParameter(item: unknown): item is Parameter {
-    return reflection.isInstance(item, Parameter.$type);
+    return reflection.isInstance(item, Parameter);
 }
 
 export interface ParameterReference extends langium.AstNode {
@@ -436,13 +359,10 @@ export interface ParameterReference extends langium.AstNode {
     parameter: langium.Reference<Parameter>;
 }
 
-export const ParameterReference = {
-    $type: 'ParameterReference',
-    parameter: 'parameter'
-} as const;
+export const ParameterReference = 'ParameterReference';
 
 export function isParameterReference(item: unknown): item is ParameterReference {
-    return reflection.isInstance(item, ParameterReference.$type);
+    return reflection.isInstance(item, ParameterReference);
 }
 
 export interface ParserRule extends langium.AstNode {
@@ -458,20 +378,10 @@ export interface ParserRule extends langium.AstNode {
     returnType?: langium.Reference<AbstractType>;
 }
 
-export const ParserRule = {
-    $type: 'ParserRule',
-    dataType: 'dataType',
-    definition: 'definition',
-    entry: 'entry',
-    fragment: 'fragment',
-    inferredType: 'inferredType',
-    name: 'name',
-    parameters: 'parameters',
-    returnType: 'returnType'
-} as const;
+export const ParserRule = 'ParserRule';
 
 export function isParserRule(item: unknown): item is ParserRule {
-    return reflection.isInstance(item, ParserRule.$type);
+    return reflection.isInstance(item, ParserRule);
 }
 
 export interface ReferenceType extends langium.AstNode {
@@ -480,13 +390,10 @@ export interface ReferenceType extends langium.AstNode {
     referenceType: TypeDefinition;
 }
 
-export const ReferenceType = {
-    $type: 'ReferenceType',
-    referenceType: 'referenceType'
-} as const;
+export const ReferenceType = 'ReferenceType';
 
 export function isReferenceType(item: unknown): item is ReferenceType {
-    return reflection.isInstance(item, ReferenceType.$type);
+    return reflection.isInstance(item, ReferenceType);
 }
 
 export interface ReturnType extends langium.AstNode {
@@ -495,13 +402,10 @@ export interface ReturnType extends langium.AstNode {
     name: PrimitiveType | string;
 }
 
-export const ReturnType = {
-    $type: 'ReturnType',
-    name: 'name'
-} as const;
+export const ReturnType = 'ReturnType';
 
 export function isReturnType(item: unknown): item is ReturnType {
-    return reflection.isInstance(item, ReturnType.$type);
+    return reflection.isInstance(item, ReturnType);
 }
 
 export interface SimpleType extends langium.AstNode {
@@ -512,15 +416,10 @@ export interface SimpleType extends langium.AstNode {
     typeRef?: langium.Reference<AbstractType>;
 }
 
-export const SimpleType = {
-    $type: 'SimpleType',
-    primitiveType: 'primitiveType',
-    stringType: 'stringType',
-    typeRef: 'typeRef'
-} as const;
+export const SimpleType = 'SimpleType';
 
 export function isSimpleType(item: unknown): item is SimpleType {
-    return reflection.isInstance(item, SimpleType.$type);
+    return reflection.isInstance(item, SimpleType);
 }
 
 export interface StringLiteral extends langium.AstNode {
@@ -529,13 +428,10 @@ export interface StringLiteral extends langium.AstNode {
     value: string;
 }
 
-export const StringLiteral = {
-    $type: 'StringLiteral',
-    value: 'value'
-} as const;
+export const StringLiteral = 'StringLiteral';
 
 export function isStringLiteral(item: unknown): item is StringLiteral {
-    return reflection.isInstance(item, StringLiteral.$type);
+    return reflection.isInstance(item, StringLiteral);
 }
 
 export interface TerminalRule extends langium.AstNode {
@@ -548,17 +444,10 @@ export interface TerminalRule extends langium.AstNode {
     type?: ReturnType;
 }
 
-export const TerminalRule = {
-    $type: 'TerminalRule',
-    definition: 'definition',
-    fragment: 'fragment',
-    hidden: 'hidden',
-    name: 'name',
-    type: 'type'
-} as const;
+export const TerminalRule = 'TerminalRule';
 
 export function isTerminalRule(item: unknown): item is TerminalRule {
-    return reflection.isInstance(item, TerminalRule.$type);
+    return reflection.isInstance(item, TerminalRule);
 }
 
 export interface Type extends langium.AstNode {
@@ -568,14 +457,10 @@ export interface Type extends langium.AstNode {
     type: TypeDefinition;
 }
 
-export const Type = {
-    $type: 'Type',
-    name: 'name',
-    type: 'type'
-} as const;
+export const Type = 'Type';
 
 export function isType(item: unknown): item is Type {
-    return reflection.isInstance(item, Type.$type);
+    return reflection.isInstance(item, Type);
 }
 
 export interface TypeAttribute extends langium.AstNode {
@@ -587,16 +472,10 @@ export interface TypeAttribute extends langium.AstNode {
     type: TypeDefinition;
 }
 
-export const TypeAttribute = {
-    $type: 'TypeAttribute',
-    defaultValue: 'defaultValue',
-    isOptional: 'isOptional',
-    name: 'name',
-    type: 'type'
-} as const;
+export const TypeAttribute = 'TypeAttribute';
 
 export function isTypeAttribute(item: unknown): item is TypeAttribute {
-    return reflection.isInstance(item, TypeAttribute.$type);
+    return reflection.isInstance(item, TypeAttribute);
 }
 
 export interface UnionType extends langium.AstNode {
@@ -605,13 +484,10 @@ export interface UnionType extends langium.AstNode {
     types: Array<TypeDefinition>;
 }
 
-export const UnionType = {
-    $type: 'UnionType',
-    types: 'types'
-} as const;
+export const UnionType = 'UnionType';
 
 export function isUnionType(item: unknown): item is UnionType {
-    return reflection.isInstance(item, UnionType.$type);
+    return reflection.isInstance(item, UnionType);
 }
 
 export interface Action extends AbstractElement {
@@ -622,18 +498,10 @@ export interface Action extends AbstractElement {
     type?: langium.Reference<AbstractType>;
 }
 
-export const Action = {
-    $type: 'Action',
-    cardinality: 'cardinality',
-    feature: 'feature',
-    inferredType: 'inferredType',
-    lookahead: 'lookahead',
-    operator: 'operator',
-    type: 'type'
-} as const;
+export const Action = 'Action';
 
 export function isAction(item: unknown): item is Action {
-    return reflection.isInstance(item, Action.$type);
+    return reflection.isInstance(item, Action);
 }
 
 export interface Alternatives extends AbstractElement {
@@ -641,15 +509,10 @@ export interface Alternatives extends AbstractElement {
     elements: Array<AbstractElement>;
 }
 
-export const Alternatives = {
-    $type: 'Alternatives',
-    cardinality: 'cardinality',
-    elements: 'elements',
-    lookahead: 'lookahead'
-} as const;
+export const Alternatives = 'Alternatives';
 
 export function isAlternatives(item: unknown): item is Alternatives {
-    return reflection.isInstance(item, Alternatives.$type);
+    return reflection.isInstance(item, Alternatives);
 }
 
 export interface Assignment extends AbstractElement {
@@ -660,18 +523,10 @@ export interface Assignment extends AbstractElement {
     terminal: AbstractElement;
 }
 
-export const Assignment = {
-    $type: 'Assignment',
-    cardinality: 'cardinality',
-    feature: 'feature',
-    lookahead: 'lookahead',
-    operator: 'operator',
-    predicate: 'predicate',
-    terminal: 'terminal'
-} as const;
+export const Assignment = 'Assignment';
 
 export function isAssignment(item: unknown): item is Assignment {
-    return reflection.isInstance(item, Assignment.$type);
+    return reflection.isInstance(item, Assignment);
 }
 
 export interface CharacterRange extends AbstractElement {
@@ -680,16 +535,10 @@ export interface CharacterRange extends AbstractElement {
     right?: Keyword;
 }
 
-export const CharacterRange = {
-    $type: 'CharacterRange',
-    cardinality: 'cardinality',
-    left: 'left',
-    lookahead: 'lookahead',
-    right: 'right'
-} as const;
+export const CharacterRange = 'CharacterRange';
 
 export function isCharacterRange(item: unknown): item is CharacterRange {
-    return reflection.isInstance(item, CharacterRange.$type);
+    return reflection.isInstance(item, CharacterRange);
 }
 
 export interface CrossReference extends AbstractElement {
@@ -699,31 +548,20 @@ export interface CrossReference extends AbstractElement {
     type: langium.Reference<AbstractType>;
 }
 
-export const CrossReference = {
-    $type: 'CrossReference',
-    cardinality: 'cardinality',
-    deprecatedSyntax: 'deprecatedSyntax',
-    lookahead: 'lookahead',
-    terminal: 'terminal',
-    type: 'type'
-} as const;
+export const CrossReference = 'CrossReference';
 
 export function isCrossReference(item: unknown): item is CrossReference {
-    return reflection.isInstance(item, CrossReference.$type);
+    return reflection.isInstance(item, CrossReference);
 }
 
 export interface EndOfFile extends AbstractElement {
     readonly $type: 'EndOfFile';
 }
 
-export const EndOfFile = {
-    $type: 'EndOfFile',
-    cardinality: 'cardinality',
-    lookahead: 'lookahead'
-} as const;
+export const EndOfFile = 'EndOfFile';
 
 export function isEndOfFile(item: unknown): item is EndOfFile {
-    return reflection.isInstance(item, EndOfFile.$type);
+    return reflection.isInstance(item, EndOfFile);
 }
 
 export interface Group extends AbstractElement {
@@ -733,17 +571,10 @@ export interface Group extends AbstractElement {
     predicate?: '->' | '=>';
 }
 
-export const Group = {
-    $type: 'Group',
-    cardinality: 'cardinality',
-    elements: 'elements',
-    guardCondition: 'guardCondition',
-    lookahead: 'lookahead',
-    predicate: 'predicate'
-} as const;
+export const Group = 'Group';
 
 export function isGroup(item: unknown): item is Group {
-    return reflection.isInstance(item, Group.$type);
+    return reflection.isInstance(item, Group);
 }
 
 export interface Keyword extends AbstractElement {
@@ -753,16 +584,10 @@ export interface Keyword extends AbstractElement {
     value: string;
 }
 
-export const Keyword = {
-    $type: 'Keyword',
-    cardinality: 'cardinality',
-    lookahead: 'lookahead',
-    predicate: 'predicate',
-    value: 'value'
-} as const;
+export const Keyword = 'Keyword';
 
 export function isKeyword(item: unknown): item is Keyword {
-    return reflection.isInstance(item, Keyword.$type);
+    return reflection.isInstance(item, Keyword);
 }
 
 export interface NegatedToken extends AbstractElement {
@@ -770,15 +595,10 @@ export interface NegatedToken extends AbstractElement {
     terminal: AbstractElement;
 }
 
-export const NegatedToken = {
-    $type: 'NegatedToken',
-    cardinality: 'cardinality',
-    lookahead: 'lookahead',
-    terminal: 'terminal'
-} as const;
+export const NegatedToken = 'NegatedToken';
 
 export function isNegatedToken(item: unknown): item is NegatedToken {
-    return reflection.isInstance(item, NegatedToken.$type);
+    return reflection.isInstance(item, NegatedToken);
 }
 
 export interface RegexToken extends AbstractElement {
@@ -786,15 +606,10 @@ export interface RegexToken extends AbstractElement {
     regex: string;
 }
 
-export const RegexToken = {
-    $type: 'RegexToken',
-    cardinality: 'cardinality',
-    lookahead: 'lookahead',
-    regex: 'regex'
-} as const;
+export const RegexToken = 'RegexToken';
 
 export function isRegexToken(item: unknown): item is RegexToken {
-    return reflection.isInstance(item, RegexToken.$type);
+    return reflection.isInstance(item, RegexToken);
 }
 
 export interface RuleCall extends AbstractElement {
@@ -805,17 +620,10 @@ export interface RuleCall extends AbstractElement {
     rule: langium.Reference<AbstractRule>;
 }
 
-export const RuleCall = {
-    $type: 'RuleCall',
-    arguments: 'arguments',
-    cardinality: 'cardinality',
-    lookahead: 'lookahead',
-    predicate: 'predicate',
-    rule: 'rule'
-} as const;
+export const RuleCall = 'RuleCall';
 
 export function isRuleCall(item: unknown): item is RuleCall {
-    return reflection.isInstance(item, RuleCall.$type);
+    return reflection.isInstance(item, RuleCall);
 }
 
 export interface TerminalAlternatives extends AbstractElement {
@@ -823,15 +631,10 @@ export interface TerminalAlternatives extends AbstractElement {
     elements: Array<AbstractElement>;
 }
 
-export const TerminalAlternatives = {
-    $type: 'TerminalAlternatives',
-    cardinality: 'cardinality',
-    elements: 'elements',
-    lookahead: 'lookahead'
-} as const;
+export const TerminalAlternatives = 'TerminalAlternatives';
 
 export function isTerminalAlternatives(item: unknown): item is TerminalAlternatives {
-    return reflection.isInstance(item, TerminalAlternatives.$type);
+    return reflection.isInstance(item, TerminalAlternatives);
 }
 
 export interface TerminalGroup extends AbstractElement {
@@ -839,15 +642,10 @@ export interface TerminalGroup extends AbstractElement {
     elements: Array<AbstractElement>;
 }
 
-export const TerminalGroup = {
-    $type: 'TerminalGroup',
-    cardinality: 'cardinality',
-    elements: 'elements',
-    lookahead: 'lookahead'
-} as const;
+export const TerminalGroup = 'TerminalGroup';
 
 export function isTerminalGroup(item: unknown): item is TerminalGroup {
-    return reflection.isInstance(item, TerminalGroup.$type);
+    return reflection.isInstance(item, TerminalGroup);
 }
 
 export interface TerminalRuleCall extends AbstractElement {
@@ -855,15 +653,10 @@ export interface TerminalRuleCall extends AbstractElement {
     rule: langium.Reference<TerminalRule>;
 }
 
-export const TerminalRuleCall = {
-    $type: 'TerminalRuleCall',
-    cardinality: 'cardinality',
-    lookahead: 'lookahead',
-    rule: 'rule'
-} as const;
+export const TerminalRuleCall = 'TerminalRuleCall';
 
 export function isTerminalRuleCall(item: unknown): item is TerminalRuleCall {
-    return reflection.isInstance(item, TerminalRuleCall.$type);
+    return reflection.isInstance(item, TerminalRuleCall);
 }
 
 export interface UnorderedGroup extends AbstractElement {
@@ -871,15 +664,10 @@ export interface UnorderedGroup extends AbstractElement {
     elements: Array<AbstractElement>;
 }
 
-export const UnorderedGroup = {
-    $type: 'UnorderedGroup',
-    cardinality: 'cardinality',
-    elements: 'elements',
-    lookahead: 'lookahead'
-} as const;
+export const UnorderedGroup = 'UnorderedGroup';
 
 export function isUnorderedGroup(item: unknown): item is UnorderedGroup {
-    return reflection.isInstance(item, UnorderedGroup.$type);
+    return reflection.isInstance(item, UnorderedGroup);
 }
 
 export interface UntilToken extends AbstractElement {
@@ -887,29 +675,20 @@ export interface UntilToken extends AbstractElement {
     terminal: AbstractElement;
 }
 
-export const UntilToken = {
-    $type: 'UntilToken',
-    cardinality: 'cardinality',
-    lookahead: 'lookahead',
-    terminal: 'terminal'
-} as const;
+export const UntilToken = 'UntilToken';
 
 export function isUntilToken(item: unknown): item is UntilToken {
-    return reflection.isInstance(item, UntilToken.$type);
+    return reflection.isInstance(item, UntilToken);
 }
 
 export interface Wildcard extends AbstractElement {
     readonly $type: 'Wildcard';
 }
 
-export const Wildcard = {
-    $type: 'Wildcard',
-    cardinality: 'cardinality',
-    lookahead: 'lookahead'
-} as const;
+export const Wildcard = 'Wildcard';
 
 export function isWildcard(item: unknown): item is Wildcard {
-    return reflection.isInstance(item, Wildcard.$type);
+    return reflection.isInstance(item, Wildcard);
 }
 
 export type LangiumGrammarAstType = {
@@ -965,677 +744,537 @@ export type LangiumGrammarAstType = {
 }
 
 export class LangiumGrammarAstReflection extends langium.AbstractAstReflection {
-    override readonly types = {
-        AbstractElement: {
-            name: AbstractElement.$type,
-            properties: {
-                cardinality: {
-                    name: 'cardinality'
-                },
-                lookahead: {
-                    name: 'lookahead'
-                }
-            },
-            superTypes: []
-        },
-        Action: {
-            name: Action.$type,
-            properties: {
-                cardinality: {
-                    name: 'cardinality'
-                },
-                feature: {
-                    name: 'feature'
-                },
-                inferredType: {
-                    name: 'inferredType'
-                },
-                lookahead: {
-                    name: 'lookahead'
-                },
-                operator: {
-                    name: 'operator'
-                },
-                type: {
-                    name: 'type',
-                    referenceType: 'AbstractType'
-                }
-            },
-            superTypes: ['AbstractElement']
-        },
-        Alternatives: {
-            name: Alternatives.$type,
-            properties: {
-                cardinality: {
-                    name: 'cardinality'
-                },
-                elements: {
-                    name: 'elements',
-                    defaultValue: []
-                },
-                lookahead: {
-                    name: 'lookahead'
-                }
-            },
-            superTypes: ['AbstractElement']
-        },
-        ArrayLiteral: {
-            name: ArrayLiteral.$type,
-            properties: {
-                elements: {
-                    name: 'elements',
-                    defaultValue: []
-                }
-            },
-            superTypes: ['ValueLiteral']
-        },
-        ArrayType: {
-            name: ArrayType.$type,
-            properties: {
-                elementType: {
-                    name: 'elementType'
-                }
-            },
-            superTypes: ['TypeDefinition']
-        },
-        Assignment: {
-            name: Assignment.$type,
-            properties: {
-                cardinality: {
-                    name: 'cardinality'
-                },
-                feature: {
-                    name: 'feature'
-                },
-                lookahead: {
-                    name: 'lookahead'
-                },
-                operator: {
-                    name: 'operator'
-                },
-                predicate: {
-                    name: 'predicate'
-                },
-                terminal: {
-                    name: 'terminal'
-                }
-            },
-            superTypes: ['AbstractElement']
-        },
-        BooleanLiteral: {
-            name: BooleanLiteral.$type,
-            properties: {
-                true: {
-                    name: 'true',
-                    defaultValue: false
-                }
-            },
-            superTypes: ['Condition', 'ValueLiteral']
-        },
-        CharacterRange: {
-            name: CharacterRange.$type,
-            properties: {
-                cardinality: {
-                    name: 'cardinality'
-                },
-                left: {
-                    name: 'left'
-                },
-                lookahead: {
-                    name: 'lookahead'
-                },
-                right: {
-                    name: 'right'
-                }
-            },
-            superTypes: ['AbstractElement']
-        },
-        Conjunction: {
-            name: Conjunction.$type,
-            properties: {
-                left: {
-                    name: 'left'
-                },
-                right: {
-                    name: 'right'
-                }
-            },
-            superTypes: ['Condition']
-        },
-        CrossReference: {
-            name: CrossReference.$type,
-            properties: {
-                cardinality: {
-                    name: 'cardinality'
-                },
-                deprecatedSyntax: {
-                    name: 'deprecatedSyntax',
-                    defaultValue: false
-                },
-                lookahead: {
-                    name: 'lookahead'
-                },
-                terminal: {
-                    name: 'terminal'
-                },
-                type: {
-                    name: 'type',
-                    referenceType: 'AbstractType'
-                }
-            },
-            superTypes: ['AbstractElement']
-        },
-        Disjunction: {
-            name: Disjunction.$type,
-            properties: {
-                left: {
-                    name: 'left'
-                },
-                right: {
-                    name: 'right'
-                }
-            },
-            superTypes: ['Condition']
-        },
-        EndOfFile: {
-            name: EndOfFile.$type,
-            properties: {
-                cardinality: {
-                    name: 'cardinality'
-                },
-                lookahead: {
-                    name: 'lookahead'
-                }
-            },
-            superTypes: ['AbstractElement']
-        },
-        Grammar: {
-            name: Grammar.$type,
-            properties: {
-                imports: {
-                    name: 'imports',
-                    defaultValue: []
-                },
-                interfaces: {
-                    name: 'interfaces',
-                    defaultValue: []
-                },
-                isDeclared: {
-                    name: 'isDeclared',
-                    defaultValue: false
-                },
-                name: {
-                    name: 'name'
-                },
-                rules: {
-                    name: 'rules',
-                    defaultValue: []
-                },
-                types: {
-                    name: 'types',
-                    defaultValue: []
-                }
-            },
-            superTypes: []
-        },
-        GrammarImport: {
-            name: GrammarImport.$type,
-            properties: {
-                path: {
-                    name: 'path'
-                }
-            },
-            superTypes: []
-        },
-        Group: {
-            name: Group.$type,
-            properties: {
-                cardinality: {
-                    name: 'cardinality'
-                },
-                elements: {
-                    name: 'elements',
-                    defaultValue: []
-                },
-                guardCondition: {
-                    name: 'guardCondition'
-                },
-                lookahead: {
-                    name: 'lookahead'
-                },
-                predicate: {
-                    name: 'predicate'
-                }
-            },
-            superTypes: ['AbstractElement']
-        },
-        InferredType: {
-            name: InferredType.$type,
-            properties: {
-                name: {
-                    name: 'name'
-                }
-            },
-            superTypes: ['AbstractType']
-        },
-        InfixRule: {
-            name: InfixRule.$type,
-            properties: {
-                call: {
-                    name: 'call'
-                },
-                name: {
-                    name: 'name'
-                },
-                operators: {
-                    name: 'operators'
-                },
-                parameters: {
-                    name: 'parameters',
-                    defaultValue: []
-                }
-            },
-            superTypes: ['AbstractRule', 'AbstractType']
-        },
-        InfixRuleOperatorList: {
-            name: InfixRuleOperatorList.$type,
-            properties: {
-                associativity: {
-                    name: 'associativity'
-                },
-                operators: {
-                    name: 'operators',
-                    defaultValue: []
-                }
-            },
-            superTypes: []
-        },
-        InfixRuleOperators: {
-            name: InfixRuleOperators.$type,
-            properties: {
-                precedences: {
-                    name: 'precedences',
-                    defaultValue: []
-                }
-            },
-            superTypes: []
-        },
-        Interface: {
-            name: Interface.$type,
-            properties: {
-                attributes: {
-                    name: 'attributes',
-                    defaultValue: []
-                },
-                name: {
-                    name: 'name'
-                },
-                superTypes: {
-                    name: 'superTypes',
-                    defaultValue: [],
-                    referenceType: 'AbstractType'
-                }
-            },
-            superTypes: ['AbstractType']
-        },
-        Keyword: {
-            name: Keyword.$type,
-            properties: {
-                cardinality: {
-                    name: 'cardinality'
-                },
-                lookahead: {
-                    name: 'lookahead'
-                },
-                predicate: {
-                    name: 'predicate'
-                },
-                value: {
-                    name: 'value'
-                }
-            },
-            superTypes: ['AbstractElement']
-        },
-        NamedArgument: {
-            name: NamedArgument.$type,
-            properties: {
-                calledByName: {
-                    name: 'calledByName',
-                    defaultValue: false
-                },
-                parameter: {
-                    name: 'parameter',
-                    referenceType: 'Parameter'
-                },
-                value: {
-                    name: 'value'
-                }
-            },
-            superTypes: []
-        },
-        NegatedToken: {
-            name: NegatedToken.$type,
-            properties: {
-                cardinality: {
-                    name: 'cardinality'
-                },
-                lookahead: {
-                    name: 'lookahead'
-                },
-                terminal: {
-                    name: 'terminal'
-                }
-            },
-            superTypes: ['AbstractElement']
-        },
-        Negation: {
-            name: Negation.$type,
-            properties: {
-                value: {
-                    name: 'value'
-                }
-            },
-            superTypes: ['Condition']
-        },
-        NumberLiteral: {
-            name: NumberLiteral.$type,
-            properties: {
-                value: {
-                    name: 'value'
-                }
-            },
-            superTypes: ['ValueLiteral']
-        },
-        Parameter: {
-            name: Parameter.$type,
-            properties: {
-                name: {
-                    name: 'name'
-                }
-            },
-            superTypes: []
-        },
-        ParameterReference: {
-            name: ParameterReference.$type,
-            properties: {
-                parameter: {
-                    name: 'parameter',
-                    referenceType: 'Parameter'
-                }
-            },
-            superTypes: ['Condition']
-        },
-        ParserRule: {
-            name: ParserRule.$type,
-            properties: {
-                dataType: {
-                    name: 'dataType'
-                },
-                definition: {
-                    name: 'definition'
-                },
-                entry: {
-                    name: 'entry',
-                    defaultValue: false
-                },
-                fragment: {
-                    name: 'fragment',
-                    defaultValue: false
-                },
-                inferredType: {
-                    name: 'inferredType'
-                },
-                name: {
-                    name: 'name'
-                },
-                parameters: {
-                    name: 'parameters',
-                    defaultValue: []
-                },
-                returnType: {
-                    name: 'returnType',
-                    referenceType: 'AbstractType'
-                }
-            },
-            superTypes: ['AbstractRule', 'AbstractType']
-        },
-        ReferenceType: {
-            name: ReferenceType.$type,
-            properties: {
-                referenceType: {
-                    name: 'referenceType'
-                }
-            },
-            superTypes: ['TypeDefinition']
-        },
-        RegexToken: {
-            name: RegexToken.$type,
-            properties: {
-                cardinality: {
-                    name: 'cardinality'
-                },
-                lookahead: {
-                    name: 'lookahead'
-                },
-                regex: {
-                    name: 'regex'
-                }
-            },
-            superTypes: ['AbstractElement']
-        },
-        ReturnType: {
-            name: ReturnType.$type,
-            properties: {
-                name: {
-                    name: 'name'
-                }
-            },
-            superTypes: []
-        },
-        RuleCall: {
-            name: RuleCall.$type,
-            properties: {
-                arguments: {
-                    name: 'arguments',
-                    defaultValue: []
-                },
-                cardinality: {
-                    name: 'cardinality'
-                },
-                lookahead: {
-                    name: 'lookahead'
-                },
-                predicate: {
-                    name: 'predicate'
-                },
-                rule: {
-                    name: 'rule',
-                    referenceType: 'AbstractRule'
-                }
-            },
-            superTypes: ['AbstractElement']
-        },
-        SimpleType: {
-            name: SimpleType.$type,
-            properties: {
-                primitiveType: {
-                    name: 'primitiveType'
-                },
-                stringType: {
-                    name: 'stringType'
-                },
-                typeRef: {
-                    name: 'typeRef',
-                    referenceType: 'AbstractType'
-                }
-            },
-            superTypes: ['TypeDefinition']
-        },
-        StringLiteral: {
-            name: StringLiteral.$type,
-            properties: {
-                value: {
-                    name: 'value'
-                }
-            },
-            superTypes: ['ValueLiteral']
-        },
-        TerminalAlternatives: {
-            name: TerminalAlternatives.$type,
-            properties: {
-                cardinality: {
-                    name: 'cardinality'
-                },
-                elements: {
-                    name: 'elements',
-                    defaultValue: []
-                },
-                lookahead: {
-                    name: 'lookahead'
-                }
-            },
-            superTypes: ['AbstractElement']
-        },
-        TerminalGroup: {
-            name: TerminalGroup.$type,
-            properties: {
-                cardinality: {
-                    name: 'cardinality'
-                },
-                elements: {
-                    name: 'elements',
-                    defaultValue: []
-                },
-                lookahead: {
-                    name: 'lookahead'
-                }
-            },
-            superTypes: ['AbstractElement']
-        },
-        TerminalRule: {
-            name: TerminalRule.$type,
-            properties: {
-                definition: {
-                    name: 'definition'
-                },
-                fragment: {
-                    name: 'fragment',
-                    defaultValue: false
-                },
-                hidden: {
-                    name: 'hidden',
-                    defaultValue: false
-                },
-                name: {
-                    name: 'name'
-                },
-                type: {
-                    name: 'type'
-                }
-            },
-            superTypes: ['AbstractRule']
-        },
-        TerminalRuleCall: {
-            name: TerminalRuleCall.$type,
-            properties: {
-                cardinality: {
-                    name: 'cardinality'
-                },
-                lookahead: {
-                    name: 'lookahead'
-                },
-                rule: {
-                    name: 'rule',
-                    referenceType: 'TerminalRule'
-                }
-            },
-            superTypes: ['AbstractElement']
-        },
-        Type: {
-            name: Type.$type,
-            properties: {
-                name: {
-                    name: 'name'
-                },
-                type: {
-                    name: 'type'
-                }
-            },
-            superTypes: ['AbstractType']
-        },
-        TypeAttribute: {
-            name: TypeAttribute.$type,
-            properties: {
-                defaultValue: {
-                    name: 'defaultValue'
-                },
-                isOptional: {
-                    name: 'isOptional',
-                    defaultValue: false
-                },
-                name: {
-                    name: 'name'
-                },
-                type: {
-                    name: 'type'
-                }
-            },
-            superTypes: []
-        },
-        UnionType: {
-            name: UnionType.$type,
-            properties: {
-                types: {
-                    name: 'types',
-                    defaultValue: []
-                }
-            },
-            superTypes: ['TypeDefinition']
-        },
-        UnorderedGroup: {
-            name: UnorderedGroup.$type,
-            properties: {
-                cardinality: {
-                    name: 'cardinality'
-                },
-                elements: {
-                    name: 'elements',
-                    defaultValue: []
-                },
-                lookahead: {
-                    name: 'lookahead'
-                }
-            },
-            superTypes: ['AbstractElement']
-        },
-        UntilToken: {
-            name: UntilToken.$type,
-            properties: {
-                cardinality: {
-                    name: 'cardinality'
-                },
-                lookahead: {
-                    name: 'lookahead'
-                },
-                terminal: {
-                    name: 'terminal'
-                }
-            },
-            superTypes: ['AbstractElement']
-        },
-        Wildcard: {
-            name: Wildcard.$type,
-            properties: {
-                cardinality: {
-                    name: 'cardinality'
-                },
-                lookahead: {
-                    name: 'lookahead'
-                }
-            },
-            superTypes: ['AbstractElement']
+
+    getAllTypes(): string[] {
+        return [AbstractElement, AbstractRule, AbstractType, Action, Alternatives, ArrayLiteral, ArrayType, Assignment, BooleanLiteral, CharacterRange, Condition, Conjunction, CrossReference, Disjunction, EndOfFile, Grammar, GrammarImport, Group, InferredType, InfixRule, InfixRuleOperatorList, InfixRuleOperators, Interface, Keyword, NamedArgument, NegatedToken, Negation, NumberLiteral, Parameter, ParameterReference, ParserRule, ReferenceType, RegexToken, ReturnType, RuleCall, SimpleType, StringLiteral, TerminalAlternatives, TerminalGroup, TerminalRule, TerminalRuleCall, Type, TypeAttribute, TypeDefinition, UnionType, UnorderedGroup, UntilToken, ValueLiteral, Wildcard];
+    }
+
+    protected override computeIsSubtype(subtype: string, supertype: string): boolean {
+        switch (subtype) {
+            case Action:
+            case Alternatives:
+            case Assignment:
+            case CharacterRange:
+            case CrossReference:
+            case EndOfFile:
+            case Group:
+            case Keyword:
+            case NegatedToken:
+            case RegexToken:
+            case RuleCall:
+            case TerminalAlternatives:
+            case TerminalGroup:
+            case TerminalRuleCall:
+            case UnorderedGroup:
+            case UntilToken:
+            case Wildcard: {
+                return this.isSubtype(AbstractElement, supertype);
+            }
+            case ArrayLiteral:
+            case NumberLiteral:
+            case StringLiteral: {
+                return this.isSubtype(ValueLiteral, supertype);
+            }
+            case ArrayType:
+            case ReferenceType:
+            case SimpleType:
+            case UnionType: {
+                return this.isSubtype(TypeDefinition, supertype);
+            }
+            case BooleanLiteral: {
+                return this.isSubtype(Condition, supertype) || this.isSubtype(ValueLiteral, supertype);
+            }
+            case Conjunction:
+            case Disjunction:
+            case Negation:
+            case ParameterReference: {
+                return this.isSubtype(Condition, supertype);
+            }
+            case InferredType:
+            case Interface:
+            case Type: {
+                return this.isSubtype(AbstractType, supertype);
+            }
+            case InfixRule:
+            case ParserRule: {
+                return this.isSubtype(AbstractRule, supertype) || this.isSubtype(AbstractType, supertype);
+            }
+            case TerminalRule: {
+                return this.isSubtype(AbstractRule, supertype);
+            }
+            default: {
+                return false;
+            }
         }
-    } as const satisfies langium.AstMetaData
+    }
+
+    getReferenceType(refInfo: langium.ReferenceInfo): string {
+        const referenceId = `${refInfo.container.$type}:${refInfo.property}`;
+        switch (referenceId) {
+            case 'Action:type':
+            case 'CrossReference:type':
+            case 'Interface:superTypes':
+            case 'ParserRule:returnType':
+            case 'SimpleType:typeRef': {
+                return AbstractType;
+            }
+            case 'NamedArgument:parameter':
+            case 'ParameterReference:parameter': {
+                return Parameter;
+            }
+            case 'RuleCall:rule': {
+                return AbstractRule;
+            }
+            case 'TerminalRuleCall:rule': {
+                return TerminalRule;
+            }
+            default: {
+                throw new Error(`${referenceId} is not a valid reference id.`);
+            }
+        }
+    }
+
+    getTypeMetaData(type: string): langium.TypeMetaData {
+        switch (type) {
+            case AbstractElement: {
+                return {
+                    name: AbstractElement,
+                    properties: [
+                        { name: 'cardinality' },
+                        { name: 'lookahead' }
+                    ]
+                };
+            }
+            case ArrayLiteral: {
+                return {
+                    name: ArrayLiteral,
+                    properties: [
+                        { name: 'elements', defaultValue: [] }
+                    ]
+                };
+            }
+            case ArrayType: {
+                return {
+                    name: ArrayType,
+                    properties: [
+                        { name: 'elementType' }
+                    ]
+                };
+            }
+            case BooleanLiteral: {
+                return {
+                    name: BooleanLiteral,
+                    properties: [
+                        { name: 'true', defaultValue: false }
+                    ]
+                };
+            }
+            case Conjunction: {
+                return {
+                    name: Conjunction,
+                    properties: [
+                        { name: 'left' },
+                        { name: 'right' }
+                    ]
+                };
+            }
+            case Disjunction: {
+                return {
+                    name: Disjunction,
+                    properties: [
+                        { name: 'left' },
+                        { name: 'right' }
+                    ]
+                };
+            }
+            case Grammar: {
+                return {
+                    name: Grammar,
+                    properties: [
+                        { name: 'imports', defaultValue: [] },
+                        { name: 'interfaces', defaultValue: [] },
+                        { name: 'isDeclared', defaultValue: false },
+                        { name: 'name' },
+                        { name: 'rules', defaultValue: [] },
+                        { name: 'types', defaultValue: [] }
+                    ]
+                };
+            }
+            case GrammarImport: {
+                return {
+                    name: GrammarImport,
+                    properties: [
+                        { name: 'path' }
+                    ]
+                };
+            }
+            case InferredType: {
+                return {
+                    name: InferredType,
+                    properties: [
+                        { name: 'name' }
+                    ]
+                };
+            }
+            case InfixRule: {
+                return {
+                    name: InfixRule,
+                    properties: [
+                        { name: 'call' },
+                        { name: 'name' },
+                        { name: 'operators' },
+                        { name: 'parameters', defaultValue: [] }
+                    ]
+                };
+            }
+            case InfixRuleOperatorList: {
+                return {
+                    name: InfixRuleOperatorList,
+                    properties: [
+                        { name: 'associativity' },
+                        { name: 'operators', defaultValue: [] }
+                    ]
+                };
+            }
+            case InfixRuleOperators: {
+                return {
+                    name: InfixRuleOperators,
+                    properties: [
+                        { name: 'precedences', defaultValue: [] }
+                    ]
+                };
+            }
+            case Interface: {
+                return {
+                    name: Interface,
+                    properties: [
+                        { name: 'attributes', defaultValue: [] },
+                        { name: 'name' },
+                        { name: 'superTypes', defaultValue: [] }
+                    ]
+                };
+            }
+            case NamedArgument: {
+                return {
+                    name: NamedArgument,
+                    properties: [
+                        { name: 'calledByName', defaultValue: false },
+                        { name: 'parameter' },
+                        { name: 'value' }
+                    ]
+                };
+            }
+            case Negation: {
+                return {
+                    name: Negation,
+                    properties: [
+                        { name: 'value' }
+                    ]
+                };
+            }
+            case NumberLiteral: {
+                return {
+                    name: NumberLiteral,
+                    properties: [
+                        { name: 'value' }
+                    ]
+                };
+            }
+            case Parameter: {
+                return {
+                    name: Parameter,
+                    properties: [
+                        { name: 'name' }
+                    ]
+                };
+            }
+            case ParameterReference: {
+                return {
+                    name: ParameterReference,
+                    properties: [
+                        { name: 'parameter' }
+                    ]
+                };
+            }
+            case ParserRule: {
+                return {
+                    name: ParserRule,
+                    properties: [
+                        { name: 'dataType' },
+                        { name: 'definition' },
+                        { name: 'entry', defaultValue: false },
+                        { name: 'fragment', defaultValue: false },
+                        { name: 'inferredType' },
+                        { name: 'name' },
+                        { name: 'parameters', defaultValue: [] },
+                        { name: 'returnType' }
+                    ]
+                };
+            }
+            case ReferenceType: {
+                return {
+                    name: ReferenceType,
+                    properties: [
+                        { name: 'referenceType' }
+                    ]
+                };
+            }
+            case ReturnType: {
+                return {
+                    name: ReturnType,
+                    properties: [
+                        { name: 'name' }
+                    ]
+                };
+            }
+            case SimpleType: {
+                return {
+                    name: SimpleType,
+                    properties: [
+                        { name: 'primitiveType' },
+                        { name: 'stringType' },
+                        { name: 'typeRef' }
+                    ]
+                };
+            }
+            case StringLiteral: {
+                return {
+                    name: StringLiteral,
+                    properties: [
+                        { name: 'value' }
+                    ]
+                };
+            }
+            case TerminalRule: {
+                return {
+                    name: TerminalRule,
+                    properties: [
+                        { name: 'definition' },
+                        { name: 'fragment', defaultValue: false },
+                        { name: 'hidden', defaultValue: false },
+                        { name: 'name' },
+                        { name: 'type' }
+                    ]
+                };
+            }
+            case Type: {
+                return {
+                    name: Type,
+                    properties: [
+                        { name: 'name' },
+                        { name: 'type' }
+                    ]
+                };
+            }
+            case TypeAttribute: {
+                return {
+                    name: TypeAttribute,
+                    properties: [
+                        { name: 'defaultValue' },
+                        { name: 'isOptional', defaultValue: false },
+                        { name: 'name' },
+                        { name: 'type' }
+                    ]
+                };
+            }
+            case UnionType: {
+                return {
+                    name: UnionType,
+                    properties: [
+                        { name: 'types', defaultValue: [] }
+                    ]
+                };
+            }
+            case Action: {
+                return {
+                    name: Action,
+                    properties: [
+                        { name: 'cardinality' },
+                        { name: 'feature' },
+                        { name: 'inferredType' },
+                        { name: 'lookahead' },
+                        { name: 'operator' },
+                        { name: 'type' }
+                    ]
+                };
+            }
+            case Alternatives: {
+                return {
+                    name: Alternatives,
+                    properties: [
+                        { name: 'cardinality' },
+                        { name: 'elements', defaultValue: [] },
+                        { name: 'lookahead' }
+                    ]
+                };
+            }
+            case Assignment: {
+                return {
+                    name: Assignment,
+                    properties: [
+                        { name: 'cardinality' },
+                        { name: 'feature' },
+                        { name: 'lookahead' },
+                        { name: 'operator' },
+                        { name: 'predicate' },
+                        { name: 'terminal' }
+                    ]
+                };
+            }
+            case CharacterRange: {
+                return {
+                    name: CharacterRange,
+                    properties: [
+                        { name: 'cardinality' },
+                        { name: 'left' },
+                        { name: 'lookahead' },
+                        { name: 'right' }
+                    ]
+                };
+            }
+            case CrossReference: {
+                return {
+                    name: CrossReference,
+                    properties: [
+                        { name: 'cardinality' },
+                        { name: 'deprecatedSyntax', defaultValue: false },
+                        { name: 'lookahead' },
+                        { name: 'terminal' },
+                        { name: 'type' }
+                    ]
+                };
+            }
+            case EndOfFile: {
+                return {
+                    name: EndOfFile,
+                    properties: [
+                        { name: 'cardinality' },
+                        { name: 'lookahead' }
+                    ]
+                };
+            }
+            case Group: {
+                return {
+                    name: Group,
+                    properties: [
+                        { name: 'cardinality' },
+                        { name: 'elements', defaultValue: [] },
+                        { name: 'guardCondition' },
+                        { name: 'lookahead' },
+                        { name: 'predicate' }
+                    ]
+                };
+            }
+            case Keyword: {
+                return {
+                    name: Keyword,
+                    properties: [
+                        { name: 'cardinality' },
+                        { name: 'lookahead' },
+                        { name: 'predicate' },
+                        { name: 'value' }
+                    ]
+                };
+            }
+            case NegatedToken: {
+                return {
+                    name: NegatedToken,
+                    properties: [
+                        { name: 'cardinality' },
+                        { name: 'lookahead' },
+                        { name: 'terminal' }
+                    ]
+                };
+            }
+            case RegexToken: {
+                return {
+                    name: RegexToken,
+                    properties: [
+                        { name: 'cardinality' },
+                        { name: 'lookahead' },
+                        { name: 'regex' }
+                    ]
+                };
+            }
+            case RuleCall: {
+                return {
+                    name: RuleCall,
+                    properties: [
+                        { name: 'arguments', defaultValue: [] },
+                        { name: 'cardinality' },
+                        { name: 'lookahead' },
+                        { name: 'predicate' },
+                        { name: 'rule' }
+                    ]
+                };
+            }
+            case TerminalAlternatives: {
+                return {
+                    name: TerminalAlternatives,
+                    properties: [
+                        { name: 'cardinality' },
+                        { name: 'elements', defaultValue: [] },
+                        { name: 'lookahead' }
+                    ]
+                };
+            }
+            case TerminalGroup: {
+                return {
+                    name: TerminalGroup,
+                    properties: [
+                        { name: 'cardinality' },
+                        { name: 'elements', defaultValue: [] },
+                        { name: 'lookahead' }
+                    ]
+                };
+            }
+            case TerminalRuleCall: {
+                return {
+                    name: TerminalRuleCall,
+                    properties: [
+                        { name: 'cardinality' },
+                        { name: 'lookahead' },
+                        { name: 'rule' }
+                    ]
+                };
+            }
+            case UnorderedGroup: {
+                return {
+                    name: UnorderedGroup,
+                    properties: [
+                        { name: 'cardinality' },
+                        { name: 'elements', defaultValue: [] },
+                        { name: 'lookahead' }
+                    ]
+                };
+            }
+            case UntilToken: {
+                return {
+                    name: UntilToken,
+                    properties: [
+                        { name: 'cardinality' },
+                        { name: 'lookahead' },
+                        { name: 'terminal' }
+                    ]
+                };
+            }
+            case Wildcard: {
+                return {
+                    name: Wildcard,
+                    properties: [
+                        { name: 'cardinality' },
+                        { name: 'lookahead' }
+                    ]
+                };
+            }
+            default: {
+                return {
+                    name: type,
+                    properties: []
+                };
+            }
+        }
+    }
 }
 
 export const reflection = new LangiumGrammarAstReflection();
