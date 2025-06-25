@@ -18,7 +18,7 @@ const answersForCore: Answers & PostAnwers = {
     fileExtensions: '.hello',
     includeVSCode: false,
     includeCLI: false,
-    includeExampleCode: false,
+    includeExampleProject: false,
     includeTest: false,
     openWith: false,
     entryName: 'Model'

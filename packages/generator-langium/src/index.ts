@@ -44,7 +44,7 @@ export interface Answers {
     fileExtensions: string;
     includeVSCode: boolean;
     includeCLI: boolean;
-    includeExampleCode: boolean;
+    includeExampleProject: boolean;
     includeTest: boolean;
     entryName: string;
 }
@@ -143,12 +143,12 @@ export class LangiumGenerator extends Generator {
             } as PromptQuestion<Answers>,
             {
                 type: 'confirm',
-                name: 'includeExampleCode',
+                name: 'includeExampleProject', // TODO changer
                 prefix: description(
-                    'You can add an example language to play around with Langium.',
-                    'If not, a blank project will be generated.'
+                    'You can generate an example project to play around with Langium (with a "Hello world" grammar, generator and validator).',
+                    'If not, a minimal project will be generated.'
                 ),
-                message: 'Add example code?',
+                message: 'Generate example project?',
                 default: true
             } as PromptQuestion<Answers>,
             {
@@ -173,11 +173,11 @@ export class LangiumGenerator extends Generator {
                 type: 'input',
                 name: 'entryName',
                 prefix: description(
-                    'The name of the "Entry" field in your grammar file.'
+                    'The name of the entry rule in your grammar file.'
                 ),
-                message: 'Entry name:',
+                message: 'Your grammar entry rule name:',
                 default: 'Model',
-                when: (answers) => !answers.includeExampleCode
+                when: (answers) => !answers.includeExampleProject
             } as PromptQuestion<Answers>
         ]);
     }
@@ -229,7 +229,7 @@ export class LangiumGenerator extends Generator {
         // .gitignore files don't get published to npm, so we need to copy it under a different name
         this.fs.copy(this.templatePath('gitignore.txt'), this._extensionPath('.gitignore'));
 
-        this.sourceRoot(path.join(__dirname, `${BASE_DIR}/${this.answers.includeExampleCode ? PACKAGE_LANGUAGE_EXAMPLE : PACKAGE_LANGUAGE_MINIMAL}`));
+        this.sourceRoot(path.join(__dirname, `${BASE_DIR}/${this.answers.includeExampleProject ? PACKAGE_LANGUAGE_EXAMPLE : PACKAGE_LANGUAGE_MINIMAL}`));
 
         const languageFiles = [
             'package.json',
@@ -294,7 +294,7 @@ export * from './generated/module.js';
 
         if (this.answers.includeCLI) {
             this.sourceRoot(path.join(__dirname, `${BASE_DIR}/${
-                this.answers.includeExampleCode ? PACKAGE_CLI_EXAMPLE : PACKAGE_CLI_MINIMAL
+                this.answers.includeExampleProject ? PACKAGE_CLI_EXAMPLE : PACKAGE_CLI_MINIMAL
             }`));
             const cliFiles = [
                 'package.json',
