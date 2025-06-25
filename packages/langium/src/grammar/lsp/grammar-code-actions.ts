@@ -7,14 +7,13 @@
 import type { Diagnostic } from 'vscode-languageserver';
 import { CodeActionKind } from 'vscode-languageserver';
 import type { CodeActionParams } from 'vscode-languageserver-protocol';
-import type { CodeAction, Command, Position, TextEdit } from 'vscode-languageserver-types';
+import type { CodeAction, Command, Position } from 'vscode-languageserver-types';
 import * as ast from '../../languages/generated/ast.js';
 import type { CodeActionProvider } from '../../lsp/code-action.js';
 import type { LangiumServices } from '../../lsp/lsp-services.js';
 import type { AstReflection, Reference, ReferenceInfo } from '../../syntax-tree.js';
 import { getContainerOfType } from '../../utils/ast-utils.js';
 import { findLeafNodeAtOffset } from '../../utils/cst-utils.js';
-import { findNodeForProperty } from '../../utils/grammar-utils.js';
 import type { MaybePromise } from '../../utils/promise-utils.js';
 import { escapeRegExp } from '../../utils/regexp-utils.js';
 import type { URI } from '../../utils/uri-utils.js';
@@ -36,7 +35,7 @@ export class LangiumGrammarCodeActionProvider implements CodeActionProvider {
         this.indexManager = services.shared.workspace.IndexManager;
     }
 
-    getCodeActions(document: LangiumDocument, params: CodeActionParams): MaybePromise<Array<Command | CodeAction>> {
+    getCodeActions(document: LangiumDocument<ast.Grammar>, params: CodeActionParams): MaybePromise<Array<Command | CodeAction>> {
         const result: CodeAction[] = [];
         const acceptor = (ca: CodeAction | undefined) => ca && result.push(ca);
         for (const diagnostic of params.context.diagnostics) {
@@ -45,14 +44,11 @@ export class LangiumGrammarCodeActionProvider implements CodeActionProvider {
         return result;
     }
 
-    private createCodeActions(diagnostic: Diagnostic, document: LangiumDocument, accept: (ca: CodeAction | undefined) => void): void {
+    private createCodeActions(diagnostic: Diagnostic, document: LangiumDocument<ast.Grammar>, accept: (ca: CodeAction | undefined) => void): void {
         switch ((diagnostic.data as DiagnosticData)?.code) {
             case IssueCodes.GrammarNameUppercase:
             case IssueCodes.RuleNameUppercase:
                 accept(this.makeUpperCase(diagnostic, document));
-                break;
-            case IssueCodes.HiddenGrammarTokens:
-                accept(this.fixHiddenTerminals(diagnostic, document));
                 break;
             case IssueCodes.UseRegexTokens:
                 accept(this.fixRegexTokens(diagnostic, document));
@@ -79,6 +75,9 @@ export class LangiumGrammarCodeActionProvider implements CodeActionProvider {
             case IssueCodes.MissingInfer:
                 accept(this.fixMissingInfer(diagnostic, document));
                 break;
+            case IssueCodes.MissingCrossRefTerminal:
+                accept(this.fixMissingCrossRefTerminal(diagnostic, document));
+                break;
             case IssueCodes.SuperfluousInfer:
                 accept(this.fixSuperfluousInfer(diagnostic, document));
                 break;
@@ -99,7 +98,7 @@ export class LangiumGrammarCodeActionProvider implements CodeActionProvider {
     /**
      * Adds missing returns for parser rule
      */
-    private fixMissingReturns(diagnostic: Diagnostic, document: LangiumDocument): CodeAction | undefined {
+    private fixMissingReturns(diagnostic: Diagnostic, document: LangiumDocument<ast.Grammar>): CodeAction | undefined {
         const text = document.textDocument.getText(diagnostic.range);
         if (text) {
             return {
@@ -119,7 +118,7 @@ export class LangiumGrammarCodeActionProvider implements CodeActionProvider {
         return undefined;
     }
 
-    private fixInvalidReturnsInfers(diagnostic: Diagnostic, document: LangiumDocument): CodeAction | undefined {
+    private fixInvalidReturnsInfers(diagnostic: Diagnostic, document: LangiumDocument<ast.Grammar>): CodeAction | undefined {
         const data = diagnostic.data as DiagnosticData;
         if (data && data.actionSegment) {
             const text = document.textDocument.getText(data.actionSegment.range);
@@ -140,7 +139,7 @@ export class LangiumGrammarCodeActionProvider implements CodeActionProvider {
         return undefined;
     }
 
-    private fixMissingInfer(diagnostic: Diagnostic, document: LangiumDocument): CodeAction | undefined {
+    private fixMissingInfer(diagnostic: Diagnostic, document: LangiumDocument<ast.Grammar>): CodeAction | undefined {
         const data = diagnostic.data as DiagnosticData;
         if (data && data.actionSegment) {
             return {
@@ -163,7 +162,31 @@ export class LangiumGrammarCodeActionProvider implements CodeActionProvider {
         return undefined;
     }
 
-    private fixSuperfluousInfer(diagnostic: Diagnostic, document: LangiumDocument): CodeAction | undefined {
+    private fixMissingCrossRefTerminal(diagnostic: Diagnostic, document: LangiumDocument<ast.Grammar>): CodeAction | undefined {
+        const grammar = document.parseResult.value;
+        const idTerminal = grammar.rules.find(rule => ast.isTerminalRule(rule) && rule.name === 'ID');
+        if (idTerminal) {
+            return {
+                title: 'Use ID token to resolve cross-reference',
+                kind: CodeActionKind.QuickFix,
+                diagnostics: [diagnostic],
+                edit: {
+                    changes: {
+                        [document.textDocument.uri]: [{
+                            range: {
+                                start: diagnostic.range.end,
+                                end: diagnostic.range.end
+                            },
+                            newText: ':ID'
+                        }]
+                    }
+                }
+            };
+        }
+        return undefined;
+    }
+
+    private fixSuperfluousInfer(diagnostic: Diagnostic, document: LangiumDocument<ast.Grammar>): CodeAction | undefined {
         const data = diagnostic.data as DiagnosticData;
         if (data && data.actionRange) {
             return {
@@ -188,7 +211,7 @@ export class LangiumGrammarCodeActionProvider implements CodeActionProvider {
          * - supported are only Alternatives (recursively) and "infers"
          * - "returns" is not relevant, since cross-references would not refer to the parser rule, but to its "return type" instead
          */
-        return !rule.fragment && !rule.entry && rule.parameters.length === 0 && !rule.definesHiddenTokens && !rule.wildcard && !rule.returnType && !rule.dataType;
+        return !rule.fragment && !rule.entry && rule.parameters.length === 0 && !rule.returnType && !rule.dataType;
     }
     private replaceRule(rule: ast.ParserRule): string {
         const type = rule.inferredType ?? rule;
@@ -213,7 +236,7 @@ export class LangiumGrammarCodeActionProvider implements CodeActionProvider {
         throw new Error('missing code for ' + node);
     }
 
-    private replaceParserRuleByTypeDeclaration(diagnostic: Diagnostic, document: LangiumDocument): CodeAction | undefined {
+    private replaceParserRuleByTypeDeclaration(diagnostic: Diagnostic, document: LangiumDocument<ast.Grammar>): CodeAction | undefined {
         const rootCst = document.parseResult.value.$cstNode;
         if (rootCst) {
             const offset = document.textDocument.offsetAt(diagnostic.range.start);
@@ -243,7 +266,7 @@ export class LangiumGrammarCodeActionProvider implements CodeActionProvider {
         return undefined;
     }
 
-    private fixUnnecessaryFileExtension(diagnostic: Diagnostic, document: LangiumDocument): CodeAction {
+    private fixUnnecessaryFileExtension(diagnostic: Diagnostic, document: LangiumDocument<ast.Grammar>): CodeAction {
         const end = {...diagnostic.range.end};
         end.character -= 1;
         const start = {...end};
@@ -267,7 +290,7 @@ export class LangiumGrammarCodeActionProvider implements CodeActionProvider {
         };
     }
 
-    private makeUpperCase(diagnostic: Diagnostic, document: LangiumDocument): CodeAction {
+    private makeUpperCase(diagnostic: Diagnostic, document: LangiumDocument<ast.Grammar>): CodeAction {
         const range = {
             start: diagnostic.range.start,
             end: {
@@ -291,7 +314,7 @@ export class LangiumGrammarCodeActionProvider implements CodeActionProvider {
         };
     }
 
-    private addEntryKeyword(diagnostic: Diagnostic, document: LangiumDocument): CodeAction | undefined {
+    private addEntryKeyword(diagnostic: Diagnostic, document: LangiumDocument<ast.Grammar>): CodeAction | undefined {
         return {
             title: 'Add entry keyword',
             kind: CodeActionKind.QuickFix,
@@ -308,7 +331,7 @@ export class LangiumGrammarCodeActionProvider implements CodeActionProvider {
         };
     }
 
-    private fixRegexTokens(diagnostic: Diagnostic, document: LangiumDocument): CodeAction | undefined {
+    private fixRegexTokens(diagnostic: Diagnostic, document: LangiumDocument<ast.Grammar>): CodeAction | undefined {
         const offset = document.textDocument.offsetAt(diagnostic.range.start);
         const rootCst = document.parseResult.value.$cstNode;
         if (rootCst) {
@@ -336,7 +359,7 @@ export class LangiumGrammarCodeActionProvider implements CodeActionProvider {
         return undefined;
     }
 
-    private fixCrossRefSyntax(diagnostic: Diagnostic, document: LangiumDocument): CodeAction {
+    private fixCrossRefSyntax(diagnostic: Diagnostic, document: LangiumDocument<ast.Grammar>): CodeAction {
         return {
             title: "Replace '|' with ':'",
             kind: CodeActionKind.QuickFix,
@@ -353,50 +376,7 @@ export class LangiumGrammarCodeActionProvider implements CodeActionProvider {
         };
     }
 
-    private fixHiddenTerminals(diagnostic: Diagnostic, document: LangiumDocument): CodeAction {
-        const grammar = document.parseResult.value as ast.Grammar;
-        const hiddenTokens = grammar.hiddenTokens;
-        const changes: TextEdit[] = [];
-        const hiddenNode = findNodeForProperty(grammar.$cstNode, 'definesHiddenTokens');
-        if (hiddenNode) {
-            const start = hiddenNode.range.start;
-            const offset = hiddenNode.offset;
-            const end = grammar.$cstNode!.text.indexOf(')', offset) + 1;
-            changes.push({
-                newText: '',
-                range: {
-                    start,
-                    end: document.textDocument.positionAt(end)
-                }
-            });
-        }
-        for (const terminal of hiddenTokens) {
-            const ref = terminal.ref;
-            if (ref && ast.isTerminalRule(ref) && !ref.hidden && ref.$cstNode) {
-                const start = ref.$cstNode.range.start;
-                changes.push({
-                    newText: 'hidden ',
-                    range: {
-                        start,
-                        end: start
-                    }
-                });
-            }
-        }
-        return {
-            title: 'Fix hidden terminals',
-            kind: CodeActionKind.QuickFix,
-            diagnostics: [diagnostic],
-            isPreferred: true,
-            edit: {
-                changes: {
-                    [document.textDocument.uri]: changes
-                }
-            }
-        };
-    }
-
-    private addNewRule(diagnostic: Diagnostic, data: LinkingErrorData, document: LangiumDocument): CodeAction | undefined {
+    private addNewRule(diagnostic: Diagnostic, data: LinkingErrorData, document: LangiumDocument<ast.Grammar>): CodeAction | undefined {
         const offset = document.textDocument.offsetAt(diagnostic.range.start);
         const rootCst = document.parseResult.value.$cstNode;
         if (rootCst) {
@@ -425,7 +405,7 @@ export class LangiumGrammarCodeActionProvider implements CodeActionProvider {
         return undefined;
     }
 
-    private lookInGlobalScope(diagnostic: Diagnostic, data: LinkingErrorData, document: LangiumDocument): CodeAction[] {
+    private lookInGlobalScope(diagnostic: Diagnostic, data: LinkingErrorData, document: LangiumDocument<ast.Grammar>): CodeAction[] {
         const refInfo: ReferenceInfo = {
             container: {
                 $type: data.containerType

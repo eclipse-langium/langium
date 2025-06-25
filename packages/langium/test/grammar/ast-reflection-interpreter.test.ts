@@ -83,19 +83,20 @@ describe('AST reflection interpreter', () => {
 
         test('Creates metadata with super types', () => {
             const superMetadata = reflectionForInheritance.getTypeMetaData('Super');
-            expect(superMetadata.properties).toHaveLength(2);
-            expect(superMetadata.properties[0].name).toBe('A');
-            expect(superMetadata.properties[0].defaultValue).toBe('a');
-            expect(superMetadata.properties[1].name).toBe('Ref');
-            expect(superMetadata.properties[1].defaultValue).toBeUndefined();
+            expect(Object.keys(superMetadata.properties)).toHaveLength(2);
+            expect(superMetadata.properties.A.name).toBe('A');
+            expect(superMetadata.properties.A.defaultValue).toBe('a');
+            expect(superMetadata.properties.Ref.name).toBe('Ref');
+            expect(superMetadata.properties.Ref.defaultValue).toBeUndefined();
+
             const subMetadata = reflectionForInheritance.getTypeMetaData('Sub');
-            expect(subMetadata.properties).toHaveLength(3);
-            expect(subMetadata.properties[0].name).toBe('A');
-            expect(subMetadata.properties[0].defaultValue).toBe('a');
-            expect(subMetadata.properties[1].name).toBe('B');
-            expect(subMetadata.properties[1].defaultValue).toBe('b');
-            expect(subMetadata.properties[2].name).toBe('Ref');
-            expect(subMetadata.properties[2].defaultValue).toBeUndefined();
+            expect(Object.keys(subMetadata.properties)).toHaveLength(3);
+            expect(subMetadata.properties.A.name).toBe('A');
+            expect(subMetadata.properties.A.defaultValue).toBe('a');
+            expect(subMetadata.properties.B.name).toBe('B');
+            expect(subMetadata.properties.B.defaultValue).toBe('b');
+            expect(subMetadata.properties.Ref.name).toBe('Ref');
+            expect(subMetadata.properties.Ref.defaultValue).toBeUndefined();
         });
 
     });

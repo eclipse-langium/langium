@@ -249,7 +249,7 @@ export class InterfaceType {
         if (reflectionInfo) {
             interfaceNode
                 .appendNewLine()
-                .append(addReflectionInfo(this.name));
+                .append(addReflectionInfo(this.name, this.superProperties));
         }
 
         return toString(interfaceNode);
@@ -261,7 +261,7 @@ export class InterfaceType {
         return toString(
             expandToNode`
                 interface ${name}${superTypes.length > 0 ? ` extends ${superTypes}` : ''} {
-                    ${pushProperties(this.properties, 'DeclaredType', reservedWords)}
+                    ${pushProperties(this.properties, 'DeclaredType')}
                 }
             `.appendNewLine()
         );
@@ -415,12 +415,13 @@ function typeParenthesis(type: PropertyType, name: string): string {
 
 function pushProperties(
     properties: Property[],
-    mode: 'AstType' | 'DeclaredType',
-    reserved = new Set<string>()
+    mode: 'AstType' | 'DeclaredType'
 ): Generated {
 
     function propertyToNode(property: Property): Generated {
-        const name = mode === 'AstType' ? property.name : escapeReservedWords(property.name, reserved);
+        // We don't need to escape reserved words in the property name
+        // The parser will be able to handle it just fine
+        const name = property.name;
         const optional = property.optional && !isMandatoryPropertyType(property.type);
         const propType = propertyTypeToString(property.type, mode);
         return expandToNode`${property.comment}`
@@ -450,12 +451,15 @@ export function isMandatoryPropertyType(propertyType: PropertyType): boolean {
     }
 }
 
-function addReflectionInfo(name: string): Generated {
+function addReflectionInfo(name: string, properties: Property[] = []): Generated {
     return expandToNode`
-        export const ${name} = '${name}';
+        export const ${name} = {
+            $type: '${name}'${properties.length > 0 ? ',' : ''}
+            ${joinToNode(properties.sort((a, b) => a.name.localeCompare(b.name)), prop => `${prop.name}: '${escapeQuotes(prop.name, "'")}'`, { separator: ',', appendNewLineIfNotEmpty: true })}
+        } as const;
 
         export function is${name}(item: unknown): item is ${name} {
-            return reflection.isInstance(item, ${name});
+            return reflection.isInstance(item, ${name}.$type);
         }
     `.appendNewLine();
 }

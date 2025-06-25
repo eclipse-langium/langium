@@ -29,11 +29,8 @@ export const DomainModelGrammar = (): Grammar => loadedDomainModelGrammar ?? (lo
         },
         "cardinality": "*"
       },
-      "definesHiddenTokens": false,
       "fragment": false,
-      "hiddenTokens": [],
-      "parameters": [],
-      "wildcard": false
+      "parameters": []
     },
     {
       "$type": "ParserRule",
@@ -57,12 +54,9 @@ export const DomainModelGrammar = (): Grammar => loadedDomainModelGrammar ?? (lo
           }
         ]
       },
-      "definesHiddenTokens": false,
       "entry": false,
       "fragment": false,
-      "hiddenTokens": [],
-      "parameters": [],
-      "wildcard": false
+      "parameters": []
     },
     {
       "$type": "ParserRule",
@@ -109,12 +103,9 @@ export const DomainModelGrammar = (): Grammar => loadedDomainModelGrammar ?? (lo
           }
         ]
       },
-      "definesHiddenTokens": false,
       "entry": false,
       "fragment": false,
-      "hiddenTokens": [],
-      "parameters": [],
-      "wildcard": false
+      "parameters": []
     },
     {
       "$type": "ParserRule",
@@ -138,12 +129,9 @@ export const DomainModelGrammar = (): Grammar => loadedDomainModelGrammar ?? (lo
           }
         ]
       },
-      "definesHiddenTokens": false,
       "entry": false,
       "fragment": false,
-      "hiddenTokens": [],
-      "parameters": [],
-      "wildcard": false
+      "parameters": []
     },
     {
       "$type": "ParserRule",
@@ -169,12 +157,9 @@ export const DomainModelGrammar = (): Grammar => loadedDomainModelGrammar ?? (lo
           }
         ]
       },
-      "definesHiddenTokens": false,
       "entry": false,
       "fragment": false,
-      "hiddenTokens": [],
-      "parameters": [],
-      "wildcard": false
+      "parameters": []
     },
     {
       "$type": "ParserRule",
@@ -250,12 +235,9 @@ export const DomainModelGrammar = (): Grammar => loadedDomainModelGrammar ?? (lo
           }
         ]
       },
-      "definesHiddenTokens": false,
       "entry": false,
       "fragment": false,
-      "hiddenTokens": [],
-      "parameters": [],
-      "wildcard": false
+      "parameters": []
     },
     {
       "$type": "ParserRule",
@@ -310,12 +292,9 @@ export const DomainModelGrammar = (): Grammar => loadedDomainModelGrammar ?? (lo
           }
         ]
       },
-      "definesHiddenTokens": false,
       "entry": false,
       "fragment": false,
-      "hiddenTokens": [],
-      "parameters": [],
-      "wildcard": false
+      "parameters": []
     },
     {
       "$type": "ParserRule",
@@ -350,12 +329,9 @@ export const DomainModelGrammar = (): Grammar => loadedDomainModelGrammar ?? (lo
           }
         ]
       },
-      "definesHiddenTokens": false,
       "entry": false,
       "fragment": false,
-      "hiddenTokens": [],
-      "parameters": [],
-      "wildcard": false
+      "parameters": []
     },
     {
       "$type": "TerminalRule",
@@ -398,10 +374,7 @@ export const DomainModelGrammar = (): Grammar => loadedDomainModelGrammar ?? (lo
       "fragment": false
     }
   ],
-  "definesHiddenTokens": false,
-  "hiddenTokens": [],
   "imports": [],
   "interfaces": [],
-  "types": [],
-  "usedGrammars": []
+  "types": []
 }`));

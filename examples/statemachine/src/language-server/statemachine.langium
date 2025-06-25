@@ -1,6 +1,6 @@
 grammar Statemachine
 
-/** A textual represntation of a state machine */
+/** A textual representation of a state machine */
 entry Statemachine:
     'statemachine'
     /** The name of the machine */

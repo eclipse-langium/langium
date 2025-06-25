@@ -25,6 +25,15 @@ import type { LangiumGrammarServices } from '../langium-grammar-module.js';
 import { typeDefinitionToPropertyType } from '../type-system/type-collector/declared-types.js';
 import { flattenPlainType, isPlainReferenceType } from '../type-system/type-collector/plain-types.js';
 
+export interface LangiumGrammarValidationOptions {
+    /**
+     * Handling of type definitions and inference in the grammar.
+     *
+     * `normal` allows both inferred and declared types, `strict` only allows declared types.
+     */
+    types?: 'normal' | 'strict'
+}
+
 export function registerValidationChecks(services: LangiumGrammarServices): void {
     const registry = services.validation.ValidationRegistry;
     const validator = services.validation.LangiumGrammarValidator;
@@ -37,11 +46,12 @@ export function registerValidationChecks(services: LangiumGrammarServices): void
             validator.checkAssignmentWithFeatureName,
             validator.checkAssignmentToFragmentRule,
             validator.checkAssignmentTypes,
-            validator.checkAssignmentReservedName
+            validator.checkAssignmentReservedName,
+            validator.checkPredicateNotSupported
         ],
         ParserRule: [
             validator.checkParserRuleDataType,
-            validator.checkRuleParametersUsed,
+            validator.checkRuleParameters,
             validator.checkEmptyParserRule,
             validator.checkParserRuleReservedName,
             validator.checkOperatorMultiplicitiesForMultiAssignments,
@@ -52,7 +62,10 @@ export function registerValidationChecks(services: LangiumGrammarServices): void
             validator.checkEmptyTerminalRule
         ],
         InferredType: validator.checkTypeReservedName,
-        Keyword: validator.checkKeyword,
+        Keyword: [
+            validator.checkKeyword,
+            validator.checkPredicateNotSupported
+        ],
         UnorderedGroup: validator.checkUnorderedGroup,
         Grammar: [
             validator.checkGrammarName,
@@ -61,7 +74,6 @@ export function registerValidationChecks(services: LangiumGrammarServices): void
             validator.checkUniqueTypeName,
             validator.checkUniqueImportedRules,
             validator.checkDuplicateImportedGrammar,
-            validator.checkGrammarHiddenTokens,
             validator.checkGrammarForUnusedRules,
             validator.checkGrammarTypeInfer,
             validator.checkClashingTerminalNames,
@@ -80,7 +92,8 @@ export function registerValidationChecks(services: LangiumGrammarServices): void
             validator.checkUsedHiddenTerminalRule,
             validator.checkUsedFragmentTerminalRule,
             validator.checkRuleCallParameters,
-            validator.checkMultiRuleCallsAreAssigned
+            validator.checkMultiRuleCallsAreAssigned,
+            validator.checkPredicateNotSupported
         ],
         TerminalRuleCall: validator.checkUsedHiddenTerminalRule,
         CrossReference: [
@@ -95,7 +108,8 @@ export function registerValidationChecks(services: LangiumGrammarServices): void
         RegexToken: [
             validator.checkInvalidRegexFlags,
             validator.checkDirectlyUsedRegexFlags
-        ]
+        ],
+        Group: validator.checkPredicateNotSupported
     };
     registry.register(checks, validator);
 }
@@ -103,7 +117,6 @@ export function registerValidationChecks(services: LangiumGrammarServices): void
 export namespace IssueCodes {
     export const GrammarNameUppercase = 'grammar-name-uppercase';
     export const RuleNameUppercase = 'rule-name-uppercase';
-    export const HiddenGrammarTokens = 'hidden-grammar-tokens';
     export const UseRegexTokens = 'use-regex-tokens';
     export const EntryRuleTokenSyntax = 'entry-rule-token-syntax';
     export const CrossRefTokenSyntax = 'cross-ref-token-syntax';
@@ -113,12 +126,15 @@ export namespace IssueCodes {
     export const InvalidInfers = 'invalid-infers';
     export const MissingInfer = 'missing-infer';
     export const MissingReturns = 'missing-returns';
+    export const MissingCrossRefTerminal = 'missing-cross-ref-terminal';
     export const SuperfluousInfer = 'superfluous-infer';
     export const OptionalUnorderedGroup = 'optional-unordered-group';
     export const ParsingRuleEmpty = 'parsing-rule-empty';
 }
 
 export class LangiumGrammarValidator {
+
+    options: LangiumGrammarValidationOptions = {};
 
     protected readonly references: References;
     protected readonly nodeLocator: AstNodeLocator;
@@ -279,6 +295,7 @@ export class LangiumGrammarValidator {
     }
 
     checkGrammarTypeInfer(grammar: ast.Grammar, accept: ValidationAcceptor): void {
+        const typesOption = this.options.types || 'normal';
         const types = new Set<string>();
         for (const type of grammar.types) {
             types.add(type.name);
@@ -300,7 +317,13 @@ export class LangiumGrammarValidator {
             const isDataType = isDataTypeRule(rule);
             const isInfers = !rule.returnType && !rule.dataType;
             const ruleTypeName = getTypeNameWithoutError(rule);
-            if (!isDataType && ruleTypeName && types.has(ruleTypeName) === isInfers) {
+            if (typesOption === 'strict' && isInfers) {
+                accept('error', 'Inferred types are not allowed in strict mode.', {
+                    node: rule.inferredType ?? rule,
+                    property: 'name',
+                    data: diagnosticData(IssueCodes.InvalidInfers)
+                });
+            } else if (!isDataType && ruleTypeName && types.has(ruleTypeName) === isInfers) {
                 if ((isInfers || rule.returnType?.ref !== undefined) && rule.inferredType === undefined) {
                     // report missing returns (a type of the same name is declared)
                     accept('error', getMessage(ruleTypeName, isInfers), {
@@ -335,9 +358,15 @@ export class LangiumGrammarValidator {
         for (const action of streamAllContents(grammar).filter(ast.isAction)) {
             const actionType = this.getActionType(action);
             if (actionType) {
-                const isInfers = Boolean(action.inferredType);
+                const isInfers = action.inferredType !== undefined;
                 const typeName = getTypeNameWithoutError(action);
-                if (action.type && typeName && types.has(typeName) === isInfers) {
+                if (typesOption === 'strict' && isInfers) {
+                    accept('error', 'Inferred types are not allowed in strict mode.', {
+                        node: action.inferredType!,
+                        property: 'name',
+                        data: diagnosticData(IssueCodes.InvalidInfers)
+                    });
+                } else if (action.type && typeName && types.has(typeName) === isInfers) {
                     const keywordNode = isInfers ? findNodeForKeyword(action.$cstNode, 'infer') : findNodeForKeyword(action.$cstNode, '{');
                     accept('error', getMessage(typeName, isInfers), {
                         node: action,
@@ -389,16 +418,6 @@ export class LangiumGrammarValidator {
         return undefined;
     }
 
-    checkGrammarHiddenTokens(grammar: ast.Grammar, accept: ValidationAcceptor): void {
-        if (grammar.definesHiddenTokens) {
-            accept('error', 'Hidden terminals are declared at the terminal definition.', {
-                node: grammar,
-                property: 'definesHiddenTokens',
-                data: diagnosticData(IssueCodes.HiddenGrammarTokens)
-            });
-        }
-    }
-
     checkHiddenTerminalRule(terminalRule: ast.TerminalRule, accept: ValidationAcceptor): void {
         if (terminalRule.hidden && terminalRule.fragment) {
             accept('error', 'Cannot use terminal fragments as hidden tokens.', { node: terminalRule, property: 'hidden' });
@@ -447,8 +466,13 @@ export class LangiumGrammarValidator {
             }
             // If the element is a direct rule call
             // We need to check whether the element consumes anything
-            if (ast.isRuleCall(element) && element.rule.ref?.definition) {
-                return consumesAnything(element.rule.ref.definition);
+            if (ast.isRuleCall(element)) {
+                if (ast.isInfixRule(element.rule.ref)) {
+                    // Infix rules always at least consume their operators
+                    return true;
+                } else if (element.rule.ref?.definition) {
+                    return consumesAnything(element.rule.ref.definition);
+                }
             }
             // Else, assert that we consume something.
             return true;
@@ -749,7 +773,7 @@ export class LangiumGrammarValidator {
         };
         const ref = call.rule.ref;
         // Parsing an unassigned terminal rule is fine.
-        if (!ref || ast.isTerminalRule(ref)) {
+        if (!ref || ast.isTerminalRule(ref) || ast.isInfixRule(ref)) {
             return;
         }
         // Fragment or data type rules are fine too.
@@ -818,9 +842,26 @@ export class LangiumGrammarValidator {
         });
     }
 
-    checkRuleParametersUsed(rule: ast.ParserRule, accept: ValidationAcceptor): void {
+    checkRuleParameters(rule: ast.ParserRule, accept: ValidationAcceptor): void {
         const parameters = rule.parameters;
         if (parameters.length > 0) {
+            // Check for duplicate parameter names
+            const parameterNames = new MultiMap<string, ast.Parameter>();
+            for (const parameter of parameters) {
+                parameterNames.add(parameter.name, parameter);
+            }
+            for (const [name, params] of parameterNames.entriesGroupedByKey()) {
+                if (params.length > 1) {
+                    params.forEach(param => {
+                        accept('error', `Parameter '${name}' is declared multiple times.`, {
+                            node: param,
+                            property: 'name'
+                        });
+                    });
+                }
+            }
+
+            // Check for unused parameters
             const allReferences = streamAllContents(rule).filter(ast.isParameterReference);
             for (const parameter of parameters) {
                 if (!allReferences.some(e => e.parameter.ref === parameter)) {
@@ -1025,20 +1066,61 @@ export class LangiumGrammarValidator {
 
     checkRuleCallParameters(ruleCall: ast.RuleCall, accept: ValidationAcceptor): void {
         const rule = ruleCall.rule.ref;
-        if (ast.isParserRule(rule)) {
+        if (ast.isParserRule(rule) || ast.isInfixRule(rule)) {
             const expected = rule.parameters.length;
             const given = ruleCall.arguments.length;
-            if (expected !== given) {
-                accept('error', `Rule '${rule.name}' expects ${expected} arguments, but got ${given}.`, { node: ruleCall });
+            if (expected > 0 && given === 0) {
+                accept('error', `Rule '${rule.name}' expects ${expected} argument${expected > 1 ? 's' : ''}.`, { node: ruleCall });
+            } else if (expected === 0 && given > 0) {
+                accept('error', `Rule '${rule.name}' does not accept any arguments.`, { node: ruleCall });
+            } else if (expected > 0 && given > 0) {
+                const namedArgs = ruleCall.arguments.filter(arg => arg.calledByName);
+                const unnamedArgs = ruleCall.arguments.filter(arg => !arg.calledByName);
+                if (namedArgs.length > 0 && unnamedArgs.length > 0) {
+                    accept('error', 'Cannot mix named and unnamed arguments in rule call.', { node: ruleCall });
+                } else if (unnamedArgs.length > 0) {
+                    if (expected !== given) {
+                        accept('error', `Rule '${rule.name}' expects ${expected} argument${expected > 1 ? 's' : ''}, but got ${given}.`, { node: ruleCall });
+                    }
+                } else {
+                    this.checkNamedArguments(ruleCall, rule, accept);
+                }
             }
         } else if (ast.isTerminalRule(rule) && ruleCall.arguments.length > 0) {
             accept('error', 'Terminal rules do not accept any arguments', { node: ruleCall });
         }
     }
 
+    private checkNamedArguments(ruleCall: ast.RuleCall, rule: ast.ParserRule | ast.InfixRule, accept: ValidationAcceptor): void {
+        const assignedParams = new Set<string>();
+
+        // Check for duplicate assignments
+        for (const arg of ruleCall.arguments) {
+            const paramName = arg.parameter?.ref?.name;
+            if (paramName) {
+                if (assignedParams.has(paramName)) {
+                    accept('error', `Parameter '${paramName}' is assigned multiple times.`, { node: arg, property: 'parameter' });
+                } else {
+                    assignedParams.add(paramName);
+                }
+            }
+        }
+
+        // Check for completeness - all parameters must be assigned
+        for (const param of rule.parameters) {
+            if (!assignedParams.has(param.name)) {
+                accept('error', `Parameter '${param.name}' is not assigned in rule call.`, { node: ruleCall });
+            }
+        }
+    }
+
     checkCrossRefNameAssignment(reference: ast.CrossReference, accept: ValidationAcceptor): void {
         if (!reference.terminal && reference.type.ref && !findNameAssignment(reference.type.ref)) {
-            accept('error', 'Cannot infer terminal or data type rule for cross-reference.', { node: reference, property: 'type' });
+            accept('error', 'Cannot infer terminal or data type rule for cross-reference.', {
+                node: reference,
+                property: 'type',
+                data: diagnosticData(IssueCodes.MissingCrossRefTerminal)
+            });
         }
     }
 
@@ -1099,9 +1181,18 @@ export class LangiumGrammarValidator {
             accept('warning', 'The "name" property is not recommended for cross-references.', { node: assignment, property: 'feature' });
         }
     }
+
+    checkPredicateNotSupported(node: ast.Assignment | ast.Group | ast.Keyword | ast.RuleCall, accept: ValidationAcceptor): void {
+        if (node.predicate) {
+            accept('error', 'Predicates are currently not supported.', { node, property: 'predicate' });
+        }
+    }
 }
 
 function isEmptyRule(rule: ast.AbstractRule): boolean {
+    if (ast.isInfixRule(rule)) {
+        return false;
+    }
     return !rule.definition || !rule.definition.$cstNode || rule.definition.$cstNode.length === 0;
 }
 

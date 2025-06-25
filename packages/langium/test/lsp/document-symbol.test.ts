@@ -11,9 +11,9 @@ import { createLangiumGrammarServices } from 'langium/grammar';
 import { expectSymbols } from 'langium/test';
 
 const text = `
- grammar g hidden(hiddenTerminal)
+ grammar g
  X: name="X";
- terminal hiddenTerminal: /x/;
+ hidden terminal hiddenTerminal: /x/;
  `.trim();
 
 const grammarServices = createLangiumGrammarServices(EmptyFileSystem).grammar;
@@ -28,7 +28,7 @@ describe('Document symbols', () => {
                 {
                     name: 'g',
                     kind: SymbolKind.Field,
-                    range: Range.create(Position.create(0, 0), Position.create(2, 30)),
+                    range: Range.create(Position.create(0, 0), Position.create(2, 37)),
                     selectionRange: Range.create(Position.create(0, 8), Position.create(0, 9)),
                     children: [
                         {
@@ -48,8 +48,8 @@ describe('Document symbols', () => {
                             children: undefined,
                             name: 'hiddenTerminal',
                             kind: SymbolKind.Field,
-                            range: Range.create(Position.create(2, 1), Position.create(2, 30)),
-                            selectionRange: Range.create(Position.create(2, 10), Position.create(2, 24))
+                            range: Range.create(Position.create(2, 1), Position.create(2, 37)),
+                            selectionRange: Range.create(Position.create(2, 17), Position.create(2, 31))
                         }
                     ]
                 }

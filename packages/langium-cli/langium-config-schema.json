@@ -4,6 +4,7 @@
         "chevrotainParserConfig": {
             "description": "An object to describe the Chevrotain parser configuration",
             "type": "object",
+            "additionalProperties": false,
             "properties": {
                 "recoveryEnabled": {
                     "description": "Is the error recovery / fault tolerance of the Chevrotain Parser enabled",
@@ -72,6 +73,7 @@
                 "textMate": {
                     "description": "An object to describe the textMate grammar properties",
                     "type": "object",
+                    "additionalProperties": false,
                     "properties": {
                         "out": {
                             "description": "The output file path to the generated textMate grammar",
@@ -85,6 +87,7 @@
                 "monarch": {
                     "description": "An object to describe the monarch grammar properties",
                     "type": "object",
+                    "additionalProperties": false,
                     "properties": {
                         "out": {
                             "description": "The output file path to the generated monarch grammar",
@@ -98,6 +101,7 @@
                 "prism": {
                     "description": "An object to describe the prism grammar properties",
                     "type": "object",
+                    "additionalProperties": false,
                     "properties": {
                         "out": {
                             "description": "The output file path to the generated prism grammar",
@@ -111,6 +115,7 @@
                 "railroad": {
                     "description": "An object to describe railroad syntax diagram properties",
                     "type": "object",
+                    "additionalProperties": false,
                     "properties": {
                         "out": {
                             "description": "The output path to the generated railroad diagrams",
@@ -139,6 +144,7 @@
                 "bnf": {
                     "description": "An object to describe bnf generator properties.",
                     "type": "object",
+                    "additionalProperties": false,
                     "properties": {
                         "out": {
                             "description": "The output path for the BNF file.",
@@ -202,6 +208,18 @@
             "description": "Mode for generating optimized code for the current environment",
             "type": "string",
             "enum": ["development", "production"]
+        },
+        "validation": {
+            "description": "Options for grammar validation",
+            "type": "object",
+            "additionalProperties": false,
+            "properties": {
+                "types": {
+                    "description": "Handling of type definitions and inference in the grammar; 'normal' allows both inferred and declared types, 'strict' only allows declared types.",
+                    "type": "string",
+                    "enum": ["normal", "strict"]
+                }
+            }
         },
         "chevrotainParserConfig": {
             "$ref": "#/$defs/chevrotainParserConfig"

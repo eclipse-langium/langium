@@ -7,18 +7,15 @@
 grammar LangiumGrammar
 
 entry Grammar:
-    (
-        isDeclared?='grammar' name=ID ('with' usedGrammars+=[Grammar:ID] (',' usedGrammars+=[Grammar:ID])*)?
-        (definesHiddenTokens?='hidden' '(' (hiddenTokens+=[AbstractRule:ID] (',' hiddenTokens+=[AbstractRule:ID])*)? ')')?
-    )?
+    (isDeclared?='grammar' name=ID)?
     imports+=GrammarImport*
     (rules+=AbstractRule | interfaces+=Interface | types+=Type)*;
 
 Interface:
     'interface' name=ID
     ('extends' superTypes+=[AbstractType:ID] (',' superTypes+=[AbstractType:ID])*)?
-    '{' 
-        attributes+=TypeAttribute* 
+    '{'
+        attributes+=TypeAttribute*
     '}'
 ';'?;
 
@@ -56,13 +53,13 @@ SimpleType infers TypeDefinition:
 PrimitiveType returns string:
     'string' | 'number' | 'boolean' | 'Date' | 'bigint';
 
-type AbstractType = Interface | Type | ParserRule | InferredType;
+type AbstractType = Interface | Type | ParserRule | InfixRule | InferredType;
 
 Type:
     'type' name=ID '=' type=TypeDefinition ';'?;
 
 AbstractRule:
-    ParserRule | TerminalRule;
+    ParserRule | TerminalRule | InfixRule;
 
 GrammarImport:
     'import' path=STRING ';'?;
@@ -70,9 +67,18 @@ GrammarImport:
 ParserRule:
     (entry?='entry' | fragment?='fragment')?
     RuleNameAndParams
-    (wildcard?='*' | ('returns' (returnType=[AbstractType:ID] | dataType=PrimitiveType)) | inferredType=InferredType<false>)?
-    (definesHiddenTokens?='hidden' '(' (hiddenTokens+=[AbstractRule:ID] (',' hiddenTokens+=[AbstractRule:ID])*)? ')')? ':'
+    ('returns' (returnType=[AbstractType:ID] | dataType=PrimitiveType) | inferredType=InferredType<false>)? ':'
     definition=Alternatives ';';
+
+InfixRule: 'infix' RuleNameAndParams 'on' call=RuleCall ':' operators=InfixRuleOperators ';';
+
+InfixRuleOperators: precedences+=InfixRuleOperatorList ('>' precedences+=InfixRuleOperatorList)*;
+
+InfixRuleOperatorList:
+    (associativity=Associativity 'assoc')?
+    operators+=Keyword ('|' operators+=Keyword)*;
+
+Associativity returns string: 'left' | 'right';
 
 InferredType<imperative>:
     (<imperative> 'infer' | <!imperative> 'infers') name=ID;
@@ -113,10 +119,9 @@ AbstractTerminal infers AbstractElement:
     PredicatedKeyword |
     PredicatedRuleCall |
     PredicatedGroup |
-    EndOfFile
-    ;
+    EndOfFile;
 
-EndOfFile: 
+EndOfFile:
     {infer EndOfFile} 'EOF';
 
 Keyword:
@@ -126,8 +131,7 @@ RuleCall:
     rule=[AbstractRule:ID] ('<' arguments+=NamedArgument (',' arguments+=NamedArgument)* '>')?;
 
 NamedArgument:
-    ( parameter=[Parameter:ID] calledByName?='=')?
-    ( value=Disjunction );
+    (parameter=[Parameter:ID] calledByName?='=')? value=Disjunction;
 
 Disjunction infers Condition:
     Conjunction ({infer Disjunction.left=current} '|' right=Conjunction)*;
@@ -148,13 +152,13 @@ ParameterReference:
     parameter=[Parameter:ID];
 
 PredicatedKeyword infers Keyword:
-    ('=>' | '->') value=STRING;
+    (predicate=('=>'|'->')) value=STRING;
 
 PredicatedRuleCall infers RuleCall:
-    ('=>' | '->') rule=[AbstractRule:ID] ('<' arguments+=NamedArgument (',' arguments+=NamedArgument)* '>')?;
+    (predicate=('=>'|'->')) rule=[AbstractRule:ID] ('<' arguments+=NamedArgument (',' arguments+=NamedArgument)* '>')?;
 
 Assignment infers AbstractElement:
-    {infer Assignment} ('=>' | '->')? feature=FeatureName operator=('+='|'='|'?=') terminal=AssignableTerminal;
+    {infer Assignment} (predicate=('=>'|'->'))? feature=FeatureName operator=('+='|'='|'?=') terminal=AssignableTerminal;
 
 AssignableTerminal infers AbstractElement:
     Keyword | RuleCall | ParenthesizedAssignableElement | CrossReference;
@@ -175,7 +179,7 @@ ParenthesizedElement infers AbstractElement:
     '(' Alternatives ')';
 
 PredicatedGroup infers Group:
-    ('=>' | '->') '(' elements+=Alternatives ')';
+    (predicate=('=>'|'->')) '(' elements+=Alternatives ')';
 
 ReturnType:
     name=(PrimitiveType | ID);
@@ -219,7 +223,7 @@ CharacterRange infers AbstractElement:
     {infer CharacterRange} left=Keyword ('..' right=Keyword)?;
 
 FeatureName returns string:
-    'current' | 'entry' | 'extends' | 'false' | 'fragment' | 'grammar' | 'hidden' | 'import' | 'interface' | 'returns' | 'terminal' | 'true' | 'type' | 'infer' | 'infers' | 'with' | PrimitiveType | ID;
+    'infix' | 'on' | 'right' | 'left' | 'assoc' | 'current' | 'entry' | 'extends' | 'false' | 'fragment' | 'grammar' | 'hidden' | 'import' | 'interface' | 'returns' | 'terminal' | 'true' | 'type' | 'infer' | 'infers' | 'with' | PrimitiveType | ID;
 
 terminal ID: /\^?[_a-zA-Z][\w_]*/;
 terminal STRING: /"(\\.|[^"\\])*"|'(\\.|[^'\\])*'/;

@@ -20,6 +20,16 @@ export type Module<I, T = I> = {
 }
 
 export namespace Module {
+    /**
+     * Merges two dependency injection modules into a new (third) one that is returned.
+     * At that `m1` and `m2` stay unchanged. Therefore, `m1` is deep-copied first,
+     * and m2 is merged onto the copy afterwards.
+     *
+     * Note that the leaf values of `m1` and `m2`, i.e. the service constructor functions,
+     * cannot be copied generically, since they are functions. They are shared by the source and merged modules.
+     *
+     * @returns the merged module being a deep copy of `m1` with `m2` merged onto it.
+     */
     export const merge = <M1, M2, R extends M1 & M2>(m1: Module<R, M1>, m2: Module<R, M2>) => (_merge(_merge({}, m1), m2) as Module<R, M1 & M2>);
 }
 
@@ -142,13 +152,28 @@ function _resolve<I, T>(obj: any, prop: string | symbol | number, module: Module
  */
 function _merge(target: Module<any>, source?: Module<any>): Module<unknown> {
     if (source) {
-        for (const [key, value2] of Object.entries(source)) {
-            if (value2 !== undefined) {
-                const value1 = target[key];
-                if (value1 !== null && value2 !== null && typeof value1 === 'object' && typeof value2 === 'object') {
-                    target[key] = _merge(value1, value2);
+        for (const [key, sourceValue] of Object.entries(source)) {
+            if (sourceValue !== undefined && sourceValue !== null) {
+                if (typeof sourceValue === 'object') {
+                    const targetValue = target[key];
+
+                    if (typeof targetValue === 'object' && targetValue !== null) {
+                        // in case both values are real (non-null) objects merge them recursively
+                        target[key] = _merge(targetValue, sourceValue);
+                    } else {
+                        // in case 'target[key]' is not a non-null object
+                        //  we overwrite any existing value with a deep copy of 'sourceValue'
+                        //  by recursively calling this function with a new 'target' object to be populated
+                        //  that is assigned to 'target[key]' afterwards
+                        target[key] = _merge({}, sourceValue);
+                    }
                 } else {
-                    target[key] = value2;
+                    // in case 'sourceValue' is defined and assigned (non-null) but not an object
+                    //  we assume it to be a service constructor function according to the Module<I> type definition
+                    target[key] = sourceValue;
+                    // note the following for such service constructor functions:
+                    // 'target[key]' will now reference the same function object being referenced by 'source[key]'.
+                    // This is accepted here, since function objects cannot be safely copied in general.
                 }
             }
         }

@@ -143,6 +143,9 @@ export function extractAssignments(element: ast.AbstractElement): ast.Assignment
     } else if (ast.isAlternatives(element) || ast.isGroup(element) || ast.isUnorderedGroup(element)) {
         return element.elements.flatMap(e => extractAssignments(e));
     } else if (ast.isRuleCall(element) && element.rule.ref) {
+        if (ast.isInfixRule(element.rule.ref)) {
+            return [];
+        }
         return extractAssignments(element.rule.ref.definition);
     }
     return [];
@@ -181,7 +184,7 @@ export async function createServicesForGrammar<L extends LangiumServices = Langi
     };
     const languageMetaData = config.languageMetaData ?? {
         caseInsensitive: false,
-        fileExtensions: [`.${grammarNode.name?.toLowerCase() ?? 'unknown'}`],
+        fileExtensions: ['.txt'],
         languageId: grammarNode.name ?? 'UNKNOWN',
         mode: 'development'
     };

@@ -16,7 +16,13 @@ import { inRange } from './cst-utils.js';
  * Link the `$container` and other related properties of every AST node that is directly contained
  * in the given `node`.
  */
-export function linkContentToContainer(node: AstNode): void {
+export function linkContentToContainer(node: AstNode, options: {
+    /**
+     * If true, the function will also link the content of the contained nodes.
+     * Otherwise, only the immediate children of the given node are linked to their container.
+     */
+    deep?: boolean
+} = {}): void {
     for (const [name, value] of Object.entries(node)) {
         if (!name.startsWith('$')) {
             if (Array.isArray(value)) {
@@ -25,11 +31,17 @@ export function linkContentToContainer(node: AstNode): void {
                         (item as Mutable<AstNode>).$container = node;
                         (item as Mutable<AstNode>).$containerProperty = name;
                         (item as Mutable<AstNode>).$containerIndex = index;
+                        if (options.deep) {
+                            linkContentToContainer(item, options);
+                        }
                     }
                 });
             } else if (isAstNode(value)) {
                 (value as Mutable<AstNode>).$container = node;
                 (value as Mutable<AstNode>).$containerProperty = name;
+                if (options.deep) {
+                    linkContentToContainer(value, options);
+                }
             }
         }
     }
@@ -237,7 +249,7 @@ export function findLocalReferences(targetNode: AstNode, lookup = getDocument(ta
 export function assignMandatoryProperties(reflection: AstReflection, node: AstNode): void {
     const typeMetaData = reflection.getTypeMetaData(node.$type);
     const genericNode = node as GenericAstNode;
-    for (const property of typeMetaData.properties) {
+    for (const property of Object.values(typeMetaData.properties)) {
         // Only set the value if the property is not already set and if it has a default value
         if (property.defaultValue !== undefined && genericNode[property.name] === undefined) {
             genericNode[property.name] = copyDefaultValue(property.defaultValue);
@@ -298,7 +310,7 @@ export function copyAstNode<T extends AstNode = AstNode>(node: T, buildReference
         }
     }
 
-    linkContentToContainer(copy);
+    linkContentToContainer(copy, { deep: true });
     return copy as unknown as T;
 }
 

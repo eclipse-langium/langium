@@ -3,7 +3,9 @@
  * This program and the accompanying materials are made available under the
  * terms of the MIT License, which is available in the project root.
  ******************************************************************************/
+
 import type { IParserConfig } from 'langium';
+import type { LangiumGrammarValidationOptions } from 'langium/grammar';
 
 export interface Package {
     name: string
@@ -26,6 +28,8 @@ export interface LangiumConfig {
     importExtension?: string
     /** Mode used to generate optimized files for development or production environments */
     mode?: 'development' | 'production';
+    /** Options for grammar validation */
+    validation?: LangiumGrammarValidationOptions
     /** Configure the chevrotain parser for all languages */
     chevrotainParserConfig?: IParserConfig,
     /** The following option is meant to be used only by Langium itself */

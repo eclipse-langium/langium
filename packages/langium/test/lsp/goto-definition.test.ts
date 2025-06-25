@@ -16,11 +16,11 @@ import { expectGoToDefinition } from 'langium/test';
  * `rangeIndex` <|ABC|> represent the range that should be targeted by a GoTo Request
  */
 const text = `
-grammar test hidden(WS, <|>COMMENT)
+grammar test
 
 term<|>inal ID: /\\w+/;
-terminal WS: /\\s+/;
-terminal <|COMMENT|>: /\\/\\/.*/;
+hidden terminal WS: /\\s+/;
+hidden terminal <|COMMENT|>: /\\/\\/.*/;
 
 Model: value=<|>Ent<|>ity;
 
@@ -39,18 +39,10 @@ const gotoDefinition = expectGoToDefinition(grammarServices);
 
 describe('Definition Provider', () => {
 
-    test('Must find SL_COMMENT inside of array of cross references', async () => {
-        await gotoDefinition({
-            text,
-            index: 0,
-            rangeIndex: 0
-        });
-    });
-
     test('Entity must find itself when referenced from start of other location', async () => {
         await gotoDefinition({
             text,
-            index: 2,
+            index: 1,
             rangeIndex: 1
         });
     });
@@ -58,7 +50,7 @@ describe('Definition Provider', () => {
     test('Entity must find itself when referenced from within other location', async () => {
         await gotoDefinition({
             text,
-            index: 3,
+            index: 2,
             rangeIndex: 1
         });
     });
@@ -66,7 +58,7 @@ describe('Definition Provider', () => {
     test('Entity must find itself when referenced from source location', async () => {
         await gotoDefinition({
             text,
-            index: 4,
+            index: 3,
             rangeIndex: 1
         });
     });
@@ -74,7 +66,7 @@ describe('Definition Provider', () => {
     test('Assignment name in parser rule X must find property name in interface A from start of location', async () => {
         await gotoDefinition({
             text,
-            index: 6,
+            index: 5,
             rangeIndex: 2
         });
     });
@@ -82,7 +74,7 @@ describe('Definition Provider', () => {
     test('Assignment name in parser rule X must find property name in interface A from within location', async () => {
         await gotoDefinition({
             text,
-            index: 7,
+            index: 6,
             rangeIndex: 2
         });
     });
@@ -90,7 +82,7 @@ describe('Definition Provider', () => {
     test('Assignment name in parser rule X must find property name in interface A from end of location', async () => {
         await gotoDefinition({
             text,
-            index: 8,
+            index: 7,
             rangeIndex: 2
         });
     });
@@ -100,7 +92,7 @@ describe('Definition Provider', () => {
         test('Should find nothing on `terminal` keyword', async () => {
             await gotoDefinition({
                 text,
-                index: 1,
+                index: 0,
                 rangeIndex: []
             });
         });
@@ -108,7 +100,7 @@ describe('Definition Provider', () => {
         test('Should find nothing on `returns` keyword', async () => {
             await gotoDefinition({
                 text,
-                index: 5,
+                index: 4,
                 rangeIndex: []
             });
         });
@@ -116,7 +108,7 @@ describe('Definition Provider', () => {
         test('Should find nothing white space', async () => {
             await gotoDefinition({
                 text,
-                index: 9,
+                index: 8,
                 rangeIndex: []
             });
         });

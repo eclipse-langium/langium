@@ -4,11 +4,11 @@
  * terms of the MIT License, which is available in the project root.
  ******************************************************************************/
 
-import type { DocumentSymbol, DocumentSymbolParams } from 'vscode-languageserver';
+import type { DocumentSymbol, DocumentSymbolParams } from 'vscode-languageserver-protocol';
 import type { CancellationToken } from '../utils/cancellation.js';
 import type { NameProvider } from '../references/name-provider.js';
 import type { LangiumServices } from './lsp-services.js';
-import type { AstNode } from '../syntax-tree.js';
+import type { AstNode, CstNode } from '../syntax-tree.js';
 import { streamContents } from '../utils/ast-utils.js';
 import type { MaybePromise } from '../utils/promise-utils.js';
 import type { LangiumDocument } from '../workspace/documents.js';
@@ -47,20 +47,23 @@ export class DefaultDocumentSymbolProvider implements DocumentSymbolProvider {
     }
 
     protected getSymbol(document: LangiumDocument, astNode: AstNode): DocumentSymbol[] {
-        const node = astNode.$cstNode;
         const nameNode = this.nameProvider.getNameNode(astNode);
-        if (nameNode && node) {
-            const name = this.nameProvider.getName(astNode);
-            return [{
-                kind: this.nodeKindProvider.getSymbolKind(astNode),
-                name: name || nameNode.text,
-                range: node.range,
-                selectionRange: nameNode.range,
-                children: this.getChildSymbols(document, astNode)
-            }];
+        if (nameNode && astNode.$cstNode) {
+            const computedName = this.nameProvider.getName(astNode);
+            return [ this.createSymbol(document, astNode, astNode.$cstNode, nameNode, computedName) ];
         } else {
             return this.getChildSymbols(document, astNode) || [];
         }
+    }
+
+    protected createSymbol(document: LangiumDocument, astNode: AstNode, cstNode: CstNode, nameNode: CstNode, computedName?: string): DocumentSymbol {
+        return {
+            kind: this.nodeKindProvider.getSymbolKind(astNode),
+            name: computedName || nameNode.text,
+            range: cstNode.range,
+            selectionRange: nameNode.range,
+            children: this.getChildSymbols(document, astNode)
+        };
     }
 
     protected getChildSymbols(document: LangiumDocument, astNode: AstNode): DocumentSymbol[] | undefined {

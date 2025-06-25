@@ -4,7 +4,7 @@
  * terms of the MIT License, which is available in the project root.
  ******************************************************************************/
 
-import type { AstReflection, ReferenceInfo, TypeProperty, TypeMetaData } from '../syntax-tree.js';
+import type { AstReflection, PropertyMetaData, TypeMetaData } from '../syntax-tree.js';
 import type { LangiumCoreServices } from '../index.js';
 import type { Grammar } from '../languages/generated/ast.js';
 import type { AstTypes, Property } from './type-system/type-collector/types.js';
@@ -38,47 +38,65 @@ export function interpretAstReflection(grammarOrTypes: Grammar | AstTypes, servi
 
 class InterpretedAstReflection extends AbstractAstReflection {
 
-    private readonly allTypes: string[];
-    private readonly references: Map<string, string>;
-    private readonly metaData: Map<string, TypeMetaData>;
-    private readonly superTypes: MultiMap<string, string>;
-
     constructor(options: {
         allTypes: string[]
         references: Map<string, string>
         metaData: Map<string, TypeMetaData>
         superTypes: MultiMap<string, string>
     }) {
-        super();
-        this.allTypes = options.allTypes;
-        this.references = options.references;
-        this.metaData = options.metaData;
-        this.superTypes = options.superTypes;
-    }
+        // Build the types object required by AbstractAstReflection
+        const types: { [type: string]: TypeMetaData } = {};
 
-    getAllTypes(): string[] {
-        return this.allTypes;
-    }
+        for (const typeName of options.allTypes) {
+            const typeMetaData = options.metaData.get(typeName);
+            if (typeMetaData) {
+                const properties: { [name: string]: PropertyMetaData } = {};
 
-    getReferenceType(refInfo: ReferenceInfo): string {
-        const referenceId = `${refInfo.container.$type}:${refInfo.property}`;
-        const referenceType = this.references.get(referenceId);
-        if (referenceType) {
-            return referenceType;
+                // Convert properties array to object and add reference types
+                if (Array.isArray(typeMetaData.properties)) {
+                    for (const prop of typeMetaData.properties) {
+                        const referenceKey = `${typeName}:${prop.name}`;
+                        const referenceType = options.references.get(referenceKey);
+
+                        properties[prop.name] = {
+                            name: prop.name,
+                            defaultValue: prop.defaultValue,
+                            ...(referenceType && { referenceType })
+                        };
+                    }
+                } else {
+                    // If properties is already an object, copy it and add reference types
+                    for (const [propName, prop] of Object.entries(typeMetaData.properties)) {
+                        const referenceKey = `${typeName}:${propName}`;
+                        const referenceType = options.references.get(referenceKey);
+
+                        properties[propName] = {
+                            ...prop,
+                            ...(referenceType && { referenceType })
+                        };
+                    }
+                }
+
+                types[typeName] = {
+                    name: typeName,
+                    properties,
+                    superTypes: Array.from(options.superTypes.get(typeName))
+                };
+            }
         }
-        throw new Error('Could not find reference type for ' + referenceId);
-    }
 
-    getTypeMetaData(type: string): TypeMetaData {
-        return this.metaData.get(type) ?? {
-            name: type,
-            properties: []
-        };
+        super();
+        // Initialize the readonly types field
+        Object.defineProperty(this, 'types', { value: types });
     }
 
     protected computeIsSubtype(subtype: string, originalSuperType: string): boolean {
-        const superTypes = this.superTypes.get(subtype);
-        for (const superType of superTypes) {
+        const typeMetaData = this.types[subtype];
+        if (!typeMetaData) {
+            return false;
+        }
+
+        for (const superType of typeMetaData.superTypes) {
             if (this.isSubtype(superType, originalSuperType)) {
                 return true;
             }
@@ -114,21 +132,21 @@ function buildTypeMetaData(astTypes: AstTypes): Map<string, TypeMetaData> {
         const props = interfaceType.superProperties;
         map.set(interfaceType.name, {
             name: interfaceType.name,
-            properties: buildPropertyMetaData(props)
+            properties: buildPropertyMetaData(props),
+            superTypes: []  // Will be populated later from superTypes data
         });
     }
     return map;
 }
 
-function buildPropertyMetaData(props: Property[]): TypeProperty[] {
-    const array: TypeProperty[] = [];
+function buildPropertyMetaData(props: Property[]): { [name: string]: PropertyMetaData } {
+    const properties: { [name: string]: PropertyMetaData } = {};
     const all = props.sort((a, b) => a.name.localeCompare(b.name));
     for (const property of all) {
-        const mandatoryProperty: TypeProperty = {
+        properties[property.name] = {
             name: property.name,
             defaultValue: property.defaultValue
         };
-        array.push(mandatoryProperty);
     }
-    return array;
+    return properties;
 }
