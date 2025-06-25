@@ -17,7 +17,7 @@ export interface AstNodeLocator {
      *
      * @param node The `AstNode` for which to create the path.
      * @returns a path represented by a `string` that identifies `node` inside its document.
-     * @see AstNodeLocator.getAstNode
+     * @see {@link getAstNode}
      */
     getAstNodePath(node: AstNode): string;
 
@@ -27,7 +27,7 @@ export interface AstNodeLocator {
      * @param node Parent element.
      * @param path Describes how to locate the `AstNode` inside the given `node`.
      * @returns The `AstNode` located under the given path, or `undefined` if the path cannot be resolved.
-     * @see AstNodeLocator.getAstNodePath
+     * @see {@link getAstNodePath}
      */
     getAstNode<T extends AstNode = AstNode>(node: AstNode, path: string): T | undefined;
 

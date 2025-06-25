@@ -31,22 +31,24 @@ export class DomainModelRenameProvider extends DefaultRenameProvider {
         const offset = document.textDocument.offsetAt(params.position);
         const leafNode = CstUtils.findDeclarationNodeAtOffset(rootNode, offset, this.grammarConfig.nameRegexp);
         if (!leafNode) return undefined;
-        const targetNode = this.references.findDeclaration(leafNode);
-        if (!targetNode) return undefined;
-        if (isNamed(targetNode)) targetNode.name = params.newName;
-        const location = this.getNodeLocation(targetNode);
-        if (location) {
-            const change = TextEdit.replace(location.range, params.newName);
-            const uri = location.uri;
-            if (uri) {
-                if (changes[uri]) {
-                    changes[uri].push(change);
-                } else {
-                    changes[uri] = [change];
+        const targetNodes = this.references.findDeclarations(leafNode);
+        if (!targetNodes.length) return undefined;
+        for (const node of targetNodes) {
+            if (isNamed(node)) node.name = params.newName;
+            const location = this.getNodeLocation(node);
+            if (location) {
+                const change = TextEdit.replace(location.range, params.newName);
+                const uri = location.uri;
+                if (uri) {
+                    if (changes[uri]) {
+                        changes[uri].push(change);
+                    } else {
+                        changes[uri] = [change];
+                    }
                 }
             }
         }
-
+        const targetNode = targetNodes[0];
         for (const node of AstUtils.streamAst(targetNode)) {
             const qn = this.buildQualifiedName(node);
             if (qn) {

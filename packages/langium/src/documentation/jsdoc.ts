@@ -506,7 +506,7 @@ class JSDocCommentImpl implements JSDocComment {
     }
 
     private getAllTags(): JSDocTag[] {
-        return this.elements.filter((e): e is JSDocTag => 'name' in e);
+        return this.elements.filter(e => 'name' in e);
     }
 
     toString(): string {

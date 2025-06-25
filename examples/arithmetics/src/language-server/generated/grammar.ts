@@ -370,7 +370,8 @@ export const ArithmeticsGrammar = (): Grammar => loadedArithmeticsGrammar ?? (lo
                   "type": {
                     "$ref": "#/types@0"
                   },
-                  "deprecatedSyntax": false
+                  "deprecatedSyntax": false,
+                  "isMulti": false
                 }
               },
               {

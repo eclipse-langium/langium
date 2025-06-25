@@ -30,6 +30,8 @@ export type PropertyType =
 
 export interface ReferenceType {
     referenceType: PropertyType
+    isMulti: boolean;
+    isSingle: boolean;
 }
 
 export function isReferenceType(propertyType: PropertyType): propertyType is ReferenceType {
@@ -215,7 +217,7 @@ export class InterfaceType {
     }
 
     get interfaceSuperTypes(): InterfaceType[] {
-        return Array.from(this.superTypes).filter((e): e is InterfaceType => e instanceof InterfaceType);
+        return Array.from(this.superTypes).filter(e => e instanceof InterfaceType);
     }
 
     constructor(name: string, declared: boolean, abstract: boolean, comment?: string) {
@@ -307,7 +309,10 @@ function isTypeAssignableInternal(from: PropertyType | undefined, to: PropertyTy
             result = isTypeAssignableInternal(from, to.value.type, visited);
         }
     } else if (isReferenceType(from)) {
-        result = isReferenceType(to) && isTypeAssignableInternal(from.referenceType, to.referenceType, visited);
+        result = isReferenceType(to)
+            && from.isMulti === to.isMulti
+            && from.isSingle === to.isSingle
+            && isTypeAssignableInternal(from.referenceType, to.referenceType, visited);
     } else if (isArrayType(from)) {
         result = isArrayType(to) && isTypeAssignableInternal(from.elementType, to.elementType, visited);
     } else if (isValueType(from)) {
@@ -362,7 +367,7 @@ function isInterfaceAssignable(from: InterfaceType, to: InterfaceType, visited: 
 
 function propertyTypeToKeyString(type: PropertyType): string {
     if (isReferenceType(type)) {
-        return `@(${propertyTypeToKeyString(type.referenceType)})}`;
+        return `@(${propertyTypeToKeyString(type.referenceType)})${type.isMulti ? '*' : ''}`;
     } else if (isArrayType(type)) {
         return type.elementType ? `(${propertyTypeToKeyString(type.elementType)})[]` : 'unknown[]';
     } else if (isPropertyUnion(type)) {
@@ -387,7 +392,7 @@ export function propertyTypeToString(type?: PropertyType, mode: 'AstType' | 'Dec
     }
     if (isReferenceType(type)) {
         const refType = propertyTypeToString(type.referenceType, mode);
-        return mode === 'AstType' ? `langium.Reference<${refType}>` : `@${typeParenthesis(type.referenceType, refType)}`;
+        return mode === 'AstType' ? `langium.${type.isMulti ? 'Multi' : ''}Reference<${refType}>` : `@${typeParenthesis(type.referenceType, refType)}${type.isMulti ? '+' : ''}`;
     } else if (isArrayType(type)) {
         const arrayType = propertyTypeToString(type.elementType, mode);
         return mode === 'AstType' ? `Array<${arrayType}>` : `${type.elementType ? typeParenthesis(type.elementType, arrayType) : 'unknown'}[]`;

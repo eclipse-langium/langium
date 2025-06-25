@@ -20,7 +20,9 @@ describe('isAstType', () => {
         expect(isAstType({
             referenceType: {
                 value: new InterfaceType('Test', true, false)
-            }
+            },
+            isSingle: true,
+            isMulti: false
         })).toBeFalsy();
     });
 

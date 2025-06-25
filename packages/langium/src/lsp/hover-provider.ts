@@ -35,21 +35,36 @@ export abstract class AstNodeHoverProvider implements HoverProvider {
 
     protected readonly references: References;
     protected readonly grammarConfig: GrammarConfig;
+    protected readonly languageId: string;
 
     constructor(services: LangiumServices) {
         this.references = services.references.References;
         this.grammarConfig = services.parser.GrammarConfig;
+        this.languageId = services.LanguageMetaData.languageId;
     }
 
-    getHoverContent(document: LangiumDocument, params: HoverParams): MaybePromise<Hover | undefined> {
+    async getHoverContent(document: LangiumDocument, params: HoverParams): Promise<Hover | undefined> {
         const rootNode = document.parseResult?.value?.$cstNode;
         if (rootNode) {
             const offset = document.textDocument.offsetAt(params.position);
             const cstNode = findDeclarationNodeAtOffset(rootNode, offset, this.grammarConfig.nameRegexp);
             if (cstNode && cstNode.offset + cstNode.length > offset) {
-                const targetNode = this.references.findDeclaration(cstNode);
-                if (targetNode) {
-                    return this.getAstNodeHoverContent(targetNode);
+                const contents: string[] = [];
+                const targetNodes = this.references.findDeclarations(cstNode);
+                for (const targetNode of targetNodes) {
+                    const content = await this.getAstNodeHoverContent(targetNode);
+                    if (typeof content === 'string') {
+                        contents.push(content);
+                    }
+                }
+                if (contents.length > 0) {
+                    return {
+                        contents: {
+                            kind: 'markdown',
+                            language: this.languageId,
+                            value: contents.join(' ')
+                        }
+                    };
                 }
 
                 // Add support for documentation on keywords
@@ -61,7 +76,7 @@ export abstract class AstNodeHoverProvider implements HoverProvider {
         return undefined;
     }
 
-    protected abstract getAstNodeHoverContent(node: AstNode): MaybePromise<Hover | undefined>;
+    protected abstract getAstNodeHoverContent(node: AstNode): MaybePromise<string | undefined>;
 
     protected getKeywordHoverContent(node: AstNode): MaybePromise<Hover | undefined> {
         let comment = isAstNodeWithComment(node) ? node.$comment : undefined;
@@ -92,16 +107,11 @@ export class MultilineCommentHoverProvider extends AstNodeHoverProvider {
         this.documentationProvider = services.documentation.DocumentationProvider;
     }
 
-    protected getAstNodeHoverContent(node: AstNode): MaybePromise<Hover | undefined> {
+    protected getAstNodeHoverContent(node: AstNode): MaybePromise<string | undefined> {
         const content = this.documentationProvider.getDocumentation(node);
 
         if (content) {
-            return {
-                contents: {
-                    kind: 'markdown',
-                    value: content
-                }
-            };
+            return content;
         }
         return undefined;
     }

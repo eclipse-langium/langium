@@ -5,11 +5,11 @@
  ******************************************************************************/
 
 import type { Range } from 'vscode-languageserver-types';
-import type { AstNode, AstReflection, CstNode, GenericAstNode, Mutable, PropertyType, Reference, ReferenceInfo } from '../syntax-tree.js';
+import type { AstNode, AstReflection, CstNode, GenericAstNode, MultiReference, Mutable, PropertyType, Reference, ReferenceInfo } from '../syntax-tree.js';
 import type { Stream, TreeStream } from './stream.js';
 import type { LangiumDocument } from '../workspace/documents.js';
-import { isAstNode, isReference } from '../syntax-tree.js';
-import { DONE_RESULT, stream, StreamImpl, TreeStreamImpl } from './stream.js';
+import { isAstNode, isMultiReference, isReference } from '../syntax-tree.js';
+import { DONE_RESULT, StreamImpl, TreeStreamImpl } from './stream.js';
 import { inRange } from './cst-utils.js';
 
 /**
@@ -101,6 +101,18 @@ export function findRootNode(node: AstNode): AstNode {
         node = node.$container;
     }
     return node;
+}
+
+/**
+ * Returns all AST nodes that are referenced by the given reference or multi-reference.
+ */
+export function getReferenceNodes(reference: Reference | MultiReference): AstNode[] {
+    if (isReference(reference)) {
+        return reference.ref ? [reference.ref] : [];
+    } else if (isMultiReference(reference)) {
+        return reference.items.map(item => item.ref);
+    }
+    return [];
 }
 
 export interface AstStreamOptions {
@@ -202,14 +214,14 @@ export function streamReferences(node: AstNode): Stream<ReferenceInfo> {
             const property = state.keys[state.keyIndex];
             if (!property.startsWith('$')) {
                 const value = (node as GenericAstNode)[property];
-                if (isReference(value)) {
+                if (isReference(value) || isMultiReference(value)) {
                     state.keyIndex++;
                     return { done: false, value: { reference: value, container: node, property } };
                 } else if (Array.isArray(value)) {
                     while (state.arrayIndex < value.length) {
                         const index = state.arrayIndex++;
                         const element = value[index];
-                        if (isReference(element)) {
+                        if (isReference(element) || isMultiReference(value)) {
                             return { done: false, value: { reference: element, container: node, property, index } };
                         }
                     }
@@ -220,24 +232,6 @@ export function streamReferences(node: AstNode): Stream<ReferenceInfo> {
         }
         return DONE_RESULT;
     });
-}
-
-/**
- * Returns a Stream of references to the target node from the AstNode tree
- *
- * @param targetNode AstNode we are looking for
- * @param lookup AstNode where we search for references. If not provided, the root node of the document is used as the default value
- */
-export function findLocalReferences(targetNode: AstNode, lookup = getDocument(targetNode).parseResult.value): Stream<Reference> {
-    const refs: Reference[] = [];
-    streamAst(lookup).forEach(node => {
-        streamReferences(node).forEach(refInfo => {
-            if (refInfo.reference.ref === targetNode) {
-                refs.push(refInfo.reference);
-            }
-        });
-    });
-    return stream(refs);
 }
 
 /**

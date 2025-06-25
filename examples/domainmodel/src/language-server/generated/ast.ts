@@ -88,7 +88,7 @@ export interface Entity extends langium.AstNode {
     readonly $type: 'Entity';
     features: Array<Feature>;
     name: string;
-    superType?: langium.Reference<Entity>;
+    superType?: langium.MultiReference<Entity>;
 }
 
 export const Entity = {

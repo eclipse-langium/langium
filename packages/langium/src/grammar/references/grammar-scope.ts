@@ -11,7 +11,7 @@ import type { Stream } from '../../utils/stream.js';
 import type { AstNodeLocator } from '../../workspace/ast-node-locator.js';
 import type { DocumentSegment, LangiumDocument, LangiumDocuments, PrecomputedScopes } from '../../workspace/documents.js';
 import type { Grammar } from '../../languages/generated/ast.js';
-import { EMPTY_SCOPE, MapScope } from '../../references/scope.js';
+import { EMPTY_SCOPE, MultiMapScope } from '../../references/scope.js';
 import { DefaultScopeComputation } from '../../references/scope-computation.js';
 import { DefaultScopeProvider } from '../../references/scope-provider.js';
 import { findRootNode, getContainerOfType, getDocument, streamAllContents } from '../../utils/ast-utils.js';
@@ -83,7 +83,7 @@ export class LangiumGrammarScopeProvider extends DefaultScopeProvider {
         if (referenceType === AbstractType.$type) {
             importedElements = importedElements.filter(des => des.type === Interface.$type || des.type === Type.$type || des.type === InferredType.$type);
         }
-        return new MapScope(importedElements);
+        return new MultiMapScope(importedElements);
     }
 
     private gatherImports(grammar: Grammar, importedUris: Set<string>): void {
