@@ -159,55 +159,134 @@ export type ArithmeticsAstType = {
     Statement: Statement
 }
 
+export const properties: langium.AstTypeProperties<ArithmeticsAstType> = langium.deepFreeze({
+    AbstractDefinition: {
+        $name: AbstractDefinition,
+        args: 'args',
+        expr: 'expr',
+        name: 'name',
+    },
+    BinaryExpression: {
+        $name: BinaryExpression,
+        left: 'left',
+        operator: 'operator',
+        right: 'right',
+    },
+    DeclaredParameter: {
+        $name: DeclaredParameter,
+        name: 'name',
+    },
+    Definition: {
+        $name: Definition,
+        args: 'args',
+        expr: 'expr',
+        name: 'name',
+    },
+    Evaluation: {
+        $name: Evaluation,
+        expression: 'expression',
+    },
+    Expression: {
+        $name: Expression,
+        left: 'left',
+        operator: 'operator',
+        right: 'right',
+    },
+    FunctionCall: {
+        $name: FunctionCall,
+        args: 'args',
+        func: 'func',
+    },
+    Module: {
+        $name: Module,
+        name: 'name',
+        statements: 'statements',
+    },
+    NumberLiteral: {
+        $name: NumberLiteral,
+        value: 'value',
+    },
+    Statement: {
+        $name: Statement,
+        args: 'args',
+        expr: 'expr',
+        name: 'name',
+    },
+});
+
 export class ArithmeticsAstReflection extends langium.AbstractAstReflection {
 
+    readonly AbstractDefinition = {
+        $name: AbstractDefinition,
+        $properties: {
+            args: { name: 'args', type: 'DeclaredParameter', kind: 'Containment', defaultValue: [] },
+            expr: { name: 'expr', type: 'Expression', kind: 'Containment' },
+            name: { name: 'name', type: 'string', kind: 'Primitive' },
+        },
+    };
     readonly BinaryExpression = {
         $name: BinaryExpression,
-        $properties: [
-            { name: 'left' },
-            { name: 'operator' },
-            { name: 'right' }
-        ]
+        $properties: {
+            left: { name: 'left', type: 'Expression', kind: 'Containment' },
+            operator: { name: 'operator', type: '"%" | "*" | "+" | "-" | "/" | "^"', kind: 'Primitive' },
+            right: { name: 'right', type: 'Expression', kind: 'Containment' },
+        },
     };
     readonly DeclaredParameter = {
         $name: DeclaredParameter,
-        $properties: [
-            { name: 'name' }
-        ]
+        $properties: {
+            name: { name: 'name', type: 'string', kind: 'Primitive' },
+        },
     };
     readonly Definition = {
         $name: Definition,
-        $properties: [
-            { name: 'args', defaultValue: [] },
-            { name: 'expr' },
-            { name: 'name' }
-        ]
+        $properties: {
+            args: { name: 'args', type: 'DeclaredParameter', kind: 'Containment', defaultValue: [] },
+            expr: { name: 'expr', type: 'Expression', kind: 'Containment' },
+            name: { name: 'name', type: 'string', kind: 'Primitive' },
+        },
     };
     readonly Evaluation = {
         $name: Evaluation,
-        $properties: [
-            { name: 'expression' }
-        ]
+        $properties: {
+            expression: { name: 'expression', type: 'Expression', kind: 'Containment' },
+        },
+    };
+    readonly Expression = {
+        $name: Expression,
+        $properties: {
+            left: { name: 'left', type: 'Expression', kind: 'Containment' },
+            operator: { name: 'operator', type: '"%" | "*" | "+" | "-" | "/" | "^"', kind: 'Primitive' },
+            right: { name: 'right', type: 'Expression', kind: 'Containment' },
+        },
     };
     readonly FunctionCall = {
         $name: FunctionCall,
-        $properties: [
-            { name: 'args', defaultValue: [] },
-            { name: 'func' }
-        ]
+        $properties: {
+            args: { name: 'args', type: 'Expression', kind: 'Containment', defaultValue: [] },
+            func: { name: 'func', type: 'AbstractDefinition', kind: 'Reference' },
+        },
     };
     readonly Module = {
         $name: Module,
-        $properties: [
-            { name: 'name' },
-            { name: 'statements', defaultValue: [] }
-        ]
+        $properties: {
+            name: { name: 'name', type: 'string', kind: 'Primitive' },
+            statements: { name: 'statements', type: 'Statement', kind: 'Containment', defaultValue: [] },
+        },
     };
     readonly NumberLiteral = {
         $name: NumberLiteral,
-        $properties: [
-            { name: 'value' }
-        ]
+        $properties: {
+            value: { name: 'value', type: 'number', kind: 'Primitive' },
+        },
+    };
+    readonly Statement = {
+        $name: Statement,
+        $properties: {
+            args: { name: 'args', type: 'DeclaredParameter', kind: 'Containment', defaultValue: [] },
+            expr: { name: 'expr', type: 'Expression', kind: 'Containment' },
+            name: { name: 'name', type: 'string', kind: 'Primitive' },
+        },
     };
 
     getAllTypes(): string[] {
@@ -237,15 +316,20 @@ export class ArithmeticsAstReflection extends langium.AbstractAstReflection {
     }
 
     getReferenceType(refInfo: langium.ReferenceInfo): string {
-        const referenceId = `${refInfo.container.$type}:${refInfo.property}`;
-        switch (referenceId) {
-            case 'FunctionCall:func': {
-                return AbstractDefinition;
-            }
-            default: {
-                throw new Error(`${referenceId} is not a valid reference id.`);
-            }
+        // TODO move both methods into the parent class?
+        const containerTypeName = refInfo.container.$type;
+        const containerTypeMetaData = this.getTypeMetaData(containerTypeName);
+        if (containerTypeMetaData === undefined) {
+            throw new Error(`${containerTypeName} is not a valid container $type.`);
         }
+        const propertyMetaData = containerTypeMetaData.$properties[refInfo.property]; //  as keyof langium.SpecificPropertiesToString<langium.AstNode>
+        if (propertyMetaData === undefined) {
+            throw new Error(`'${refInfo.property}' is not a valid property of the container $type ${containerTypeName}.`);
+        }
+        if (propertyMetaData.kind !== 'Reference') {
+            throw new Error(`'${refInfo.property}' is no Reference, but ${propertyMetaData.kind}.`);
+        }
+        return propertyMetaData.type;
     }
 
     getTypeMetaData(type: string): langium.TypeMetaData | undefined {

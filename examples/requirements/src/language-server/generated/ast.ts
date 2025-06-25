@@ -119,52 +119,88 @@ export type RequirementsAndTestsAstType = {
     TestModel: TestModel
 }
 
+export const properties: langium.AstTypeProperties<RequirementsAndTestsAstType> = langium.deepFreeze({
+    Contact: {
+        $name: Contact,
+        user_name: 'user_name',
+    },
+    Environment: {
+        $name: Environment,
+        description: 'description',
+        name: 'name',
+    },
+    Requirement: {
+        $name: Requirement,
+        environments: 'environments',
+        name: 'name',
+        text: 'text',
+    },
+    RequirementModel: {
+        $name: RequirementModel,
+        contact: 'contact',
+        environments: 'environments',
+        requirements: 'requirements',
+    },
+    Test: {
+        $name: Test,
+        environments: 'environments',
+        name: 'name',
+        requirements: 'requirements',
+        testFile: 'testFile',
+    },
+    TestModel: {
+        $name: TestModel,
+        contact: 'contact',
+        tests: 'tests',
+    },
+});
+
 export class RequirementsAndTestsAstReflection extends langium.AbstractAstReflection {
 
     readonly Contact = {
         $name: Contact,
-        $properties: [
-            { name: 'user_name' }
-        ]
+        $properties: {
+            user_name: { name: 'user_name', type: 'string', kind: 'Primitive' },
+        },
     };
     readonly Environment = {
         $name: Environment,
-        $properties: [
-            { name: 'description' },
-            { name: 'name' }
-        ]
+        $properties: {
+            description: { name: 'description', type: 'string', kind: 'Primitive' },
+            name: { name: 'name', type: 'string', kind: 'Primitive' },
+        },
     };
     readonly Requirement = {
         $name: Requirement,
-        $properties: [
-            { name: 'environments', defaultValue: [] },
-            { name: 'name' },
-            { name: 'text' }
-        ]
+        $properties: {
+            environments: { name: 'environments', type: 'Environment', kind: 'Reference', defaultValue: [] },
+            name: { name: 'name', type: 'string', kind: 'Primitive' },
+            text: { name: 'text', type: 'string', kind: 'Primitive' },
+        },
     };
     readonly RequirementModel = {
         $name: RequirementModel,
-        $properties: [
-            { name: 'contact' },
-            { name: 'environments', defaultValue: [] },
-            { name: 'requirements', defaultValue: [] }
-        ]
+        $properties: {
+            contact: { name: 'contact', type: 'Contact', kind: 'Containment' },
+            environments: { name: 'environments', type: 'Environment', kind: 'Containment', defaultValue: [] },
+            requirements: { name: 'requirements', type: 'Requirement', kind: 'Containment', defaultValue: [] },
+        },
     };
     readonly Test = {
         $name: Test,
-        $properties: [
-            { name: 'environments', defaultValue: [] },
-            { name: 'name' },
-            { name: 'requirements', defaultValue: [] },
-            { name: 'testFile' }
-        ]
+        $properties: {
+            environments: { name: 'environments', type: 'Environment', kind: 'Reference', defaultValue: [] },
+            name: { name: 'name', type: 'string', kind: 'Primitive' },
+            requirements: { name: 'requirements', type: 'Requirement', kind: 'Reference', defaultValue: [] },
+            testFile: { name: 'testFile', type: 'string', kind: 'Primitive' },
+        },
     };
     readonly TestModel = {
         $name: TestModel,
-        $properties: [
-            { name: 'contact' },
-            { name: 'tests', defaultValue: [] }
-        ]
+        $properties: {
+            contact: { name: 'contact', type: 'Contact', kind: 'Containment' },
+            tests: { name: 'tests', type: 'Test', kind: 'Containment', defaultValue: [] },
+        },
     };
 
     getAllTypes(): string[] {
@@ -180,19 +216,20 @@ export class RequirementsAndTestsAstReflection extends langium.AbstractAstReflec
     }
 
     getReferenceType(refInfo: langium.ReferenceInfo): string {
-        const referenceId = `${refInfo.container.$type}:${refInfo.property}`;
-        switch (referenceId) {
-            case 'Requirement:environments':
-            case 'Test:environments': {
-                return Environment;
-            }
-            case 'Test:requirements': {
-                return Requirement;
-            }
-            default: {
-                throw new Error(`${referenceId} is not a valid reference id.`);
-            }
+        // TODO move both methods into the parent class?
+        const containerTypeName = refInfo.container.$type;
+        const containerTypeMetaData = this.getTypeMetaData(containerTypeName);
+        if (containerTypeMetaData === undefined) {
+            throw new Error(`${containerTypeName} is not a valid container $type.`);
         }
+        const propertyMetaData = containerTypeMetaData.$properties[refInfo.property]; //  as keyof langium.SpecificPropertiesToString<langium.AstNode>
+        if (propertyMetaData === undefined) {
+            throw new Error(`'${refInfo.property}' is not a valid property of the container $type ${containerTypeName}.`);
+        }
+        if (propertyMetaData.kind !== 'Reference') {
+            throw new Error(`'${refInfo.property}' is no Reference, but ${propertyMetaData.kind}.`);
+        }
+        return propertyMetaData.type;
     }
 
     getTypeMetaData(type: string): langium.TypeMetaData | undefined {

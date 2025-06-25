@@ -17,8 +17,8 @@ entry Grammar:
 Interface:
     'interface' name=ID
     ('extends' superTypes+=[AbstractType:ID] (',' superTypes+=[AbstractType:ID])*)?
-    '{' 
-        attributes+=TypeAttribute* 
+    '{'
+        attributes+=TypeAttribute*
     '}'
 ';'?;
 
@@ -48,6 +48,24 @@ ArrayType infers TypeDefinition:
 ReferenceType infers TypeDefinition:
     SimpleType |
     {infer ReferenceType} '@' referenceType=SimpleType;
+
+interface A {
+    a: string;
+    joint: string;
+}
+interface B {
+    b: string;
+    joint: string;
+}
+// TODO warum ist das ein Interface und kein Type/Union??
+type C = A | B;
+
+C returns C:
+    A | B;
+A returns A:
+    'a' a=ID joint=ID ';';
+B returns B:
+    'b' b=ID joint=ID ';';
 
 SimpleType infers TypeDefinition:
     '(' TypeDefinition ')' |
@@ -116,7 +134,7 @@ AbstractTerminal infers AbstractElement:
     EndOfFile
     ;
 
-EndOfFile: 
+EndOfFile:
     {infer EndOfFile} 'EOF';
 
 Keyword:

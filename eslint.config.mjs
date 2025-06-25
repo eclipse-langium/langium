@@ -96,9 +96,9 @@ export default [{
         'no-inner-declarations': 'off',
         // GOTO is only used in BASIC ;)
         'no-labels': 'error',
-        // two or more empty lines need to be fused to one
+        // three or more empty lines need to be fused
         'no-multiple-empty-lines': ['error', {
-            max: 1
+            max: 2
         }],
         // there is no reason to wrap primitve values
         'no-new-wrappers': 'error',

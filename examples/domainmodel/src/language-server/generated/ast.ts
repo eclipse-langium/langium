@@ -124,42 +124,92 @@ export type DomainModelAstType = {
     Type: Type
 }
 
+export const properties: langium.AstTypeProperties<DomainModelAstType> = langium.deepFreeze({
+    AbstractElement: {
+        $name: AbstractElement,
+        elements: 'elements',
+        name: 'name',
+    },
+    DataType: {
+        $name: DataType,
+        name: 'name',
+    },
+    Domainmodel: {
+        $name: Domainmodel,
+        elements: 'elements',
+    },
+    Entity: {
+        $name: Entity,
+        features: 'features',
+        name: 'name',
+        superType: 'superType',
+    },
+    Feature: {
+        $name: Feature,
+        many: 'many',
+        name: 'name',
+        type: 'type',
+    },
+    PackageDeclaration: {
+        $name: PackageDeclaration,
+        elements: 'elements',
+        name: 'name',
+    },
+    Type: {
+        $name: Type,
+        name: 'name',
+    },
+});
+
 export class DomainModelAstReflection extends langium.AbstractAstReflection {
 
+    readonly AbstractElement = {
+        $name: AbstractElement,
+        $properties: {
+            elements: { name: 'elements', type: 'AbstractElement', kind: 'Containment', defaultValue: [] },
+            name: { name: 'name', type: 'QualifiedName', kind: 'Primitive' },
+        },
+    };
     readonly DataType = {
         $name: DataType,
-        $properties: [
-            { name: 'name' }
-        ]
+        $properties: {
+            name: { name: 'name', type: 'string', kind: 'Primitive' },
+        },
     };
     readonly Domainmodel = {
         $name: Domainmodel,
-        $properties: [
-            { name: 'elements', defaultValue: [] }
-        ]
+        $properties: {
+            elements: { name: 'elements', type: 'AbstractElement', kind: 'Containment', defaultValue: [] },
+        },
     };
     readonly Entity = {
         $name: Entity,
-        $properties: [
-            { name: 'features', defaultValue: [] },
-            { name: 'name' },
-            { name: 'superType' }
-        ]
+        $properties: {
+            features: { name: 'features', type: 'Feature', kind: 'Containment', defaultValue: [] },
+            name: { name: 'name', type: 'string', kind: 'Primitive' },
+            superType: { name: 'superType', type: 'Entity', kind: 'Reference' },
+        },
     };
     readonly Feature = {
         $name: Feature,
-        $properties: [
-            { name: 'many', defaultValue: false },
-            { name: 'name' },
-            { name: 'type' }
-        ]
+        $properties: {
+            many: { name: 'many', type: 'boolean', kind: 'Primitive', defaultValue: false },
+            name: { name: 'name', type: 'string', kind: 'Primitive' },
+            type: { name: 'type', type: 'Type', kind: 'Reference' },
+        },
     };
     readonly PackageDeclaration = {
         $name: PackageDeclaration,
-        $properties: [
-            { name: 'elements', defaultValue: [] },
-            { name: 'name' }
-        ]
+        $properties: {
+            elements: { name: 'elements', type: 'AbstractElement', kind: 'Containment', defaultValue: [] },
+            name: { name: 'name', type: 'QualifiedName', kind: 'Primitive' },
+        },
+    };
+    readonly Type = {
+        $name: Type,
+        $properties: {
+            name: { name: 'name', type: 'string', kind: 'Primitive' },
+        },
     };
 
     getAllTypes(): string[] {
@@ -183,18 +233,20 @@ export class DomainModelAstReflection extends langium.AbstractAstReflection {
     }
 
     getReferenceType(refInfo: langium.ReferenceInfo): string {
-        const referenceId = `${refInfo.container.$type}:${refInfo.property}`;
-        switch (referenceId) {
-            case 'Entity:superType': {
-                return Entity;
-            }
-            case 'Feature:type': {
-                return Type;
-            }
-            default: {
-                throw new Error(`${referenceId} is not a valid reference id.`);
-            }
+        // TODO move both methods into the parent class?
+        const containerTypeName = refInfo.container.$type;
+        const containerTypeMetaData = this.getTypeMetaData(containerTypeName);
+        if (containerTypeMetaData === undefined) {
+            throw new Error(`${containerTypeName} is not a valid container $type.`);
         }
+        const propertyMetaData = containerTypeMetaData.$properties[refInfo.property]; //  as keyof langium.SpecificPropertiesToString<langium.AstNode>
+        if (propertyMetaData === undefined) {
+            throw new Error(`'${refInfo.property}' is not a valid property of the container $type ${containerTypeName}.`);
+        }
+        if (propertyMetaData.kind !== 'Reference') {
+            throw new Error(`'${refInfo.property}' is no Reference, but ${propertyMetaData.kind}.`);
+        }
+        return propertyMetaData.type;
     }
 
     getTypeMetaData(type: string): langium.TypeMetaData | undefined {

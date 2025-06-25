@@ -114,44 +114,74 @@ export type StatemachineAstType = {
     Transition: Transition
 }
 
+export const properties: langium.AstTypeProperties<StatemachineAstType> = langium.deepFreeze({
+    Command: {
+        $name: Command,
+        name: 'name',
+    },
+    Event: {
+        $name: Event,
+        name: 'name',
+    },
+    State: {
+        $name: State,
+        actions: 'actions',
+        name: 'name',
+        transitions: 'transitions',
+    },
+    Statemachine: {
+        $name: Statemachine,
+        commands: 'commands',
+        events: 'events',
+        init: 'init',
+        name: 'name',
+        states: 'states',
+    },
+    Transition: {
+        $name: Transition,
+        event: 'event',
+        state: 'state',
+    },
+});
+
 export class StatemachineAstReflection extends langium.AbstractAstReflection {
 
     readonly Command = {
         $name: Command,
-        $properties: [
-            { name: 'name' }
-        ]
+        $properties: {
+            name: { name: 'name', type: 'string', kind: 'Primitive' },
+        },
     };
     readonly Event = {
         $name: Event,
-        $properties: [
-            { name: 'name' }
-        ]
+        $properties: {
+            name: { name: 'name', type: 'string', kind: 'Primitive' },
+        },
     };
     readonly State = {
         $name: State,
-        $properties: [
-            { name: 'actions', defaultValue: [] },
-            { name: 'name' },
-            { name: 'transitions', defaultValue: [] }
-        ]
+        $properties: {
+            actions: { name: 'actions', type: 'Command', kind: 'Reference', defaultValue: [] },
+            name: { name: 'name', type: 'string', kind: 'Primitive' },
+            transitions: { name: 'transitions', type: 'Transition', kind: 'Containment', defaultValue: [] },
+        },
     };
     readonly Statemachine = {
         $name: Statemachine,
-        $properties: [
-            { name: 'commands', defaultValue: [] },
-            { name: 'events', defaultValue: [] },
-            { name: 'init' },
-            { name: 'name' },
-            { name: 'states', defaultValue: [] }
-        ]
+        $properties: {
+            commands: { name: 'commands', type: 'Command', kind: 'Containment', defaultValue: [] },
+            events: { name: 'events', type: 'Event', kind: 'Containment', defaultValue: [] },
+            init: { name: 'init', type: 'State', kind: 'Reference' },
+            name: { name: 'name', type: 'string', kind: 'Primitive' },
+            states: { name: 'states', type: 'State', kind: 'Containment', defaultValue: [] },
+        },
     };
     readonly Transition = {
         $name: Transition,
-        $properties: [
-            { name: 'event' },
-            { name: 'state' }
-        ]
+        $properties: {
+            event: { name: 'event', type: 'Event', kind: 'Reference' },
+            state: { name: 'state', type: 'State', kind: 'Reference' },
+        },
     };
 
     getAllTypes(): string[] {
@@ -167,22 +197,20 @@ export class StatemachineAstReflection extends langium.AbstractAstReflection {
     }
 
     getReferenceType(refInfo: langium.ReferenceInfo): string {
-        const referenceId = `${refInfo.container.$type}:${refInfo.property}`;
-        switch (referenceId) {
-            case 'State:actions': {
-                return Command;
-            }
-            case 'Statemachine:init':
-            case 'Transition:state': {
-                return State;
-            }
-            case 'Transition:event': {
-                return Event;
-            }
-            default: {
-                throw new Error(`${referenceId} is not a valid reference id.`);
-            }
+        // TODO move both methods into the parent class?
+        const containerTypeName = refInfo.container.$type;
+        const containerTypeMetaData = this.getTypeMetaData(containerTypeName);
+        if (containerTypeMetaData === undefined) {
+            throw new Error(`${containerTypeName} is not a valid container $type.`);
         }
+        const propertyMetaData = containerTypeMetaData.$properties[refInfo.property]; //  as keyof langium.SpecificPropertiesToString<langium.AstNode>
+        if (propertyMetaData === undefined) {
+            throw new Error(`'${refInfo.property}' is not a valid property of the container $type ${containerTypeName}.`);
+        }
+        if (propertyMetaData.kind !== 'Reference') {
+            throw new Error(`'${refInfo.property}' is no Reference, but ${propertyMetaData.kind}.`);
+        }
+        return propertyMetaData.type;
     }
 
     getTypeMetaData(type: string): langium.TypeMetaData | undefined {

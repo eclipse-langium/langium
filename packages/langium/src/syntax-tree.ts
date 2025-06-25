@@ -35,7 +35,7 @@ export interface GenericAstNode extends AstNode {
     [key: string]: unknown
 }
 
-type SpecificNodeProperties<N extends AstNode> = keyof Omit<N, keyof AstNode | number | symbol>;
+type SpecificNodeProperties<N extends AstNode> = keyof Omit<N, keyof AstNode | number | string | symbol>;
 
 /**
  * The property names of a given AST node type.
@@ -198,11 +198,17 @@ export abstract class AbstractAstReflection implements AstReflection {
 /**
  * Represents runtime meta data about a meta model type.
  */
-export interface TypeMetaData {
+export interface TypeMetaData
+{
     /** The name of this meta model type. Corresponds to the `AstNode.$type` value. */
     $name: string
     /** A list of properties. They can contain default values for their respective property in the AST. */
-    $properties: TypeProperty[]
+    $properties: Record<string, TypeProperty>
+}
+
+/** Returns the list of properties for a given TypeMetaData object. */
+export function getTypeMetaDataProperties(metaData: TypeMetaData): TypeProperty[] {
+    return Object.values(metaData.$properties);
 }
 
 /**
@@ -213,13 +219,28 @@ export interface TypeMetaData {
  */
 export interface TypeProperty {
     name: string
+    type: string
+    kind: TypePropertyKind
     defaultValue?: PropertyType
 }
+
+export type TypePropertyKind = 'Reference' | 'Containment' | 'Primitive';
 
 /**
  * Represents a default value for an AST property.
  */
 export type PropertyType = number | string | boolean | PropertyType[];
+
+
+export type SpecificPropertiesToString<T extends AstNode> = {
+    [K in keyof SpecificNodeProperties<T>]: string;
+} & {
+    $name: string; // $type value of the AstNode, TODO weg damit
+};
+export type AstTypeProperties<T extends object> = { // Record<string, langium.AstNode>
+    [K in keyof T]: T[K] extends AstNode ? SpecificPropertiesToString<T[K]> : never;
+};
+
 
 /**
  * A node in the Concrete Syntax Tree (CST).
@@ -313,3 +334,9 @@ export type AstNodeTypesWithCrossReferences<A extends AstTypeList<A>> = {
 export type Mutable<T> = {
     -readonly [P in keyof T]: T[P]
 };
+
+
+export function deepFreeze<T extends object>(o: T): T {
+    Object.values(o).forEach(v => Object.isFrozen(v) || deepFreeze(v));
+    return Object.freeze(o);
+}

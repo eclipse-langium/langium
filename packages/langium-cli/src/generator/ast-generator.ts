@@ -4,13 +4,13 @@
  * terms of the MIT License, which is available in the project root.
  ******************************************************************************/
 import type { Grammar, LangiumCoreServices } from 'langium';
+import { MultiMap } from 'langium';
 import { EOL, type Generated, expandToNode, joinToNode, toString } from 'langium/generate';
 import type { AstTypes, Property, PropertyDefaultValue } from 'langium/grammar';
+import { collectAst, collectTypeHierarchy, escapeQuotes, findReferenceTypes, isAstType, isReferenceType, mergeTypesAndInterfaces, propertyTypeToKind, propertyTypeToString } from 'langium/grammar';
 import type { LangiumConfig } from '../package-types.js';
-import { MultiMap } from 'langium';
-import { collectAst, collectTypeHierarchy, findReferenceTypes, isAstType, mergeTypesAndInterfaces, escapeQuotes } from 'langium/grammar';
-import { generatedHeader } from './node-util.js';
 import { collectKeywords, collectTerminalRegexps } from './langium-util.js';
+import { generatedHeader } from './node-util.js';
 
 export function generateAst(services: LangiumCoreServices, grammars: Grammar[], config: LangiumConfig): string {
     const astTypes = collectAst(grammars, services);
@@ -26,7 +26,7 @@ export function generateAst(services: LangiumCoreServices, grammars: Grammar[], 
         ${joinToNode(astTypes.unions, union => union.toAstTypesString(isAstType(union.type)), { appendNewLineIfNotEmpty: true })}
         ${joinToNode(astTypes.interfaces, iFace => iFace.toAstTypesString(true), { appendNewLineIfNotEmpty: true })}
         ${
-            astTypes.unions = astTypes.unions.filter(e => isAstType(e.type)),
+            astTypes.unions = astTypes.unions.filter(e => isAstType(e.type)), // The astTypes.unions are filtered in-place here!
             generateAstReflection(config, astTypes)
         }
     `;
@@ -38,10 +38,18 @@ function generateAstReflection(config: LangiumConfig, astTypes: AstTypes): Gener
         .concat(astTypes.unions.map(t => t.name))
         .sort();
     const crossReferenceTypes = buildCrossReferenceTypes(astTypes);
+    // TODO properties: UnionTypes with common properties??
+    // TODO getAllTypes(): MetaData vs Names
+    // TODO Names of Properties in PropertyMetaData
+    // TODO Properties: Multiplicities: 1, 0..1, * VS mandatory/multiValue
     return expandToNode`
         export type ${config.projectName}AstType = {
             ${joinToNode(typeNames, name => name + ': ' + name, { appendNewLineIfNotEmpty: true })}
         }
+
+        export const properties: langium.AstTypeProperties<${config.projectName}AstType> = langium.deepFreeze({
+            ${buildTypeMetaDataProperties(astTypes)}
+        });
 
         export class ${config.projectName}AstReflection extends langium.AbstractAstReflection {
 
@@ -56,7 +64,7 @@ function generateAstReflection(config: LangiumConfig, astTypes: AstTypes): Gener
             }
 
             getReferenceType(refInfo: langium.ReferenceInfo): string {
-                ${buildReferenceTypeMethod(crossReferenceTypes)}
+                ${buildReferenceTypeMethod(crossReferenceTypes, config)}
             }
 
             getTypeMetaData(type: string): langium.TypeMetaData | undefined {
@@ -68,15 +76,51 @@ function generateAstReflection(config: LangiumConfig, astTypes: AstTypes): Gener
     `.appendNewLine();
 }
 
-function buildTypeMetaData(astTypes: AstTypes): Generated {
+type TypeWithProperties = {
+    name: string,
+    properties: Property[], // own and inherited properties!
+}
+
+function calculateAllTypesWithProperties(astTypes: AstTypes): TypeWithProperties[] {
+    const result: TypeWithProperties[] = [];
+    // interfaces
+    astTypes.interfaces.forEach(interfaceType => result.push({ name: interfaceType.name, properties: interfaceType.superProperties }));
+    // types, including union types like "A = B | C"
+    astTypes.unions.forEach(typeType => result.push({ name: typeType.name, properties: typeType.properties }));
+    result.sort((t1, t2) => t1.name.localeCompare(t2.name)); // ensure stable and sorted order
+    return result;
+}
+
+function buildTypeMetaDataProperties(astTypes: AstTypes): Generated {
+    const types = calculateAllTypesWithProperties(astTypes);
     return joinToNode(
-        astTypes.interfaces, // this does not include union types like "A = B | C"!
-        interfaceType => expandToNode`
-            readonly ${interfaceType.name} = {
-                $name: ${interfaceType.name},
-                $properties: [
-                    ${buildPropertyType(interfaceType.superProperties /* own and inherited properties! */)}
-                ]
+        types,
+        typeWithProperties => expandToNode`
+            ${typeWithProperties.name}: {
+                $name: ${typeWithProperties.name},
+                ${joinToNode(
+                    typeWithProperties.properties,
+                    property => `${property.name}: '${property.name}',`,
+                    { appendNewLineIfNotEmpty: true }
+                )}
+            },
+        `,
+        {
+            appendNewLineIfNotEmpty: true
+        }
+    );
+}
+
+function buildTypeMetaData(astTypes: AstTypes): Generated {
+    const types = calculateAllTypesWithProperties(astTypes);
+    return joinToNode(
+        types, // this includes union types like "A = B | C"!
+        typeWithProperties => expandToNode`
+            readonly ${typeWithProperties.name} = {
+                $name: ${typeWithProperties.name},
+                $properties: {
+                    ${buildPropertyType(typeWithProperties.properties /* own and inherited properties! */)}
+                },
             };
         `,
         {
@@ -91,10 +135,15 @@ function buildPropertyType(props: Property[]): Generated {
     return joinToNode(
         all,
         property => {
+            // TODO "inheritedFrom: string|undefined" ??
+            const propertyType = propertyTypeToString(isReferenceType(property.type) ? property.type.referenceType : property.type, 'Reflection');
+            const name = escapeQuotes(property.name, "'");
+            const type = escapeQuotes(propertyType, "'");
+            const kind = propertyTypeToKind(property.type);
             const defaultValue = stringifyDefaultValue(property.defaultValue);
-            return `{ name: '${escapeQuotes(property.name, "'")}'${defaultValue ? `, defaultValue: ${defaultValue}` : ''} }`;
+            return `${name}: { name: '${name}', type: '${type}', kind: '${kind}'${defaultValue ? `, defaultValue: ${defaultValue}` : ''} },`;
         },
-        { separator: ',', appendNewLineIfNotEmpty: true}
+        { appendNewLineIfNotEmpty: true}
     );
 }
 
@@ -111,26 +160,22 @@ function stringifyDefaultValue(value?: PropertyDefaultValue): string | undefined
     }
 }
 
-function buildReferenceTypeMethod(crossReferenceTypes: CrossReferenceType[]): Generated {
-    const buckets = new MultiMap<string, string>(crossReferenceTypes.map(e => [e.referenceType, `${e.type}:${e.feature}`]));
+function buildReferenceTypeMethod(_crossReferenceTypes: CrossReferenceType[], _config: LangiumConfig): Generated {
     return expandToNode`
-        const referenceId = ${'`${refInfo.container.$type}:${refInfo.property}`'};
-        switch (referenceId) {
-            ${
-                joinToNode(
-                    buckets.entriesGroupedByKey(),
-                    ([target, refs]) => expandToNode`
-                        ${joinToNode(refs, ref => `case '${escapeQuotes(ref, "'")}':`, { appendNewLineIfNotEmpty: true, skipNewLineAfterLastItem: true})} {
-                            return ${target};
-                        }
-                    `,
-                    { appendNewLineIfNotEmpty: true }
-                )
-            }
-            default: {
-                throw new Error(${'`${referenceId} is not a valid reference id.`'});
-            }
+        // TODO move both methods into the parent class?
+        const containerTypeName = refInfo.container.$type;
+        const containerTypeMetaData = this.getTypeMetaData(containerTypeName);
+        if (containerTypeMetaData === undefined) {
+            throw new Error(\`\${containerTypeName} is not a valid container $type.\`);
         }
+        const propertyMetaData = containerTypeMetaData.$properties[refInfo.property]; //  as keyof langium.SpecificPropertiesToString<langium.AstNode>
+        if (propertyMetaData === undefined) {
+            throw new Error(\`'\${refInfo.property}' is not a valid property of the container $type \${containerTypeName}.\`);
+        }
+        if (propertyMetaData.kind !== 'Reference') {
+            throw new Error(\`'\${refInfo.property}' is no Reference, but \${propertyMetaData.kind}.\`);
+        }
+        return propertyMetaData.type;
     `;
 }
 

@@ -8,7 +8,7 @@ import type { Range } from 'vscode-languageserver-types';
 import type { AstNode, AstReflection, CstNode, GenericAstNode, Mutable, PropertyType, Reference, ReferenceInfo } from '../syntax-tree.js';
 import type { Stream, TreeStream } from './stream.js';
 import type { LangiumDocument } from '../workspace/documents.js';
-import { isAstNode, isReference } from '../syntax-tree.js';
+import { getTypeMetaDataProperties, isAstNode, isReference } from '../syntax-tree.js';
 import { DONE_RESULT, stream, StreamImpl, TreeStreamImpl } from './stream.js';
 import { inRange } from './cst-utils.js';
 
@@ -237,7 +237,7 @@ export function findLocalReferences(targetNode: AstNode, lookup = getDocument(ta
 export function assignMandatoryProperties(reflection: AstReflection, node: AstNode): void {
     const typeMetaData = reflection.getTypeMetaData(node.$type);
     const genericNode = node as GenericAstNode;
-    for (const property of (typeMetaData?.$properties ?? [/* wrong reflection object */])) {
+    for (const property of (typeMetaData ? getTypeMetaDataProperties(typeMetaData) : [/* wrong reflection object */])) {
         // Only set the value if the property is not already set and if it has a default value
         if (property.defaultValue !== undefined && genericNode[property.name] === undefined) {
             genericNode[property.name] = copyDefaultValue(property.defaultValue);

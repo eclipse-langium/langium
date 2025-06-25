@@ -7,7 +7,7 @@
 import type { AstReflection, ReferenceInfo, TypeProperty, TypeMetaData } from '../syntax-tree.js';
 import type { LangiumCoreServices } from '../index.js';
 import type { Grammar } from '../languages/generated/ast.js';
-import type { AstTypes, Property } from './type-system/type-collector/types.js';
+import { propertyTypeToKind, propertyTypeToString, type AstTypes, type Property } from './type-system/type-collector/types.js';
 import { AbstractAstReflection } from '../syntax-tree.js';
 import { MultiMap } from '../utils/collections.js';
 import { isGrammar } from '../languages/generated/ast.js';
@@ -72,7 +72,7 @@ class InterpretedAstReflection extends AbstractAstReflection {
     getTypeMetaData(type: string): TypeMetaData {
         return this.metaData.get(type) ?? {
             $name: type,
-            $properties: []
+            $properties: {},
         };
     }
 
@@ -114,21 +114,23 @@ function buildTypeMetaData(astTypes: AstTypes): Map<string, TypeMetaData> {
         const props = interfaceType.superProperties;
         map.set(interfaceType.name, {
             $name: interfaceType.name,
-            $properties: buildPropertyMetaData(props)
+            $properties: buildPropertyMetaData(props),
         });
     }
     return map;
 }
 
-function buildPropertyMetaData(props: Property[]): TypeProperty[] {
-    const array: TypeProperty[] = [];
+function buildPropertyMetaData(props: Property[]): Record<string, TypeProperty> {
+    const result: Record<string, TypeProperty> = {};
     const all = props.sort((a, b) => a.name.localeCompare(b.name));
     for (const property of all) {
         const mandatoryProperty: TypeProperty = {
             name: property.name,
+            type: propertyTypeToString(property.type, 'Reflection'),
+            kind: propertyTypeToKind(property.type),
             defaultValue: property.defaultValue
         };
-        array.push(mandatoryProperty);
+        result[mandatoryProperty.name] = mandatoryProperty;
     }
-    return array;
+    return result;
 }

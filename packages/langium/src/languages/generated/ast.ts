@@ -88,6 +88,14 @@ export function isAbstractType(item: unknown): item is AbstractType {
     return reflection.isInstance(item, AbstractType);
 }
 
+export type C = A | B;
+
+export const C = 'C';
+
+export function isC(item: unknown): item is C {
+    return reflection.isInstance(item, C);
+}
+
 export type Condition = BooleanLiteral | Conjunction | Disjunction | Negation | ParameterReference;
 
 export const Condition = 'Condition';
@@ -124,6 +132,18 @@ export function isValueLiteral(item: unknown): item is ValueLiteral {
     return reflection.isInstance(item, ValueLiteral);
 }
 
+export interface A extends langium.AstNode {
+    readonly $type: 'A';
+    a: string;
+    joint: string;
+}
+
+export const A = 'A';
+
+export function isA(item: unknown): item is A {
+    return reflection.isInstance(item, A);
+}
+
 export interface AbstractElement extends langium.AstNode {
     readonly $type: 'AbstractElement' | 'Action' | 'Alternatives' | 'Assignment' | 'CharacterRange' | 'CrossReference' | 'EndOfFile' | 'Group' | 'Keyword' | 'NegatedToken' | 'RegexToken' | 'RuleCall' | 'TerminalAlternatives' | 'TerminalGroup' | 'TerminalRuleCall' | 'UnorderedGroup' | 'UntilToken' | 'Wildcard';
     cardinality?: '*' | '+' | '?';
@@ -158,6 +178,18 @@ export const ArrayType = 'ArrayType';
 
 export function isArrayType(item: unknown): item is ArrayType {
     return reflection.isInstance(item, ArrayType);
+}
+
+export interface B extends langium.AstNode {
+    readonly $type: 'B';
+    b: string;
+    joint: string;
+}
+
+export const B = 'B';
+
+export function isB(item: unknown): item is B {
+    return reflection.isInstance(item, B);
 }
 
 export interface BooleanLiteral extends langium.AstNode {
@@ -642,6 +674,7 @@ export function isWildcard(item: unknown): item is Wildcard {
 }
 
 export type LangiumGrammarAstType = {
+    A: A
     AbstractElement: AbstractElement
     AbstractRule: AbstractRule
     AbstractType: AbstractType
@@ -650,7 +683,9 @@ export type LangiumGrammarAstType = {
     ArrayLiteral: ArrayLiteral
     ArrayType: ArrayType
     Assignment: Assignment
+    B: B
     BooleanLiteral: BooleanLiteral
+    C: C
     CharacterRange: CharacterRange
     Condition: Condition
     Conjunction: Conjunction
@@ -690,338 +725,696 @@ export type LangiumGrammarAstType = {
     Wildcard: Wildcard
 }
 
+export const properties: langium.AstTypeProperties<LangiumGrammarAstType> = langium.deepFreeze({
+    A: {
+        $name: A,
+        a: 'a',
+        joint: 'joint',
+    },
+    AbstractElement: {
+        $name: AbstractElement,
+        cardinality: 'cardinality',
+        lookahead: 'lookahead',
+    },
+    AbstractRule: {
+        $name: AbstractRule,
+        dataType: 'dataType',
+        definesHiddenTokens: 'definesHiddenTokens',
+        definition: 'definition',
+        entry: 'entry',
+        fragment: 'fragment',
+        hiddenTokens: 'hiddenTokens',
+        inferredType: 'inferredType',
+        name: 'name',
+        parameters: 'parameters',
+        returnType: 'returnType',
+        wildcard: 'wildcard',
+    },
+    AbstractType: {
+        $name: AbstractType,
+        attributes: 'attributes',
+        name: 'name',
+        superTypes: 'superTypes',
+    },
+    Action: {
+        $name: Action,
+        feature: 'feature',
+        inferredType: 'inferredType',
+        operator: 'operator',
+        type: 'type',
+        cardinality: 'cardinality',
+        lookahead: 'lookahead',
+    },
+    Alternatives: {
+        $name: Alternatives,
+        elements: 'elements',
+        cardinality: 'cardinality',
+        lookahead: 'lookahead',
+    },
+    ArrayLiteral: {
+        $name: ArrayLiteral,
+        elements: 'elements',
+    },
+    ArrayType: {
+        $name: ArrayType,
+        elementType: 'elementType',
+    },
+    Assignment: {
+        $name: Assignment,
+        feature: 'feature',
+        operator: 'operator',
+        terminal: 'terminal',
+        cardinality: 'cardinality',
+        lookahead: 'lookahead',
+    },
+    B: {
+        $name: B,
+        b: 'b',
+        joint: 'joint',
+    },
+    BooleanLiteral: {
+        $name: BooleanLiteral,
+        true: 'true',
+    },
+    C: {
+        $name: C,
+        a: 'a',
+        joint: 'joint',
+    },
+    CharacterRange: {
+        $name: CharacterRange,
+        left: 'left',
+        right: 'right',
+        cardinality: 'cardinality',
+        lookahead: 'lookahead',
+    },
+    Condition: {
+        $name: Condition,
+        true: 'true',
+    },
+    Conjunction: {
+        $name: Conjunction,
+        left: 'left',
+        right: 'right',
+    },
+    CrossReference: {
+        $name: CrossReference,
+        deprecatedSyntax: 'deprecatedSyntax',
+        terminal: 'terminal',
+        type: 'type',
+        cardinality: 'cardinality',
+        lookahead: 'lookahead',
+    },
+    Disjunction: {
+        $name: Disjunction,
+        left: 'left',
+        right: 'right',
+    },
+    EndOfFile: {
+        $name: EndOfFile,
+        cardinality: 'cardinality',
+        lookahead: 'lookahead',
+    },
+    Grammar: {
+        $name: Grammar,
+        definesHiddenTokens: 'definesHiddenTokens',
+        hiddenTokens: 'hiddenTokens',
+        imports: 'imports',
+        interfaces: 'interfaces',
+        isDeclared: 'isDeclared',
+        name: 'name',
+        rules: 'rules',
+        types: 'types',
+        usedGrammars: 'usedGrammars',
+    },
+    GrammarImport: {
+        $name: GrammarImport,
+        path: 'path',
+    },
+    Group: {
+        $name: Group,
+        elements: 'elements',
+        guardCondition: 'guardCondition',
+        cardinality: 'cardinality',
+        lookahead: 'lookahead',
+    },
+    InferredType: {
+        $name: InferredType,
+        name: 'name',
+    },
+    Interface: {
+        $name: Interface,
+        attributes: 'attributes',
+        name: 'name',
+        superTypes: 'superTypes',
+    },
+    Keyword: {
+        $name: Keyword,
+        value: 'value',
+        cardinality: 'cardinality',
+        lookahead: 'lookahead',
+    },
+    NamedArgument: {
+        $name: NamedArgument,
+        calledByName: 'calledByName',
+        parameter: 'parameter',
+        value: 'value',
+    },
+    NegatedToken: {
+        $name: NegatedToken,
+        terminal: 'terminal',
+        cardinality: 'cardinality',
+        lookahead: 'lookahead',
+    },
+    Negation: {
+        $name: Negation,
+        value: 'value',
+    },
+    NumberLiteral: {
+        $name: NumberLiteral,
+        value: 'value',
+    },
+    Parameter: {
+        $name: Parameter,
+        name: 'name',
+    },
+    ParameterReference: {
+        $name: ParameterReference,
+        parameter: 'parameter',
+    },
+    ParserRule: {
+        $name: ParserRule,
+        dataType: 'dataType',
+        definesHiddenTokens: 'definesHiddenTokens',
+        definition: 'definition',
+        entry: 'entry',
+        fragment: 'fragment',
+        hiddenTokens: 'hiddenTokens',
+        inferredType: 'inferredType',
+        name: 'name',
+        parameters: 'parameters',
+        returnType: 'returnType',
+        wildcard: 'wildcard',
+    },
+    ReferenceType: {
+        $name: ReferenceType,
+        referenceType: 'referenceType',
+    },
+    RegexToken: {
+        $name: RegexToken,
+        regex: 'regex',
+        cardinality: 'cardinality',
+        lookahead: 'lookahead',
+    },
+    ReturnType: {
+        $name: ReturnType,
+        name: 'name',
+    },
+    RuleCall: {
+        $name: RuleCall,
+        arguments: 'arguments',
+        rule: 'rule',
+        cardinality: 'cardinality',
+        lookahead: 'lookahead',
+    },
+    SimpleType: {
+        $name: SimpleType,
+        primitiveType: 'primitiveType',
+        stringType: 'stringType',
+        typeRef: 'typeRef',
+    },
+    StringLiteral: {
+        $name: StringLiteral,
+        value: 'value',
+    },
+    TerminalAlternatives: {
+        $name: TerminalAlternatives,
+        elements: 'elements',
+        cardinality: 'cardinality',
+        lookahead: 'lookahead',
+    },
+    TerminalGroup: {
+        $name: TerminalGroup,
+        elements: 'elements',
+        cardinality: 'cardinality',
+        lookahead: 'lookahead',
+    },
+    TerminalRule: {
+        $name: TerminalRule,
+        definition: 'definition',
+        fragment: 'fragment',
+        hidden: 'hidden',
+        name: 'name',
+        type: 'type',
+    },
+    TerminalRuleCall: {
+        $name: TerminalRuleCall,
+        rule: 'rule',
+        cardinality: 'cardinality',
+        lookahead: 'lookahead',
+    },
+    Type: {
+        $name: Type,
+        name: 'name',
+        type: 'type',
+    },
+    TypeAttribute: {
+        $name: TypeAttribute,
+        defaultValue: 'defaultValue',
+        isOptional: 'isOptional',
+        name: 'name',
+        type: 'type',
+    },
+    TypeDefinition: {
+        $name: TypeDefinition,
+        types: 'types',
+    },
+    UnionType: {
+        $name: UnionType,
+        types: 'types',
+    },
+    UnorderedGroup: {
+        $name: UnorderedGroup,
+        elements: 'elements',
+        cardinality: 'cardinality',
+        lookahead: 'lookahead',
+    },
+    UntilToken: {
+        $name: UntilToken,
+        terminal: 'terminal',
+        cardinality: 'cardinality',
+        lookahead: 'lookahead',
+    },
+    ValueLiteral: {
+        $name: ValueLiteral,
+        value: 'value',
+    },
+    Wildcard: {
+        $name: Wildcard,
+        cardinality: 'cardinality',
+        lookahead: 'lookahead',
+    },
+});
+
 export class LangiumGrammarAstReflection extends langium.AbstractAstReflection {
 
+    readonly A = {
+        $name: A,
+        $properties: {
+            a: { name: 'a', type: 'string', kind: 'Primitive' },
+            joint: { name: 'joint', type: 'string', kind: 'Primitive' },
+        },
+    };
     readonly AbstractElement = {
         $name: AbstractElement,
-        $properties: [
-            { name: 'cardinality' },
-            { name: 'lookahead' }
-        ]
+        $properties: {
+            cardinality: { name: 'cardinality', type: '"*" | "+" | "?"', kind: 'Primitive' },
+            lookahead: { name: 'lookahead', type: '"?!" | "?<!" | "?<=" | "?="', kind: 'Primitive' },
+        },
     };
-    readonly ArrayLiteral = {
-        $name: ArrayLiteral,
-        $properties: [
-            { name: 'elements', defaultValue: [] }
-        ]
+    readonly AbstractRule = {
+        $name: AbstractRule,
+        $properties: {
+            dataType: { name: 'dataType', type: 'PrimitiveType', kind: 'Primitive' },
+            definesHiddenTokens: { name: 'definesHiddenTokens', type: 'boolean', kind: 'Primitive', defaultValue: false },
+            definition: { name: 'definition', type: 'AbstractElement', kind: 'Containment' },
+            entry: { name: 'entry', type: 'boolean', kind: 'Primitive', defaultValue: false },
+            fragment: { name: 'fragment', type: 'boolean', kind: 'Primitive', defaultValue: false },
+            hiddenTokens: { name: 'hiddenTokens', type: 'AbstractRule', kind: 'Reference', defaultValue: [] },
+            inferredType: { name: 'inferredType', type: 'InferredType', kind: 'Containment' },
+            name: { name: 'name', type: 'string', kind: 'Primitive' },
+            parameters: { name: 'parameters', type: 'Parameter', kind: 'Containment', defaultValue: [] },
+            returnType: { name: 'returnType', type: 'AbstractType', kind: 'Reference' },
+            wildcard: { name: 'wildcard', type: 'boolean', kind: 'Primitive', defaultValue: false },
+        },
     };
-    readonly ArrayType = {
-        $name: ArrayType,
-        $properties: [
-            { name: 'elementType' }
-        ]
-    };
-    readonly BooleanLiteral = {
-        $name: BooleanLiteral,
-        $properties: [
-            { name: 'true', defaultValue: false }
-        ]
-    };
-    readonly Conjunction = {
-        $name: Conjunction,
-        $properties: [
-            { name: 'left' },
-            { name: 'right' }
-        ]
-    };
-    readonly Disjunction = {
-        $name: Disjunction,
-        $properties: [
-            { name: 'left' },
-            { name: 'right' }
-        ]
-    };
-    readonly Grammar = {
-        $name: Grammar,
-        $properties: [
-            { name: 'definesHiddenTokens', defaultValue: false },
-            { name: 'hiddenTokens', defaultValue: [] },
-            { name: 'imports', defaultValue: [] },
-            { name: 'interfaces', defaultValue: [] },
-            { name: 'isDeclared', defaultValue: false },
-            { name: 'name' },
-            { name: 'rules', defaultValue: [] },
-            { name: 'types', defaultValue: [] },
-            { name: 'usedGrammars', defaultValue: [] }
-        ]
-    };
-    readonly GrammarImport = {
-        $name: GrammarImport,
-        $properties: [
-            { name: 'path' }
-        ]
-    };
-    readonly InferredType = {
-        $name: InferredType,
-        $properties: [
-            { name: 'name' }
-        ]
-    };
-    readonly Interface = {
-        $name: Interface,
-        $properties: [
-            { name: 'attributes', defaultValue: [] },
-            { name: 'name' },
-            { name: 'superTypes', defaultValue: [] }
-        ]
-    };
-    readonly NamedArgument = {
-        $name: NamedArgument,
-        $properties: [
-            { name: 'calledByName', defaultValue: false },
-            { name: 'parameter' },
-            { name: 'value' }
-        ]
-    };
-    readonly Negation = {
-        $name: Negation,
-        $properties: [
-            { name: 'value' }
-        ]
-    };
-    readonly NumberLiteral = {
-        $name: NumberLiteral,
-        $properties: [
-            { name: 'value' }
-        ]
-    };
-    readonly Parameter = {
-        $name: Parameter,
-        $properties: [
-            { name: 'name' }
-        ]
-    };
-    readonly ParameterReference = {
-        $name: ParameterReference,
-        $properties: [
-            { name: 'parameter' }
-        ]
-    };
-    readonly ParserRule = {
-        $name: ParserRule,
-        $properties: [
-            { name: 'dataType' },
-            { name: 'definesHiddenTokens', defaultValue: false },
-            { name: 'definition' },
-            { name: 'entry', defaultValue: false },
-            { name: 'fragment', defaultValue: false },
-            { name: 'hiddenTokens', defaultValue: [] },
-            { name: 'inferredType' },
-            { name: 'name' },
-            { name: 'parameters', defaultValue: [] },
-            { name: 'returnType' },
-            { name: 'wildcard', defaultValue: false }
-        ]
-    };
-    readonly ReferenceType = {
-        $name: ReferenceType,
-        $properties: [
-            { name: 'referenceType' }
-        ]
-    };
-    readonly ReturnType = {
-        $name: ReturnType,
-        $properties: [
-            { name: 'name' }
-        ]
-    };
-    readonly SimpleType = {
-        $name: SimpleType,
-        $properties: [
-            { name: 'primitiveType' },
-            { name: 'stringType' },
-            { name: 'typeRef' }
-        ]
-    };
-    readonly StringLiteral = {
-        $name: StringLiteral,
-        $properties: [
-            { name: 'value' }
-        ]
-    };
-    readonly TerminalRule = {
-        $name: TerminalRule,
-        $properties: [
-            { name: 'definition' },
-            { name: 'fragment', defaultValue: false },
-            { name: 'hidden', defaultValue: false },
-            { name: 'name' },
-            { name: 'type' }
-        ]
-    };
-    readonly Type = {
-        $name: Type,
-        $properties: [
-            { name: 'name' },
-            { name: 'type' }
-        ]
-    };
-    readonly TypeAttribute = {
-        $name: TypeAttribute,
-        $properties: [
-            { name: 'defaultValue' },
-            { name: 'isOptional', defaultValue: false },
-            { name: 'name' },
-            { name: 'type' }
-        ]
-    };
-    readonly UnionType = {
-        $name: UnionType,
-        $properties: [
-            { name: 'types', defaultValue: [] }
-        ]
+    readonly AbstractType = {
+        $name: AbstractType,
+        $properties: {
+            attributes: { name: 'attributes', type: 'TypeAttribute', kind: 'Containment', defaultValue: [] },
+            name: { name: 'name', type: 'string', kind: 'Primitive' },
+            superTypes: { name: 'superTypes', type: 'AbstractType', kind: 'Reference', defaultValue: [] },
+        },
     };
     readonly Action = {
         $name: Action,
-        $properties: [
-            { name: 'cardinality' },
-            { name: 'feature' },
-            { name: 'inferredType' },
-            { name: 'lookahead' },
-            { name: 'operator' },
-            { name: 'type' }
-        ]
+        $properties: {
+            cardinality: { name: 'cardinality', type: '"*" | "+" | "?"', kind: 'Primitive' },
+            feature: { name: 'feature', type: 'FeatureName', kind: 'Primitive' },
+            inferredType: { name: 'inferredType', type: 'InferredType', kind: 'Containment' },
+            lookahead: { name: 'lookahead', type: '"?!" | "?<!" | "?<=" | "?="', kind: 'Primitive' },
+            operator: { name: 'operator', type: '"+=" | "="', kind: 'Primitive' },
+            type: { name: 'type', type: 'AbstractType', kind: 'Reference' },
+        },
     };
     readonly Alternatives = {
         $name: Alternatives,
-        $properties: [
-            { name: 'cardinality' },
-            { name: 'elements', defaultValue: [] },
-            { name: 'lookahead' }
-        ]
+        $properties: {
+            cardinality: { name: 'cardinality', type: '"*" | "+" | "?"', kind: 'Primitive' },
+            elements: { name: 'elements', type: 'AbstractElement', kind: 'Containment', defaultValue: [] },
+            lookahead: { name: 'lookahead', type: '"?!" | "?<!" | "?<=" | "?="', kind: 'Primitive' },
+        },
+    };
+    readonly ArrayLiteral = {
+        $name: ArrayLiteral,
+        $properties: {
+            elements: { name: 'elements', type: 'ValueLiteral', kind: 'Containment', defaultValue: [] },
+        },
+    };
+    readonly ArrayType = {
+        $name: ArrayType,
+        $properties: {
+            elementType: { name: 'elementType', type: 'TypeDefinition', kind: 'Containment' },
+        },
     };
     readonly Assignment = {
         $name: Assignment,
-        $properties: [
-            { name: 'cardinality' },
-            { name: 'feature' },
-            { name: 'lookahead' },
-            { name: 'operator' },
-            { name: 'terminal' }
-        ]
+        $properties: {
+            cardinality: { name: 'cardinality', type: '"*" | "+" | "?"', kind: 'Primitive' },
+            feature: { name: 'feature', type: 'FeatureName', kind: 'Primitive' },
+            lookahead: { name: 'lookahead', type: '"?!" | "?<!" | "?<=" | "?="', kind: 'Primitive' },
+            operator: { name: 'operator', type: '"+=" | "=" | "?="', kind: 'Primitive' },
+            terminal: { name: 'terminal', type: 'AbstractElement', kind: 'Containment' },
+        },
+    };
+    readonly B = {
+        $name: B,
+        $properties: {
+            b: { name: 'b', type: 'string', kind: 'Primitive' },
+            joint: { name: 'joint', type: 'string', kind: 'Primitive' },
+        },
+    };
+    readonly BooleanLiteral = {
+        $name: BooleanLiteral,
+        $properties: {
+            true: { name: 'true', type: 'boolean', kind: 'Primitive', defaultValue: false },
+        },
+    };
+    readonly C = {
+        $name: C,
+        $properties: {
+            a: { name: 'a', type: 'string', kind: 'Primitive' },
+            joint: { name: 'joint', type: 'string', kind: 'Primitive' },
+        },
     };
     readonly CharacterRange = {
         $name: CharacterRange,
-        $properties: [
-            { name: 'cardinality' },
-            { name: 'left' },
-            { name: 'lookahead' },
-            { name: 'right' }
-        ]
+        $properties: {
+            cardinality: { name: 'cardinality', type: '"*" | "+" | "?"', kind: 'Primitive' },
+            left: { name: 'left', type: 'Keyword', kind: 'Containment' },
+            lookahead: { name: 'lookahead', type: '"?!" | "?<!" | "?<=" | "?="', kind: 'Primitive' },
+            right: { name: 'right', type: 'Keyword', kind: 'Containment' },
+        },
+    };
+    readonly Condition = {
+        $name: Condition,
+        $properties: {
+            true: { name: 'true', type: 'boolean', kind: 'Primitive', defaultValue: false },
+        },
+    };
+    readonly Conjunction = {
+        $name: Conjunction,
+        $properties: {
+            left: { name: 'left', type: 'Condition', kind: 'Containment' },
+            right: { name: 'right', type: 'Condition', kind: 'Containment' },
+        },
     };
     readonly CrossReference = {
         $name: CrossReference,
-        $properties: [
-            { name: 'cardinality' },
-            { name: 'deprecatedSyntax', defaultValue: false },
-            { name: 'lookahead' },
-            { name: 'terminal' },
-            { name: 'type' }
-        ]
+        $properties: {
+            cardinality: { name: 'cardinality', type: '"*" | "+" | "?"', kind: 'Primitive' },
+            deprecatedSyntax: { name: 'deprecatedSyntax', type: 'boolean', kind: 'Primitive', defaultValue: false },
+            lookahead: { name: 'lookahead', type: '"?!" | "?<!" | "?<=" | "?="', kind: 'Primitive' },
+            terminal: { name: 'terminal', type: 'AbstractElement', kind: 'Containment' },
+            type: { name: 'type', type: 'AbstractType', kind: 'Reference' },
+        },
+    };
+    readonly Disjunction = {
+        $name: Disjunction,
+        $properties: {
+            left: { name: 'left', type: 'Condition', kind: 'Containment' },
+            right: { name: 'right', type: 'Condition', kind: 'Containment' },
+        },
     };
     readonly EndOfFile = {
         $name: EndOfFile,
-        $properties: [
-            { name: 'cardinality' },
-            { name: 'lookahead' }
-        ]
+        $properties: {
+            cardinality: { name: 'cardinality', type: '"*" | "+" | "?"', kind: 'Primitive' },
+            lookahead: { name: 'lookahead', type: '"?!" | "?<!" | "?<=" | "?="', kind: 'Primitive' },
+        },
+    };
+    readonly Grammar = {
+        $name: Grammar,
+        $properties: {
+            definesHiddenTokens: { name: 'definesHiddenTokens', type: 'boolean', kind: 'Primitive', defaultValue: false },
+            hiddenTokens: { name: 'hiddenTokens', type: 'AbstractRule', kind: 'Reference', defaultValue: [] },
+            imports: { name: 'imports', type: 'GrammarImport', kind: 'Containment', defaultValue: [] },
+            interfaces: { name: 'interfaces', type: 'Interface', kind: 'Containment', defaultValue: [] },
+            isDeclared: { name: 'isDeclared', type: 'boolean', kind: 'Primitive', defaultValue: false },
+            name: { name: 'name', type: 'string', kind: 'Primitive' },
+            rules: { name: 'rules', type: 'AbstractRule', kind: 'Containment', defaultValue: [] },
+            types: { name: 'types', type: 'Type', kind: 'Containment', defaultValue: [] },
+            usedGrammars: { name: 'usedGrammars', type: 'Grammar', kind: 'Reference', defaultValue: [] },
+        },
+    };
+    readonly GrammarImport = {
+        $name: GrammarImport,
+        $properties: {
+            path: { name: 'path', type: 'string', kind: 'Primitive' },
+        },
     };
     readonly Group = {
         $name: Group,
-        $properties: [
-            { name: 'cardinality' },
-            { name: 'elements', defaultValue: [] },
-            { name: 'guardCondition' },
-            { name: 'lookahead' }
-        ]
+        $properties: {
+            cardinality: { name: 'cardinality', type: '"*" | "+" | "?"', kind: 'Primitive' },
+            elements: { name: 'elements', type: 'AbstractElement', kind: 'Containment', defaultValue: [] },
+            guardCondition: { name: 'guardCondition', type: 'Condition', kind: 'Containment' },
+            lookahead: { name: 'lookahead', type: '"?!" | "?<!" | "?<=" | "?="', kind: 'Primitive' },
+        },
+    };
+    readonly InferredType = {
+        $name: InferredType,
+        $properties: {
+            name: { name: 'name', type: 'string', kind: 'Primitive' },
+        },
+    };
+    readonly Interface = {
+        $name: Interface,
+        $properties: {
+            attributes: { name: 'attributes', type: 'TypeAttribute', kind: 'Containment', defaultValue: [] },
+            name: { name: 'name', type: 'string', kind: 'Primitive' },
+            superTypes: { name: 'superTypes', type: 'AbstractType', kind: 'Reference', defaultValue: [] },
+        },
     };
     readonly Keyword = {
         $name: Keyword,
-        $properties: [
-            { name: 'cardinality' },
-            { name: 'lookahead' },
-            { name: 'value' }
-        ]
+        $properties: {
+            cardinality: { name: 'cardinality', type: '"*" | "+" | "?"', kind: 'Primitive' },
+            lookahead: { name: 'lookahead', type: '"?!" | "?<!" | "?<=" | "?="', kind: 'Primitive' },
+            value: { name: 'value', type: 'string', kind: 'Primitive' },
+        },
+    };
+    readonly NamedArgument = {
+        $name: NamedArgument,
+        $properties: {
+            calledByName: { name: 'calledByName', type: 'boolean', kind: 'Primitive', defaultValue: false },
+            parameter: { name: 'parameter', type: 'Parameter', kind: 'Reference' },
+            value: { name: 'value', type: 'Condition', kind: 'Containment' },
+        },
     };
     readonly NegatedToken = {
         $name: NegatedToken,
-        $properties: [
-            { name: 'cardinality' },
-            { name: 'lookahead' },
-            { name: 'terminal' }
-        ]
+        $properties: {
+            cardinality: { name: 'cardinality', type: '"*" | "+" | "?"', kind: 'Primitive' },
+            lookahead: { name: 'lookahead', type: '"?!" | "?<!" | "?<=" | "?="', kind: 'Primitive' },
+            terminal: { name: 'terminal', type: 'AbstractElement', kind: 'Containment' },
+        },
+    };
+    readonly Negation = {
+        $name: Negation,
+        $properties: {
+            value: { name: 'value', type: 'Condition', kind: 'Containment' },
+        },
+    };
+    readonly NumberLiteral = {
+        $name: NumberLiteral,
+        $properties: {
+            value: { name: 'value', type: 'number', kind: 'Primitive' },
+        },
+    };
+    readonly Parameter = {
+        $name: Parameter,
+        $properties: {
+            name: { name: 'name', type: 'string', kind: 'Primitive' },
+        },
+    };
+    readonly ParameterReference = {
+        $name: ParameterReference,
+        $properties: {
+            parameter: { name: 'parameter', type: 'Parameter', kind: 'Reference' },
+        },
+    };
+    readonly ParserRule = {
+        $name: ParserRule,
+        $properties: {
+            dataType: { name: 'dataType', type: 'PrimitiveType', kind: 'Primitive' },
+            definesHiddenTokens: { name: 'definesHiddenTokens', type: 'boolean', kind: 'Primitive', defaultValue: false },
+            definition: { name: 'definition', type: 'AbstractElement', kind: 'Containment' },
+            entry: { name: 'entry', type: 'boolean', kind: 'Primitive', defaultValue: false },
+            fragment: { name: 'fragment', type: 'boolean', kind: 'Primitive', defaultValue: false },
+            hiddenTokens: { name: 'hiddenTokens', type: 'AbstractRule', kind: 'Reference', defaultValue: [] },
+            inferredType: { name: 'inferredType', type: 'InferredType', kind: 'Containment' },
+            name: { name: 'name', type: 'string', kind: 'Primitive' },
+            parameters: { name: 'parameters', type: 'Parameter', kind: 'Containment', defaultValue: [] },
+            returnType: { name: 'returnType', type: 'AbstractType', kind: 'Reference' },
+            wildcard: { name: 'wildcard', type: 'boolean', kind: 'Primitive', defaultValue: false },
+        },
+    };
+    readonly ReferenceType = {
+        $name: ReferenceType,
+        $properties: {
+            referenceType: { name: 'referenceType', type: 'TypeDefinition', kind: 'Containment' },
+        },
     };
     readonly RegexToken = {
         $name: RegexToken,
-        $properties: [
-            { name: 'cardinality' },
-            { name: 'lookahead' },
-            { name: 'regex' }
-        ]
+        $properties: {
+            cardinality: { name: 'cardinality', type: '"*" | "+" | "?"', kind: 'Primitive' },
+            lookahead: { name: 'lookahead', type: '"?!" | "?<!" | "?<=" | "?="', kind: 'Primitive' },
+            regex: { name: 'regex', type: 'string', kind: 'Primitive' },
+        },
+    };
+    readonly ReturnType = {
+        $name: ReturnType,
+        $properties: {
+            name: { name: 'name', type: 'PrimitiveType | string', kind: 'Primitive' },
+        },
     };
     readonly RuleCall = {
         $name: RuleCall,
-        $properties: [
-            { name: 'arguments', defaultValue: [] },
-            { name: 'cardinality' },
-            { name: 'lookahead' },
-            { name: 'rule' }
-        ]
+        $properties: {
+            arguments: { name: 'arguments', type: 'NamedArgument', kind: 'Containment', defaultValue: [] },
+            cardinality: { name: 'cardinality', type: '"*" | "+" | "?"', kind: 'Primitive' },
+            lookahead: { name: 'lookahead', type: '"?!" | "?<!" | "?<=" | "?="', kind: 'Primitive' },
+            rule: { name: 'rule', type: 'AbstractRule', kind: 'Reference' },
+        },
+    };
+    readonly SimpleType = {
+        $name: SimpleType,
+        $properties: {
+            primitiveType: { name: 'primitiveType', type: 'PrimitiveType', kind: 'Primitive' },
+            stringType: { name: 'stringType', type: 'string', kind: 'Primitive' },
+            typeRef: { name: 'typeRef', type: 'AbstractType', kind: 'Reference' },
+        },
+    };
+    readonly StringLiteral = {
+        $name: StringLiteral,
+        $properties: {
+            value: { name: 'value', type: 'string', kind: 'Primitive' },
+        },
     };
     readonly TerminalAlternatives = {
         $name: TerminalAlternatives,
-        $properties: [
-            { name: 'cardinality' },
-            { name: 'elements', defaultValue: [] },
-            { name: 'lookahead' }
-        ]
+        $properties: {
+            cardinality: { name: 'cardinality', type: '"*" | "+" | "?"', kind: 'Primitive' },
+            elements: { name: 'elements', type: 'AbstractElement', kind: 'Containment', defaultValue: [] },
+            lookahead: { name: 'lookahead', type: '"?!" | "?<!" | "?<=" | "?="', kind: 'Primitive' },
+        },
     };
     readonly TerminalGroup = {
         $name: TerminalGroup,
-        $properties: [
-            { name: 'cardinality' },
-            { name: 'elements', defaultValue: [] },
-            { name: 'lookahead' }
-        ]
+        $properties: {
+            cardinality: { name: 'cardinality', type: '"*" | "+" | "?"', kind: 'Primitive' },
+            elements: { name: 'elements', type: 'AbstractElement', kind: 'Containment', defaultValue: [] },
+            lookahead: { name: 'lookahead', type: '"?!" | "?<!" | "?<=" | "?="', kind: 'Primitive' },
+        },
+    };
+    readonly TerminalRule = {
+        $name: TerminalRule,
+        $properties: {
+            definition: { name: 'definition', type: 'AbstractElement', kind: 'Containment' },
+            fragment: { name: 'fragment', type: 'boolean', kind: 'Primitive', defaultValue: false },
+            hidden: { name: 'hidden', type: 'boolean', kind: 'Primitive', defaultValue: false },
+            name: { name: 'name', type: 'string', kind: 'Primitive' },
+            type: { name: 'type', type: 'ReturnType', kind: 'Containment' },
+        },
     };
     readonly TerminalRuleCall = {
         $name: TerminalRuleCall,
-        $properties: [
-            { name: 'cardinality' },
-            { name: 'lookahead' },
-            { name: 'rule' }
-        ]
+        $properties: {
+            cardinality: { name: 'cardinality', type: '"*" | "+" | "?"', kind: 'Primitive' },
+            lookahead: { name: 'lookahead', type: '"?!" | "?<!" | "?<=" | "?="', kind: 'Primitive' },
+            rule: { name: 'rule', type: 'TerminalRule', kind: 'Reference' },
+        },
+    };
+    readonly Type = {
+        $name: Type,
+        $properties: {
+            name: { name: 'name', type: 'string', kind: 'Primitive' },
+            type: { name: 'type', type: 'TypeDefinition', kind: 'Containment' },
+        },
+    };
+    readonly TypeAttribute = {
+        $name: TypeAttribute,
+        $properties: {
+            defaultValue: { name: 'defaultValue', type: 'ValueLiteral', kind: 'Containment' },
+            isOptional: { name: 'isOptional', type: 'boolean', kind: 'Primitive', defaultValue: false },
+            name: { name: 'name', type: 'FeatureName', kind: 'Primitive' },
+            type: { name: 'type', type: 'TypeDefinition', kind: 'Containment' },
+        },
+    };
+    readonly TypeDefinition = {
+        $name: TypeDefinition,
+        $properties: {
+            types: { name: 'types', type: 'TypeDefinition', kind: 'Containment', defaultValue: [] },
+        },
+    };
+    readonly UnionType = {
+        $name: UnionType,
+        $properties: {
+            types: { name: 'types', type: 'TypeDefinition', kind: 'Containment', defaultValue: [] },
+        },
     };
     readonly UnorderedGroup = {
         $name: UnorderedGroup,
-        $properties: [
-            { name: 'cardinality' },
-            { name: 'elements', defaultValue: [] },
-            { name: 'lookahead' }
-        ]
+        $properties: {
+            cardinality: { name: 'cardinality', type: '"*" | "+" | "?"', kind: 'Primitive' },
+            elements: { name: 'elements', type: 'AbstractElement', kind: 'Containment', defaultValue: [] },
+            lookahead: { name: 'lookahead', type: '"?!" | "?<!" | "?<=" | "?="', kind: 'Primitive' },
+        },
     };
     readonly UntilToken = {
         $name: UntilToken,
-        $properties: [
-            { name: 'cardinality' },
-            { name: 'lookahead' },
-            { name: 'terminal' }
-        ]
+        $properties: {
+            cardinality: { name: 'cardinality', type: '"*" | "+" | "?"', kind: 'Primitive' },
+            lookahead: { name: 'lookahead', type: '"?!" | "?<!" | "?<=" | "?="', kind: 'Primitive' },
+            terminal: { name: 'terminal', type: 'AbstractElement', kind: 'Containment' },
+        },
+    };
+    readonly ValueLiteral = {
+        $name: ValueLiteral,
+        $properties: {
+            value: { name: 'value', type: 'string', kind: 'Primitive' },
+        },
     };
     readonly Wildcard = {
         $name: Wildcard,
-        $properties: [
-            { name: 'cardinality' },
-            { name: 'lookahead' }
-        ]
+        $properties: {
+            cardinality: { name: 'cardinality', type: '"*" | "+" | "?"', kind: 'Primitive' },
+            lookahead: { name: 'lookahead', type: '"?!" | "?<!" | "?<=" | "?="', kind: 'Primitive' },
+        },
     };
 
     getAllTypes(): string[] {
-        return [AbstractElement, AbstractRule, AbstractType, Action, Alternatives, ArrayLiteral, ArrayType, Assignment, BooleanLiteral, CharacterRange, Condition, Conjunction, CrossReference, Disjunction, EndOfFile, Grammar, GrammarImport, Group, InferredType, Interface, Keyword, NamedArgument, NegatedToken, Negation, NumberLiteral, Parameter, ParameterReference, ParserRule, ReferenceType, RegexToken, ReturnType, RuleCall, SimpleType, StringLiteral, TerminalAlternatives, TerminalGroup, TerminalRule, TerminalRuleCall, Type, TypeAttribute, TypeDefinition, UnionType, UnorderedGroup, UntilToken, ValueLiteral, Wildcard];
+        return [A, AbstractElement, AbstractRule, AbstractType, Action, Alternatives, ArrayLiteral, ArrayType, Assignment, B, BooleanLiteral, C, CharacterRange, Condition, Conjunction, CrossReference, Disjunction, EndOfFile, Grammar, GrammarImport, Group, InferredType, Interface, Keyword, NamedArgument, NegatedToken, Negation, NumberLiteral, Parameter, ParameterReference, ParserRule, ReferenceType, RegexToken, ReturnType, RuleCall, SimpleType, StringLiteral, TerminalAlternatives, TerminalGroup, TerminalRule, TerminalRuleCall, Type, TypeAttribute, TypeDefinition, UnionType, UnorderedGroup, UntilToken, ValueLiteral, Wildcard];
     }
 
     protected override computeIsSubtype(subtype: string, supertype: string): boolean {
         switch (subtype) {
+            case A:
+            case B: {
+                return this.isSubtype(C, supertype);
+            }
             case Action:
             case Alternatives:
             case Assignment:
@@ -1079,34 +1472,20 @@ export class LangiumGrammarAstReflection extends langium.AbstractAstReflection {
     }
 
     getReferenceType(refInfo: langium.ReferenceInfo): string {
-        const referenceId = `${refInfo.container.$type}:${refInfo.property}`;
-        switch (referenceId) {
-            case 'Action:type':
-            case 'CrossReference:type':
-            case 'Interface:superTypes':
-            case 'ParserRule:returnType':
-            case 'SimpleType:typeRef': {
-                return AbstractType;
-            }
-            case 'Grammar:hiddenTokens':
-            case 'ParserRule:hiddenTokens':
-            case 'RuleCall:rule': {
-                return AbstractRule;
-            }
-            case 'Grammar:usedGrammars': {
-                return Grammar;
-            }
-            case 'NamedArgument:parameter':
-            case 'ParameterReference:parameter': {
-                return Parameter;
-            }
-            case 'TerminalRuleCall:rule': {
-                return TerminalRule;
-            }
-            default: {
-                throw new Error(`${referenceId} is not a valid reference id.`);
-            }
+        // TODO move both methods into the parent class?
+        const containerTypeName = refInfo.container.$type;
+        const containerTypeMetaData = this.getTypeMetaData(containerTypeName);
+        if (containerTypeMetaData === undefined) {
+            throw new Error(`${containerTypeName} is not a valid container $type.`);
         }
+        const propertyMetaData = containerTypeMetaData.$properties[refInfo.property]; //  as keyof langium.SpecificPropertiesToString<langium.AstNode>
+        if (propertyMetaData === undefined) {
+            throw new Error(`'${refInfo.property}' is not a valid property of the container $type ${containerTypeName}.`);
+        }
+        if (propertyMetaData.kind !== 'Reference') {
+            throw new Error(`'${refInfo.property}' is no Reference, but ${propertyMetaData.kind}.`);
+        }
+        return propertyMetaData.type;
     }
 
     getTypeMetaData(type: string): langium.TypeMetaData | undefined {
