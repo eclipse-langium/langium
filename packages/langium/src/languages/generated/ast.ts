@@ -88,14 +88,6 @@ export function isAbstractType(item: unknown): item is AbstractType {
     return reflection.isInstance(item, AbstractType);
 }
 
-export type C = A | B;
-
-export const C = 'C';
-
-export function isC(item: unknown): item is C {
-    return reflection.isInstance(item, C);
-}
-
 export type Condition = BooleanLiteral | Conjunction | Disjunction | Negation | ParameterReference;
 
 export const Condition = 'Condition';
@@ -132,18 +124,6 @@ export function isValueLiteral(item: unknown): item is ValueLiteral {
     return reflection.isInstance(item, ValueLiteral);
 }
 
-export interface A extends langium.AstNode {
-    readonly $type: 'A';
-    a: string;
-    joint: string;
-}
-
-export const A = 'A';
-
-export function isA(item: unknown): item is A {
-    return reflection.isInstance(item, A);
-}
-
 export interface AbstractElement extends langium.AstNode {
     readonly $type: 'AbstractElement' | 'Action' | 'Alternatives' | 'Assignment' | 'CharacterRange' | 'CrossReference' | 'EndOfFile' | 'Group' | 'Keyword' | 'NegatedToken' | 'RegexToken' | 'RuleCall' | 'TerminalAlternatives' | 'TerminalGroup' | 'TerminalRuleCall' | 'UnorderedGroup' | 'UntilToken' | 'Wildcard';
     cardinality?: '*' | '+' | '?';
@@ -178,18 +158,6 @@ export const ArrayType = 'ArrayType';
 
 export function isArrayType(item: unknown): item is ArrayType {
     return reflection.isInstance(item, ArrayType);
-}
-
-export interface B extends langium.AstNode {
-    readonly $type: 'B';
-    b: string;
-    joint: string;
-}
-
-export const B = 'B';
-
-export function isB(item: unknown): item is B {
-    return reflection.isInstance(item, B);
 }
 
 export interface BooleanLiteral extends langium.AstNode {
@@ -674,7 +642,6 @@ export function isWildcard(item: unknown): item is Wildcard {
 }
 
 export type LangiumGrammarAstType = {
-    A: A
     AbstractElement: AbstractElement
     AbstractRule: AbstractRule
     AbstractType: AbstractType
@@ -683,9 +650,7 @@ export type LangiumGrammarAstType = {
     ArrayLiteral: ArrayLiteral
     ArrayType: ArrayType
     Assignment: Assignment
-    B: B
     BooleanLiteral: BooleanLiteral
-    C: C
     CharacterRange: CharacterRange
     Condition: Condition
     Conjunction: Conjunction
@@ -726,10 +691,6 @@ export type LangiumGrammarAstType = {
 }
 
 export const properties: langium.AstTypeProperties<LangiumGrammarAstType> = langium.deepFreeze({
-    A: {
-        a: 'a',
-        joint: 'joint',
-    },
     AbstractElement: {
         cardinality: 'cardinality',
         lookahead: 'lookahead',
@@ -778,16 +739,8 @@ export const properties: langium.AstTypeProperties<LangiumGrammarAstType> = lang
         cardinality: 'cardinality',
         lookahead: 'lookahead',
     },
-    B: {
-        b: 'b',
-        joint: 'joint',
-    },
     BooleanLiteral: {
         true: 'true',
-    },
-    C: {
-        a: 'a',
-        joint: 'joint',
     },
     CharacterRange: {
         left: 'left',
@@ -969,13 +922,6 @@ export const properties: langium.AstTypeProperties<LangiumGrammarAstType> = lang
 
 export class LangiumGrammarAstReflection extends langium.AbstractAstReflection {
 
-    readonly A = {
-        $name: A,
-        $properties: {
-            a: { name: 'a', type: 'string', kind: 'Primitive' },
-            joint: { name: 'joint', type: 'string', kind: 'Primitive' },
-        },
-    };
     readonly AbstractElement = {
         $name: AbstractElement,
         $properties: {
@@ -1048,24 +994,10 @@ export class LangiumGrammarAstReflection extends langium.AbstractAstReflection {
             terminal: { name: 'terminal', type: 'AbstractElement', kind: 'Containment' },
         },
     };
-    readonly B = {
-        $name: B,
-        $properties: {
-            b: { name: 'b', type: 'string', kind: 'Primitive' },
-            joint: { name: 'joint', type: 'string', kind: 'Primitive' },
-        },
-    };
     readonly BooleanLiteral = {
         $name: BooleanLiteral,
         $properties: {
             true: { name: 'true', type: 'boolean', kind: 'Primitive', defaultValue: false },
-        },
-    };
-    readonly C = {
-        $name: C,
-        $properties: {
-            a: { name: 'a', type: 'string', kind: 'Primitive' },
-            joint: { name: 'joint', type: 'string', kind: 'Primitive' },
         },
     };
     readonly CharacterRange = {
@@ -1357,15 +1289,11 @@ export class LangiumGrammarAstReflection extends langium.AbstractAstReflection {
     };
 
     getAllTypes(): string[] {
-        return [A, AbstractElement, AbstractRule, AbstractType, Action, Alternatives, ArrayLiteral, ArrayType, Assignment, B, BooleanLiteral, C, CharacterRange, Condition, Conjunction, CrossReference, Disjunction, EndOfFile, Grammar, GrammarImport, Group, InferredType, Interface, Keyword, NamedArgument, NegatedToken, Negation, NumberLiteral, Parameter, ParameterReference, ParserRule, ReferenceType, RegexToken, ReturnType, RuleCall, SimpleType, StringLiteral, TerminalAlternatives, TerminalGroup, TerminalRule, TerminalRuleCall, Type, TypeAttribute, TypeDefinition, UnionType, UnorderedGroup, UntilToken, ValueLiteral, Wildcard];
+        return [AbstractElement, AbstractRule, AbstractType, Action, Alternatives, ArrayLiteral, ArrayType, Assignment, BooleanLiteral, CharacterRange, Condition, Conjunction, CrossReference, Disjunction, EndOfFile, Grammar, GrammarImport, Group, InferredType, Interface, Keyword, NamedArgument, NegatedToken, Negation, NumberLiteral, Parameter, ParameterReference, ParserRule, ReferenceType, RegexToken, ReturnType, RuleCall, SimpleType, StringLiteral, TerminalAlternatives, TerminalGroup, TerminalRule, TerminalRuleCall, Type, TypeAttribute, TypeDefinition, UnionType, UnorderedGroup, UntilToken, ValueLiteral, Wildcard];
     }
 
     protected override computeIsSubtype(subtype: string, supertype: string): boolean {
         switch (subtype) {
-            case A:
-            case B: {
-                return this.isSubtype(C, supertype);
-            }
             case Action:
             case Alternatives:
             case Assignment:
