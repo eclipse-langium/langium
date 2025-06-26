@@ -142,7 +142,7 @@ export class StatemachineAstReflection extends langium.AbstractAstReflection {
             name: Command.$type,
             properties: {
                 name: {
-                    name: 'name'
+                    name: Command.name
                 }
             },
             superTypes: []
@@ -151,7 +151,7 @@ export class StatemachineAstReflection extends langium.AbstractAstReflection {
             name: Event.$type,
             properties: {
                 name: {
-                    name: 'name'
+                    name: Event.name
                 }
             },
             superTypes: []
@@ -160,15 +160,15 @@ export class StatemachineAstReflection extends langium.AbstractAstReflection {
             name: State.$type,
             properties: {
                 actions: {
-                    name: 'actions',
+                    name: State.actions,
                     defaultValue: [],
-                    referenceType: 'Command'
+                    referenceType: Command.$type
                 },
                 name: {
-                    name: 'name'
+                    name: State.name
                 },
                 transitions: {
-                    name: 'transitions',
+                    name: State.transitions,
                     defaultValue: []
                 }
             },
@@ -178,22 +178,22 @@ export class StatemachineAstReflection extends langium.AbstractAstReflection {
             name: Statemachine.$type,
             properties: {
                 commands: {
-                    name: 'commands',
+                    name: Statemachine.commands,
                     defaultValue: []
                 },
                 events: {
-                    name: 'events',
+                    name: Statemachine.events,
                     defaultValue: []
                 },
                 init: {
-                    name: 'init',
-                    referenceType: 'State'
+                    name: Statemachine.init,
+                    referenceType: State.$type
                 },
                 name: {
-                    name: 'name'
+                    name: Statemachine.name
                 },
                 states: {
-                    name: 'states',
+                    name: Statemachine.states,
                     defaultValue: []
                 }
             },
@@ -203,12 +203,12 @@ export class StatemachineAstReflection extends langium.AbstractAstReflection {
             name: Transition.$type,
             properties: {
                 event: {
-                    name: 'event',
-                    referenceType: 'Event'
+                    name: Transition.event,
+                    referenceType: Event.$type
                 },
                 state: {
-                    name: 'state',
-                    referenceType: 'State'
+                    name: Transition.state,
+                    referenceType: State.$type
                 }
             },
             superTypes: []
