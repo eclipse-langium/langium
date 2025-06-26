@@ -411,6 +411,42 @@ describe('Ast generator', () => {
         }`
     );
 
+    testTypeMetaData('should generate property metadata for empty types', `
+        grammar TestGrammar
+
+        interface IAmArray { }
+        interface DeclaredArray extends IAmArray{
+            elements: ArrayContent[];
+        }
+
+        DeclaredArray returns DeclaredArray:
+            'declared' (elements+=ArrayContent)* ';';
+
+        hidden terminal WS: /\\s+/;
+        terminal ID: /[_a-zA-Z][\\w_]*/;
+    `, expandToString`
+        export class testAstReflection extends langium.AbstractAstReflection {
+            override readonly types = {
+                DeclaredArray: {
+                    name: DeclaredArray.$type,
+                    properties: {
+                        elements: {
+                            name: 'elements',
+                            defaultValue: []
+                        }
+                    },
+                    superTypes: ['IAmArray']
+                },
+                IAmArray: {
+                    name: IAmArray.$type,
+                    properties: {
+                    },
+                    superTypes: []
+                }
+            } as const satisfies langium.AstMetaData
+        }`
+    );
+
     testTypeMetaData('should generate escaped default value', `
         grammar TestGrammar
 
