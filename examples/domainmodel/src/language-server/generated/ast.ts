@@ -154,16 +154,16 @@ export class DomainModelAstReflection extends langium.AbstractAstReflection {
             name: DataType.$type,
             properties: {
                 name: {
-                    name: 'name'
+                    name: DataType.name
                 }
             },
-            superTypes: ['Type']
+            superTypes: [Type.$type]
         },
         Domainmodel: {
             name: Domainmodel.$type,
             properties: {
                 elements: {
-                    name: 'elements',
+                    name: Domainmodel.elements,
                     defaultValue: []
                 }
             },
@@ -173,32 +173,32 @@ export class DomainModelAstReflection extends langium.AbstractAstReflection {
             name: Entity.$type,
             properties: {
                 features: {
-                    name: 'features',
+                    name: Entity.features,
                     defaultValue: []
                 },
                 name: {
-                    name: 'name'
+                    name: Entity.name
                 },
                 superType: {
-                    name: 'superType',
-                    referenceType: 'Entity'
+                    name: Entity.superType,
+                    referenceType: Entity.$type
                 }
             },
-            superTypes: ['Type']
+            superTypes: [Type.$type]
         },
         Feature: {
             name: Feature.$type,
             properties: {
                 many: {
-                    name: 'many',
+                    name: Feature.many,
                     defaultValue: false
                 },
                 name: {
-                    name: 'name'
+                    name: Feature.name
                 },
                 type: {
-                    name: 'type',
-                    referenceType: 'Type'
+                    name: Feature.type,
+                    referenceType: Type.$type
                 }
             },
             superTypes: []
@@ -207,14 +207,14 @@ export class DomainModelAstReflection extends langium.AbstractAstReflection {
             name: PackageDeclaration.$type,
             properties: {
                 elements: {
-                    name: 'elements',
+                    name: PackageDeclaration.elements,
                     defaultValue: []
                 },
                 name: {
-                    name: 'name'
+                    name: PackageDeclaration.name
                 }
             },
-            superTypes: ['AbstractElement']
+            superTypes: [AbstractElement.$type]
         },
     } as const satisfies langium.AstMetaData
 }

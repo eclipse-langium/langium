@@ -272,8 +272,6 @@ export interface TypeMetaData {
     }
     /** The super types of this AST node type. */
     superTypes: string[]
-    /** All property names of this AST node type, as a shortcut `_p` corresponding to `properties[p].name`. */
-    [name: `_${string}`]: string
 }
 
 /**

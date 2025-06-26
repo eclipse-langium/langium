@@ -391,19 +391,55 @@ describe('Ast generator', () => {
                     name: DeclaredArray.$type,
                     properties: {
                         elements: {
-                            name: 'elements',
+                            name: DeclaredArray.elements,
                             defaultValue: []
                         }
                     },
-                    superTypes: ['IAmArray']
+                    superTypes: [IAmArray.$type]
                 },
                 IAmArray: {
                     name: IAmArray.$type,
                     properties: {
                         elements: {
-                            name: 'elements',
+                            name: IAmArray.elements,
                             defaultValue: []
                         }
+                    },
+                    superTypes: []
+                }
+            } as const satisfies langium.AstMetaData
+        }`
+    );
+
+    testTypeMetaData('should generate property metadata for empty types', `
+        grammar TestGrammar
+
+        interface IAmArray { }
+        interface DeclaredArray extends IAmArray{
+            elements: ArrayContent[];
+        }
+
+        DeclaredArray returns DeclaredArray:
+            'declared' (elements+=ArrayContent)* ';';
+
+        hidden terminal WS: /\\s+/;
+        terminal ID: /[_a-zA-Z][\\w_]*/;
+    `, expandToString`
+        export class testAstReflection extends langium.AbstractAstReflection {
+            override readonly types = {
+                DeclaredArray: {
+                    name: DeclaredArray.$type,
+                    properties: {
+                        elements: {
+                            name: DeclaredArray.elements,
+                            defaultValue: []
+                        }
+                    },
+                    superTypes: [IAmArray.$type]
+                },
+                IAmArray: {
+                    name: IAmArray.$type,
+                    properties: {
                     },
                     superTypes: []
                 }
@@ -430,7 +466,7 @@ describe('Ast generator', () => {
                     name: Test.$type,
                     properties: {
                         value: {
-                            name: 'value',
+                            name: Test.value,
                             defaultValue: '\\'test\\''
                         }
                     },
@@ -463,12 +499,12 @@ describe('Ast generator', () => {
                     name: A.$type,
                     properties: {
                         refA1: {
-                            name: 'refA1',
-                            referenceType: 'A'
+                            name: A.refA1,
+                            referenceType: A.$type
                         },
                         refB1: {
-                            name: 'refB1',
-                            referenceType: 'B'
+                            name: A.refB1,
+                            referenceType: B.$type
                         }
                     },
                     superTypes: []
@@ -477,63 +513,63 @@ describe('Ast generator', () => {
                     name: B.$type,
                     properties: {
                         refA1: {
-                            name: 'refA1',
-                            referenceType: 'A'
+                            name: B.refA1,
+                            referenceType: A.$type
                         },
                         refB1: {
-                            name: 'refB1',
-                            referenceType: 'B'
+                            name: B.refB1,
+                            referenceType: B.$type
                         },
                         refB2: {
-                            name: 'refB2',
-                            referenceType: 'B'
+                            name: B.refB2,
+                            referenceType: B.$type
                         }
                     },
-                    superTypes: ['A']
+                    superTypes: [A.$type]
                 },
                 C: {
                     name: C.$type,
                     properties: {
                         refA1: {
-                            name: 'refA1',
-                            referenceType: 'A'
+                            name: C.refA1,
+                            referenceType: A.$type
                         },
                         refB1: {
-                            name: 'refB1',
-                            referenceType: 'B'
+                            name: C.refB1,
+                            referenceType: B.$type
                         },
                         refB2: {
-                            name: 'refB2',
-                            referenceType: 'B'
+                            name: C.refB2,
+                            referenceType: B.$type
                         },
                         refC1: {
-                            name: 'refC1',
-                            referenceType: 'C'
+                            name: C.refC1,
+                            referenceType: C.$type
                         }
                     },
-                    superTypes: ['A', 'B']
+                    superTypes: [A.$type, B.$type]
                 },
                 D: {
                     name: D.$type,
                     properties: {
                         refA1: {
-                            name: 'refA1',
-                            referenceType: 'A'
+                            name: D.refA1,
+                            referenceType: A.$type
                         },
                         refB1: {
-                            name: 'refB1',
-                            referenceType: 'B'
+                            name: D.refB1,
+                            referenceType: B.$type
                         },
                         refB2: {
-                            name: 'refB2',
-                            referenceType: 'B'
+                            name: D.refB2,
+                            referenceType: B.$type
                         },
                         refD1: {
-                            name: 'refD1',
-                            referenceType: 'D'
+                            name: D.refD1,
+                            referenceType: D.$type
                         }
                     },
-                    superTypes: ['A', 'B']
+                    superTypes: [A.$type, B.$type]
                 }
             } as const satisfies langium.AstMetaData
         }`

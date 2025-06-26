@@ -55,9 +55,9 @@ function generateAstReflection(config: LangiumConfig, astTypes: AstTypes): Gener
                             ${typeName}: {
                                 name: ${typeName}.$type,
                                 properties: {
-                                    ${buildPropertyMetaData(props)}
+                                    ${buildPropertyMetaData(props, typeName)}
                                 },
-                                superTypes: [${superTypes.map(t => `'${t}'`).join(', ')}]
+                                superTypes: [${superTypes.map(t => `${t}.$type`).join(', ')}]
                             }
                         `;
                     }
@@ -70,7 +70,7 @@ function generateAstReflection(config: LangiumConfig, astTypes: AstTypes): Gener
     `.appendNewLine();
 }
 
-function buildPropertyMetaData(props: Property[]): Generated {
+function buildPropertyMetaData(props: Property[], ownerTypeName: string): Generated {
     const all = props.sort((a, b) => a.name.localeCompare(b.name));
 
     return joinToNode(
@@ -80,12 +80,12 @@ function buildPropertyMetaData(props: Property[]): Generated {
             const refTypes = findReferenceTypes(property.type);
             const refType = refTypes.length > 0 ? refTypes[0] : undefined;
 
-            const attributes: string[] = [`name: '${escapeQuotes(property.name, "'")}'`];
+            const attributes: string[] = [`name: ${ownerTypeName}.${property.name}`];
             if (defaultValue) {
                 attributes.push(`defaultValue: ${defaultValue}`);
             }
             if (refType) {
-                attributes.push(`referenceType: '${refType}'`);
+                attributes.push(`referenceType: ${refType}.$type`);
             }
 
             return expandToNode`

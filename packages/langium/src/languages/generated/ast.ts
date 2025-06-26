@@ -974,10 +974,10 @@ export class LangiumGrammarAstReflection extends langium.AbstractAstReflection {
             name: AbstractElement.$type,
             properties: {
                 cardinality: {
-                    name: 'cardinality'
+                    name: AbstractElement.cardinality
                 },
                 lookahead: {
-                    name: 'lookahead'
+                    name: AbstractElement.lookahead
                 }
             },
             superTypes: []
@@ -986,201 +986,201 @@ export class LangiumGrammarAstReflection extends langium.AbstractAstReflection {
             name: Action.$type,
             properties: {
                 cardinality: {
-                    name: 'cardinality'
+                    name: Action.cardinality
                 },
                 feature: {
-                    name: 'feature'
+                    name: Action.feature
                 },
                 inferredType: {
-                    name: 'inferredType'
+                    name: Action.inferredType
                 },
                 lookahead: {
-                    name: 'lookahead'
+                    name: Action.lookahead
                 },
                 operator: {
-                    name: 'operator'
+                    name: Action.operator
                 },
                 type: {
-                    name: 'type',
-                    referenceType: 'AbstractType'
+                    name: Action.type,
+                    referenceType: AbstractType.$type
                 }
             },
-            superTypes: ['AbstractElement']
+            superTypes: [AbstractElement.$type]
         },
         Alternatives: {
             name: Alternatives.$type,
             properties: {
                 cardinality: {
-                    name: 'cardinality'
+                    name: Alternatives.cardinality
                 },
                 elements: {
-                    name: 'elements',
+                    name: Alternatives.elements,
                     defaultValue: []
                 },
                 lookahead: {
-                    name: 'lookahead'
+                    name: Alternatives.lookahead
                 }
             },
-            superTypes: ['AbstractElement']
+            superTypes: [AbstractElement.$type]
         },
         ArrayLiteral: {
             name: ArrayLiteral.$type,
             properties: {
                 elements: {
-                    name: 'elements',
+                    name: ArrayLiteral.elements,
                     defaultValue: []
                 }
             },
-            superTypes: ['ValueLiteral']
+            superTypes: [ValueLiteral.$type]
         },
         ArrayType: {
             name: ArrayType.$type,
             properties: {
                 elementType: {
-                    name: 'elementType'
+                    name: ArrayType.elementType
                 }
             },
-            superTypes: ['TypeDefinition']
+            superTypes: [TypeDefinition.$type]
         },
         Assignment: {
             name: Assignment.$type,
             properties: {
                 cardinality: {
-                    name: 'cardinality'
+                    name: Assignment.cardinality
                 },
                 feature: {
-                    name: 'feature'
+                    name: Assignment.feature
                 },
                 lookahead: {
-                    name: 'lookahead'
+                    name: Assignment.lookahead
                 },
                 operator: {
-                    name: 'operator'
+                    name: Assignment.operator
                 },
                 predicate: {
-                    name: 'predicate'
+                    name: Assignment.predicate
                 },
                 terminal: {
-                    name: 'terminal'
+                    name: Assignment.terminal
                 }
             },
-            superTypes: ['AbstractElement']
+            superTypes: [AbstractElement.$type]
         },
         BooleanLiteral: {
             name: BooleanLiteral.$type,
             properties: {
                 true: {
-                    name: 'true',
+                    name: BooleanLiteral.true,
                     defaultValue: false
                 }
             },
-            superTypes: ['Condition', 'ValueLiteral']
+            superTypes: [Condition.$type, ValueLiteral.$type]
         },
         CharacterRange: {
             name: CharacterRange.$type,
             properties: {
                 cardinality: {
-                    name: 'cardinality'
+                    name: CharacterRange.cardinality
                 },
                 left: {
-                    name: 'left'
+                    name: CharacterRange.left
                 },
                 lookahead: {
-                    name: 'lookahead'
+                    name: CharacterRange.lookahead
                 },
                 right: {
-                    name: 'right'
+                    name: CharacterRange.right
                 }
             },
-            superTypes: ['AbstractElement']
+            superTypes: [AbstractElement.$type]
         },
         Conjunction: {
             name: Conjunction.$type,
             properties: {
                 left: {
-                    name: 'left'
+                    name: Conjunction.left
                 },
                 right: {
-                    name: 'right'
+                    name: Conjunction.right
                 }
             },
-            superTypes: ['Condition']
+            superTypes: [Condition.$type]
         },
         CrossReference: {
             name: CrossReference.$type,
             properties: {
                 cardinality: {
-                    name: 'cardinality'
+                    name: CrossReference.cardinality
                 },
                 deprecatedSyntax: {
-                    name: 'deprecatedSyntax',
+                    name: CrossReference.deprecatedSyntax,
                     defaultValue: false
                 },
                 isMulti: {
-                    name: 'isMulti',
+                    name: CrossReference.isMulti,
                     defaultValue: false
                 },
                 lookahead: {
-                    name: 'lookahead'
+                    name: CrossReference.lookahead
                 },
                 terminal: {
-                    name: 'terminal'
+                    name: CrossReference.terminal
                 },
                 type: {
-                    name: 'type',
-                    referenceType: 'AbstractType'
+                    name: CrossReference.type,
+                    referenceType: AbstractType.$type
                 }
             },
-            superTypes: ['AbstractElement']
+            superTypes: [AbstractElement.$type]
         },
         Disjunction: {
             name: Disjunction.$type,
             properties: {
                 left: {
-                    name: 'left'
+                    name: Disjunction.left
                 },
                 right: {
-                    name: 'right'
+                    name: Disjunction.right
                 }
             },
-            superTypes: ['Condition']
+            superTypes: [Condition.$type]
         },
         EndOfFile: {
             name: EndOfFile.$type,
             properties: {
                 cardinality: {
-                    name: 'cardinality'
+                    name: EndOfFile.cardinality
                 },
                 lookahead: {
-                    name: 'lookahead'
+                    name: EndOfFile.lookahead
                 }
             },
-            superTypes: ['AbstractElement']
+            superTypes: [AbstractElement.$type]
         },
         Grammar: {
             name: Grammar.$type,
             properties: {
                 imports: {
-                    name: 'imports',
+                    name: Grammar.imports,
                     defaultValue: []
                 },
                 interfaces: {
-                    name: 'interfaces',
+                    name: Grammar.interfaces,
                     defaultValue: []
                 },
                 isDeclared: {
-                    name: 'isDeclared',
+                    name: Grammar.isDeclared,
                     defaultValue: false
                 },
                 name: {
-                    name: 'name'
+                    name: Grammar.name
                 },
                 rules: {
-                    name: 'rules',
+                    name: Grammar.rules,
                     defaultValue: []
                 },
                 types: {
-                    name: 'types',
+                    name: Grammar.types,
                     defaultValue: []
                 }
             },
@@ -1190,7 +1190,7 @@ export class LangiumGrammarAstReflection extends langium.AbstractAstReflection {
             name: GrammarImport.$type,
             properties: {
                 path: {
-                    name: 'path'
+                    name: GrammarImport.path
                 }
             },
             superTypes: []
@@ -1199,60 +1199,60 @@ export class LangiumGrammarAstReflection extends langium.AbstractAstReflection {
             name: Group.$type,
             properties: {
                 cardinality: {
-                    name: 'cardinality'
+                    name: Group.cardinality
                 },
                 elements: {
-                    name: 'elements',
+                    name: Group.elements,
                     defaultValue: []
                 },
                 guardCondition: {
-                    name: 'guardCondition'
+                    name: Group.guardCondition
                 },
                 lookahead: {
-                    name: 'lookahead'
+                    name: Group.lookahead
                 },
                 predicate: {
-                    name: 'predicate'
+                    name: Group.predicate
                 }
             },
-            superTypes: ['AbstractElement']
+            superTypes: [AbstractElement.$type]
         },
         InferredType: {
             name: InferredType.$type,
             properties: {
                 name: {
-                    name: 'name'
+                    name: InferredType.name
                 }
             },
-            superTypes: ['AbstractType']
+            superTypes: [AbstractType.$type]
         },
         InfixRule: {
             name: InfixRule.$type,
             properties: {
                 call: {
-                    name: 'call'
+                    name: InfixRule.call
                 },
                 name: {
-                    name: 'name'
+                    name: InfixRule.name
                 },
                 operators: {
-                    name: 'operators'
+                    name: InfixRule.operators
                 },
                 parameters: {
-                    name: 'parameters',
+                    name: InfixRule.parameters,
                     defaultValue: []
                 }
             },
-            superTypes: ['AbstractRule', 'AbstractType']
+            superTypes: [AbstractRule.$type, AbstractType.$type]
         },
         InfixRuleOperatorList: {
             name: InfixRuleOperatorList.$type,
             properties: {
                 associativity: {
-                    name: 'associativity'
+                    name: InfixRuleOperatorList.associativity
                 },
                 operators: {
-                    name: 'operators',
+                    name: InfixRuleOperatorList.operators,
                     defaultValue: []
                 }
             },
@@ -1262,7 +1262,7 @@ export class LangiumGrammarAstReflection extends langium.AbstractAstReflection {
             name: InfixRuleOperators.$type,
             properties: {
                 precedences: {
-                    name: 'precedences',
+                    name: InfixRuleOperators.precedences,
                     defaultValue: []
                 }
             },
@@ -1272,51 +1272,51 @@ export class LangiumGrammarAstReflection extends langium.AbstractAstReflection {
             name: Interface.$type,
             properties: {
                 attributes: {
-                    name: 'attributes',
+                    name: Interface.attributes,
                     defaultValue: []
                 },
                 name: {
-                    name: 'name'
+                    name: Interface.name
                 },
                 superTypes: {
-                    name: 'superTypes',
+                    name: Interface.superTypes,
                     defaultValue: [],
-                    referenceType: 'AbstractType'
+                    referenceType: AbstractType.$type
                 }
             },
-            superTypes: ['AbstractType']
+            superTypes: [AbstractType.$type]
         },
         Keyword: {
             name: Keyword.$type,
             properties: {
                 cardinality: {
-                    name: 'cardinality'
+                    name: Keyword.cardinality
                 },
                 lookahead: {
-                    name: 'lookahead'
+                    name: Keyword.lookahead
                 },
                 predicate: {
-                    name: 'predicate'
+                    name: Keyword.predicate
                 },
                 value: {
-                    name: 'value'
+                    name: Keyword.value
                 }
             },
-            superTypes: ['AbstractElement']
+            superTypes: [AbstractElement.$type]
         },
         NamedArgument: {
             name: NamedArgument.$type,
             properties: {
                 calledByName: {
-                    name: 'calledByName',
+                    name: NamedArgument.calledByName,
                     defaultValue: false
                 },
                 parameter: {
-                    name: 'parameter',
-                    referenceType: 'Parameter'
+                    name: NamedArgument.parameter,
+                    referenceType: Parameter.$type
                 },
                 value: {
-                    name: 'value'
+                    name: NamedArgument.value
                 }
             },
             superTypes: []
@@ -1325,40 +1325,40 @@ export class LangiumGrammarAstReflection extends langium.AbstractAstReflection {
             name: NegatedToken.$type,
             properties: {
                 cardinality: {
-                    name: 'cardinality'
+                    name: NegatedToken.cardinality
                 },
                 lookahead: {
-                    name: 'lookahead'
+                    name: NegatedToken.lookahead
                 },
                 terminal: {
-                    name: 'terminal'
+                    name: NegatedToken.terminal
                 }
             },
-            superTypes: ['AbstractElement']
+            superTypes: [AbstractElement.$type]
         },
         Negation: {
             name: Negation.$type,
             properties: {
                 value: {
-                    name: 'value'
+                    name: Negation.value
                 }
             },
-            superTypes: ['Condition']
+            superTypes: [Condition.$type]
         },
         NumberLiteral: {
             name: NumberLiteral.$type,
             properties: {
                 value: {
-                    name: 'value'
+                    name: NumberLiteral.value
                 }
             },
-            superTypes: ['ValueLiteral']
+            superTypes: [ValueLiteral.$type]
         },
         Parameter: {
             name: Parameter.$type,
             properties: {
                 name: {
-                    name: 'name'
+                    name: Parameter.name
                 }
             },
             superTypes: []
@@ -1367,79 +1367,79 @@ export class LangiumGrammarAstReflection extends langium.AbstractAstReflection {
             name: ParameterReference.$type,
             properties: {
                 parameter: {
-                    name: 'parameter',
-                    referenceType: 'Parameter'
+                    name: ParameterReference.parameter,
+                    referenceType: Parameter.$type
                 }
             },
-            superTypes: ['Condition']
+            superTypes: [Condition.$type]
         },
         ParserRule: {
             name: ParserRule.$type,
             properties: {
                 dataType: {
-                    name: 'dataType'
+                    name: ParserRule.dataType
                 },
                 definition: {
-                    name: 'definition'
+                    name: ParserRule.definition
                 },
                 entry: {
-                    name: 'entry',
+                    name: ParserRule.entry,
                     defaultValue: false
                 },
                 fragment: {
-                    name: 'fragment',
+                    name: ParserRule.fragment,
                     defaultValue: false
                 },
                 inferredType: {
-                    name: 'inferredType'
+                    name: ParserRule.inferredType
                 },
                 name: {
-                    name: 'name'
+                    name: ParserRule.name
                 },
                 parameters: {
-                    name: 'parameters',
+                    name: ParserRule.parameters,
                     defaultValue: []
                 },
                 returnType: {
-                    name: 'returnType',
-                    referenceType: 'AbstractType'
+                    name: ParserRule.returnType,
+                    referenceType: AbstractType.$type
                 }
             },
-            superTypes: ['AbstractRule', 'AbstractType']
+            superTypes: [AbstractRule.$type, AbstractType.$type]
         },
         ReferenceType: {
             name: ReferenceType.$type,
             properties: {
                 isMulti: {
-                    name: 'isMulti',
+                    name: ReferenceType.isMulti,
                     defaultValue: false
                 },
                 referenceType: {
-                    name: 'referenceType'
+                    name: ReferenceType.referenceType
                 }
             },
-            superTypes: ['TypeDefinition']
+            superTypes: [TypeDefinition.$type]
         },
         RegexToken: {
             name: RegexToken.$type,
             properties: {
                 cardinality: {
-                    name: 'cardinality'
+                    name: RegexToken.cardinality
                 },
                 lookahead: {
-                    name: 'lookahead'
+                    name: RegexToken.lookahead
                 },
                 regex: {
-                    name: 'regex'
+                    name: RegexToken.regex
                 }
             },
-            superTypes: ['AbstractElement']
+            superTypes: [AbstractElement.$type]
         },
         ReturnType: {
             name: ReturnType.$type,
             properties: {
                 name: {
-                    name: 'name'
+                    name: ReturnType.name
                 }
             },
             superTypes: []
@@ -1448,148 +1448,148 @@ export class LangiumGrammarAstReflection extends langium.AbstractAstReflection {
             name: RuleCall.$type,
             properties: {
                 arguments: {
-                    name: 'arguments',
+                    name: RuleCall.arguments,
                     defaultValue: []
                 },
                 cardinality: {
-                    name: 'cardinality'
+                    name: RuleCall.cardinality
                 },
                 lookahead: {
-                    name: 'lookahead'
+                    name: RuleCall.lookahead
                 },
                 predicate: {
-                    name: 'predicate'
+                    name: RuleCall.predicate
                 },
                 rule: {
-                    name: 'rule',
-                    referenceType: 'AbstractRule'
+                    name: RuleCall.rule,
+                    referenceType: AbstractRule.$type
                 }
             },
-            superTypes: ['AbstractElement']
+            superTypes: [AbstractElement.$type]
         },
         SimpleType: {
             name: SimpleType.$type,
             properties: {
                 primitiveType: {
-                    name: 'primitiveType'
+                    name: SimpleType.primitiveType
                 },
                 stringType: {
-                    name: 'stringType'
+                    name: SimpleType.stringType
                 },
                 typeRef: {
-                    name: 'typeRef',
-                    referenceType: 'AbstractType'
+                    name: SimpleType.typeRef,
+                    referenceType: AbstractType.$type
                 }
             },
-            superTypes: ['TypeDefinition']
+            superTypes: [TypeDefinition.$type]
         },
         StringLiteral: {
             name: StringLiteral.$type,
             properties: {
                 value: {
-                    name: 'value'
+                    name: StringLiteral.value
                 }
             },
-            superTypes: ['ValueLiteral']
+            superTypes: [ValueLiteral.$type]
         },
         TerminalAlternatives: {
             name: TerminalAlternatives.$type,
             properties: {
                 cardinality: {
-                    name: 'cardinality'
+                    name: TerminalAlternatives.cardinality
                 },
                 elements: {
-                    name: 'elements',
+                    name: TerminalAlternatives.elements,
                     defaultValue: []
                 },
                 lookahead: {
-                    name: 'lookahead'
+                    name: TerminalAlternatives.lookahead
                 }
             },
-            superTypes: ['AbstractElement']
+            superTypes: [AbstractElement.$type]
         },
         TerminalGroup: {
             name: TerminalGroup.$type,
             properties: {
                 cardinality: {
-                    name: 'cardinality'
+                    name: TerminalGroup.cardinality
                 },
                 elements: {
-                    name: 'elements',
+                    name: TerminalGroup.elements,
                     defaultValue: []
                 },
                 lookahead: {
-                    name: 'lookahead'
+                    name: TerminalGroup.lookahead
                 }
             },
-            superTypes: ['AbstractElement']
+            superTypes: [AbstractElement.$type]
         },
         TerminalRule: {
             name: TerminalRule.$type,
             properties: {
                 definition: {
-                    name: 'definition'
+                    name: TerminalRule.definition
                 },
                 fragment: {
-                    name: 'fragment',
+                    name: TerminalRule.fragment,
                     defaultValue: false
                 },
                 hidden: {
-                    name: 'hidden',
+                    name: TerminalRule.hidden,
                     defaultValue: false
                 },
                 name: {
-                    name: 'name'
+                    name: TerminalRule.name
                 },
                 type: {
-                    name: 'type'
+                    name: TerminalRule.type
                 }
             },
-            superTypes: ['AbstractRule']
+            superTypes: [AbstractRule.$type]
         },
         TerminalRuleCall: {
             name: TerminalRuleCall.$type,
             properties: {
                 cardinality: {
-                    name: 'cardinality'
+                    name: TerminalRuleCall.cardinality
                 },
                 lookahead: {
-                    name: 'lookahead'
+                    name: TerminalRuleCall.lookahead
                 },
                 rule: {
-                    name: 'rule',
-                    referenceType: 'TerminalRule'
+                    name: TerminalRuleCall.rule,
+                    referenceType: TerminalRule.$type
                 }
             },
-            superTypes: ['AbstractElement']
+            superTypes: [AbstractElement.$type]
         },
         Type: {
             name: Type.$type,
             properties: {
                 name: {
-                    name: 'name'
+                    name: Type.name
                 },
                 type: {
-                    name: 'type'
+                    name: Type.type
                 }
             },
-            superTypes: ['AbstractType']
+            superTypes: [AbstractType.$type]
         },
         TypeAttribute: {
             name: TypeAttribute.$type,
             properties: {
                 defaultValue: {
-                    name: 'defaultValue'
+                    name: TypeAttribute.defaultValue
                 },
                 isOptional: {
-                    name: 'isOptional',
+                    name: TypeAttribute.isOptional,
                     defaultValue: false
                 },
                 name: {
-                    name: 'name'
+                    name: TypeAttribute.name
                 },
                 type: {
-                    name: 'type'
+                    name: TypeAttribute.type
                 }
             },
             superTypes: []
@@ -1598,54 +1598,54 @@ export class LangiumGrammarAstReflection extends langium.AbstractAstReflection {
             name: UnionType.$type,
             properties: {
                 types: {
-                    name: 'types',
+                    name: UnionType.types,
                     defaultValue: []
                 }
             },
-            superTypes: ['TypeDefinition']
+            superTypes: [TypeDefinition.$type]
         },
         UnorderedGroup: {
             name: UnorderedGroup.$type,
             properties: {
                 cardinality: {
-                    name: 'cardinality'
+                    name: UnorderedGroup.cardinality
                 },
                 elements: {
-                    name: 'elements',
+                    name: UnorderedGroup.elements,
                     defaultValue: []
                 },
                 lookahead: {
-                    name: 'lookahead'
+                    name: UnorderedGroup.lookahead
                 }
             },
-            superTypes: ['AbstractElement']
+            superTypes: [AbstractElement.$type]
         },
         UntilToken: {
             name: UntilToken.$type,
             properties: {
                 cardinality: {
-                    name: 'cardinality'
+                    name: UntilToken.cardinality
                 },
                 lookahead: {
-                    name: 'lookahead'
+                    name: UntilToken.lookahead
                 },
                 terminal: {
-                    name: 'terminal'
+                    name: UntilToken.terminal
                 }
             },
-            superTypes: ['AbstractElement']
+            superTypes: [AbstractElement.$type]
         },
         Wildcard: {
             name: Wildcard.$type,
             properties: {
                 cardinality: {
-                    name: 'cardinality'
+                    name: Wildcard.cardinality
                 },
                 lookahead: {
-                    name: 'lookahead'
+                    name: Wildcard.lookahead
                 }
             },
-            superTypes: ['AbstractElement']
+            superTypes: [AbstractElement.$type]
         }
     } as const satisfies langium.AstMetaData
 }

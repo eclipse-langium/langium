@@ -198,73 +198,73 @@ export class ArithmeticsAstReflection extends langium.AbstractAstReflection {
             name: BinaryExpression.$type,
             properties: {
                 left: {
-                    name: 'left'
+                    name: BinaryExpression.left
                 },
                 operator: {
-                    name: 'operator'
+                    name: BinaryExpression.operator
                 },
                 right: {
-                    name: 'right'
+                    name: BinaryExpression.right
                 }
             },
-            superTypes: ['Expression']
+            superTypes: [Expression.$type]
         },
         DeclaredParameter: {
             name: DeclaredParameter.$type,
             properties: {
                 name: {
-                    name: 'name'
+                    name: DeclaredParameter.name
                 }
             },
-            superTypes: ['AbstractDefinition']
+            superTypes: [AbstractDefinition.$type]
         },
         Definition: {
             name: Definition.$type,
             properties: {
                 args: {
-                    name: 'args',
+                    name: Definition.args,
                     defaultValue: []
                 },
                 expr: {
-                    name: 'expr'
+                    name: Definition.expr
                 },
                 name: {
-                    name: 'name'
+                    name: Definition.name
                 }
             },
-            superTypes: ['AbstractDefinition', 'Statement']
+            superTypes: [AbstractDefinition.$type, Statement.$type]
         },
         Evaluation: {
             name: Evaluation.$type,
             properties: {
                 expression: {
-                    name: 'expression'
+                    name: Evaluation.expression
                 }
             },
-            superTypes: ['Statement']
+            superTypes: [Statement.$type]
         },
         FunctionCall: {
             name: FunctionCall.$type,
             properties: {
                 args: {
-                    name: 'args',
+                    name: FunctionCall.args,
                     defaultValue: []
                 },
                 func: {
-                    name: 'func',
-                    referenceType: 'AbstractDefinition'
+                    name: FunctionCall.func,
+                    referenceType: AbstractDefinition.$type
                 }
             },
-            superTypes: ['Expression']
+            superTypes: [Expression.$type]
         },
         Module: {
             name: Module.$type,
             properties: {
                 name: {
-                    name: 'name'
+                    name: Module.name
                 },
                 statements: {
-                    name: 'statements',
+                    name: Module.statements,
                     defaultValue: []
                 }
             },
@@ -274,10 +274,10 @@ export class ArithmeticsAstReflection extends langium.AbstractAstReflection {
             name: NumberLiteral.$type,
             properties: {
                 value: {
-                    name: 'value'
+                    name: NumberLiteral.value
                 }
             },
-            superTypes: ['Expression']
+            superTypes: [Expression.$type]
         },
     } as const satisfies langium.AstMetaData
 }
