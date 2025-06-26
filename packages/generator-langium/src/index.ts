@@ -143,7 +143,7 @@ export class LangiumGenerator extends Generator {
             } as PromptQuestion<Answers>,
             {
                 type: 'confirm',
-                name: 'includeExampleProject', // TODO changer
+                name: 'includeExampleProject',
                 prefix: description(
                     'You can generate an example project to play around with Langium (with a "Hello world" grammar, generator and validator).',
                     'If not, a minimal project will be generated.'
