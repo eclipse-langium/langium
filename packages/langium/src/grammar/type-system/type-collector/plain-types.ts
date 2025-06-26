@@ -20,7 +20,7 @@ export interface PlainInterface {
     name: string;
     superTypes: Set<string>;
     subTypes: Set<string>;
-    properties: PlainProperty[];
+    properties: PlainProperty[]; // does not include inherited properties
     declared: boolean;
     abstract: boolean;
     comment?: string;

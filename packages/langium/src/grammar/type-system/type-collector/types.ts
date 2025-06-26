@@ -5,9 +5,10 @@
  ******************************************************************************/
 
 import { expandToNode, expandToStringWithNL, joinToNode, toString, type Generated } from '../../../generate/index.js';
-import type { CstNode } from '../../../syntax-tree.js';
 import type { Action, Assignment, TypeAttribute } from '../../../languages/generated/ast.js';
-import { distinctAndSorted, escapeQuotes } from '../types-util.js';
+import type { CstNode, TypePropertyKind } from '../../../syntax-tree.js';
+import { assertUnreachable } from '../../../utils/errors.js';
+import { distinctAndSorted, escapeQuotes, isAstType } from '../types-util.js';
 
 export interface Property {
     name: string;
@@ -123,6 +124,70 @@ export class UnionType {
         this.declared = options?.declared ?? false;
         this.dataType = options?.dataType;
         this.comment = options?.comment;
+    }
+
+    /** The properties which are in all the types of the union. */
+    get properties(): Property[] {
+        const properties = this.calculateUnionProperties(this.type, new Map()); // TODO Set required?? Ja, für circuläre TypeDefs: name => Properties?
+        return properties;
+    }
+
+    private calculateUnionProperties(type: PropertyType, visited: Map<PropertyType, Property[]>): Property[] {
+        if (type === undefined) {
+            return [];
+        }
+        const alreadyKnown = visited.get(type);
+        if (alreadyKnown) {
+            return alreadyKnown;
+        }
+        let result: Property[];
+        if (isReferenceType(type)) {
+            result = []; // TODO
+        } else if (isArrayType(type)) {
+            result = []; // TODO
+        } else if (isPropertyUnion(type)) {
+            // calculate the joint set of properties
+            if (type.types.length === 0) {
+                result = [];
+            } else if (type.types.length === 1) {
+                result = this.calculateUnionProperties(type.types[0], visited);
+            } else {
+                const intersection: Map<string, Property> = new Map();
+                // 1st child
+                this.calculateUnionProperties(type.types[0], visited).forEach(property => intersection.set(property.name, {...property}));
+                // 2nd ... * children
+                for (let i = 1; i < type.types.length; i++) {
+                    for (const current of this.calculateUnionProperties(type.types[i], visited)) {
+                        const existing = intersection.get(current.name);
+                        if (existing) {
+                            // keep this property, but merge types of the property TODO
+                        } else {
+                            // this property is not part of at least one of the previous/other united types => skip it
+                            intersection.delete(current.name);
+                        }
+                    }
+                }
+                result = [...intersection.values()];
+            }
+        } else if (isValueType(type)) {
+            if (isUnionType(type.value)) {
+                result = this.calculateUnionProperties(type.value.type, visited);
+            } else if (isInterfaceType(type.value)) {
+                result = type.value.superProperties; // including inherited properties!
+            } else {
+                assertUnreachable(type.value);
+            }
+        } else if (isPrimitiveType(type)) {
+            result = [];
+        } else if (isStringType(type)) {
+            result = [];
+        } else {
+            assertUnreachable(type);
+        }
+        if (result.length >= 1) {
+            visited.set(type, result);
+        }
+        return result;
     }
 
     toAstTypesString(reflectionInfo: boolean): string {
@@ -382,16 +447,16 @@ function propertyTypeToKeyString(type: PropertyType): string {
     throw new Error('Invalid type');
 }
 
-export function propertyTypeToString(type?: PropertyType, mode: 'AstType' | 'DeclaredType' = 'AstType'): string {
+export function propertyTypeToString(type?: PropertyType, mode: 'AstType' | 'DeclaredType' | 'Reflection' = 'AstType'): string {
     if (!type) {
         return 'unknown';
     }
     if (isReferenceType(type)) {
         const refType = propertyTypeToString(type.referenceType, mode);
-        return mode === 'AstType' ? `langium.Reference<${refType}>` : `@${typeParenthesis(type.referenceType, refType)}`;
+        return mode === 'AstType' ? `langium.Reference<${refType}>` : mode === 'DeclaredType' ? `@${typeParenthesis(type.referenceType, refType)}` : refType;
     } else if (isArrayType(type)) {
         const arrayType = propertyTypeToString(type.elementType, mode);
-        return mode === 'AstType' ? `Array<${arrayType}>` : `${type.elementType ? typeParenthesis(type.elementType, arrayType) : 'unknown'}[]`;
+        return mode === 'AstType' ? `Array<${arrayType}>` : mode === 'DeclaredType' ? `${type.elementType ? typeParenthesis(type.elementType, arrayType) : 'unknown'}[]` : arrayType;
     } else if (isPropertyUnion(type)) {
         const types = type.types.map(e => typeParenthesis(e, propertyTypeToString(e, mode)));
         return distinctAndSorted(types).join(' | ');
@@ -400,6 +465,7 @@ export function propertyTypeToString(type?: PropertyType, mode: 'AstType' | 'Dec
     } else if (isPrimitiveType(type)) {
         return type.primitive;
     } else if (isStringType(type)) {
+        // TODO return just "string" for the 'Reflection'-case?
         const delimiter = mode === 'AstType' ? "'" : '"';
         return `${delimiter}${escapeQuotes(type.string, delimiter)}${delimiter}`;
     }
@@ -412,6 +478,20 @@ function typeParenthesis(type: PropertyType, name: string): string {
         name = `(${name})`;
     }
     return name;
+}
+
+export function propertyTypeToKind(type: PropertyType | undefined): TypePropertyKind {
+    if (type === undefined) {
+        return 'Primitive'; // fall-back solution
+    } if (isReferenceType(type)) {
+        return 'Reference';
+    } else if (isArrayType(type)) {
+        return propertyTypeToKind(type.elementType);
+    } else if (isAstType(type)) {
+        return 'Containment'; // AstTypes which are not used as cross-reference are containments
+    } else {
+        return 'Primitive';
+    }
 }
 
 function pushProperties(

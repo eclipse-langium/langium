@@ -10,6 +10,7 @@ import { beforeEach, describe, expect, test } from 'vitest';
 import { EmptyFileSystem } from 'langium';
 import { createLangiumGrammarServices } from 'langium/grammar';
 import { clearDocuments, parseHelper } from 'langium/test';
+import { isSimpleType, isUnionType, SimpleType } from '../../../src/languages/generated/ast.js';
 
 describe('Type Linking', () => {
 
@@ -142,6 +143,41 @@ describe('Type Linking', () => {
         const reference = locator.getAstNode<GrammarTypes.CrossReference>(grammar3.parseResult.value, 'rules@1/definition/elements@1/terminal');
         const declaredType = locator.getAstNode<GrammarTypes.Interface>(grammar1.parseResult.value, 'interfaces@0');
         expect(reference?.type.ref).toBe(declaredType);
+    });
+
+    test.only('Linking types', async () => {
+        const grammar = await parse(`
+        interface A {
+            a: string;
+            joint: string;
+        }
+        interface B {
+            b: string;
+            joint: string;
+        }
+        // TODO warum ist das ein Interface und kein Type/Union??
+        // TODO "Could not resolve reference to typeRef named 'A'."
+        type C = A | B; // primitives sind unknown?!
+        `);
+        await services.shared.workspace.DocumentBuilder.build([grammar], { validation: true });
+        const a = grammar.parseResult.value.interfaces[0];
+        expect(a.name).toBe('A');
+        const b = grammar.parseResult.value.interfaces[1];
+        expect(b.name).toBe('B');
+        const c = grammar.parseResult.value.types[0];
+        expect(c.name).toBe('C');
+        const cType = c.type;
+        if (isUnionType(cType)) {
+            expect(cType.types.length).toBe(2);
+            expect(isSimpleType(cType.types[0])).toBeTruthy();
+            expect((cType.types[0] as SimpleType).typeRef?.$refText).toBe('A');
+            expect((cType.types[0] as SimpleType).typeRef?.ref).toBe(a);
+            expect(isSimpleType(cType.types[1])).toBeTruthy();
+            expect((cType.types[1] as SimpleType).typeRef?.$refText).toBe('AB');
+            expect((cType.types[1] as SimpleType).typeRef?.ref).toBe(b);
+        } else {
+            expect.fail(`C has $type '${cType.$type}'.`);
+        }
     });
 
 });
