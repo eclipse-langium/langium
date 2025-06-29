@@ -76,7 +76,7 @@ export function collectAllAstResources(grammars: Grammar | Grammar[], visited: S
 
         const documents = services?.shared.workspace.LangiumDocuments;
         if (documents) {
-            const importedGrammars = grammar.imports.map(e => resolveImport(documents, e)).filter((e): e is Grammar => e !== undefined);
+            const importedGrammars = grammar.imports.map(e => resolveImport(documents, e)).filter(e => e !== undefined);
             collectAllAstResources(importedGrammars, visited, astResources, services);
         }
     }

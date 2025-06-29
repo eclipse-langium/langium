@@ -54,12 +54,16 @@ export abstract class AbstractCallHierarchyProvider implements CallHierarchyProv
             return undefined;
         }
 
-        const declarationNode = this.references.findDeclarationNode(targetNode);
-        if (!declarationNode) {
+        const declarationNodes = this.references.findDeclarationNodes(targetNode);
+        if (!declarationNodes) {
             return undefined;
         }
 
-        return this.getCallHierarchyItems(declarationNode.astNode, document);
+        const items: CallHierarchyItem[] = [];
+        for (const declarationNode of declarationNodes) {
+            items.push(...(this.getCallHierarchyItems(declarationNode.astNode, document) ?? []));
+        }
+        return items;
     }
 
     protected getCallHierarchyItems(targetNode: AstNode, document: LangiumDocument<AstNode>): CallHierarchyItem[] | undefined {

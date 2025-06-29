@@ -5,7 +5,7 @@
  ******************************************************************************/
 
 import type { LangiumCoreServices } from '../services.js';
-import type { AstNode, AstNodeDescription, AstReflection, CstNode, LinkingError, Reference, ReferenceInfo } from '../syntax-tree.js';
+import type { AstNode, AstNodeDescription, AstReflection, CstNode, LinkingError, MultiReference, MultiReferenceItem, Reference, ReferenceInfo } from '../syntax-tree.js';
 import type { AstNodeLocator } from '../workspace/ast-node-locator.js';
 import type { LangiumDocument, LangiumDocuments } from '../workspace/documents.js';
 import type { ScopeProvider } from './scope-provider.js';
@@ -47,6 +47,15 @@ export interface Linker {
     getCandidate(refInfo: ReferenceInfo): AstNodeDescription | LinkingError;
 
     /**
+     * Determines a candidate AST node description for linking the given reference.
+     *
+     * @param node The AST node containing the reference.
+     * @param refId The reference identifier used to build a scope.
+     * @param reference The actual reference to resolve.
+     */
+    getCandidates(refInfo: ReferenceInfo): AstNodeDescription[] | LinkingError;
+
+    /**
      * Creates a cross reference node being aware of its containing AstNode, the corresponding CstNode,
      * the cross reference text denoting the target AstNode being already extracted of the document text,
      * as well as the unique cross reference identifier.
@@ -65,6 +74,8 @@ export interface Linker {
      */
     buildReference(node: AstNode, property: string, refNode: CstNode | undefined, refText: string): Reference;
 
+    buildMultiReference(node: AstNode, property: string, refNode: CstNode | undefined, refText: string): MultiReference;
+
 }
 
 const ref_resolving = Symbol('ref_resolving');
@@ -72,6 +83,11 @@ const ref_resolving = Symbol('ref_resolving');
 interface DefaultReference extends Reference {
     _ref?: AstNode | LinkingError | typeof ref_resolving;
     _nodeDescription?: AstNodeDescription;
+}
+
+export interface DefaultMultiReference extends MultiReference {
+    _items: MultiReferenceItem[] | typeof ref_resolving | undefined;
+    _linkingError?: LinkingError;
 }
 
 export class DefaultLinker implements Linker {
@@ -95,9 +111,9 @@ export class DefaultLinker implements Linker {
     }
 
     protected doLink(refInfo: ReferenceInfo, document: LangiumDocument): void {
-        const ref = refInfo.reference as DefaultReference;
+        const ref = refInfo.reference as DefaultReference | DefaultMultiReference;
         // The reference may already have been resolved lazily by accessing its `ref` property.
-        if (ref._ref === undefined) {
+        if ('_ref' in ref && ref._ref === undefined) {
             ref._ref = ref_resolving;
             try {
                 const description = this.getCandidate(refInfo);
@@ -105,35 +121,54 @@ export class DefaultLinker implements Linker {
                     ref._ref = description;
                 } else {
                     ref._nodeDescription = description;
-                    if (this.langiumDocuments().hasDocument(description.documentUri)) {
-                        // The target document is already loaded
-                        const linkedNode = this.loadAstNode(description);
-                        ref._ref = linkedNode ?? this.createLinkingError(refInfo, description);
-                    } else {
-                        // Try to load the target AST node later using the already provided description
-                        ref._ref = undefined;
-                    }
+                    const linkedNode = this.loadAstNode(description);
+                    ref._ref = linkedNode ?? this.createLinkingError(refInfo, description);
                 }
             } catch (err) {
                 console.error(`An error occurred while resolving reference to '${ref.$refText}':`, err);
                 const errorMessage = (err as Error).message ?? String(err);
                 ref._ref = {
-                    ...refInfo,
+                    info: refInfo,
                     message: `An error occurred while resolving reference to '${ref.$refText}': ${errorMessage}`
                 };
             }
-            // Add the reference to the document's array of references
-            // Only add if the reference has been not been resolved earlier
-            // Otherwise we end up with duplicates
-            // See also implementation of `buildReference`
+            document.references.push(ref);
+        } else if ('_items' in ref && ref._items === undefined) {
+            ref._items = ref_resolving;
+            try {
+                const descriptions = this.getCandidates(refInfo);
+                const items: MultiReferenceItem[] = [];
+                if (isLinkingError(descriptions)) {
+                    ref._linkingError = descriptions;
+                } else {
+                    for (const description of descriptions) {
+                        const linkedNode = this.loadAstNode(description);
+                        if (linkedNode) {
+                            items.push({ ref: linkedNode, $nodeDescription: description });
+                        }
+                    }
+                }
+                ref._items = items;
+            } catch (err) {
+                ref._linkingError = {
+                    info: refInfo,
+                    message: `An error occurred while resolving reference to '${ref.$refText}': ${err}`
+                };
+                ref._items = [];
+            }
             document.references.push(ref);
         }
     }
 
     unlink(document: LangiumDocument): void {
         for (const ref of document.references) {
-            delete (ref as DefaultReference)._ref;
-            delete (ref as DefaultReference)._nodeDescription;
+            if ('_ref' in ref) {
+                (ref as DefaultReference)._ref = undefined;
+                delete (ref as DefaultReference)._nodeDescription;
+            } else if ('_items' in ref) {
+                (ref as DefaultMultiReference)._items = undefined;
+                delete (ref as DefaultMultiReference)._linkingError;
+            }
         }
         document.references = [];
     }
@@ -144,6 +179,12 @@ export class DefaultLinker implements Linker {
         return description ?? this.createLinkingError(refInfo);
     }
 
+    getCandidates(refInfo: ReferenceInfo): AstNodeDescription[] | LinkingError {
+        const scope = this.scopeProvider.getScope(refInfo);
+        const descriptions = scope.getElements(refInfo.reference.$refText).distinct(desc => `${desc.documentUri}#${desc.path}`).toArray();
+        return descriptions.length > 0 ? descriptions : this.createLinkingError(refInfo);
+    }
+
     buildReference(node: AstNode, property: string, refNode: CstNode | undefined, refText: string): Reference {
         // See behavior description in doc of Linker, update that on changes in here.
         // eslint-disable-next-line @typescript-eslint/no-this-alias
@@ -151,6 +192,7 @@ export class DefaultLinker implements Linker {
         const reference: DefaultReference = {
             $refNode: refNode,
             $refText: refText,
+            _ref: undefined,
 
             get ref() {
                 if (isAstNode(this._ref)) {
@@ -174,7 +216,7 @@ export class DefaultLinker implements Linker {
                     this._nodeDescription = refData.descr;
                     document?.references.push(this);
                 } else if (this._ref === ref_resolving) {
-                    throw new Error(`Cyclic reference resolution detected: ${linker.astNodeLocator.getAstNodePath(node)}/${property} (symbol '${refText}')`);
+                    linker.throwCyclicReferenceError(node, property, refText);
                 }
                 return isAstNode(this._ref) ? this._ref : undefined;
             },
@@ -186,6 +228,63 @@ export class DefaultLinker implements Linker {
             }
         };
         return reference;
+    }
+
+    buildMultiReference(node: AstNode, property: string, refNode: CstNode | undefined, refText: string): MultiReference {
+        // See behavior description in doc of Linker, update that on changes in here.
+        // eslint-disable-next-line @typescript-eslint/no-this-alias
+        const linker = this;
+        const reference: DefaultMultiReference = {
+            $refNode: refNode,
+            $refText: refText,
+            _items: undefined,
+
+            get items() {
+                if (Array.isArray(this._items)) {
+                    return this._items;
+                } else if (this._items === undefined) {
+                    this._items = ref_resolving;
+                    const document = findRootNode(node).$document;
+                    const descriptions = linker.getCandidates({
+                        reference,
+                        container: node,
+                        property
+                    });
+                    const items: MultiReferenceItem[] = [];
+                    if (isLinkingError(descriptions)) {
+                        this._linkingError = descriptions;
+                    } else {
+                        for (const description of descriptions) {
+                            const linkedNode = linker.loadAstNode(description);
+                            if (linkedNode) {
+                                items.push({ ref: linkedNode, $nodeDescription: description });
+                            }
+                        }
+                    }
+                    this._items = items;
+                    document?.references.push(this);
+                } else if (this._items === ref_resolving) {
+                    linker.throwCyclicReferenceError(node, property, refText);
+                }
+                return Array.isArray(this._items) ? this._items : [];
+            },
+            get error() {
+                if (this._linkingError) {
+                    return this._linkingError;
+                }
+                const refs = this.items;
+                if (refs.length > 0) {
+                    return undefined;
+                } else {
+                    return (this._linkingError = linker.createLinkingError({ reference, container: node, property }));
+                }
+            }
+        };
+        return reference;
+    }
+
+    protected throwCyclicReferenceError(node: AstNode, property: string, refText: string): never {
+        throw new Error(`Cyclic reference resolution detected: ${this.astNodeLocator.getAstNodePath(node)}/${property} (symbol '${refText}')`);
     }
 
     protected getLinkedNode(refInfo: ReferenceInfo): { node?: AstNode, descr?: AstNodeDescription, error?: LinkingError } {
@@ -210,7 +309,7 @@ export class DefaultLinker implements Linker {
             const errorMessage = (err as Error).message ?? String(err);
             return {
                 error: {
-                    ...refInfo,
+                    info: refInfo,
                     message: `An error occurred while resolving reference to '${refInfo.reference.$refText}': ${errorMessage}`
                 }
             };
@@ -237,7 +336,7 @@ export class DefaultLinker implements Linker {
         }
         const referenceType = this.reflection.getReferenceType(refInfo);
         return {
-            ...refInfo,
+            info: refInfo,
             message: `Could not resolve reference to ${referenceType} named '${refInfo.reference.$refText}'.`,
             targetDescription
         };

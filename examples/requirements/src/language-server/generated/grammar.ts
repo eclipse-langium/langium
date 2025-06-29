@@ -168,7 +168,8 @@ export const RequirementsGrammar = (): Grammar => loadedRequirementsGrammar ?? (
                   "type": {
                     "$ref": "#/rules@1"
                   },
-                  "deprecatedSyntax": false
+                  "deprecatedSyntax": false,
+                  "isMulti": false
                 }
               },
               {
@@ -187,7 +188,8 @@ export const RequirementsGrammar = (): Grammar => loadedRequirementsGrammar ?? (
                       "type": {
                         "$ref": "#/rules@1"
                       },
-                      "deprecatedSyntax": false
+                      "deprecatedSyntax": false,
+                      "isMulti": false
                     }
                   }
                 ],
@@ -428,7 +430,8 @@ export const TestsGrammar = (): Grammar => loadedTestsGrammar ?? (loadedTestsGra
                 },
                 "arguments": []
               },
-              "deprecatedSyntax": false
+              "deprecatedSyntax": false,
+              "isMulti": false
             }
           },
           {
@@ -454,7 +457,8 @@ export const TestsGrammar = (): Grammar => loadedTestsGrammar ?? (loadedTestsGra
                     },
                     "arguments": []
                   },
-                  "deprecatedSyntax": false
+                  "deprecatedSyntax": false,
+                  "isMulti": false
                 }
               }
             ],
@@ -480,7 +484,8 @@ export const TestsGrammar = (): Grammar => loadedTestsGrammar ?? (loadedTestsGra
                   "type": {
                     "$ref": "#/rules@3"
                   },
-                  "deprecatedSyntax": false
+                  "deprecatedSyntax": false,
+                  "isMulti": false
                 }
               },
               {
@@ -499,7 +504,8 @@ export const TestsGrammar = (): Grammar => loadedTestsGrammar ?? (loadedTestsGra
                       "type": {
                         "$ref": "#/rules@3"
                       },
-                      "deprecatedSyntax": false
+                      "deprecatedSyntax": false,
+                      "isMulti": false
                     }
                   }
                 ],
@@ -672,7 +678,8 @@ export const TestsGrammar = (): Grammar => loadedTestsGrammar ?? (loadedTestsGra
                   "type": {
                     "$ref": "#/rules@3"
                   },
-                  "deprecatedSyntax": false
+                  "deprecatedSyntax": false,
+                  "isMulti": false
                 }
               },
               {
@@ -691,7 +698,8 @@ export const TestsGrammar = (): Grammar => loadedTestsGrammar ?? (loadedTestsGra
                       "type": {
                         "$ref": "#/rules@3"
                       },
-                      "deprecatedSyntax": false
+                      "deprecatedSyntax": false,
+                      "isMulti": false
                     }
                   }
                 ],

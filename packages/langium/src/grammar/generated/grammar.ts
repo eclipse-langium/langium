@@ -154,7 +154,8 @@ export const LangiumGrammarGrammar = (): Grammar => loadedLangiumGrammarGrammar 
                     },
                     "arguments": []
                   },
-                  "deprecatedSyntax": false
+                  "deprecatedSyntax": false,
+                  "isMulti": false
                 }
               },
               {
@@ -180,7 +181,8 @@ export const LangiumGrammarGrammar = (): Grammar => loadedLangiumGrammarGrammar 
                         },
                         "arguments": []
                       },
-                      "deprecatedSyntax": false
+                      "deprecatedSyntax": false,
+                      "isMulti": false
                     }
                   }
                 ],
@@ -653,6 +655,16 @@ export const LangiumGrammarGrammar = (): Grammar => loadedLangiumGrammarGrammar 
                   },
                   "arguments": []
                 }
+              },
+              {
+                "$type": "Assignment",
+                "feature": "isMulti",
+                "operator": "?=",
+                "terminal": {
+                  "$type": "Keyword",
+                  "value": "+"
+                },
+                "cardinality": "?"
               }
             ]
           }
@@ -724,7 +736,8 @@ export const LangiumGrammarGrammar = (): Grammar => loadedLangiumGrammarGrammar 
                         },
                         "arguments": []
                       },
-                      "deprecatedSyntax": false
+                      "deprecatedSyntax": false,
+                      "isMulti": false
                     }
                   },
                   {
@@ -990,7 +1003,8 @@ export const LangiumGrammarGrammar = (): Grammar => loadedLangiumGrammarGrammar 
                             },
                             "arguments": []
                           },
-                          "deprecatedSyntax": false
+                          "deprecatedSyntax": false,
+                          "isMulti": false
                         }
                       },
                       {
@@ -1826,7 +1840,8 @@ export const LangiumGrammarGrammar = (): Grammar => loadedLangiumGrammarGrammar 
                     },
                     "arguments": []
                   },
-                  "deprecatedSyntax": false
+                  "deprecatedSyntax": false,
+                  "isMulti": false
                 }
               },
               {
@@ -2047,7 +2062,8 @@ export const LangiumGrammarGrammar = (): Grammar => loadedLangiumGrammarGrammar 
                 },
                 "arguments": []
               },
-              "deprecatedSyntax": false
+              "deprecatedSyntax": false,
+              "isMulti": false
             }
           },
           {
@@ -2132,7 +2148,8 @@ export const LangiumGrammarGrammar = (): Grammar => loadedLangiumGrammarGrammar 
                     },
                     "arguments": []
                   },
-                  "deprecatedSyntax": false
+                  "deprecatedSyntax": false,
+                  "isMulti": false
                 }
               },
               {
@@ -2429,7 +2446,8 @@ export const LangiumGrammarGrammar = (): Grammar => loadedLangiumGrammarGrammar 
             },
             "arguments": []
           },
-          "deprecatedSyntax": false
+          "deprecatedSyntax": false,
+          "isMulti": false
         }
       },
       "definesHiddenTokens": false,
@@ -2532,7 +2550,8 @@ export const LangiumGrammarGrammar = (): Grammar => loadedLangiumGrammarGrammar 
                 },
                 "arguments": []
               },
-              "deprecatedSyntax": false
+              "deprecatedSyntax": false,
+              "isMulti": false
             }
           },
           {
@@ -2850,6 +2869,16 @@ export const LangiumGrammarGrammar = (): Grammar => loadedLangiumGrammarGrammar 
           },
           {
             "$type": "Assignment",
+            "feature": "isMulti",
+            "operator": "?=",
+            "terminal": {
+              "$type": "Keyword",
+              "value": "+"
+            },
+            "cardinality": "?"
+          },
+          {
+            "$type": "Assignment",
             "feature": "type",
             "operator": "=",
             "terminal": {
@@ -2857,7 +2886,8 @@ export const LangiumGrammarGrammar = (): Grammar => loadedLangiumGrammarGrammar 
               "type": {
                 "$ref": "#/types@0"
               },
-              "deprecatedSyntax": false
+              "deprecatedSyntax": false,
+              "isMulti": false
             }
           },
           {
@@ -3508,7 +3538,8 @@ export const LangiumGrammarGrammar = (): Grammar => loadedLangiumGrammarGrammar 
                 },
                 "arguments": []
               },
-              "deprecatedSyntax": false
+              "deprecatedSyntax": false,
+              "isMulti": false
             }
           }
         ]
