@@ -11,7 +11,7 @@ async function runUpdate() {
         replaceAll('langium-cli', true, version),
         replaceAll('langium-sprotty', true, version),
         replaceAll('langium-vscode', true, version),
-        replaceAll('generator-langium/templates/core', true, version, true),
+        replaceAll('generator-langium/templates', true, version, false),
         replaceAll('arithmetics', false, version),
         replaceAll('domainmodel', false, version),
         replaceAll('requirements', false, version),

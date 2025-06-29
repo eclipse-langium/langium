@@ -61,8 +61,11 @@ export const RequirementsGrammar = (): Grammar => loadedRequirementsGrammar ?? (
           }
         ]
       },
+      "definesHiddenTokens": false,
       "fragment": false,
-      "parameters": []
+      "hiddenTokens": [],
+      "parameters": [],
+      "wildcard": false
     },
     {
       "$type": "ParserRule",
@@ -104,9 +107,12 @@ export const RequirementsGrammar = (): Grammar => loadedRequirementsGrammar ?? (
           }
         ]
       },
+      "definesHiddenTokens": false,
       "entry": false,
       "fragment": false,
-      "parameters": []
+      "hiddenTokens": [],
+      "parameters": [],
+      "wildcard": false
     },
     {
       "$type": "ParserRule",
@@ -194,9 +200,12 @@ export const RequirementsGrammar = (): Grammar => loadedRequirementsGrammar ?? (
           }
         ]
       },
+      "definesHiddenTokens": false,
       "entry": false,
       "fragment": false,
-      "parameters": []
+      "hiddenTokens": [],
+      "parameters": [],
+      "wildcard": false
     },
     {
       "$type": "ParserRule",
@@ -226,9 +235,12 @@ export const RequirementsGrammar = (): Grammar => loadedRequirementsGrammar ?? (
           }
         ]
       },
+      "definesHiddenTokens": false,
       "entry": false,
       "fragment": false,
-      "parameters": []
+      "hiddenTokens": [],
+      "parameters": [],
+      "wildcard": false
     },
     {
       "$type": "TerminalRule",
@@ -295,8 +307,11 @@ export const RequirementsGrammar = (): Grammar => loadedRequirementsGrammar ?? (
       "fragment": false
     }
   ],
+  "definesHiddenTokens": false,
+  "hiddenTokens": [],
   "interfaces": [],
-  "types": []
+  "types": [],
+  "usedGrammars": []
 }`));
 
 let loadedTestsGrammar: Grammar | undefined;
@@ -341,8 +356,11 @@ export const TestsGrammar = (): Grammar => loadedTestsGrammar ?? (loadedTestsGra
           }
         ]
       },
+      "definesHiddenTokens": false,
       "fragment": false,
-      "parameters": []
+      "hiddenTokens": [],
+      "parameters": [],
+      "wildcard": false
     },
     {
       "$type": "ParserRule",
@@ -498,9 +516,12 @@ export const TestsGrammar = (): Grammar => loadedTestsGrammar ?? (loadedTestsGra
           }
         ]
       },
+      "definesHiddenTokens": false,
       "entry": false,
       "fragment": false,
-      "parameters": []
+      "hiddenTokens": [],
+      "parameters": [],
+      "wildcard": false
     },
     {
       "$type": "ParserRule",
@@ -550,8 +571,11 @@ export const TestsGrammar = (): Grammar => loadedTestsGrammar ?? (loadedTestsGra
           }
         ]
       },
+      "definesHiddenTokens": false,
       "fragment": false,
-      "parameters": []
+      "hiddenTokens": [],
+      "parameters": [],
+      "wildcard": false
     },
     {
       "$type": "ParserRule",
@@ -593,9 +617,12 @@ export const TestsGrammar = (): Grammar => loadedTestsGrammar ?? (loadedTestsGra
           }
         ]
       },
+      "definesHiddenTokens": false,
       "entry": false,
       "fragment": false,
-      "parameters": []
+      "hiddenTokens": [],
+      "parameters": [],
+      "wildcard": false
     },
     {
       "$type": "ParserRule",
@@ -683,9 +710,12 @@ export const TestsGrammar = (): Grammar => loadedTestsGrammar ?? (loadedTestsGra
           }
         ]
       },
+      "definesHiddenTokens": false,
       "entry": false,
       "fragment": false,
-      "parameters": []
+      "hiddenTokens": [],
+      "parameters": [],
+      "wildcard": false
     },
     {
       "$type": "ParserRule",
@@ -715,9 +745,12 @@ export const TestsGrammar = (): Grammar => loadedTestsGrammar ?? (loadedTestsGra
           }
         ]
       },
+      "definesHiddenTokens": false,
       "entry": false,
       "fragment": false,
-      "parameters": []
+      "hiddenTokens": [],
+      "parameters": [],
+      "wildcard": false
     },
     {
       "$type": "TerminalRule",
@@ -784,6 +817,9 @@ export const TestsGrammar = (): Grammar => loadedTestsGrammar ?? (loadedTestsGra
       "fragment": false
     }
   ],
+  "definesHiddenTokens": false,
+  "hiddenTokens": [],
   "interfaces": [],
-  "types": []
+  "types": [],
+  "usedGrammars": []
 }`));
