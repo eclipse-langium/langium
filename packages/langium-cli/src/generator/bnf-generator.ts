@@ -4,22 +4,15 @@
  * terms of the MIT License, which is available in the project root.
  ******************************************************************************/
 
-import { CstUtils, type Grammar } from 'langium';
+import { CstUtils, GrammarAST, type Grammar } from 'langium';
 import { EOL } from 'langium/generate';
 import _ from 'lodash';
-import type { AbstractElement, AbstractRule, Condition, InfixRule, NamedArgument, Parameter } from '../../../langium/lib/languages/generated/ast.js';
-import {
-    isAction, isAlternatives, isAssignment,
-    isCrossReference, isGroup, isInfixRule, isKeyword,
-    isParserRule, isRegexToken,
-    isRuleCall, isTerminalAlternatives, isTerminalGroup, isTerminalRule, isTerminalRuleCall
-} from '../../../langium/lib/languages/generated/ast.js';
 
 export function generateBnf(grammars: Grammar[], options: GeneratorOptions = { dialect: 'GBNF' }): string {
     const grammarsWithName = grammars.filter(grammar => !!grammar.name);
 
-    const isHiddenTerminalRule = (rule: AbstractRule): boolean => {
-        return isTerminalRule(rule) && rule.hidden;
+    const isHiddenTerminalRule = (rule: GrammarAST.AbstractRule): boolean => {
+        return GrammarAST.isTerminalRule(rule) && rule.hidden;
     };
 
     const ctx: GeneratorContext = {
@@ -29,7 +22,7 @@ export function generateBnf(grammars: Grammar[], options: GeneratorOptions = { d
         commentStyle: options.commentStyle ?? (options.dialect === 'GBNF' ? 'hash' : 'parentheses')
     };
 
-    const hiddenRules: AbstractRule[] = [];
+    const hiddenRules: GrammarAST.AbstractRule[] = [];
 
     let result: string = '';
     grammarsWithName.forEach(grammar => {
@@ -48,17 +41,17 @@ export function generateBnf(grammars: Grammar[], options: GeneratorOptions = { d
     return result;
 }
 
-function processRule(rule: AbstractRule, ctx: GeneratorContext): string {
-    const markRoot = !ctx.rootAssigned && isParserRule(rule) && rule.entry;
+function processRule(rule: GrammarAST.AbstractRule, ctx: GeneratorContext): string {
+    const markRoot = !ctx.rootAssigned && GrammarAST.isParserRule(rule) && rule.entry;
     if (markRoot) {
         ctx.rootAssigned = true;
     }
 
     // GBNF expects 'root' as the root rule name, Lark e.g. expects 'start'.
     const ruleComment = processComment(rule, ctx);
-    const hiddenPrefix = (isTerminalRule(rule) && !rule.hidden) ? hiddenRuleCall(ctx) : '';
+    const hiddenPrefix = (GrammarAST.isTerminalRule(rule) && !rule.hidden) ? hiddenRuleCall(ctx) : '';
     const ruleName = markRoot ? 'root' : rule.name;
-    if (isParserRule(rule) && rule.parameters.length > 0) {
+    if (GrammarAST.isParserRule(rule) && rule.parameters.length > 0) {
         // parser rule with parameters
         const variations: Array<Record<string, boolean>> = parserRuleVariations(rule.parameters);
         let content = '';
@@ -71,14 +64,14 @@ function processRule(rule: AbstractRule, ctx: GeneratorContext): string {
         });
         return content;
     }
-    if (isInfixRule(rule)) {
+    if (GrammarAST.isInfixRule(rule)) {
         return `${ruleComment}${processName(ruleName, ctx)} ::= ${hiddenPrefix}${processInfix(rule, ctx)}`;
     } else {
         return `${ruleComment}${processName(ruleName, ctx)} ::= ${hiddenPrefix}${processElement(rule.definition, ctx)}`;
     }
 }
 
-function processInfix(rule: InfixRule, ctx: GeneratorContext): string {
+function processInfix(rule: GrammarAST.InfixRule, ctx: GeneratorContext): string {
     const infixRuleName = processName(rule.name, ctx);
     const variation = collectArguments(rule.call.rule.ref, rule.call.arguments, ctx);
     const ruleName = rule.call.rule.ref?.name ?? rule.call.rule.$refText;
@@ -88,14 +81,14 @@ function processInfix(rule: InfixRule, ctx: GeneratorContext): string {
     return `${infixRuleName} ::= ${call} (${allOperators} ${call})*`;
 }
 
-function processElement(element: AbstractElement, ctx: GeneratorContext): string {
-    const processRecursively = (element: AbstractElement) => {
+function processElement(element: GrammarAST.AbstractElement, ctx: GeneratorContext): string {
+    const processRecursively = (element: GrammarAST.AbstractElement) => {
         return processElement(element, ctx);
     };
-    if (isKeyword(element)) {
+    if (GrammarAST.isKeyword(element)) {
         return `${hiddenRuleCall(ctx)}"${element.value}"`;
-    } else if (isGroup(element) || isTerminalGroup(element)) {
-        if (isGroup(element) && element.guardCondition && !evaluateCondition(element.guardCondition, ctx)) {
+    } else if (GrammarAST.isGroup(element) || GrammarAST.isTerminalGroup(element)) {
+        if (GrammarAST.isGroup(element) && element.guardCondition && !evaluateCondition(element.guardCondition, ctx)) {
             // Skip group if guard condition is false
             return ' ';
         }
@@ -104,31 +97,31 @@ function processElement(element: AbstractElement, ctx: GeneratorContext): string
             return `( ${content} )${processCardinality(element)}`;
         }
         return content;
-    } else if (isAssignment(element)) {
+    } else if (GrammarAST.isAssignment(element)) {
         return processRecursively(element.terminal) + processCardinality(element);
-    } else if (isRuleCall(element) || isTerminalRuleCall(element)) {
-        const variation = isRuleCall(element) ? collectArguments(element.rule.ref, element.arguments, ctx) : undefined;
+    } else if (GrammarAST.isRuleCall(element) || GrammarAST.isTerminalRuleCall(element)) {
+        const variation = GrammarAST.isRuleCall(element) ? collectArguments(element.rule.ref, element.arguments, ctx) : undefined;
         const ruleName = element.rule.ref?.name ?? element.rule.$refText;
         return processName(ruleName, ctx, variation) + processCardinality(element);
-    } else if (isAlternatives(element) || isTerminalAlternatives(element)) {
+    } else if (GrammarAST.isAlternatives(element) || GrammarAST.isTerminalAlternatives(element)) {
         const content = element.elements.map(processRecursively).filter(notEmpty).join(' | ');
         if (notEmpty(content)) {
             return '(' + content + ')' + processCardinality(element);
         }
         return '';
-    } else if (isRegexToken(element)) {
+    } else if (GrammarAST.isRegexToken(element)) {
         // First remove trailing and leading slashes. Replace escaped slashes `\/` with unescaped slashes `/`.
         return element.regex.replace(/(^|[^\\])\//g, (_, p1) => p1 + '').replace(/\\\//g, '/');
-    } else if (isCrossReference(element)) {
+    } else if (GrammarAST.isCrossReference(element)) {
         return (element.terminal ? processRecursively(element.terminal) : 'ID') + processCardinality(element);
-    } else if (isAction(element)) {
+    } else if (GrammarAST.isAction(element)) {
         return '';
     }
     console.error(`Not handled AbstractElement type: ${element?.$type}`);
     return `not-handled-(${element?.$type})`;
 }
 
-function processCardinality(element: AbstractElement): string {
+function processCardinality(element: GrammarAST.AbstractElement): string {
     return element.cardinality ?? '';
 }
 
@@ -149,7 +142,7 @@ function processName(ruleName: string, ctx: GeneratorContext, parserRuleVariatio
     }
 }
 
-function processComment(rule: AbstractRule, ctx: GeneratorContext) {
+function processComment(rule: GrammarAST.AbstractRule, ctx: GeneratorContext) {
     const comment = CstUtils.findCommentNode(rule.$cstNode, ['ML_COMMENT'])?.text
         ?.replace(/\r?\n|\r/g, ' ') // Replace line breaks
         ?.replace(/^\/\*\s*/, '')   // Remove leading `/*`
@@ -186,7 +179,7 @@ function notEmpty(text: string): boolean {
  * @param params parserRule parameters
  * @returns all possible combination of guards for the parserRule - 2^params.length
  */
-function parserRuleVariations(params: Parameter[]): Array<Record<string, boolean>> {
+function parserRuleVariations(params: GrammarAST.Parameter[]): Array<Record<string, boolean>> {
     const variationsCount = Math.pow(2, params.length);
     const variations: Array<Record<string, boolean>> = [];
     for (let i = 0; i < variationsCount; i++) {
@@ -201,8 +194,8 @@ function parserRuleVariations(params: Parameter[]): Array<Record<string, boolean
     return variations;
 }
 
-function collectArguments(rule: AbstractRule | undefined, namedArgs: NamedArgument[], ctx: GeneratorContext): Record<string, boolean> | undefined {
-    if (isParserRule(rule) && namedArgs.length > 0 && rule.parameters.length === namedArgs.length) {
+function collectArguments(rule: GrammarAST.AbstractRule | undefined, namedArgs: GrammarAST.NamedArgument[], ctx: GeneratorContext): Record<string, boolean> | undefined {
+    if (GrammarAST.isParserRule(rule) && namedArgs.length > 0 && rule.parameters.length === namedArgs.length) {
         const variation: Record<string, boolean> = {};
         namedArgs.forEach((arg, idx) => {
             variation[rule.parameters[idx].name] = evaluateCondition(arg.value, ctx);
@@ -212,7 +205,7 @@ function collectArguments(rule: AbstractRule | undefined, namedArgs: NamedArgume
     return undefined;
 }
 
-function evaluateCondition(condition: Condition, ctx: GeneratorContext): boolean {
+function evaluateCondition(condition: GrammarAST.Condition, ctx: GeneratorContext): boolean {
     switch (condition.$type) {
         case 'BooleanLiteral':
             return condition.true;
@@ -229,7 +222,7 @@ function evaluateCondition(condition: Condition, ctx: GeneratorContext): boolean
             return ctx.parserRuleVariation[condition.parameter.ref?.name ?? condition.parameter.$refText];
         }
         default:
-            throw new Error(`Unhandled Condition type: ${(condition as Condition).$type}`);
+            throw new Error(`Unhandled Condition type: ${(condition as GrammarAST.Condition).$type}`);
     }
 }
 
