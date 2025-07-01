@@ -4,10 +4,9 @@
  * terms of the MIT License, which is available in the project root.
  ******************************************************************************/
 
-import { CstUtils, type Grammar } from 'langium';
+import { CstUtils, type GrammarAST as ast, type Grammar } from 'langium';
 import { EOL } from 'langium/generate';
 import _ from 'lodash';
-import type { AbstractElement, AbstractRule, Condition, InfixRule, NamedArgument, Parameter } from '../../../langium/lib/languages/generated/ast.js';
 import {
     isAction, isAlternatives, isAssignment,
     isCrossReference, isGroup, isInfixRule, isKeyword,
@@ -18,7 +17,7 @@ import {
 export function generateBnf(grammars: Grammar[], options: GeneratorOptions = { dialect: 'GBNF' }): string {
     const grammarsWithName = grammars.filter(grammar => !!grammar.name);
 
-    const isHiddenTerminalRule = (rule: AbstractRule): boolean => {
+    const isHiddenTerminalRule = (rule: ast.AbstractRule): boolean => {
         return isTerminalRule(rule) && rule.hidden;
     };
 
@@ -29,7 +28,7 @@ export function generateBnf(grammars: Grammar[], options: GeneratorOptions = { d
         commentStyle: options.commentStyle ?? (options.dialect === 'GBNF' ? 'hash' : 'parentheses')
     };
 
-    const hiddenRules: AbstractRule[] = [];
+    const hiddenRules: ast.AbstractRule[] = [];
 
     let result: string = '';
     grammarsWithName.forEach(grammar => {
@@ -48,7 +47,7 @@ export function generateBnf(grammars: Grammar[], options: GeneratorOptions = { d
     return result;
 }
 
-function processRule(rule: AbstractRule, ctx: GeneratorContext): string {
+function processRule(rule: ast.AbstractRule, ctx: GeneratorContext): string {
     const markRoot = !ctx.rootAssigned && isParserRule(rule) && rule.entry;
     if (markRoot) {
         ctx.rootAssigned = true;
@@ -78,7 +77,7 @@ function processRule(rule: AbstractRule, ctx: GeneratorContext): string {
     }
 }
 
-function processInfix(rule: InfixRule, ctx: GeneratorContext): string {
+function processInfix(rule: ast.InfixRule, ctx: GeneratorContext): string {
     const infixRuleName = processName(rule.name, ctx);
     const variation = collectArguments(rule.call.rule.ref, rule.call.arguments, ctx);
     const ruleName = rule.call.rule.ref?.name ?? rule.call.rule.$refText;
@@ -88,8 +87,8 @@ function processInfix(rule: InfixRule, ctx: GeneratorContext): string {
     return `${infixRuleName} ::= ${call} (${allOperators} ${call})*`;
 }
 
-function processElement(element: AbstractElement, ctx: GeneratorContext): string {
-    const processRecursively = (element: AbstractElement) => {
+function processElement(element: ast.AbstractElement, ctx: GeneratorContext): string {
+    const processRecursively = (element: ast.AbstractElement) => {
         return processElement(element, ctx);
     };
     if (isKeyword(element)) {
@@ -128,7 +127,7 @@ function processElement(element: AbstractElement, ctx: GeneratorContext): string
     return `not-handled-(${element?.$type})`;
 }
 
-function processCardinality(element: AbstractElement): string {
+function processCardinality(element: ast.AbstractElement): string {
     return element.cardinality ?? '';
 }
 
@@ -149,7 +148,7 @@ function processName(ruleName: string, ctx: GeneratorContext, parserRuleVariatio
     }
 }
 
-function processComment(rule: AbstractRule, ctx: GeneratorContext) {
+function processComment(rule: ast.AbstractRule, ctx: GeneratorContext) {
     const comment = CstUtils.findCommentNode(rule.$cstNode, ['ML_COMMENT'])?.text
         ?.replace(/\r?\n|\r/g, ' ') // Replace line breaks
         ?.replace(/^\/\*\s*/, '')   // Remove leading `/*`
@@ -186,7 +185,7 @@ function notEmpty(text: string): boolean {
  * @param params parserRule parameters
  * @returns all possible combination of guards for the parserRule - 2^params.length
  */
-function parserRuleVariations(params: Parameter[]): Array<Record<string, boolean>> {
+function parserRuleVariations(params: ast.Parameter[]): Array<Record<string, boolean>> {
     const variationsCount = Math.pow(2, params.length);
     const variations: Array<Record<string, boolean>> = [];
     for (let i = 0; i < variationsCount; i++) {
@@ -201,7 +200,7 @@ function parserRuleVariations(params: Parameter[]): Array<Record<string, boolean
     return variations;
 }
 
-function collectArguments(rule: AbstractRule | undefined, namedArgs: NamedArgument[], ctx: GeneratorContext): Record<string, boolean> | undefined {
+function collectArguments(rule: ast.AbstractRule | undefined, namedArgs: ast.NamedArgument[], ctx: GeneratorContext): Record<string, boolean> | undefined {
     if (isParserRule(rule) && namedArgs.length > 0 && rule.parameters.length === namedArgs.length) {
         const variation: Record<string, boolean> = {};
         namedArgs.forEach((arg, idx) => {
@@ -212,7 +211,7 @@ function collectArguments(rule: AbstractRule | undefined, namedArgs: NamedArgume
     return undefined;
 }
 
-function evaluateCondition(condition: Condition, ctx: GeneratorContext): boolean {
+function evaluateCondition(condition: ast.Condition, ctx: GeneratorContext): boolean {
     switch (condition.$type) {
         case 'BooleanLiteral':
             return condition.true;
@@ -229,7 +228,7 @@ function evaluateCondition(condition: Condition, ctx: GeneratorContext): boolean
             return ctx.parserRuleVariation[condition.parameter.ref?.name ?? condition.parameter.$refText];
         }
         default:
-            throw new Error(`Unhandled Condition type: ${(condition as Condition).$type}`);
+            throw new Error(`Unhandled Condition type: ${(condition as ast.Condition).$type}`);
     }
 }
 
