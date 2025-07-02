@@ -4,12 +4,12 @@
  * terms of the MIT License, which is available in the project root.
  ******************************************************************************/
 
-import type { ParserRule, Action, AbstractElement, Assignment, RuleCall, InfixRule, TypeAttribute } from '../../../languages/generated/ast.js';
+import type { ParserRule, Action, AbstractElement, Assignment, RuleCall, InfixRule, TypeAttribute, AbstractParserRule } from '../../../languages/generated/ast.js';
 import type { PlainAstTypes, PlainInterface, PlainProperty, PlainPropertyType, PlainUnion } from './plain-types.js';
 import type { LangiumCoreServices } from '../../../index.js';
 import { isNamed } from '../../../references/name-provider.js';
 import { MultiMap } from '../../../utils/collections.js';
-import { isAlternatives, isKeyword, isParserRule, isAction, isGroup, isUnorderedGroup, isAssignment, isRuleCall, isCrossReference, isTerminalRule, isInfixRule } from '../../../languages/generated/ast.js';
+import { isAlternatives, isKeyword, isParserRule, isAction, isGroup, isUnorderedGroup, isAssignment, isRuleCall, isCrossReference, isTerminalRule, isAbstractParserRule } from '../../../languages/generated/ast.js';
 import { getTypeNameWithoutError, isPrimitiveGrammarType } from '../../internal-grammar-util.js';
 import { mergePropertyTypes } from './plain-types.js';
 import { isOptionalCardinality, terminalRegex, getRuleTypeName, getTypeName } from '../../../utils/grammar-utils.js';
@@ -274,7 +274,8 @@ export function collectInferredTypes(parserRules: ParserRule[], datatypeRules: P
         const comment = commentProvider?.getComment(rule);
         allTypes.push(...getRuleTypes(context, rule, services).map(typePath => ({...typePath, comment})));
     }
-    const interfaces = calculateInterfaces(allTypes, calculateInfixInterfaces(infixRules));
+    const infixInterfaces = calculateInfixInterfaces(infixRules);
+    const interfaces = calculateInterfaces(allTypes, infixInterfaces);
     const unions = buildSuperUnions(interfaces);
     const astTypes = extractUnions(interfaces, unions, declared);
 
@@ -296,14 +297,11 @@ export function collectInferredTypes(parserRules: ParserRule[], datatypeRules: P
 
 function calculateInfixInterfaces(rules: InfixRule[]): PlainInterface[] {
     const interfaces: PlainInterface[] = [];
-    for (const rule of rules) {
-        const on = rule.call.rule.ref;
-        let onName = on?.name;
-        if (isParserRule(on)) {
-            onName = getTypeName(on);
-        }
-        if (onName && rule.name) {
-            const operators = rule.operators.precedences
+    for (const infixRule of rules) {
+        const on = infixRule.call.rule.ref;
+        const onName = isAbstractParserRule(on) ? getTypeName(on) : on?.name;
+        if (onName && infixRule.name) {
+            const operators = infixRule.operators.precedences
                 .flatMap(e => e.operators).map(e => e.value).sort();
             const expressionProperty = {
                 astNodes: new Set<Assignment | Action | TypeAttribute>(),
@@ -313,7 +311,7 @@ function calculateInfixInterfaces(rules: InfixRule[]): PlainInterface[] {
                 }
             };
             const interfaceType: PlainInterface = {
-                name: rule.name,
+                name: getTypeName(infixRule),
                 declared: false,
                 abstract: false,
                 properties: [
@@ -423,9 +421,9 @@ function getRuleTypes(context: TypeCollectionContext, rule: ParserRule, services
     return flattenTypes(graph.getTypes(), type.end ?? newTypePart());
 }
 
-function newTypePart(element?: ParserRule | Action | string): TypePart {
+function newTypePart(element?: AbstractParserRule | Action | string): TypePart {
     return {
-        name: isParserRule(element) || isAction(element) ? getTypeNameWithoutError(element) : element,
+        name: isAbstractParserRule(element) || isAction(element) ? getTypeNameWithoutError(element) : element,
         properties: [],
         ruleCalls: [],
         children: [],
@@ -435,7 +433,8 @@ function newTypePart(element?: ParserRule | Action | string): TypePart {
 }
 
 /**
- * Collects all possible type branches of a given element.
+ * Collects all possible type branches of a given parser rule element.
+ *
  * @param state State to walk over element's graph.
  * @param type Element that collects a current type branch for the given element.
  * @param element The given AST element, from which it's necessary to extract the type.
@@ -576,7 +575,7 @@ function addRuleCall(graph: TypeGraph, current: TypePart, ruleCall: RuleCall, se
         } else {
             current.properties.push(...properties);
         }
-    } else if (isParserRule(rule) || isInfixRule(rule)) {
+    } else if (isAbstractParserRule(rule)) {
         current.ruleCalls.push(getRuleTypeName(rule));
     }
 }

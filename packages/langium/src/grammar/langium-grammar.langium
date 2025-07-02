@@ -71,7 +71,10 @@ ParserRule returns ParserRule:
     ('returns' (returnType=[AbstractType:ID] | dataType=PrimitiveType) | inferredType=InferredType<false>)? ':'
     definition=Alternatives ';';
 
-InfixRule returns InfixRule: 'infix' RuleNameAndParams 'on' call=RuleCall ':' operators=InfixRuleOperators ';';
+InfixRule returns InfixRule: 'infix' RuleNameAndParams
+    'on' call=RuleCall
+    ('returns' (returnType=[AbstractType:ID] | dataType=PrimitiveType) | inferredType=InferredType<false>)? ':'
+    operators=InfixRuleOperators ';';
 
 InfixRuleOperators returns InfixRuleOperators: precedences+=InfixRuleOperatorList ('>' precedences+=InfixRuleOperatorList)*;
 
