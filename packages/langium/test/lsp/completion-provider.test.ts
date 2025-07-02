@@ -35,9 +35,9 @@ describe('Langium completion provider', () => {
                 'import',
                 'entry',
                 'fragment',
-                'infix',
                 'hidden',
                 'terminal',
+                'infix',
                 'interface',
                 'type'
             ]
