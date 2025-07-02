@@ -6,8 +6,8 @@
 
 import { EmptyFileSystem, type Grammar } from 'langium';
 import { expandToString, normalizeEOL } from 'langium/generate';
-import { parseHelper } from 'langium/test';
 import { createLangiumGrammarServices } from 'langium/grammar';
+import { parseHelper } from 'langium/test';
 import { describe, expect, test } from 'vitest';
 import { generateAst } from '../../src/generator/ast-generator.js';
 import type { LangiumConfig } from '../../src/package-types.js';
@@ -18,7 +18,7 @@ const parse = parseHelper<Grammar>(services.grammar);
 
 describe('Ast generator', () => {
 
-    testGeneratedAst('should generate checker functions for datatype rules comprised of a single string', `
+    test('should generate checker functions for datatype rules comprised of a single string', () => testGeneratedAst(`
         grammar TestGrammar
 
         A returns string:
@@ -32,9 +32,9 @@ describe('Ast generator', () => {
         export function isA(item: unknown): item is A {
             return item === 'a';
         }
-    `);
+    `));
 
-    testGeneratedAst('should generate checker functions for datatype rules comprised of a multiple strings', `
+    test('should generate checker functions for datatype rules comprised of a multiple strings', () => testGeneratedAst(`
         grammar TestGrammar
 
         A returns string:
@@ -48,9 +48,9 @@ describe('Ast generator', () => {
         export function isA(item: unknown): item is A {
             return item === 'a' || item === 'b' || item === 'c';
         }
-    `);
+    `));
 
-    testGeneratedAst('should generate checker functions for datatype rules with subtypes', `
+    test('should generate checker functions for datatype rules with subtypes', () => testGeneratedAst(`
         grammar TestGrammar
 
         A returns string:
@@ -73,9 +73,9 @@ describe('Ast generator', () => {
         export function isAB(item: unknown): item is AB {
             return isA(item) || item === 'b';
         }
-    `);
+    `));
 
-    testGeneratedAst('should generate checker functions for datatype rules referencing a terminal', `
+    test('should generate checker functions for datatype rules referencing a terminal', () => testGeneratedAst(`
         grammar TestGrammar
 
         A returns string:
@@ -89,9 +89,9 @@ describe('Ast generator', () => {
         export function isA(item: unknown): item is A {
             return (typeof item === 'string' && (/[_a-zA-Z][\\w_]*/.test(item)));
         }
-    `);
+    `));
 
-    testGeneratedAst('should generate checker functions for datatype rules referencing multiple terminals', `
+    test('should generate checker functions for datatype rules referencing multiple terminals', () => testGeneratedAst(`
         grammar TestGrammar
 
         A returns string:
@@ -106,9 +106,9 @@ describe('Ast generator', () => {
         export function isA(item: unknown): item is A {
             return (typeof item === 'string' && (/[_a-zA-Z][\\w_]*/.test(item) || /"(\\\\.|[^"\\\\])*"|'(\\\\.|[^'\\\\])*'/.test(item)));
         }
-    `);
+    `));
 
-    testGeneratedAst('should generate checker functions for datatype rules with nested union', `
+    test('should generate checker functions for datatype rules with nested union', () => testGeneratedAst(`
         grammar TestGrammar
 
         A returns string:
@@ -149,9 +149,9 @@ describe('Ast generator', () => {
         export function isC(item: unknown): item is C {
             return item === 'c';
         }
-    `);
+    `));
 
-    testGeneratedAst('should generate checker functions for datatype rules with repeated terminals', `
+    test('should generate checker functions for datatype rules with repeated terminals', () => testGeneratedAst(`
         grammar TestGrammar
 
         A returns string:
@@ -165,9 +165,9 @@ describe('Ast generator', () => {
         export function isA(item: unknown): item is A {
             return typeof item === 'string';
         }
-    `);
+    `));
 
-    testGeneratedInterface('should escape string delimiters in property type', `
+    test('should escape string delimiters in property type', () => testGeneratedInterface(`
         grammar TestGrammar
 
         entry Test: value="'test'";
@@ -187,9 +187,9 @@ describe('Ast generator', () => {
         export function isTest(item: unknown): item is Test {
             return reflection.isInstance(item, Test.$type);
         }
-    `);
+    `));
 
-    testGeneratedAst('should generate checker functions for datatype rules of type number', `
+    test('should generate checker functions for datatype rules of type number', () => testGeneratedAst(`
         grammar TestGrammar
 
         A returns number: '1';
@@ -202,9 +202,9 @@ describe('Ast generator', () => {
         export function isA(item: unknown): item is A {
             return typeof item === 'number';
         }
-    `);
+    `));
 
-    testGeneratedAst('check generated property with datatype rule of type number: single-value', `
+    test('check generated property with datatype rule of type number: single-value', () => testGeneratedAst(`
         grammar TestGrammar
 
         Node: num=A;
@@ -232,9 +232,9 @@ describe('Ast generator', () => {
         export function isNode(item: unknown): item is Node {
             return reflection.isInstance(item, Node.$type);
         }
-    `);
+    `));
 
-    testGeneratedAst('check generated property with datatype rule of type number: multi-value', `
+    test('check generated property with datatype rule of type number: multi-value', () => testGeneratedAst(`
         grammar TestGrammar
 
         Node: num+=A*;
@@ -262,9 +262,9 @@ describe('Ast generator', () => {
         export function isNode(item: unknown): item is Node {
             return reflection.isInstance(item, Node.$type);
         }
-    `);
+    `));
 
-    testGeneratedAst('should generate checker functions for datatype rules of type boolean', `
+    test('should generate checker functions for datatype rules of type boolean', () => testGeneratedAst(`
         grammar TestGrammar
 
         A returns boolean: 'on';
@@ -277,9 +277,9 @@ describe('Ast generator', () => {
         export function isA(item: unknown): item is A {
             return typeof item === 'boolean';
         }
-    `);
+    `));
 
-    testGeneratedAst('should generate checker functions for datatype rules of type bigint', `
+    test('should generate checker functions for datatype rules of type bigint', () => testGeneratedAst(`
         grammar TestGrammar
 
         A returns bigint: '1';
@@ -292,9 +292,9 @@ describe('Ast generator', () => {
         export function isA(item: unknown): item is A {
             return typeof item === 'bigint';
         }
-    `);
+    `));
 
-    testGeneratedAst('should generate checker functions for datatype rules of type Date', `
+    test('should generate checker functions for datatype rules of type Date', () => testGeneratedAst(`
         grammar TestGrammar
 
         A returns Date: '2023-01-01';
@@ -307,7 +307,7 @@ describe('Ast generator', () => {
         export function isA(item: unknown): item is A {
             return item instanceof Date;
         }
-    `);
+    `));
 
     test('should generate terminal names and regular expressions', () => testTerminalConstants(`
         grammar TestGrammar
@@ -325,36 +325,115 @@ describe('Ast generator', () => {
         };
     `));
 
-    test('should generate terminal constants with range operator', () => testTerminalConstants(`
+    test('should generate EBNF terminals with range operator', () => testTerminalConstants(`
         grammar TestGrammar
 
-        entry Amount:
-            value=NUMBER;
-
-        hidden terminal WS: /\\s+/;
+        entry Value: value=NUMBER;
 
         terminal NUMBER: '0'..'9'+;
     `, expandToString`
         export const TestTerminals = {
-            WS: /\\s+/,
             NUMBER: /[0-9]+/,
         };
     `));
 
-    test('should generate terminal constants with fragments', () => testTerminalConstants(`
+    test('should generate EBNF terminals with groups', () => testTerminalConstants(`
         grammar TestGrammar
 
-        entry Amount:
-            value=NUMBER;
+        entry Value: value=Literal;
 
-        hidden terminal WS: /\\s+/;
+        terminal Literal: /PRE#/? '0'..'9' /#SUF?/;
+    `, expandToString`
+        export const TestTerminals = {
+            Literal: /PRE#?[0-9]#SUF?/,
+        };
+    `));
 
-        terminal NUMBER: DIGIT+;
+    test('should generate EBNF terminals with parenthesized groups', () => testTerminalConstants(`
+        grammar TestGrammar
+
+        entry Value: value=Literal;
+
+        terminal Literal: (/PRE#/)? ('0'..'9' /#SUF?/);
+    `, expandToString`
+        export const TestTerminals = {
+            Literal: /(PRE#)?([0-9]#SUF?)/,
+        };
+    `));
+
+    test('should generate EBNF terminals with alternatives', () => testTerminalConstants(`
+        grammar TestGrammar
+
+        entry Value: value=Literal;
+
+        terminal Literal: '0'..'9' | /PRE#/ '0'..'9' /#SUF/;
+    `, expandToString`
+        export const TestTerminals = {
+            Literal: /[0-9]|PRE#[0-9]#SUF/,
+        };
+    `));
+
+    test('should generate EBNF terminals with parenthesized alternatives', () => testTerminalConstants(`
+        grammar TestGrammar
+
+        entry Value: value=Literal;
+
+        terminal Literal: ((/PRE#/ | /P#/) '0'..'9') ((/#SUF/ | /S#/))?;    // Note: double parentheses are 'merged' during parsing, not reflected in the AST
+    `, expandToString`
+        export const TestTerminals = {
+            Literal: /((PRE#|P#)[0-9])(#SUF|S#)?/,
+        };
+    `));
+
+    test('should generate EBNF terminals with fragment references', () => testTerminalConstants(`
+        grammar TestGrammar
+
+        entry Value: value=NUMBER;
+
+        terminal NUMBER: DIGIT;
         terminal fragment DIGIT: '0'..'9';
     `, expandToString`
         export const TestTerminals = {
-            WS: /\\s+/,
-            NUMBER: /([0-9])+/,
+            NUMBER: /(?:[0-9])/,
+        };
+    `));
+
+    test('should generate EBNF terminals with parenthesized fragment references', () => testTerminalConstants(`
+        grammar TestGrammar
+
+        entry Value: value=NUMBER;
+
+        terminal NUMBER: (DIGIT);
+        terminal fragment DIGIT: '0'..'9';
+    `, expandToString`
+        export const TestTerminals = {
+            NUMBER: /([0-9])/,
+        };
+    `));
+
+    test('should generate EBNF terminals with referenced fragments with parenthesized content 1', () => testTerminalConstants(`
+        grammar TestGrammar
+
+        entry Value: value=NUMBER;
+
+        terminal NUMBER: DIGIT+;
+        terminal fragment DIGIT: ('0'..'9');
+    `, expandToString`
+        export const TestTerminals = {
+            NUMBER: /(?:([0-9]))+/,
+        };
+    `));
+
+    test('should generate EBNF terminals with referenced fragments with parenthesized content 2', () => testTerminalConstants(`
+        grammar TestGrammar
+
+        entry Value: value=NUMBER;
+
+        terminal NUMBER: DIGIT+;
+        terminal fragment DIGIT: ('0'..'9') '_'?;
+    `, expandToString`
+        export const TestTerminals = {
+            NUMBER: /(?:([0-9])_?)+/,
         };
     `));
 
@@ -371,7 +450,7 @@ describe('Ast generator', () => {
         };
     `));
 
-    testTypeMetaData('should generate property metadata for super types', `
+    test('should generate property metadata for super types', () => testTypeMetaData(`
         grammar TestGrammar
 
         interface IAmArray {
@@ -409,9 +488,9 @@ describe('Ast generator', () => {
                 }
             } as const satisfies langium.AstMetaData
         }`
-    );
+    ));
 
-    testTypeMetaData('should generate property metadata for empty types', `
+    test('should generate property metadata for empty types', () => testTypeMetaData(`
         grammar TestGrammar
 
         interface IAmArray { }
@@ -445,9 +524,9 @@ describe('Ast generator', () => {
                 }
             } as const satisfies langium.AstMetaData
         }`
-    );
+    ));
 
-    testTypeMetaData('should generate escaped default value', `
+    test('should generate escaped default value', () => testTypeMetaData(`
         grammar TestGrammar
 
         interface Test {
@@ -474,9 +553,9 @@ describe('Ast generator', () => {
                 }
             } as const satisfies langium.AstMetaData
         }`
-    );
+    ));
 
-    testReferenceType('check all referenceIds are properly generated', `
+    test('check all referenceIds are properly generated', () => testReferenceType(`
         grammar TestGrammar
 
         interface A {
@@ -573,7 +652,7 @@ describe('Ast generator', () => {
                 }
             } as const satisfies langium.AstMetaData
         }`
-    );
+    ));
 });
 
 async function testTerminalConstants(grammar: string, expected: string) {
@@ -592,36 +671,35 @@ async function testTerminalConstants(grammar: string, expected: string) {
     expect(relevantPart).toEqual(expectedPart);
 }
 
-function testGeneratedInterface(name: string, grammar: string, expected: string): void {
-    testGenerated(name, grammar, expected, 'export interface', 'export type testAstType');
+async function testGeneratedInterface(grammar: string, expected: string): Promise<void> {
+    return testGenerated(grammar, expected, 'export interface', 'export type testAstType');
 }
 
-function testGeneratedAst(name: string, grammar: string, expected: string): void {
-    testGenerated(name, grammar, expected, 'export type', 'export type testAstType', 3);
+async function testGeneratedAst(grammar: string, expected: string): Promise<void> {
+    return testGenerated(grammar, expected, 'export type', 'export type testAstType', 3);
 }
 
-function testTypeMetaData(name: string, grammar: string, expected: string): void {
-    testGenerated(name, grammar, expected, 'export class testAstReflection', 'export const reflection');
+async function testTypeMetaData(grammar: string, expected: string): Promise<void> {
+    return testGenerated(grammar, expected, 'export class testAstReflection', 'export const reflection');
 }
 
-function testReferenceType(name: string, grammar: string, expected: string): void {
-    testGenerated(name, grammar, expected, 'export class testAstReflection', 'export const reflection');
+async function testReferenceType(grammar: string, expected: string): Promise<void> {
+    return testGenerated(grammar, expected, 'export class testAstReflection', 'export const reflection');
 }
-function testGenerated(name: string, grammar: string, expected: string, start: string, end: string, startCount = 0): void {
-    test(name, async () => {
-        const result = (await parse(grammar)).parseResult;
-        const config: LangiumConfig = {
-            [RelativePath]: './',
-            projectName: 'test',
-            languages: []
-        };
-        const expectedPart = normalizeEOL(expected).trim();
-        const typesFileContent = generateAst(services.grammar, [result.value], config);
-        let startIndex = typesFileContent.indexOf(start);
-        for (let i = 0; i < startCount; i++) {
-            startIndex = typesFileContent.indexOf(start, startIndex + start.length);
-        }
-        const relevantPart = typesFileContent.substring(startIndex, typesFileContent.indexOf(end)).trim();
-        expect(relevantPart).toEqual(expectedPart);
-    });
+
+async function testGenerated(grammar: string, expected: string, start: string, end: string, startCount = 0): Promise<void> {
+    const result = (await parse(grammar)).parseResult;
+    const config: LangiumConfig = {
+        [RelativePath]: './',
+        projectName: 'test',
+        languages: []
+    };
+    const expectedPart = normalizeEOL(expected).trim();
+    const typesFileContent = generateAst(services.grammar, [result.value], config);
+    let startIndex = typesFileContent.indexOf(start);
+    for (let i = 0; i < startCount; i++) {
+        startIndex = typesFileContent.indexOf(start, startIndex + start.length);
+    }
+    const relevantPart = typesFileContent.substring(startIndex, typesFileContent.indexOf(end)).trim();
+    expect(relevantPart).toEqual(expectedPart);
 }

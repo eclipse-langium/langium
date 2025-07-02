@@ -140,37 +140,6 @@ export function mergeTypesAndInterfaces(astTypes: AstTypes): TypeOption[] {
     return (astTypes.interfaces as TypeOption[]).concat(astTypes.unions);
 }
 
-/**
- * Performs topological sorting on the generated interfaces.
- * @param interfaces The interfaces to sort topologically.
- * @returns A topologically sorted set of interfaces.
- */
-export function sortInterfacesTopologically(interfaces: PlainInterface[]): PlainInterface[] {
-    type TypeNode = {
-        value: PlainInterface;
-        nodes: TypeNode[];
-    }
-
-    const nodes: TypeNode[] = interfaces
-        .sort((a, b) => a.name.localeCompare(b.name))
-        .map(e => <TypeNode>{ value: e, nodes: [] });
-    for (const node of nodes) {
-        node.nodes = nodes.filter(e => node.value.superTypes.has(e.value.name));
-    }
-    const l: TypeNode[] = [];
-    const s = nodes.filter(e => e.nodes.length === 0);
-    while (s.length > 0) {
-        const n = s.shift()!;
-        if (!l.includes(n)) {
-            l.push(n);
-            nodes
-                .filter(e => e.nodes.includes(n))
-                .forEach(m => s.push(m));
-        }
-    }
-    return l.map(e => e.value);
-}
-
 export function hasArrayType(type: PropertyType): boolean {
     if (isPropertyUnion(type)) {
         return type.types.some(e => hasArrayType(e));

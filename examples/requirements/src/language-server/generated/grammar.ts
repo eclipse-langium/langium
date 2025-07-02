@@ -236,7 +236,8 @@ export const RequirementsGrammar = (): Grammar => loadedRequirementsGrammar ?? (
       "name": "WS",
       "definition": {
         "$type": "RegexToken",
-        "regex": "/\\\\s+/"
+        "regex": "/\\\\s+/",
+        "parenthesized": false
       },
       "fragment": false
     },
@@ -245,7 +246,8 @@ export const RequirementsGrammar = (): Grammar => loadedRequirementsGrammar ?? (
       "name": "ID",
       "definition": {
         "$type": "RegexToken",
-        "regex": "/[_a-zA-Z][\\\\w_]*/"
+        "regex": "/[_a-zA-Z][\\\\w_]*/",
+        "parenthesized": false
       },
       "fragment": false,
       "hidden": false
@@ -259,7 +261,8 @@ export const RequirementsGrammar = (): Grammar => loadedRequirementsGrammar ?? (
       },
       "definition": {
         "$type": "RegexToken",
-        "regex": "/[0-9]+/"
+        "regex": "/[0-9]+/",
+        "parenthesized": false
       },
       "fragment": false,
       "hidden": false
@@ -269,7 +272,8 @@ export const RequirementsGrammar = (): Grammar => loadedRequirementsGrammar ?? (
       "name": "STRING",
       "definition": {
         "$type": "RegexToken",
-        "regex": "/\\"(\\\\\\\\.|[^\\"\\\\\\\\])*\\"|'(\\\\\\\\.|[^'\\\\\\\\])*'/"
+        "regex": "/\\"(\\\\\\\\.|[^\\"\\\\\\\\])*\\"|'(\\\\\\\\.|[^'\\\\\\\\])*'/",
+        "parenthesized": false
       },
       "fragment": false,
       "hidden": false
@@ -280,7 +284,8 @@ export const RequirementsGrammar = (): Grammar => loadedRequirementsGrammar ?? (
       "name": "ML_COMMENT",
       "definition": {
         "$type": "RegexToken",
-        "regex": "/\\\\/\\\\*[\\\\s\\\\S]*?\\\\*\\\\//"
+        "regex": "/\\\\/\\\\*[\\\\s\\\\S]*?\\\\*\\\\//",
+        "parenthesized": false
       },
       "fragment": false
     },
@@ -290,7 +295,8 @@ export const RequirementsGrammar = (): Grammar => loadedRequirementsGrammar ?? (
       "name": "SL_COMMENT",
       "definition": {
         "$type": "RegexToken",
-        "regex": "/\\\\/\\\\/[^\\\\n\\\\r]*/"
+        "regex": "/\\\\/\\\\/[^\\\\n\\\\r]*/",
+        "parenthesized": false
       },
       "fragment": false
     }
@@ -725,7 +731,8 @@ export const TestsGrammar = (): Grammar => loadedTestsGrammar ?? (loadedTestsGra
       "name": "WS",
       "definition": {
         "$type": "RegexToken",
-        "regex": "/\\\\s+/"
+        "regex": "/\\\\s+/",
+        "parenthesized": false
       },
       "fragment": false
     },
@@ -734,7 +741,8 @@ export const TestsGrammar = (): Grammar => loadedTestsGrammar ?? (loadedTestsGra
       "name": "ID",
       "definition": {
         "$type": "RegexToken",
-        "regex": "/[_a-zA-Z][\\\\w_]*/"
+        "regex": "/[_a-zA-Z][\\\\w_]*/",
+        "parenthesized": false
       },
       "fragment": false,
       "hidden": false
@@ -748,7 +756,8 @@ export const TestsGrammar = (): Grammar => loadedTestsGrammar ?? (loadedTestsGra
       },
       "definition": {
         "$type": "RegexToken",
-        "regex": "/[0-9]+/"
+        "regex": "/[0-9]+/",
+        "parenthesized": false
       },
       "fragment": false,
       "hidden": false
@@ -758,7 +767,8 @@ export const TestsGrammar = (): Grammar => loadedTestsGrammar ?? (loadedTestsGra
       "name": "STRING",
       "definition": {
         "$type": "RegexToken",
-        "regex": "/\\"(\\\\\\\\.|[^\\"\\\\\\\\])*\\"|'(\\\\\\\\.|[^'\\\\\\\\])*'/"
+        "regex": "/\\"(\\\\\\\\.|[^\\"\\\\\\\\])*\\"|'(\\\\\\\\.|[^'\\\\\\\\])*'/",
+        "parenthesized": false
       },
       "fragment": false,
       "hidden": false
@@ -769,7 +779,8 @@ export const TestsGrammar = (): Grammar => loadedTestsGrammar ?? (loadedTestsGra
       "name": "ML_COMMENT",
       "definition": {
         "$type": "RegexToken",
-        "regex": "/\\\\/\\\\*[\\\\s\\\\S]*?\\\\*\\\\//"
+        "regex": "/\\\\/\\\\*[\\\\s\\\\S]*?\\\\*\\\\//",
+        "parenthesized": false
       },
       "fragment": false
     },
@@ -779,7 +790,8 @@ export const TestsGrammar = (): Grammar => loadedTestsGrammar ?? (loadedTestsGra
       "name": "SL_COMMENT",
       "definition": {
         "$type": "RegexToken",
-        "regex": "/\\\\/\\\\/[^\\\\n\\\\r]*/"
+        "regex": "/\\\\/\\\\/[^\\\\n\\\\r]*/",
+        "parenthesized": false
       },
       "fragment": false
     }
