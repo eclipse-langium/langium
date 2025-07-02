@@ -5,11 +5,11 @@
  ******************************************************************************/
 
 import type { CodeDescription, DiagnosticRelatedInformation, DiagnosticTag, integer, Range } from 'vscode-languageserver-types';
-import { assertUnreachable } from '../index.js';
 import type { LangiumCoreServices } from '../services.js';
 import type { AstNode, AstReflection, Properties } from '../syntax-tree.js';
 import type { CancellationToken } from '../utils/cancellation.js';
 import { MultiMap } from '../utils/collections.js';
+import { assertUnreachable } from '../utils/errors.js';
 import type { MaybePromise } from '../utils/promise-utils.js';
 import { isOperationCancelled } from '../utils/promise-utils.js';
 import type { Stream } from '../utils/stream.js';
