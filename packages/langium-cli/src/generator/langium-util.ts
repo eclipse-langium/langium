@@ -3,8 +3,9 @@
  * This program and the accompanying materials are made available under the
  * terms of the MIT License, which is available in the project root.
  ******************************************************************************/
-import { AstUtils, type Grammar, GrammarAST, GrammarUtils, stream } from 'langium';
 import chalk from 'chalk';
+import { AstUtils, type Grammar, GrammarAST, GrammarUtils, type LangiumDocument, stream } from 'langium';
+import * as path from 'path';
 
 //eslint-disable-next-line @typescript-eslint/no-explicit-any
 export function log(level: 'log' | 'warn' | 'error', options: { watch?: boolean }, message: string, ...args: any[]): void {
@@ -46,4 +47,25 @@ export function collectTerminalRegexps(grammar: Grammar): Record<string, RegExp>
         result[name] = regexp;
     }
     return result;
+}
+
+export function getAstIdentifierForGrammarFile(grammar: Grammar): string {
+    const doc: LangiumDocument = AstUtils.getDocument(grammar);
+    const p1 = doc.uri.fsPath.toLowerCase();
+    // use the file name, since not each grammar contains a "grammar XXX"-declaration
+    return replaceSpecialSignsForCamelCase(path.basename(p1, '.langium'));
+}
+
+export function replaceSpecialSignsForCamelCase(value: string): string {
+    return value.split('.').flatMap(p => p.split(' ')).flatMap(p => p.split('-')).flatMap(p => p.split('_')) // replace some signs: . -_
+        .map(ensureCamelCase) // camel case for each single part of the value after removing the special signs
+        .join('');
+}
+
+export function ensureCamelCase(value: string): string {
+    if (value.length >= 1 && value[0].toLocaleUpperCase() !== value[0]) {
+        return value[0].toLocaleUpperCase() + value.substring(1);
+    } else {
+        return value;
+    }
 }
