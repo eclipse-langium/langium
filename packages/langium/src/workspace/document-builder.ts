@@ -88,6 +88,14 @@ export interface DocumentBuilder {
     onUpdate(callback: DocumentUpdateListener): Disposable;
 
     /**
+     * Reset the state of a document to the specified state, removing any derived data as needed.
+     *
+     * @param document The document to reset.
+     * @param state The state to reset the document to.
+     */
+    resetToState<T extends AstNode>(document: LangiumDocument<T>, state: DocumentState): void;
+
+    /**
      * Notify the given callback when a set of documents has been built reaching the specified target state.
      */
     onBuildPhase(targetState: DocumentState, callback: DocumentBuildListener): Disposable;
@@ -167,8 +175,7 @@ export class DefaultDocumentBuilder implements DocumentBuilder {
             if (document.state === DocumentState.Validated) {
                 if (typeof options.validation === 'boolean' && options.validation) {
                     // Force re-running all validation checks
-                    document.state = DocumentState.IndexedReferences;
-                    document.diagnostics = undefined;
+                    this.resetToState(document, DocumentState.IndexedReferences);
                     this.buildState.delete(key);
                 } else if (typeof options.validation === 'object') {
                     const buildState = this.buildState.get(key);
@@ -235,12 +242,7 @@ export class DefaultDocumentBuilder implements DocumentBuilder {
         const allChangedUris = stream(changedUris).concat(deletedUris).map(uri => uri.toString()).toSet();
         this.langiumDocuments.all
             .filter(doc => !allChangedUris.has(doc.uri.toString()) && this.shouldRelink(doc, allChangedUris))
-            .forEach(doc => {
-                const linker = this.serviceRegistry.getServices(doc.uri).references.Linker;
-                linker.unlink(doc);
-                doc.state = Math.min(doc.state, DocumentState.ComputedScopes);
-                doc.diagnostics = undefined;
-            });
+            .forEach(doc => this.resetToState(doc, DocumentState.ComputedScopes));
         // Notify listeners of the update
         await this.emitUpdate(changedUris, deletedUris);
         // Only allow interrupting the execution after all state changes are done
@@ -341,6 +343,52 @@ export class DefaultDocumentBuilder implements DocumentBuilder {
         });
     }
 
+    resetToState<T extends AstNode>(document: LangiumDocument<T>, state: DocumentState): void {
+        switch (state) {
+            case DocumentState.Changed: {
+                const invalidated = this.langiumDocuments.invalidateDocument(document.uri);
+                if (invalidated) {
+                    break;
+                }
+                // Else fall through
+            }
+            case DocumentState.Parsed:
+                if (document.state <= DocumentState.Parsed) {
+                    break;
+                }
+                this.indexManager.removeContent(document.uri);
+                // Fall through
+            case DocumentState.IndexedContent:
+                if (document.state <= DocumentState.IndexedContent) {
+                    break;
+                }
+                document.localSymbols = undefined;
+                // Fall through
+            case DocumentState.ComputedScopes: {
+                if (document.state <= DocumentState.ComputedScopes) {
+                    break;
+                }
+                const linker = this.serviceRegistry.getServices(document.uri).references.Linker;
+                linker.unlink(document);
+                // Fall through
+            }
+            case DocumentState.Linked:
+                if (document.state <= DocumentState.Linked) {
+                    break;
+                }
+                this.indexManager.removeReferences(document.uri);
+                // Fall through
+            case DocumentState.IndexedReferences:
+                if (document.state <= DocumentState.IndexedReferences) {
+                    break;
+                }
+                document.diagnostics = undefined;
+        }
+        if (document.state > state) {
+            document.state = state;
+        }
+    }
+
     /**
      * Build the given documents by stepping through all build phases. If a document's state indicates
      * that a certain build phase is already done, the phase is skipped for that document.
@@ -425,17 +473,18 @@ export class DefaultDocumentBuilder implements DocumentBuilder {
      */
     protected async runCancelable(documents: LangiumDocument[], targetState: DocumentState, cancelToken: CancellationToken,
         callback: (document: LangiumDocument) => MaybePromise<unknown>): Promise<void> {
-        const filtered = documents.filter(doc => doc.state < targetState);
-        for (const document of filtered) {
-            await interruptAndCheck(cancelToken);
-            await callback(document);
-            document.state = targetState;
-            await this.notifyDocumentPhase(document, targetState, cancelToken);
+        for (const document of documents) {
+            if (document.state < targetState) {
+                await interruptAndCheck(cancelToken);
+                await callback(document);
+                document.state = targetState;
+                await this.notifyDocumentPhase(document, targetState, cancelToken);
+            }
         }
 
-        // Do not use `filtered` here, as that will miss documents that have previously reached the current target state
+        // Do not use `filtered` here, as that will miss documents that have previously reached the current target state.
         // For example, this happens in case the cancellation triggers between the processing of two documents
-        // Or files that were picked up during the workspace initialization
+        // or files that were picked up during the workspace initialization.
         const targetStateDocs = documents.filter(doc => doc.state === targetState);
         await this.notifyBuildPhase(targetStateDocs, targetState, cancelToken);
         this.currentState = targetState;

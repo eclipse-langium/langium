@@ -25,7 +25,7 @@ import type { LangiumDocument, LangiumDocuments } from './documents.js';
 export interface IndexManager {
 
     /**
-     * Removes the specified document URI from the index.
+     * Remove the specified document URI from the index.
      * Necessary when documents are deleted and not referenceable anymore.
      *
      * @param uri The URI of the document for which index data shall be removed
@@ -33,7 +33,17 @@ export interface IndexManager {
     remove(uri: URI): void;
 
     /**
-     * Updates the information about the exportable content of a document inside the index.
+     * Remove only the information about the exportable content of a document.
+     */
+    removeContent(uri: URI): void;
+
+    /**
+     * Remove only the information about the cross-references of a document.
+     */
+    removeReferences(uri: URI): void;
+
+    /**
+     * Update the information about the exportable content of a document inside the index.
      *
      * @param document Document to be updated
      * @param cancelToken Indicates when to cancel the current operation.
@@ -42,7 +52,7 @@ export interface IndexManager {
     updateContent(document: LangiumDocument, cancelToken?: CancellationToken): Promise<void>;
 
     /**
-     * Updates the information about the cross-references of a document inside the index.
+     * Update the information about the cross-references of a document inside the index.
      *
      * @param document Document to be updated
      * @param cancelToken Indicates when to cancel the current operation.
@@ -145,9 +155,18 @@ export class DefaultIndexManager implements IndexManager {
     }
 
     remove(uri: URI): void {
+        this.removeContent(uri);
+        this.removeReferences(uri);
+    }
+
+    removeContent(uri: URI): void {
         const uriString = uri.toString();
         this.symbolIndex.delete(uriString);
         this.symbolByTypeIndex.clear(uriString);
+    }
+
+    removeReferences(uri: URI): void {
+        const uriString = uri.toString();
         this.referenceIndex.delete(uriString);
     }
 
