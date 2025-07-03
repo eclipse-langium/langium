@@ -4,8 +4,8 @@
  * terms of the MIT License, which is available in the project root.
  ******************************************************************************/
 
-import { stream } from 'langium';
-import { CompositeGeneratorNode, EOL, NL, joinToNode, expandToNode as n, expandToString as s, toString } from 'langium/generate';
+import { EMPTY_STREAM, stream } from 'langium';
+import { CompositeGeneratorNode, EOL, NL, type NewLineNode, joinToNode, expandToNode as n, expandToString as s, toString } from 'langium/generate';
 import { describe, expect, test } from 'vitest';
 
 // deactivate the eslint check 'no-unexpected-multiline' with the message
@@ -873,7 +873,7 @@ describe('Multiple nested substitution templates', () => {
 });
 
 describe('Joining lists', () => {
-    test('ForEach loop with empty iterable', () => {
+    test('Joining an empty iterable 1', () => {
         const node = n`
             Data:
               ${joinToNode([], String, { appendNewLineIfNotEmpty: true})}
@@ -885,10 +885,10 @@ describe('Joining lists', () => {
             Footer:
         `);
     });
-    test('ForEach loop with empty iterable 2 (\'toGenerated\' === \'undefined\')', () => {
+    test('Joining an empty iterable 2 (\'toGenerated\' === \'undefined\')', () => {
         const node = n`
             Data:
-              ${joinToNode([], undefined, { appendNewLineIfNotEmpty: true})}
+              ${joinToNode(EMPTY_STREAM, undefined, { appendNewLineIfNotEmpty: true})}
             Footer:
         `;
         const text = toString(node);
@@ -897,10 +897,10 @@ describe('Joining lists', () => {
             Footer:
         `);
     });
-    test('ForEach loop with empty iterable 3 (no \'toGenerated\')', () => {
+    test('Joining an empty iterable 3 (no \'toGenerated\')', () => {
         const node = n`
             Data:
-              ${joinToNode([], { appendNewLineIfNotEmpty: true})}
+              ${joinToNode(new Set(), { appendNewLineIfNotEmpty: true})}
             Footer:
         `;
         const text = toString(node);
@@ -909,7 +909,7 @@ describe('Joining lists', () => {
             Footer:
         `);
     });
-    test('ForEach loop with Array input (no \'toGenerated\', no \'options\')', () => {
+    test('Joining an Array input (no \'toGenerated\', no \'options\')', () => {
         const node = n`
             Data:
               ${joinToNode(['a', 'b'])}
@@ -920,7 +920,7 @@ describe('Joining lists', () => {
               ab
         `);
     });
-    test('ForEach loop with separator and Array input', () => {
+    test('Joining with separator and Array input 1', () => {
         const node = n`
             Data:
               ${joinToNode(['a', 'b'], String, { separator: ', ' })}
@@ -931,7 +931,7 @@ describe('Joining lists', () => {
               a, b
         `);
     });
-    test('ForEach loop with separator and Array input 2 (\'toGenerated\' === \'undefined\')', () => {
+    test('Joining with separator and Array input 2 (\'toGenerated\' === \'undefined\')', () => {
         const node = n`
             Data:
               ${joinToNode(['a', 'b'], undefined, { separator: ', ' })}
@@ -942,7 +942,7 @@ describe('Joining lists', () => {
               a, b
         `);
     });
-    test('ForEach loop with separator and Array input 3 (no \'toGenerated\')', () => {
+    test('Joining with separator and Array input 3 (no \'toGenerated\')', () => {
         const node = n`
             Data:
               ${joinToNode(['a', 'b'], { separator: ', ' })}
@@ -953,7 +953,7 @@ describe('Joining lists', () => {
               a, b
         `);
     });
-    test('ForEach loop with separator and Array of generator nodes input', () => {
+    test('Joining with separator and Array of generator nodes input 1', () => {
         const node = n`
             Data:
               ${joinToNode([n`a`, ' b', NL], n => n, { separator: ',' })}
@@ -965,7 +965,7 @@ describe('Joining lists', () => {
 
         `);
     });
-    test('ForEach loop with separator and Array of generator nodes input 2 (\'toGenerated\' === \'undefined\')', () => {
+    test('Joining with separator and Array of generator nodes input 2 (\'toGenerated\' === \'undefined\')', () => {
         const node = n`
             Data:
               ${joinToNode([n`a`, ' b', NL], undefined, { separator: ',' })}
@@ -977,7 +977,7 @@ describe('Joining lists', () => {
 
         `);
     });
-    test('ForEach loop with separator and Array of generator nodes input 3 (no \'toGenerated\')', () => {
+    test('Joining with separator and Array of generator nodes input 3 (no \'toGenerated\')', () => {
         const node = n`
             Data:
               ${joinToNode([n`a`, ' b', NL], { separator: ',' })}
@@ -989,7 +989,7 @@ describe('Joining lists', () => {
 
         `);
     });
-    test('ForEach loop with element prefix and Array input', () => {
+    test('Joining with element prefix and Array input 1', () => {
         const node = n`
             Data:
               ${joinToNode(['a', 'b'], String, { prefix: ',' })}
@@ -1000,7 +1000,7 @@ describe('Joining lists', () => {
               ,a,b
         `);
     });
-    test('ForEach loop with element prefix and Array input 2 (function)', () => {
+    test('Joining with element prefix and Array input 2 (function)', () => {
         const node = n`
             Data:
               ${joinToNode(['a', 'b'], String, { prefix: (e, i) => i === 0 ? '': ', ' })}
@@ -1011,7 +1011,7 @@ describe('Joining lists', () => {
               a, b
         `);
     });
-    test('ForEach loop with element suffix and Set input', () => {
+    test('Joining with element suffix and Set input 1', () => {
         const node = n`
             Data:
               ${joinToNode(new Set(['a', 'b']), String, { suffix: ',' })}
@@ -1022,7 +1022,7 @@ describe('Joining lists', () => {
               a,b,
         `);
     });
-    test('ForEach loop with element suffix and Set input 2 (function)', () => {
+    test('Joining with element suffix and Set input 2 (function)', () => {
         const node = n`
             Data:
               ${joinToNode(new Set(['a', 'b']), String, { suffix: (e, i, isLast) => isLast ? '': ', ' })}
@@ -1033,7 +1033,7 @@ describe('Joining lists', () => {
               a, b
         `);
     });
-    test('ForEach loop with Stream input (no \'toGenerated\', no \'options\')', () => {
+    test('Joining with Stream input (no \'toGenerated\', no \'options\')', () => {
         const node = n`
             Data:
               ${joinToNode(stream('a', 'b'))}
@@ -1044,7 +1044,35 @@ describe('Joining lists', () => {
               ab
         `);
     });
-    test('ForEach loop with line breaks and Stream input', () => {
+    test('Joining with filter function', () => {
+        const node = n`
+            Data:
+              ${joinToNode(stream(['a', 'b']), String, { filter: e => e !== 'a' })}
+        `;
+        const text = toString(node);
+        expect(text).toBe(s`
+            Data:
+              b
+        `);
+    });
+
+    test('Joining with type guard filter function, prefix, and separator', () => {
+        const isAorC =      (e: string): e is 'a' | 'c' => e === 'a' || e === 'c';
+        const toGenerated = (e: 'a' | 'c')              => String(e);
+        const prefix =      (e: 'a' | 'c')              => e === 'a' ? '*' : undefined;
+
+        const node = n`
+            Data:
+              ${joinToNode(stream(['a', 'b', 'c']), toGenerated, { filter: isAorC, prefix, separator: ','})}
+        `;
+        const text = toString(node);
+        expect(text).toBe(s`
+            Data:
+              *a,c
+        `);
+    });
+
+    test('Joining with line breaks and Stream input', () => {
         const node = n`
             Data:
               ${joinToNode(stream(['a', 'b']), String, { appendNewLineIfNotEmpty: true})}
@@ -1057,7 +1085,7 @@ describe('Joining lists', () => {
             
         `);
     });
-    test('ForEach loop with line breaks and skip line break after last line and Stream input', () => {
+    test('Joining with line breaks and skip line break after last line and Stream input', () => {
         const node = n`
             Data:
               ${joinToNode(stream(['a', 'b']), String, { appendNewLineIfNotEmpty: true, skipNewLineAfterLastItem: true})}
@@ -1069,7 +1097,7 @@ describe('Joining lists', () => {
               b
         `);
     });
-    test('ForEach loop with separator, line breaks, and Stream input', () => {
+    test('Joining with separator, line breaks, and Stream input', () => {
         const node = n`
             Data:
               ${joinToNode(stream(['a', undefined, 'b']), String, { separator: ',', appendNewLineIfNotEmpty: true})}
@@ -1083,7 +1111,7 @@ describe('Joining lists', () => {
             
         `);
     });
-    test('ForEach loop with separator, line breaks and skip line break after last line, and Stream input', () => {
+    test('Joining with separator, line breaks and skip line break after last line, and Stream input', () => {
         const node = n`
             Data:
               ${joinToNode(stream(['a', undefined, 'b']), String, { separator: ',', appendNewLineIfNotEmpty: true, skipNewLineAfterLastItem: true})}
@@ -1096,7 +1124,7 @@ describe('Joining lists', () => {
               b
         `);
     });
-    test('ForEach loop with omitted `undefined`, separator, line breaks and Stream input', () => {
+    test('Joining with omitted `undefined`, separator, line breaks and Stream input', () => {
         const node = n`
             Data:
               ${joinToNode(stream(['a', undefined, 'b']), e => e && String(e), { separator: ',', appendNewLineIfNotEmpty: true})}
@@ -1109,7 +1137,7 @@ describe('Joining lists', () => {
             
         `);
     });
-    test('ForEach loop with omitted `undefined`, separator, line breaks and skip line break after last line, and Stream input', () => {
+    test('Joining with omitted `undefined`, separator, line breaks and skip line break after last line, and Stream input', () => {
         const node = n`
             Data:
               ${joinToNode(stream(['a', undefined, 'b']), e => e && String(e), { separator: ',', appendNewLineIfNotEmpty: true, skipNewLineAfterLastItem: true})}
@@ -1121,8 +1149,7 @@ describe('Joining lists', () => {
               b
         `);
     });
-
-    test('Nested ForEach loop with empty iterable followed by an indented line', () => {
+    test('Nested joining of empty iterable followed by an indented line', () => {
         const node = n`
             ${joinToNode([], { appendNewLineIfNotEmpty: true})}
             a
@@ -1132,8 +1159,7 @@ describe('Joining lists', () => {
             a
         `);
     });
-
-    test('ForEach loop with 3 line breaks if not empty', () => {
+    test('Joining with 3 line breaks if not empty', () => {
         const node = n`
             Data:
               ${joinToNode(stream(['a', ' ', 'b']), String, { appendNewLineIfNotEmpty: 3})}
@@ -1150,7 +1176,7 @@ describe('Joining lists', () => {
             
         `);
     });
-    test('ForEach loop with 6 line breaks if not empty and skip line break after last line', () => {
+    test('Joining with 6 line breaks if not empty and skip line breaks after last line if not empty', () => {
         const node = n`
             Data:
               ${joinToNode(stream(['a', '\t', 'b']), String, { appendNewLineIfNotEmpty: 6, skipNewLineAfterLastItem: true})}
@@ -1167,7 +1193,18 @@ describe('Joining lists', () => {
               b
         `);
     });
-
+    test('Joining with a computed number of line breaks', () => {
+        const lbs: NewLineNode.NoOfLineBreaks = [].length === 0 ? 2 : 3;
+        const node = n`
+              ${joinToNode(stream(['a', '\t', 'b']), String, { appendNewLineIfNotEmpty: lbs, skipNewLineAfterLastItem: true})}
+        `;
+        const text = toString(node);
+        expect(text).toBe(s`
+              a
+            
+              b
+        `);
+    });
 });
 
 describe('Appending templates to existing nodes', () => {

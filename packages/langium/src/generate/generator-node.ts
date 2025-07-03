@@ -1118,10 +1118,10 @@ export function traceToNodeIf<T extends AstNode>(condition: boolean, source: T |
 export class IndentNode extends CompositeGeneratorNode {
 
     readonly indentation?: string;
-    readonly indentImmediately;
-    readonly indentEmptyLines;
+    readonly indentImmediately: boolean;
+    readonly indentEmptyLines: boolean;
 
-    constructor(indentation?: string | number, indentImmediately = true, indentEmptyLines = false) {
+    constructor(indentation?: string | number, indentImmediately: boolean = true, indentEmptyLines: boolean = false) {
         super();
         if (typeof (indentation) === 'string') {
             this.indentation = indentation;
