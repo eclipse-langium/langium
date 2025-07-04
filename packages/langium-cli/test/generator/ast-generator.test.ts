@@ -4,17 +4,17 @@
  * terms of the MIT License, which is available in the project root.
  ******************************************************************************/
 
-import { AstUtils, EmptyFileSystem, MultiMap, URI, type Grammar, type LangiumDocument } from 'langium';
+import { AstUtils, EmptyFileSystem, type Grammar, MultiMap, stream, URI, type LangiumDocument } from 'langium';
 import { CompositeGeneratorNode, expandToNode, expandToString, IndentNode, normalizeEOL, toString, type Generated } from 'langium/generate';
 import { createLangiumGrammarServices } from 'langium/grammar';
 import { clearDocuments, expectNoIssues, parseHelper } from 'langium/test';
 import { beforeEach, describe, expect, test } from 'vitest';
-import { generate } from '../../src/generate.js';
-import { generateAstMultiFileProject, generateAstSingleFileProject } from '../../src/generator/ast-generator.js';
-import { getAstIdentifierForGrammarFile } from '../../src/generator/langium-util.js';
-import type { LangiumConfig } from '../../src/package-types.js';
-import { RelativePath } from '../../src/package-types.js';
 import { DiagnosticSeverity } from 'vscode-languageserver-types';
+import { generate } from '../../src/generate.js';
+import { generateAstMultiFileProject, generateAstMultiLanguageProject, generateAstSingleFileProject } from '../../src/generator/ast-generator.js';
+import { getAstIdentifierForGrammarFile } from '../../src/generator/langium-util.js';
+import type { LangiumConfig, LangiumLanguageConfig } from '../../src/package-types.js';
+import { RelativePath } from '../../src/package-types.js';
 
 const services = createLangiumGrammarServices(EmptyFileSystem);
 const parse = parseHelper<Grammar>(services.grammar);
@@ -717,11 +717,8 @@ describe('Ast generator (with multiple *.langium files)', () => {
         await clearDocuments(services.shared); // ensure that *.langium files from previous test cases are not existing anymore
     });
 
-    // TODO no ID conflict with unrelated grammars!
-    // TODO multi-language projects
-
     test('Multi-file project: Grammar "one" uses a type which is inferred in file "two"', async () => {
-        await testMultiFilesProject(
+        await testMultiProject(
             [{
                 path: 'one.langium',
                 languageID: 'one',
@@ -838,9 +835,8 @@ describe('Ast generator (with multiple *.langium files)', () => {
         );
     });
 
-    // TODO alle aufgelisteten Typen korrekt?
     test('Multi-file project: Types use types which are declared in (transitively) imported files', async () => {
-        await testMultiFilesProject(
+        await testMultiProject(
             [{
                 path: 'one.langium',
                 languageID: 'one',
@@ -991,7 +987,7 @@ describe('Ast generator (with multiple *.langium files)', () => {
     });
 
     test('Multi-file project: Same name "test" for project, file name and language id', async () => {
-        await testMultiFilesProject(
+        await testMultiProject(
             [{
                 path: 'test.langium',
                 languageID: 'test',
@@ -1060,7 +1056,7 @@ describe('Ast generator (with multiple *.langium files)', () => {
     });
 
     test('Multi-file project: Same name "test" for project, file name and language id (fails with grammar file names which produce non-unique identifiers)', async () => {
-        expect(async () => await testMultiFilesProject(
+        expect(async () => await testMultiProject(
             [{
                 path: 'test.langium',
                 languageID: 'test',
@@ -1087,7 +1083,7 @@ describe('Ast generator (with multiple *.langium files)', () => {
     });
 
     test('Multi-file project: All unused terminals are listed, since they might be used by other grammars', async () => {
-        await testMultiFilesProject(
+        await testMultiProject(
             [{
                 path: 'one.langium',
                 languageID: 'one',
@@ -1152,6 +1148,288 @@ describe('Ast generator (with multiple *.langium files)', () => {
         );
     });
 
+    test('Multi-language project: 2 languages, both import another grammar file', async () => {
+        await testMultiProject(
+            [{
+                path: 'one.langium',
+                languageID: 'one',
+                grammarContent: `
+                    grammar OneGrammar
+                    import "three";
+                    entry Entry1: 'a' a1=ID;
+                `,
+                expectedAstContentParts: [
+                    expandToString`
+                        export const testFileOneTerminals = {
+                        };
+
+                        export type testFileOneTerminalNames = keyof typeof testFileOneTerminals;
+
+                        export type testFileOneKeywordNames =
+                            | "a";
+
+                        export type testFileOneTokenNames = testFileOneTerminalNames | testFileOneKeywordNames;
+                    `, expandToString`
+                        export const testLanguageOneGrammarTerminals = {
+                            ...testFileOneTerminals,
+                            ...testFileThreeTerminals,
+                        };
+
+                        export type testLanguageOneGrammarTerminalNames = keyof typeof testLanguageOneGrammarTerminals;
+
+                        export type testLanguageOneGrammarKeywordNames = testFileOneKeywordNames | testFileThreeKeywordNames;
+
+                        export type testLanguageOneGrammarTokenNames = testLanguageOneGrammarTerminalNames | testLanguageOneGrammarKeywordNames;
+                    `
+                ],
+            }, {
+                path: 'two.langium',
+                languageID: 'two',
+                grammarContent: `
+                    grammar TwoGrammar
+                    import "three";
+                    entry Entry2: 'b' b1=INT;
+                `,
+                expectedAstContentParts: [
+                    expandToString`
+                        export const testFileTwoTerminals = {
+                        };
+
+                        export type testFileTwoTerminalNames = keyof typeof testFileTwoTerminals;
+
+                        export type testFileTwoKeywordNames =
+                            | "b";
+
+                        export type testFileTwoTokenNames = testFileTwoTerminalNames | testFileTwoKeywordNames;
+                    `, expandToString`
+                        export const testLanguageTwoGrammarTerminals = {
+                            ...testFileThreeTerminals,
+                            ...testFileTwoTerminals,
+                        };
+
+                        export type testLanguageTwoGrammarTerminalNames = keyof typeof testLanguageTwoGrammarTerminals;
+
+                        export type testLanguageTwoGrammarKeywordNames = testFileThreeKeywordNames | testFileTwoKeywordNames;
+
+                        export type testLanguageTwoGrammarTokenNames = testLanguageTwoGrammarTerminalNames | testLanguageTwoGrammarKeywordNames;
+                    `
+                ],
+            }, {
+                path: 'three.langium',
+                languageID: undefined,
+                grammarContent: `
+                    terminal ID: /[a-zA-Z]+/;
+                    terminal INT: /[0-9]+/;
+                    hidden terminal WS: /\s+/;
+                `,
+                expectedAstContentParts: [
+                    expandToString`
+                        export const testFileThreeTerminals = {
+                            ID: /[a-zA-Z]+/,
+                            INT: /[0-9]+/,
+                            WS: /s+/,
+                        };
+
+                        export type testFileThreeTerminalNames = keyof typeof testFileThreeTerminals;
+
+                        export type testFileThreeKeywordNames = never;
+
+                        export type testFileThreeTokenNames = testFileThreeTerminalNames | testFileThreeKeywordNames;
+                    `
+                ],
+            }],
+            [expandToString`
+                export const testTerminals = {
+                    ...testLanguageOneGrammarTerminals,
+                    ...testLanguageTwoGrammarTerminals,
+                };
+
+                export type testTerminalNames = keyof typeof testTerminals;
+
+                export type testKeywordNames = testLanguageOneGrammarKeywordNames | testLanguageTwoGrammarKeywordNames;
+
+                export type testTokenNames = testTerminalNames | testKeywordNames;
+            `, expandToString`
+                export type testFileOneAstType = {
+                    Entry1: Entry1
+                }
+
+                export type testFileTwoAstType = {
+                    Entry2: Entry2
+                }
+
+                export type testFileThreeAstType = {
+                }
+
+                export type testLanguageOneGrammarAstType = testFileOneAstType & testFileThreeAstType
+
+                export type testLanguageTwoGrammarAstType = testFileThreeAstType & testFileTwoAstType
+
+                export type testAstType = testLanguageOneGrammarAstType & testLanguageTwoGrammarAstType
+            `]
+        );
+    });
+
+    test('Multi-language project: 2 languages, both import a different grammar file which import each other', async () => {
+        await testMultiProject(
+            [{
+                path: 'one.langium',
+                languageID: 'one',
+                grammarContent: `
+                    grammar OneGrammar
+                    import "oneCommon";
+                    entry Entry1: 'a' a1=ID a2=C1;
+                `,
+                expectedAstContentParts: [
+                    expandToString`
+                        export type testFileOneAstType = {
+                            C1: C1
+                            C2: C2
+                            Entry1: Entry1
+                        }
+                    `, expandToString`
+                        export const testLanguageOneGrammarTerminals = {
+                            ...testFileOneTerminals,
+                            ...testFileOnecommonTerminals,
+                            ...testFileTwocommonTerminals,
+                        };
+
+                        export type testLanguageOneGrammarTerminalNames = keyof typeof testLanguageOneGrammarTerminals;
+
+                        export type testLanguageOneGrammarKeywordNames = testFileOneKeywordNames | testFileOnecommonKeywordNames | testFileTwocommonKeywordNames;
+
+                        export type testLanguageOneGrammarTokenNames = testLanguageOneGrammarTerminalNames | testLanguageOneGrammarKeywordNames;
+                    `
+                ],
+            }, {
+                path: 'two.langium',
+                languageID: 'two',
+                grammarContent: `
+                    grammar TwoGrammar
+                    import "twoCommon";
+                    entry Entry2: 'b' b1=INT b2=C2;
+                `,
+                expectedAstContentParts: [
+                    expandToString`
+                        export type testFileTwoAstType = {
+                            C1: C1
+                            C2: C2
+                            Entry2: Entry2
+                        }
+                    `, expandToString`
+                        export const testLanguageTwoGrammarTerminals = {
+                            ...testFileOnecommonTerminals,
+                            ...testFileTwoTerminals,
+                            ...testFileTwocommonTerminals,
+                        };
+
+                        export type testLanguageTwoGrammarTerminalNames = keyof typeof testLanguageTwoGrammarTerminals;
+
+                        export type testLanguageTwoGrammarKeywordNames = testFileOnecommonKeywordNames | testFileTwoKeywordNames | testFileTwocommonKeywordNames;
+
+                        export type testLanguageTwoGrammarTokenNames = testLanguageTwoGrammarTerminalNames | testLanguageTwoGrammarKeywordNames;
+                    `
+                ],
+            }, {
+                path: 'oneCommon.langium',
+                languageID: undefined,
+                grammarContent: `
+                    import "twoCommon"
+                    terminal ID: /[a-zA-Z]+/;
+                    hidden terminal WS: /\s+/;
+                    C1: 'c1' (c1=C2)?;
+                `,
+                expectedAstContentParts: [
+                    expandToString`
+                        export const testFileOnecommonTerminals = {
+                            ID: /[a-zA-Z]+/,
+                            WS: /s+/,
+                        };
+                    `, expandToString`
+                        export interface C1 extends langium.AstNode {
+                            readonly $container: C2 | Entry1;
+                            readonly $type: 'C1';
+                            c1?: C2;
+                        }
+
+                        export const C1 = {
+                            $type: 'C1',
+                            c1: 'c1'
+                        } as const;
+
+                        export function isC1(item: unknown): item is C1 {
+                            return reflection.isInstance(item, C1.$type);
+                        }
+                    `, expandToString`
+                        export type testFileOnecommonAstType = {
+                            C1: C1
+                            C2: C2
+                        }
+                    `
+                ],
+            }, {
+                path: 'twoCommon.langium',
+                languageID: undefined,
+                grammarContent: `
+                    import "oneCommon"
+                    terminal INT: /[0-9]+/;
+                    C2: 'c2' (c2=C1)?;
+                `,
+                expectedAstContentParts: [
+                    expandToString`
+                        export const testFileTwocommonTerminals = {
+                            INT: /[0-9]+/,
+                        };
+                    `, expandToString`
+                        export interface C2 extends langium.AstNode {
+                            readonly $container: C1 | Entry2;
+                            readonly $type: 'C2';
+                            c2?: C1;
+                        }
+
+                        export const C2 = {
+                            $type: 'C2',
+                            c2: 'c2'
+                        } as const;
+
+                        export function isC2(item: unknown): item is C2 {
+                            return reflection.isInstance(item, C2.$type);
+                        }
+                    `, expandToString`
+                        export type testFileTwocommonAstType = {
+                            C1: C1
+                            C2: C2
+                        }
+                    `
+                ],
+            }],
+            [expandToString`
+                export const testTerminals = {
+                    ...testLanguageOneGrammarTerminals,
+                    ...testLanguageTwoGrammarTerminals,
+                };
+
+                export type testTerminalNames = keyof typeof testTerminals;
+
+                export type testKeywordNames = testLanguageOneGrammarKeywordNames | testLanguageTwoGrammarKeywordNames;
+
+                export type testTokenNames = testTerminalNames | testKeywordNames;
+            `, expandToString`
+                export type testLanguageOneGrammarAstType = testFileOneAstType & testFileOnecommonAstType & testFileTwocommonAstType
+
+                export type testLanguageTwoGrammarAstType = testFileOnecommonAstType & testFileTwoAstType & testFileTwocommonAstType
+
+                export type testAstType = testLanguageOneGrammarAstType & testLanguageTwoGrammarAstType
+            `, expandToString`
+                export type testLanguageOneGrammarAstType = testFileOneAstType & testFileOnecommonAstType & testFileTwocommonAstType
+
+                export type testLanguageTwoGrammarAstType = testFileOnecommonAstType & testFileTwoAstType & testFileTwocommonAstType
+
+                export type testAstType = testLanguageOneGrammarAstType & testLanguageTwoGrammarAstType
+            `]
+        );
+    });
+
     test.skip('Use this test case for debugging the generation of the Arithmetics example (single-file project)', async () => {
         await generate({ file: 'examples/arithmetics/langium-config.json' });
     });
@@ -1169,15 +1447,7 @@ interface GrammarFile {
     grammarContent: string;
     expectedAstContentParts: string[];
 }
-/**
- *
- * @param grammarFiles at least two grammar files
- * @param moreExpectedParts the main 'ast.ts' content
- */
-async function testMultiFilesProject(grammarFiles: GrammarFile[], moreExpectedParts: string[]): Promise<void> {
-    if (grammarFiles.length <= 1) {
-        throw new Error('At least two grammar files are expected here');
-    }
+async function testMultiProject(grammarFiles: GrammarFile[], moreExpectedParts: string[]): Promise<void> {
     // collect all information
     const config: LangiumConfig = {
         [RelativePath]: './',
@@ -1186,6 +1456,7 @@ async function testMultiFilesProject(grammarFiles: GrammarFile[], moreExpectedPa
     };
     const documents: LangiumDocument[] = [];
     const expectedParts: string[] = [];
+    const configMap: Map<LangiumDocument, LangiumLanguageConfig> = new Map();
     for (const file of grammarFiles) {
         const grammarFile = `file:///${file.path}`;
         const uri = URI.parse(grammarFile);
@@ -1194,10 +1465,12 @@ async function testMultiFilesProject(grammarFiles: GrammarFile[], moreExpectedPa
         documents.push(document);
         expectedParts.push(...file.expectedAstContentParts);
         if (file.languageID) { // use this grammar file as entry point for a language
-            config.languages.push({
+            const languageConfig = {
                 id: file.languageID,
                 grammar: grammarFile,
-            });
+            };
+            config.languages.push(languageConfig);
+            configMap.set(document, languageConfig);
         }
     }
     expectedParts.push(...moreExpectedParts);
@@ -1223,7 +1496,9 @@ async function testMultiFilesProject(grammarFiles: GrammarFile[], moreExpectedPa
     }
 
     // generate the ast.ts
-    const generated = generateAstMultiFileProject(services.grammar, config, allGrammars);
+    const generated = configMap.size === 1
+        ? generateAstMultiFileProject(services.grammar, config, allGrammars)
+        : generateAstMultiLanguageProject(services.grammar, stream(configMap.entries()).reduce((prev, cur) => { prev.set(cur[0].parseResult.value as Grammar, cur[1]); return prev; }, new Map<Grammar, LangiumLanguageConfig>()), config, allGrammars);
 
     // check the generated content
     expectedParts.forEach(part => expect(generated).toContain(part));

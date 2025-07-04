@@ -13,8 +13,6 @@ import type { LangiumConfig, LangiumLanguageConfig } from '../package-types.js';
 import { collectKeywords, collectTerminalRegexps, getAstIdentifierForGrammarFile } from './langium-util.js';
 import { generatedHeader } from './node-util.js';
 
-// TODO test cases: transitive Imports von utility-Langium documents, *.langium files in different folders (oder limitation?), no keywords in grammar file at all
-
 function generateAstHeader(langiumConfig: LangiumConfig): CompositeGeneratorNode {
     const importFrom = langiumConfig.langiumInternal ? `../../syntax-tree${langiumConfig.importExtension}` : 'langium';
     return expandToNode`
