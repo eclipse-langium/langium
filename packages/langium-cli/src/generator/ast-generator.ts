@@ -256,7 +256,6 @@ function generateTerminalConstants(grammars: Grammar[], name: string): Generated
 
 function generateTerminalConstantsComposed(identifiers: string[], name: string): Generated {
     identifiers.sort(); // in-place, for a stable order
-    // Note that type definitions (type X, constant X, function isX) can be imported from their 'ast-xxx.ts' files and don't need to be repeated here
     return expandToNode`
         export const ${name}Terminals = {
             ${joinToNode(

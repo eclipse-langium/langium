@@ -332,7 +332,7 @@ export async function runGenerator(config: LangiumConfig, options: GenerateOptio
 
     // ast.ts
     const isSingleLanguage = config.languages.length === 1;
-    const isSingleFile = allGrammars.length === 1 && isSingleLanguage /* handle special case: multiple languages use the same *.langium file */;
+    const isSingleFile = allGrammars.length === 1 && isSingleLanguage /* handles a special case: multiple languages use the same *.langium file */;
     let embeddedGrammars: Grammar[];
     if (isSingleFile) {
         // merge all grammars into a single grammar and use it

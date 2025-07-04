@@ -4,8 +4,8 @@
  * terms of the MIT License, which is available in the project root.
  ******************************************************************************/
 
-import { type LangiumCoreServices } from '../../index.js';
 import { type Grammar } from '../../languages/generated/ast.js';
+import { type LangiumCoreServices } from '../../services.js';
 import type { ValidationAstTypes } from './type-collector/all-types.js';
 import { collectTypeResources } from './type-collector/all-types.js';
 import type { PlainAstTypes, PlainInterface, PlainUnion } from './type-collector/plain-types.js';
