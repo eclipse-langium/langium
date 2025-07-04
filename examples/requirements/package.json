@@ -2,7 +2,7 @@
   "name": "langium-requirements-dsl",
   "displayName": "Requirements DSL",
   "description": "A demo showing how to combine two DSLs",
-  "version": "3.5.0",
+  "version": "3.6.0",
   "engines": {
     "vscode": "^1.67.0"
   },
@@ -78,8 +78,8 @@
     "langium-cli": "~3.5.0"
   },
   "volta": {
-      "node": "20.19.2",
-      "npm": "10.8.2"
+    "node": "20.19.2",
+    "npm": "10.8.2"
   },
   "repository": {
     "type": "git",

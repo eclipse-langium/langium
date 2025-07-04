@@ -1,7 +1,7 @@
 {
   "name": "langium-vscode",
   "publisher": "langium",
-  "version": "3.5.0",
+  "version": "3.6.0",
   "displayName": "Langium",
   "description": "Support for the Langium Grammar Language",
   "homepage": "https://langium.org",
