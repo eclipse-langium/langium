@@ -46,6 +46,6 @@ function createMinimalGrammarServices(): LangiumCoreServices {
 export function loadGrammarFromJson(json: string): ast.Grammar {
     const services = createMinimalGrammarServices();
     const astNode = services.serializer.JsonSerializer.deserialize(json) as Mutable<ast.Grammar>;
-    services.shared.workspace.LangiumDocumentFactory.fromModel(astNode, URI.parse(`memory://${astNode.name ?? 'grammar'}.langium`));
+    services.shared.workspace.LangiumDocumentFactory.fromModel(astNode, URI.parse(`memory:/${astNode.name ?? 'grammar'}.langium`));
     return astNode;
 }
