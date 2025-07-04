@@ -170,7 +170,7 @@ export async function createServicesForGrammar<L extends LangiumServices = Langi
     sharedModule?: Module<S, unknown>
 }): Promise<L> {
     const grammarServices = config.grammarServices ?? createLangiumGrammarServices(EmptyFileSystem).grammar;
-    const uri = URI.parse('memory:///grammar.langium');
+    const uri = URI.parse('memory:/grammar.langium');
     const factory = grammarServices.shared.workspace.LangiumDocumentFactory;
     const grammarDocument = typeof config.grammar === 'string'
         ? factory.fromString(config.grammar, uri)

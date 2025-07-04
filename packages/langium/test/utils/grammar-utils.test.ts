@@ -6,7 +6,7 @@
 
 import type { Grammar } from 'langium';
 import { describe, expect, test } from 'vitest';
-import { EmptyFileSystem, GrammarUtils } from 'langium';
+import { AstUtils, EmptyFileSystem, GrammarUtils } from 'langium';
 import { createLangiumGrammarServices } from 'langium/grammar';
 import { parseHelper } from 'langium/test';
 
@@ -35,6 +35,15 @@ describe('Grammar Utils', () => {
 
         // assert
         expect(reachableRules).toContain('Ws');
+    });
+
+    test('Can load the grammar document from the services', () => {
+        const grammar = services.grammar.Grammar;
+        expect(grammar).toBeDefined();
+        const document = AstUtils.getDocument(grammar);
+        expect(document).toBeDefined();
+        const textDocument = document.textDocument;
+        expect(textDocument).toBeDefined();
     });
 
 });
