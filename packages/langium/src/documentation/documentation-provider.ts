@@ -51,7 +51,7 @@ export class JSDocDocumentationProvider implements DocumentationProvider {
     }
 
     protected documentationLinkRenderer(node: AstNode, name: string, display: string): string | undefined {
-        const description = this.findNameInPrecomputedScopes(node, name) ?? this.findNameInGlobalScope(node, name);
+        const description = this.findNameInLocalSymbols(node, name) ?? this.findNameInGlobalScope(node, name);
         if (description && description.nameSegment) {
             const line = description.nameSegment.range.start.line + 1;
             const character = description.nameSegment.range.start.character + 1;
@@ -67,15 +67,15 @@ export class JSDocDocumentationProvider implements DocumentationProvider {
         return undefined;
     }
 
-    protected findNameInPrecomputedScopes(node: AstNode, name: string): AstNodeDescription | undefined {
+    protected findNameInLocalSymbols(node: AstNode, name: string): AstNodeDescription | undefined {
         const document = getDocument(node);
-        const precomputed = document.precomputedScopes;
+        const precomputed = document.localSymbols;
         if (!precomputed) {
             return undefined;
         }
         let currentNode: AstNode | undefined = node;
         do {
-            const allDescriptions = precomputed.get(currentNode);
+            const allDescriptions = precomputed.getStream(currentNode);
             const description = allDescriptions.find(e => e.name === name);
             if (description) {
                 return description;

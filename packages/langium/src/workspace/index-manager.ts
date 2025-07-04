@@ -153,7 +153,7 @@ export class DefaultIndexManager implements IndexManager {
 
     async updateContent(document: LangiumDocument, cancelToken = CancellationToken.None): Promise<void> {
         const services = this.serviceRegistry.getServices(document.uri);
-        const exports = await services.references.ScopeComputation.computeExports(document, cancelToken);
+        const exports = await services.references.ScopeComputation.collectExportedSymbols(document, cancelToken);
         const uri = document.uri.toString();
         this.symbolIndex.set(uri, exports);
         this.symbolByTypeIndex.clear(uri);

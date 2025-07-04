@@ -19,7 +19,6 @@ import type { ParseResult, ParserOptions } from '../parser/langium-parser.js';
 import type { ServiceRegistry } from '../service-registry.js';
 import type { LangiumSharedCoreServices } from '../services.js';
 import type { AstNode, AstNodeDescription, MultiReference, Mutable, Reference } from '../syntax-tree.js';
-import type { MultiMap } from '../utils/collections.js';
 import type { Stream } from '../utils/stream.js';
 import { TextDocument } from './documents.js';
 import { CancellationToken } from '../utils/cancellation.js';
@@ -40,7 +39,7 @@ export interface LangiumDocument<T extends AstNode = AstNode> {
     /** The parse result holds the Abstract Syntax Tree (AST) and potentially also parser / lexer errors */
     parseResult: ParseResult<T>;
     /** Result of the scope precomputation phase */
-    precomputedScopes?: PrecomputedScopes;
+    localSymbols?: LocalSymbols;
     /** An array of all cross-references found in the AST while linking */
     references: Array<Reference | MultiReference>;
     /** Result of the validation phase */
@@ -69,8 +68,8 @@ export enum DocumentState {
      */
     IndexedContent = 2,
     /**
-     * The `ScopeComputation` service has processed this document. This means the local symbols
-     * are stored in a MultiMap so they can be looked up by the `ScopeProvider` service.
+     * The `ScopeComputation` service has processed this document. This means the document's locally accessible
+     * symbols are captured in a `DocumentSymbols` table and can be looked up by the `ScopeProvider` service.
      * Once a document has reached this state, you may follow every reference - it will lazily
      * resolve its `ref` property and yield either the target AST node or `undefined` in case
      * the target is not in scope.
@@ -95,10 +94,17 @@ export enum DocumentState {
 }
 
 /**
- * Result of the scope precomputation phase (`ScopeComputation` service).
- * It maps every AST node to the set of symbols that are visible in the subtree of that node.
+ * Result of the scope pre-computation phase performed by the `ScopeComputation` service.
+ * It maps AST nodes of a document to their corresponding sets of symbols that are accessible
+ * by those nodes/subtrees, provided any symbols corresponding specifically to those nodes/subtrees exist.
+ * The sets of symbols are assumed to be un-ordered. Hence, no assumptions about the order of
+ * symbols in the sets should be made. The default `ScopeComputation` implementation uses an
+ * instance of `MultiMap<AstNode, AstNodeDescription>`, which conforms to this interface.
  */
-export type PrecomputedScopes = MultiMap<AstNode, AstNodeDescription>
+export interface LocalSymbols {
+    has(node: AstNode): boolean
+    getStream(key: AstNode): Stream<AstNodeDescription>
+}
 
 export interface DocumentSegment {
     readonly range: Range
@@ -466,7 +472,7 @@ export class DefaultLangiumDocuments implements LangiumDocuments {
             const linker = this.serviceRegistry.getServices(uri).references.Linker;
             linker.unlink(langiumDoc);
             langiumDoc.state = DocumentState.Changed;
-            langiumDoc.precomputedScopes = undefined;
+            langiumDoc.localSymbols = undefined;
             langiumDoc.diagnostics = undefined;
         }
         return langiumDoc;
