@@ -97,7 +97,9 @@ export enum DocumentState {
  * Result of the scope pre-computation phase performed by the `ScopeComputation` service.
  * It maps AST nodes of a document to their corresponding sets of symbols that are accessible
  * by those nodes/subtrees, provided any symbols corresponding specifically to those nodes/subtrees exist.
- * The sets of symbols are assumed to be un-ordered. Hence, no assumptions about the order of symbols in the sets should be made.
+ * The sets of symbols are assumed to be un-ordered. Hence, no assumptions about the order of
+ * symbols in the sets should be made. The default `ScopeComputation` implementation uses an
+ * instance of `MultiMap<AstNode, AstNodeDescription>`, which conforms to this interface.
  */
 export interface LocalSymbols {
     has(node: AstNode): boolean

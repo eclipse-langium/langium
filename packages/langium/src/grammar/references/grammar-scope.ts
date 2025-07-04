@@ -8,7 +8,6 @@ import type { Scope } from '../../references/scope.js';
 import type { LangiumCoreServices } from '../../services.js';
 import type { AstNode, AstNodeDescription, ReferenceInfo } from '../../syntax-tree.js';
 import type { MultiMap } from '../../utils/collections.js';
-import type { Stream } from '../../utils/stream.js';
 import type { AstNodeLocator } from '../../workspace/ast-node-locator.js';
 import type { DocumentSegment, LangiumDocument, LangiumDocuments } from '../../workspace/documents.js';
 import type { Grammar } from '../../languages/generated/ast.js';
@@ -54,20 +53,19 @@ export class LangiumGrammarScopeProvider extends DefaultScopeProvider {
     }
 
     private getTypeScope(referenceType: string, context: ReferenceInfo): Scope {
-        let localScope: Stream<AstNodeDescription> | undefined;
         const localSymbols = getDocument(context.container).localSymbols;
         const rootNode = findRootNode(context.container);
-        if (localSymbols && rootNode) {
-            if (localSymbols.has(rootNode)) {
-                localScope = localSymbols.getStream(rootNode).filter(des => des.type === Interface.$type || des.type === Type.$type || des.type === InferredType.$type);
-            }
-        }
 
-        const globalScope = this.getGlobalScope(referenceType, context);
-        if (localScope) {
+        if (localSymbols && rootNode && localSymbols.has(rootNode)) {
+            const globalScope = this.getGlobalScope(referenceType, context);
+            const localScope = localSymbols.getStream(rootNode).filter(
+                des => des.type === Interface.$type || des.type === Type.$type || des.type === InferredType.$type
+            );
+
             return this.createScope(localScope, globalScope);
+
         } else {
-            return globalScope;
+            return this.getGlobalScope(referenceType, context);
         }
     }
 
