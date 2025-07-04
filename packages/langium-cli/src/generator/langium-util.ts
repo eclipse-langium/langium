@@ -27,9 +27,9 @@ function padZeroes(i: number): string {
 
 export function collectKeywords(grammar: Grammar): string[] {
     const keywords = new Set<string>();
-    const reachableRules = GrammarUtils.getAllReachableRules(grammar, false);
+    const allRules = grammar.rules; // since this grammar might be imported by other grammars, all rules need to be investigated
 
-    for (const keyword of stream(reachableRules)
+    for (const keyword of stream(allRules)
         .filter(rule => GrammarAST.isParserRule(rule) || GrammarAST.isInfixRule(rule))
         .flatMap(rule => AstUtils.streamAllContents(rule).filter(GrammarAST.isKeyword))) {
         keywords.add(keyword.value);
@@ -40,8 +40,8 @@ export function collectKeywords(grammar: Grammar): string[] {
 
 export function collectTerminalRegexps(grammar: Grammar): Record<string, RegExp> {
     const result: Record<string, RegExp> = {};
-    const reachableRules = GrammarUtils.getAllReachableRules(grammar, false);
-    for (const terminalRule of stream(reachableRules).filter(GrammarAST.isTerminalRule)) {
+    const allRules = grammar.rules; // since this grammar might be imported by other grammars, all rules need to be investigated
+    for (const terminalRule of stream(allRules).filter(GrammarAST.isTerminalRule)) {
         const name = terminalRule.name;
         const regexp = GrammarUtils.terminalRegex(terminalRule);
         result[name] = regexp;

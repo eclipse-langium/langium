@@ -14,6 +14,7 @@ import { generateAstMultiFileProject, generateAstSingleFileProject } from '../..
 import { getAstIdentifierForGrammarFile } from '../../src/generator/langium-util.js';
 import type { LangiumConfig } from '../../src/package-types.js';
 import { RelativePath } from '../../src/package-types.js';
+import { DiagnosticSeverity } from 'vscode-languageserver-types';
 
 const services = createLangiumGrammarServices(EmptyFileSystem);
 const parse = parseHelper<Grammar>(services.grammar);
@@ -397,6 +398,7 @@ describe('Ast generator (with a single *.langium file in the project only)', () 
     `, expandToString`
         export const TestTerminals = {
             NUMBER: /(?:[0-9])/,
+            DIGIT: /[0-9]/,
         };
     `));
 
@@ -410,6 +412,7 @@ describe('Ast generator (with a single *.langium file in the project only)', () 
     `, expandToString`
         export const TestTerminals = {
             NUMBER: /([0-9])/,
+            DIGIT: /[0-9]/,
         };
     `));
 
@@ -423,6 +426,7 @@ describe('Ast generator (with a single *.langium file in the project only)', () 
     `, expandToString`
         export const TestTerminals = {
             NUMBER: /(?:([0-9]))+/,
+            DIGIT: /([0-9])/,
         };
     `));
 
@@ -436,6 +440,7 @@ describe('Ast generator (with a single *.langium file in the project only)', () 
     `, expandToString`
         export const TestTerminals = {
             NUMBER: /(?:([0-9])_?)+/,
+            DIGIT: /([0-9])_?/,
         };
     `));
 
@@ -712,7 +717,7 @@ describe('Ast generator (with multiple *.langium files)', () => {
         await clearDocuments(services.shared); // ensure that *.langium files from previous test cases are not existing anymore
     });
 
-    // TODO (un)used terminals, no ID conflict with unrelated grammars!
+    // TODO no ID conflict with unrelated grammars!
     // TODO multi-language projects
 
     test('Multi-file project: Grammar "one" uses a type which is inferred in file "two"', async () => {
@@ -1081,6 +1086,72 @@ describe('Ast generator (with multiple *.langium files)', () => {
         )).rejects.toThrowError("The grammars file:///test.langium, file:///myFolder/Test.langium result in the same identifier 'Test': Rename the file name(s) to make the grammar identifiers unique.");
     });
 
+    test('Multi-file project: All unused terminals are listed, since they might be used by other grammars', async () => {
+        await testMultiFilesProject(
+            [{
+                path: 'one.langium',
+                languageID: 'one',
+                grammarContent: `
+                    grammar OneGrammar
+                    import "two";
+                    entry Entry1: 'a' a1=ID1 a2=ID2 a3=ID3 a4=INT2;
+                    terminal ID1: /[a-zA-Z]+/;
+                    terminal INT1: /[0-9]+/;
+                    hidden terminal WS: /\s+/;
+                `,
+                expectedAstContentParts: [
+                    expandToString`
+                        export const testFileOneTerminals = {
+                            ID1: /[a-zA-Z]+/,
+                            INT1: /[0-9]+/,
+                            WS: /s+/,
+                        };
+                    `
+                ],
+            }, {
+                path: 'two.langium',
+                languageID: undefined,
+                grammarContent: `
+                    grammar TwoGrammar
+                    import "three";
+                    terminal ID2: /[a-zA-Z]+/;
+                    terminal INT2: /[0-9]+/;
+                    entry Entry2: 'b' b1=ID2 b2=ID3;
+                `,
+                expectedAstContentParts: [
+                    expandToString`
+                        export const testFileTwoTerminals = {
+                            ID2: /[a-zA-Z]+/,
+                            INT2: /[0-9]+/,
+                        };
+                    `
+                ],
+            }, {
+                path: 'three.langium',
+                languageID: undefined,
+                grammarContent: `
+                    terminal ID3: /[a-zA-Z]+/;
+                    terminal INT3: /[0-9]+/;
+                `,
+                expectedAstContentParts: [
+                    expandToString`
+                        export const testFileThreeTerminals = {
+                            ID3: /[a-zA-Z]+/,
+                            INT3: /[0-9]+/,
+                        };
+                    `
+                ],
+            }],
+            [expandToString`
+                export const testTerminals = {
+                    ...testFileOneTerminals,
+                    ...testFileThreeTerminals,
+                    ...testFileTwoTerminals,
+                };
+            `]
+        );
+    });
+
     test.skip('Use this test case for debugging the generation of the Arithmetics example (single-file project)', async () => {
         await generate({ file: 'examples/arithmetics/langium-config.json' });
     });
@@ -1136,12 +1207,12 @@ async function testMultiFilesProject(grammarFiles: GrammarFile[], moreExpectedPa
     await documentBuilder.build(documents, { validation: true });
     const allGrammars = documents.map(d => d.parseResult.value as Grammar);
 
-    // check for validation issues
+    // check for validation issues (only errors)
     documents.forEach(document => expectNoIssues({
         document,
         diagnostics: document.diagnostics ?? [],
         dispose: async () => {},
-    }));
+    }, { severity: DiagnosticSeverity.Error }));
     // check that the identifiers of the grammars are unique
     const mapCheckUnique: MultiMap<string, Grammar> = new MultiMap();
     allGrammars.forEach(grammar => mapCheckUnique.add(getAstIdentifierForGrammarFile(grammar), grammar));
