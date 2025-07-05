@@ -6,28 +6,85 @@
 /* eslint-disable */
 import * as langium from 'langium';
 
-export const RequirementsAndTestsTerminals = {
+export const RequirementsAndTestsFileCommonTerminals = {
     WS: /\s+/,
     ID: /[_a-zA-Z][\w_]*/,
+    INT: /[0-9]+/,
     STRING: /"(\\.|[^"\\])*"|'(\\.|[^'\\])*'/,
     ML_COMMENT: /\/\*[\s\S]*?\*\//,
     SL_COMMENT: /\/\/[^\n\r]*/,
 };
 
-export type RequirementsAndTestsTerminalNames = keyof typeof RequirementsAndTestsTerminals;
+export type RequirementsAndTestsFileCommonTerminalNames = keyof typeof RequirementsAndTestsFileCommonTerminals;
 
-export type RequirementsAndTestsKeywordNames =
+export type RequirementsAndTestsFileCommonKeywordNames =
+    | ":"
+    | "contact";
+
+export type RequirementsAndTestsFileCommonTokenNames = RequirementsAndTestsFileCommonTerminalNames | RequirementsAndTestsFileCommonKeywordNames;
+
+export const RequirementsAndTestsFileRequirementsTerminals = {
+};
+
+export type RequirementsAndTestsFileRequirementsTerminalNames = keyof typeof RequirementsAndTestsFileRequirementsTerminals;
+
+export type RequirementsAndTestsFileRequirementsKeywordNames =
     | ","
     | ":"
-    | "="
     | "applicable"
-    | "contact"
     | "environment"
     | "for"
-    | "req"
+    | "req";
+
+export type RequirementsAndTestsFileRequirementsTokenNames = RequirementsAndTestsFileRequirementsTerminalNames | RequirementsAndTestsFileRequirementsKeywordNames;
+
+export const RequirementsAndTestsFileTestsTerminals = {
+};
+
+export type RequirementsAndTestsFileTestsTerminalNames = keyof typeof RequirementsAndTestsFileTestsTerminals;
+
+export type RequirementsAndTestsFileTestsKeywordNames =
+    | ","
+    | "="
+    | "applicable"
+    | "for"
     | "testFile"
     | "tests"
     | "tst";
+
+export type RequirementsAndTestsFileTestsTokenNames = RequirementsAndTestsFileTestsTerminalNames | RequirementsAndTestsFileTestsKeywordNames;
+
+export const RequirementsAndTestsLanguageRequirementsTerminals = {
+    ...RequirementsAndTestsFileCommonTerminals,
+    ...RequirementsAndTestsFileRequirementsTerminals,
+};
+
+export type RequirementsAndTestsLanguageRequirementsTerminalNames = keyof typeof RequirementsAndTestsLanguageRequirementsTerminals;
+
+export type RequirementsAndTestsLanguageRequirementsKeywordNames = RequirementsAndTestsFileCommonKeywordNames | RequirementsAndTestsFileRequirementsKeywordNames;
+
+export type RequirementsAndTestsLanguageRequirementsTokenNames = RequirementsAndTestsLanguageRequirementsTerminalNames | RequirementsAndTestsLanguageRequirementsKeywordNames;
+
+export const RequirementsAndTestsLanguageTestsTerminals = {
+    ...RequirementsAndTestsFileCommonTerminals,
+    ...RequirementsAndTestsFileRequirementsTerminals,
+    ...RequirementsAndTestsFileTestsTerminals,
+};
+
+export type RequirementsAndTestsLanguageTestsTerminalNames = keyof typeof RequirementsAndTestsLanguageTestsTerminals;
+
+export type RequirementsAndTestsLanguageTestsKeywordNames = RequirementsAndTestsFileCommonKeywordNames | RequirementsAndTestsFileRequirementsKeywordNames | RequirementsAndTestsFileTestsKeywordNames;
+
+export type RequirementsAndTestsLanguageTestsTokenNames = RequirementsAndTestsLanguageTestsTerminalNames | RequirementsAndTestsLanguageTestsKeywordNames;
+
+export const RequirementsAndTestsTerminals = {
+    ...RequirementsAndTestsLanguageRequirementsTerminals,
+    ...RequirementsAndTestsLanguageTestsTerminals,
+};
+
+export type RequirementsAndTestsTerminalNames = keyof typeof RequirementsAndTestsTerminals;
+
+export type RequirementsAndTestsKeywordNames = RequirementsAndTestsLanguageRequirementsKeywordNames | RequirementsAndTestsLanguageTestsKeywordNames;
 
 export type RequirementsAndTestsTokenNames = RequirementsAndTestsTerminalNames | RequirementsAndTestsKeywordNames;
 
@@ -137,7 +194,18 @@ export function isTestModel(item: unknown): item is TestModel {
     return reflection.isInstance(item, TestModel.$type);
 }
 
-export type RequirementsAndTestsAstType = {
+export type RequirementsAndTestsFileCommonAstType = {
+    Contact: Contact
+}
+
+export type RequirementsAndTestsFileRequirementsAstType = {
+    Contact: Contact
+    Environment: Environment
+    Requirement: Requirement
+    RequirementModel: RequirementModel
+}
+
+export type RequirementsAndTestsFileTestsAstType = {
     Contact: Contact
     Environment: Environment
     Requirement: Requirement
@@ -145,6 +213,12 @@ export type RequirementsAndTestsAstType = {
     Test: Test
     TestModel: TestModel
 }
+
+export type RequirementsAndTestsLanguageRequirementsAstType = RequirementsAndTestsFileCommonAstType & RequirementsAndTestsFileRequirementsAstType
+
+export type RequirementsAndTestsLanguageTestsAstType = RequirementsAndTestsFileCommonAstType & RequirementsAndTestsFileRequirementsAstType & RequirementsAndTestsFileTestsAstType
+
+export type RequirementsAndTestsAstType = RequirementsAndTestsLanguageRequirementsAstType & RequirementsAndTestsLanguageTestsAstType
 
 export class RequirementsAndTestsAstReflection extends langium.AbstractAstReflection {
     override readonly types = {

@@ -4,31 +4,29 @@
  * terms of the MIT License, which is available in the project root.
  ******************************************************************************/
 
-import type { AstNode, Grammar, LangiumDocument, Mutable } from 'langium';
-import type { LangiumConfig, LangiumLanguageConfig } from './package-types.js';
-import { URI } from 'langium';
-import { loadConfig } from './package.js';
-import { AstUtils, GrammarAST } from 'langium';
+import chalk from 'chalk';
+import fs from 'fs-extra';
+import { validate } from 'jsonschema';
+import { MultiMap, type AstNode, type Grammar, type LangiumDocument, type Mutable } from 'langium';
+import { AstUtils, GrammarAST, URI } from 'langium';
+import { createGrammarDiagramHtml, createGrammarDiagramSvg } from 'langium-railroad';
 import { createLangiumGrammarServices, resolveImport, resolveImportUri, resolveTransitiveImports } from 'langium/grammar';
 import { NodeFileSystem } from 'langium/node';
-import { generateAst } from './generator/ast-generator.js';
-import { serializeGrammar } from './generator/grammar-serializer.js';
-import { generateModule } from './generator/module-generator.js';
+import * as path from 'path';
+import { generateAstMultiFileProject, generateAstMultiLanguageProject, generateAstSingleFileProject } from './generator/ast-generator.js';
 import { generateBnf } from './generator/bnf-generator.js';
-import { generateTextMate } from './generator/highlighting/textmate-generator.js';
+import { serializeGrammar } from './generator/grammar-serializer.js';
 import { generateMonarch } from './generator/highlighting/monarch-generator.js';
 import { generatePrismHighlighting } from './generator/highlighting/prism-generator.js';
-import { getTime, log } from './generator/langium-util.js';
+import { generateTextMate } from './generator/highlighting/textmate-generator.js';
+import { getAstIdentifierForGrammarFile, getTime, log } from './generator/langium-util.js';
+import { generateModule } from './generator/module-generator.js';
 import { elapsedTime, getUserChoice, schema } from './generator/node-util.js';
-import { RelativePath } from './package-types.js';
-import { getFilePath } from './package.js';
-import { validateParser } from './parser-validation.js';
 import { generateTypesFile } from './generator/types-generator.js';
-import { createGrammarDiagramHtml, createGrammarDiagramSvg } from 'langium-railroad';
-import { validate } from 'jsonschema';
-import chalk from 'chalk';
-import * as path from 'path';
-import fs from 'fs-extra';
+import type { LangiumConfig, LangiumLanguageConfig } from './package-types.js';
+import { RelativePath } from './package-types.js';
+import { getFilePath, loadConfig } from './package.js';
+import { validateParser } from './parser-validation.js';
 
 export async function generate(options: GenerateOptions): Promise<boolean> {
     const config = await loadConfig(options);
@@ -260,7 +258,7 @@ export async function runGenerator(config: LangiumConfig, options: GenerateOptio
         grammarServices.validation.LangiumGrammarValidator.options = config.validation;
     }
 
-    const all = await buildAll(config);
+    const all = await buildAll(config); // all parsed *.langium documents with their "doc.uri.fsPath" as key
     const buildResult: (success: boolean) => GeneratorResult = (success: boolean) => ({
         success,
         files: Array.from(all.keys())
@@ -290,7 +288,8 @@ export async function runGenerator(config: LangiumConfig, options: GenerateOptio
         return buildResult(false);
     }
 
-    const grammars: Grammar[] = [];
+    // identify all relevant grammars
+    const topLevelGrammars: Grammar[] = [];
     const configMap: Map<Grammar, LangiumLanguageConfig> = new Map();
     const relPath = config[RelativePath];
     for (const languageConfig of config.languages) {
@@ -302,28 +301,20 @@ export async function runGenerator(config: LangiumConfig, options: GenerateOptio
                 log('error', options, chalk.red(`${absGrammarPath}: The entry grammar must start with the 'grammar' keyword.`));
                 return buildResult(false);
             }
-            grammars.push(grammar);
+            topLevelGrammars.push(grammar);
             configMap.set(grammar, languageConfig);
         }
     }
-
-    const grammarElements = mapGrammarElements(grammars);
-
-    const embeddedGrammars: Grammar[] = [];
-    for (const grammar of grammars) {
-        const embeddedGrammar = embedReferencedGrammar(grammar, grammarElements);
-        embeddedGrammars.push(embeddedGrammar);
-        configMap.set(embeddedGrammar, configMap.get(grammar)!);
-    }
-    // We need to rescope the grammars again
-    // They need to pick up on the embedded references
-    await relinkGrammars(embeddedGrammars);
-
-    for (const grammar of embeddedGrammars) {
-        // Create and validate the in-memory parser
-        const parserAnalysis = await validateParser(grammar, config, configMap, grammarServices);
-        if (parserAnalysis instanceof Error) {
-            log('error', options, chalk.red(parserAnalysis.toString()));
+    const importedGrammars = topLevelGrammars.flatMap(g => resolveTransitiveImports(sharedServices.workspace.LangiumDocuments, g));
+    const allGrammars = [ ...topLevelGrammars, ...importedGrammars ]
+        .filter((grammar, index, array) => array.indexOf(grammar) === index) // keep only the 1st occurance of each grammar => filter out duplicates in in-place way
+        .sort((g1, g2) => getAstIdentifierForGrammarFile(g1).localeCompare(getAstIdentifierForGrammarFile(g2))); // sort regarding their file names
+    // check that the identifiers of the grammars are unique
+    const mapCheckUnique: MultiMap<string, Grammar> = new MultiMap();
+    allGrammars.forEach(grammar => mapCheckUnique.add(getAstIdentifierForGrammarFile(grammar), grammar));
+    for (const [identifier, grammars] of mapCheckUnique.entriesGroupedByKey()) {
+        if (grammars.length >= 2) {
+            log('error', options, chalk.red(`The grammars ${grammars.map(g => AstUtils.getDocument(g).uri.toString()).join(', ')} result in the same identifier '${identifier}': Rename the file name(s) to make the grammar identifiers unique.`));
             return buildResult(false);
         }
     }
@@ -339,15 +330,57 @@ export async function runGenerator(config: LangiumConfig, options: GenerateOptio
         return buildResult(false);
     }
 
-    const genAst = generateAst(grammarServices, embeddedGrammars, config);
-    await writeWithFail(path.resolve(updateLangiumInternalAstPath(output, config), 'ast.ts'), genAst, options);
+    // ast.ts
+    const isSingleLanguage = config.languages.length === 1;
+    const isSingleFile = allGrammars.length === 1 && isSingleLanguage /* handles a special case: multiple languages use the same *.langium file */;
+    let embeddedGrammars: Grammar[];
+    if (isSingleFile) {
+        // merge all grammars into a single grammar and use it
+        embeddedGrammars = topLevelGrammars;
 
+        const genAst = generateAstSingleFileProject(grammarServices, embeddedGrammars, config);
+        await writeWithFail(path.resolve(updateLangiumInternalAstPath(output, config), 'ast.ts'), genAst, options);
+    } else {
+        if (isSingleLanguage) {
+            // only a single language, but with multiple *.langium files
+            const genAst = generateAstMultiFileProject(grammarServices, config, allGrammars);
+            await writeWithFail(path.resolve(updateLangiumInternalAstPath(output, config), 'ast.ts'), genAst, options);
+        } else {
+            // multiple languages
+            const genAst = generateAstMultiLanguageProject(grammarServices, configMap, config, allGrammars);
+            await writeWithFail(path.resolve(updateLangiumInternalAstPath(output, config), 'ast.ts'), genAst, options);
+        }
+
+        // merge all grammars into a single grammar and use it in the following steps
+        const grammarElements = mapGrammarElements(topLevelGrammars);
+        embeddedGrammars = [];
+        for (const grammar of topLevelGrammars) {
+            const embeddedGrammar = embedReferencedGrammar(grammar, grammarElements);
+            embeddedGrammars.push(embeddedGrammar);
+            configMap.set(embeddedGrammar, configMap.get(grammar)!);
+        }
+        // We need to rescope the grammars again
+        // They need to pick up on the embedded references
+        await relinkGrammars(embeddedGrammars);
+        // Create and validate the in-memory parser
+        for (const grammar of embeddedGrammars) {
+            const parserAnalysis = await validateParser(grammar, config, configMap, grammarServices);
+            if (parserAnalysis instanceof Error) {
+                log('error', options, chalk.red(parserAnalysis.toString()));
+                return buildResult(false);
+            }
+        }
+    }
+
+    // grammar.ts
     const serializedGrammar = serializeGrammar(grammarServices, embeddedGrammars, config);
     await writeWithFail(path.resolve(output, 'grammar.ts'), serializedGrammar, options);
 
+    // module.ts
     const genModule = generateModule(embeddedGrammars, config, configMap);
     await writeWithFail(path.resolve(output, 'module.ts'), genModule, options);
 
+    // additional artifacts
     for (const grammar of embeddedGrammars) {
         const languageConfig = configMap.get(grammar);
 

@@ -6,7 +6,7 @@
 /* eslint-disable */
 import * as langium from '../../syntax-tree.js';
 
-export const LangiumGrammarTerminals = {
+export const LangiumGrammarFileLangiumGrammarTerminals = {
     ID: /\^?[_a-zA-Z][\w_]*/,
     STRING: /"(\\.|[^"\\])*"|'(\\.|[^'\\])*'/,
     NUMBER: /NaN|-?((\d*\.\d+|\d+)([Ee][+-]?\d+)?|Infinity)/,
@@ -16,9 +16,9 @@ export const LangiumGrammarTerminals = {
     SL_COMMENT: /\/\/[^\n\r]*/,
 };
 
-export type LangiumGrammarTerminalNames = keyof typeof LangiumGrammarTerminals;
+export type LangiumGrammarFileLangiumGrammarTerminalNames = keyof typeof LangiumGrammarFileLangiumGrammarTerminals;
 
-export type LangiumGrammarKeywordNames =
+export type LangiumGrammarFileLangiumGrammarKeywordNames =
     | "!"
     | "&"
     | "("
@@ -74,6 +74,26 @@ export type LangiumGrammarKeywordNames =
     | "{"
     | "|"
     | "}";
+
+export type LangiumGrammarFileLangiumGrammarTokenNames = LangiumGrammarFileLangiumGrammarTerminalNames | LangiumGrammarFileLangiumGrammarKeywordNames;
+
+export const LangiumGrammarFileLangiumTypesTerminals = {
+};
+
+export type LangiumGrammarFileLangiumTypesTerminalNames = keyof typeof LangiumGrammarFileLangiumTypesTerminals;
+
+export type LangiumGrammarFileLangiumTypesKeywordNames = never;
+
+export type LangiumGrammarFileLangiumTypesTokenNames = LangiumGrammarFileLangiumTypesTerminalNames | LangiumGrammarFileLangiumTypesKeywordNames;
+
+export const LangiumGrammarTerminals = {
+    ...LangiumGrammarFileLangiumGrammarTerminals,
+    ...LangiumGrammarFileLangiumTypesTerminals,
+};
+
+export type LangiumGrammarTerminalNames = keyof typeof LangiumGrammarTerminals;
+
+export type LangiumGrammarKeywordNames = LangiumGrammarFileLangiumGrammarKeywordNames | LangiumGrammarFileLangiumTypesKeywordNames;
 
 export type LangiumGrammarTokenNames = LangiumGrammarTerminalNames | LangiumGrammarKeywordNames;
 
@@ -918,7 +938,7 @@ export function isWildcard(item: unknown): item is Wildcard {
     return reflection.isInstance(item, Wildcard.$type);
 }
 
-export type LangiumGrammarAstType = {
+export type LangiumGrammarFileLangiumGrammarAstType = {
     AbstractElement: AbstractElement
     AbstractRule: AbstractRule
     AbstractType: AbstractType
@@ -970,6 +990,61 @@ export type LangiumGrammarAstType = {
     ValueLiteral: ValueLiteral
     Wildcard: Wildcard
 }
+
+export type LangiumGrammarFileLangiumTypesAstType = {
+    AbstractElement: AbstractElement
+    AbstractRule: AbstractRule
+    AbstractType: AbstractType
+    Action: Action
+    Alternatives: Alternatives
+    ArrayLiteral: ArrayLiteral
+    ArrayType: ArrayType
+    Assignment: Assignment
+    BooleanLiteral: BooleanLiteral
+    CharacterRange: CharacterRange
+    Condition: Condition
+    Conjunction: Conjunction
+    CrossReference: CrossReference
+    Disjunction: Disjunction
+    EndOfFile: EndOfFile
+    Grammar: Grammar
+    GrammarImport: GrammarImport
+    Group: Group
+    InferredType: InferredType
+    InfixRule: InfixRule
+    InfixRuleOperatorList: InfixRuleOperatorList
+    InfixRuleOperators: InfixRuleOperators
+    Interface: Interface
+    Keyword: Keyword
+    NamedArgument: NamedArgument
+    NegatedToken: NegatedToken
+    Negation: Negation
+    NumberLiteral: NumberLiteral
+    Parameter: Parameter
+    ParameterReference: ParameterReference
+    ParserRule: ParserRule
+    ReferenceType: ReferenceType
+    RegexToken: RegexToken
+    ReturnType: ReturnType
+    RuleCall: RuleCall
+    SimpleType: SimpleType
+    StringLiteral: StringLiteral
+    TerminalAlternatives: TerminalAlternatives
+    TerminalElement: TerminalElement
+    TerminalGroup: TerminalGroup
+    TerminalRule: TerminalRule
+    TerminalRuleCall: TerminalRuleCall
+    Type: Type
+    TypeAttribute: TypeAttribute
+    TypeDefinition: TypeDefinition
+    UnionType: UnionType
+    UnorderedGroup: UnorderedGroup
+    UntilToken: UntilToken
+    ValueLiteral: ValueLiteral
+    Wildcard: Wildcard
+}
+
+export type LangiumGrammarAstType = LangiumGrammarFileLangiumGrammarAstType & LangiumGrammarFileLangiumTypesAstType
 
 export class LangiumGrammarAstReflection extends langium.AbstractAstReflection {
     override readonly types = {
