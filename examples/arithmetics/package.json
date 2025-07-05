@@ -1,7 +1,7 @@
 {
   "name": "langium-arithmetics-dsl",
   "displayName": "Arithmetics DSL",
-  "version": "3.5.0",
+  "version": "3.6.0",
   "description": "Example language built with Langium",
   "homepage": "https://langium.org",
   "engines": {
@@ -76,8 +76,8 @@
     "langium-cli": "~3.5.0"
   },
   "volta": {
-      "node": "20.19.2",
-      "npm": "10.8.2"
+    "node": "20.19.2",
+    "npm": "10.8.2"
   },
   "repository": {
     "type": "git",

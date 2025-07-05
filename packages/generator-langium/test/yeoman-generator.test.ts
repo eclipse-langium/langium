@@ -18,8 +18,10 @@ const answersForCore: Answers & PostAnwers = {
     fileExtensions: '.hello',
     includeVSCode: false,
     includeCLI: false,
+    includeExampleProject: false,
     includeTest: false,
-    openWith: false
+    openWith: false,
+    entryName: 'Model'
 };
 
 describe('Check yeoman generator works', () => {
