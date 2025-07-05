@@ -448,7 +448,7 @@ export class DefaultCompletionProvider implements CompletionProvider {
             };
             try {
                 for (const candidate of this.getReferenceCandidates(refInfo, context)) {
-                    acceptor(context, this.createReferenceCompletionItem(candidate));
+                    acceptor(context, this.createReferenceCompletionItem(candidate, refInfo, context));
                 }
             } catch (err) {
                 console.error(err);
@@ -476,9 +476,11 @@ export class DefaultCompletionProvider implements CompletionProvider {
      * To change the `documentation`, override the `DocumentationProvider` service instead.
      *
      * @param nodeDescription The description of a reference candidate
+     * @param _refInfo Information about the reference for which the candidate is proposed
+     * @param _context The completion context
      * @returns A partial completion item
      */
-    protected createReferenceCompletionItem(nodeDescription: AstNodeDescription): CompletionValueItem {
+    protected createReferenceCompletionItem(nodeDescription: AstNodeDescription, _refInfo: ReferenceInfo, _context: CompletionContext): CompletionValueItem {
         const kind = this.nodeKindProvider.getCompletionItemKind(nodeDescription);
         const documentation = this.getReferenceDocumentation(nodeDescription);
         return {

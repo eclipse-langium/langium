@@ -5,11 +5,11 @@
  ******************************************************************************/
 
 import { describe, test, beforeEach } from 'vitest';
-import type { AstNode, AstNodeDescription, LangiumDocument, Module } from 'langium';
+import type { AstNode, AstNodeDescription, LangiumDocument, Module, ReferenceInfo } from 'langium';
 import { DefaultAstNodeDescriptionProvider, EmptyFileSystem } from 'langium';
 import { createLangiumGrammarServices, createServicesForGrammar } from 'langium/grammar';
 import { DefaultCompletionProvider } from 'langium/lsp';
-import type { LangiumServices, PartialLangiumServices } from 'langium/lsp';
+import type { CompletionContext, LangiumServices, PartialLangiumServices } from 'langium/lsp';
 import { clearDocuments, expectCompletion, parseHelper } from 'langium/test';
 import { MarkupContent } from 'vscode-languageserver';
 import * as assert from 'assert';
@@ -255,10 +255,10 @@ describe('Completion within alternatives', () => {
             grammar, module: {
                 lsp: {
                     CompletionProvider: (services) => new class extends DefaultCompletionProvider {
-                        override createReferenceCompletionItem(nodeDescription: AstNodeDescription) {
+                        override createReferenceCompletionItem(nodeDescription: AstNodeDescription, refInfo: ReferenceInfo, context: CompletionContext) {
                             // Use <name> <birth> as label
                             const label = nodeDescription.name + ' ' + (nodeDescription as AstNodeDescription & { birth: string }).birth;
-                            return { ...super.createReferenceCompletionItem(nodeDescription), label };
+                            return { ...super.createReferenceCompletionItem(nodeDescription, refInfo, context), label };
                         }
                     }(services),
                 },
