@@ -198,6 +198,25 @@ export class CompositeGeneratorNode {
     }
 
     /**
+     * Prepends `strings` and instances of {@link GeneratorNode} to the content of `this` generator node.
+     *
+     * @param content a var arg mixture of `strings` or {@link GeneratorNode GeneratorNodes}.
+     *
+     * @returns `this` {@link CompositeGeneratorNode} for convenience.
+     *
+     * @example
+     *   generateSomeContent()?.prepend(
+     *      'Some preamble text:', NL
+     *   ).append(
+     *      'Some postamble text:', NL
+     *   );
+     */
+    prepend(...content: Generated[]): this {
+        this.contents.unshift(...content.filter(c => c !== undefined));
+        return this;
+    }
+
+    /**
      * Appends `strings` and instances of {@link GeneratorNode} to `this` generator node, if `condition` is equal to `true`.
      *
      * If `condition` is satisfied this method delegates to {@link append}, otherwise it returns just `this`.
@@ -218,6 +237,30 @@ export class CompositeGeneratorNode {
      */
     appendIf(condition: boolean, ...content: Array<Generated | ((node: CompositeGeneratorNode) => void)>): this {
         return condition ? this.append(...content) : this;
+    }
+
+    /**
+     * Prepends `strings` and instances of {@link GeneratorNode} to the content of `this` generator node, if `condition` is equal to `true`.
+     *
+     * If `condition` is satisfied this method delegates to {@link prepend}, otherwise it returns just `this`.
+     *
+     * @param condition a boolean value indicating whether to prepend the elements of `args` to the content of `this`.
+     *
+     * @param content a var arg mixture of `strings` or {@link GeneratorNode GeneratorNodes}.
+     *
+     * @returns `this` {@link CompositeGeneratorNode} for convenience.
+     *
+     * @example
+     *   generateSomeContent()?.prependIf(
+     *      generatePreamble === true,
+     *      'Some preamble', NL
+     *   ).appendIf(
+     *      generatePostamble === true,
+     *      'Some postamble', NL
+     *   );
+     */
+    prependIf(condition: boolean, ...content: Generated[]): this {
+        return condition ? this.prepend(...content) : this;
     }
 
     /**
@@ -1074,11 +1117,11 @@ export function traceToNodeIf<T extends AstNode>(condition: boolean, source: T |
  */
 export class IndentNode extends CompositeGeneratorNode {
 
-    indentation?: string;
-    indentImmediately = true;
-    indentEmptyLines = false;
+    readonly indentation?: string;
+    readonly indentImmediately: boolean;
+    readonly indentEmptyLines: boolean;
 
-    constructor(indentation?: string | number, indentImmediately = true, indentEmptyLines = false) {
+    constructor(indentation?: string | number, indentImmediately: boolean = true, indentEmptyLines: boolean = false) {
         super();
         if (typeof (indentation) === 'string') {
             this.indentation = indentation;
@@ -1090,19 +1133,22 @@ export class IndentNode extends CompositeGeneratorNode {
     }
 }
 
+export namespace NewLineNode {
+    /**
+     * Integer range type allowing to specify 1 to 6 consecutive line breaks, i.e. up to 5 empty lines with a single `NewLineNode`.
+     */
+    export type NoOfLineBreaks = 1 | 2 | 3 | 4 | 5 | 6;
+}
+
 /**
  * Implementation of @{link GeneratorNode} denoting linebreaks in the desired generated text.
  */
 export class NewLineNode {
-
-    lineDelimiter: string;
-
-    ifNotEmpty = false;
-
-    constructor(lineDelimiter?: string, ifNotEmpty = false) {
-        this.lineDelimiter = lineDelimiter ?? EOL;
-        this.ifNotEmpty = ifNotEmpty;
-    }
+    constructor(
+        public readonly lineDelimiter: string = EOL,
+        public readonly ifNotEmpty: boolean = false,
+        public readonly count: NewLineNode.NoOfLineBreaks = 1
+    ) {}
 }
 
 export const NL = new NewLineNode();

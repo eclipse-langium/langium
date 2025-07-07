@@ -5,16 +5,39 @@
  ******************************************************************************/
 
 import type { AstNode, Properties } from '../syntax-tree.js';
-import { type Generated, isGeneratorNode } from './generator-node.js';
+import { CompositeGeneratorNode, type Generated, isGeneratorNode, NewLineNode, traceToNode } from './generator-node.js';
 import type { SourceRegion } from './generator-tracing.js';
-import { CompositeGeneratorNode, traceToNode } from './generator-node.js';
 
-export interface JoinOptions<T> {
-    filter?: (element: T, index: number, isLast: boolean) => boolean;
-    prefix?: Generated | ((element: T, index: number, isLast: boolean) => Generated | undefined);
-    suffix?: Generated | ((element: T, index: number, isLast: boolean) => Generated | undefined);
+export interface JoinOptions<T, U extends T = T> {
+    /**
+     * A plain or type guard filter function.
+     *
+     * Benefit compared to pre-filtering the joined iterable: Original indices of the elements are preserved and forwarded to the `toGenerated` function.
+     */
+    filter?: ((element: T, index: number, isLast: boolean) => boolean) | ((element: T, index: number, isLast: boolean) => element is U);
+
+    /** A fixed prefix or prefix computation function to be prepended before each element of the iterable. */
+    prefix?: Generated | ((element: U, index: number, isLast: boolean) => Generated | undefined);
+
+    /** A fixed suffix or suffix computation function to be appended after each element of the iterable. */
+    suffix?: Generated | ((element: U, index: number, isLast: boolean) => Generated | undefined);
+
+    /** A fixed element separator to be inserted between 2 consecutive non-undefined item representations incl. their suffixes and prefixes. */
     separator?: Generated;
-    appendNewLineIfNotEmpty?: true;
+
+    /**
+     * Activates appending of up 6 line breaks after a non-undefined element + suffix + separator if given.
+     *
+     * If `true` a single line break is appended.
+     *
+     * If a number `> 6` is required you can achieve that via the `separator` or `suffix` options,
+     *  e.g. `separator: new CompositeGeneratorNode(calcLineBreaks(...))`.
+     */
+    appendNewLineIfNotEmpty?: true | NewLineNode.NoOfLineBreaks;
+
+    /**
+     * Suppresses appending trailing line breaks after the last item in the iterable if activated via `appendNewLineIfNotEmpty`.
+     */
     skipNewLineAfterLastItem?: true;
 }
 
@@ -33,7 +56,7 @@ const defaultToGenerated = (e: unknown): Generated => e === undefined || typeof 
  *
  * Examples:
  * ```
- *   exandToNode`
+ *   expandToNode`
  *       ${ joinToNode(['a', 'b'], { appendNewLineIfNotEmpty: true }) }
  *
  *       ${ joinToNode(new Set(['a', undefined, getElementNode()]), { separator: ',', appendNewLineIfNotEmpty: true }) }
@@ -44,8 +67,8 @@ const defaultToGenerated = (e: unknown): Generated => e === undefined || typeof 
  *
  * @param options optional config object for defining a `separator`, contributing specialized
  *  `prefix` and/or `suffix` providers, and activating conditional line-break insertion. In addition,
- *  a dedicated `filter` function can be provided that is required get provided with the original
- *  element indices in the aformentioned functions, if the list is to be filtered. If
+ *  a dedicated `filter` function can be provided that enables the provision of the original
+ *  element indices to the aforementioned functions, if the list is to be filtered. If
  *  {@link Array.filter} would be applied to the original list, the indices will be those of the
  *  filtered list during subsequent processing that in particular will cause confusion when using
  *  the tracing variant of this function named ({@link joinTracedToNode}).
@@ -66,7 +89,7 @@ export function joinToNode<Generated>(
  *
  * Examples:
  * ```
- *   exandToNode`
+ *   expandToNode`
  *       ${ joinToNode(['a', 'b'], String, { appendNewLineIfNotEmpty: true }) }
  *
  *       ${ joinToNode(new Set(['a', undefined, 'b']), e => e && String(e), { separator: ',', appendNewLineIfNotEmpty: true }) }
@@ -81,8 +104,8 @@ export function joinToNode<Generated>(
  *
  * @param options optional config object for defining a `separator`, contributing specialized
  *  `prefix` and/or `suffix` providers, and activating conditional line-break insertion. In addition,
- *  a dedicated `filter` function can be provided that is required get provided with the original
- *  element indices in the aformentioned functions, if the list is to be filtered. If
+ *  a dedicated `filter` function can be provided that enables the provision of the
+ *  original element indices to the aforementioned functions, if the list is to be filtered. If
  *  {@link Array.filter} would be applied to the original list, the indices will be those of the
  *  filtered list during subsequent processing that in particular will cause confusion when using
  *  the tracing variant of this function named ({@link joinTracedToNode}).
@@ -92,6 +115,46 @@ export function joinToNode<T>(
     iterable: Iterable<T> | T[],
     toGenerated?: ((element: T, index: number, isLast: boolean) => Generated),
     options?: JoinOptions<T>
+): CompositeGeneratorNode | undefined;
+
+/**
+ * Joins the elements of the given `iterable` by applying `toGenerated` to each element
+ * and appending the results to a {@link CompositeGeneratorNode} being returned finally.
+ *
+ * Here the mandatory type guard `filter` function is used to filter the elements of
+ * `iterable` and to apply the `toGenerated` function as well as the optional
+ * `prefix` and `suffix` functions to the accepted items with the more specific type
+ * `U` and their original indices.
+ *
+ * Note: empty strings being returned by `toGenerated` are treated as ordinary string
+ * representations, while the result of `undefined` makes this function to ignore the
+ * corresponding item and no separator is appended, if configured.
+ *
+ * Example:
+ * ```
+ *   expandToNode`
+ *       ${ joinToNode([x, y], e => e.propertyOfX, { filter: (e): e is X => e.$type === 'X' }) }
+ *   `
+ * ```
+ *
+ * @param iterable an {@link Array} or {@link Iterable} providing the elements to be joined
+ *
+ * @param toGenerated a callback converting each individual element to a string, a
+ *  {@link CompositeGeneratorNode}, or to `undefined` if to be omitted, defaults to the `identity`
+ *  for strings, generator nodes, and `undefined`, and to {@link String} otherwise.
+ *
+ * @param options config object including the here required type guard filter function, as well as
+ *  optional `separator` and `prefix` and/or `suffix` providers, and activating conditional
+ *  line-break insertion.
+ *  In contrast to {@link Array.filter} the dedicated `filter` function enables the provision of the
+ *  original element indices to `toGenerated` and the aforementioned functions, if the list is to be
+ *  filtered.
+ * @returns the resulting {@link CompositeGeneratorNode} representing `iterable`'s content
+ */
+export function joinToNode<T, U extends T>(
+    iterable: Iterable<T> | T[],
+    toGenerated: ((element: U, index: number, isLast: boolean) => Generated),
+    options: JoinOptions<T, U> & { filter: (element: T, index: number, isLast: boolean) => element is U; } // the type guard filter function is mandatory here!
 ): CompositeGeneratorNode | undefined;
 
 export function joinToNode<T>(
@@ -116,13 +179,16 @@ export function joinToNode<T>(
             .append(content)
             .append(suffixFunc(it, i, isLast))
             .appendIf(!isLast, separator)
-            .appendNewLineIfNotEmptyIf(
+            .appendIf(
                 // append 'newLineIfNotEmpty' elements only if 'node' has some content already,
                 //  as if the parent is an IndentNode with 'indentImmediately' set to 'false'
                 //  the indentation is not properly applied to the first non-empty line of the (this) child node
-                // besides, append the newLine only if more lines are following, if appending a newline
+                // besides, append the newLine(s) only if more lines are following, or if appending a newline
                 //  is not suppressed for the final item
-                !node.isEmpty() && !!appendNewLineIfNotEmpty && (!isLast || !skipNewLineAfterLastItem)
+                !node.isEmpty() && !!appendNewLineIfNotEmpty && (!isLast || !skipNewLineAfterLastItem),
+                n => (appendNewLineIfNotEmpty === true || appendNewLineIfNotEmpty === 1)
+                    ? n.appendNewLineIfNotEmpty()
+                    : n.append(new NewLineNode(undefined, true, appendNewLineIfNotEmpty))
             );
     });
 }

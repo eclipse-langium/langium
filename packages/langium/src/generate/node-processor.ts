@@ -290,8 +290,11 @@ function processNewLineNode(node: NewLineNode, context: Context) {
         context.resetCurrentLine();
     } else {
         handlePendingIndent(context, true);
-        context.append(node.lineDelimiter);
-        context.addNewLine();
+        let count = node.count;
+        while (count-- > 0) {
+            context.append(node.lineDelimiter);
+            context.addNewLine();
+        }
     }
 }
 
