@@ -78,15 +78,15 @@ export interface Linker {
 
 }
 
-const ref_resolving = Symbol('ref_resolving');
+export const RefResolving = Symbol('RefResolving');
 
-interface DefaultReference extends Reference {
-    _ref?: AstNode | LinkingError | typeof ref_resolving;
+export interface DefaultReference extends Reference {
+    _ref?: AstNode | LinkingError | typeof RefResolving;
     _nodeDescription?: AstNodeDescription;
 }
 
 export interface DefaultMultiReference extends MultiReference {
-    _items: MultiReferenceItem[] | typeof ref_resolving | undefined;
+    _items: MultiReferenceItem[] | typeof RefResolving | undefined;
     _linkingError?: LinkingError;
 }
 
@@ -114,7 +114,7 @@ export class DefaultLinker implements Linker {
         const ref = refInfo.reference as DefaultReference | DefaultMultiReference;
         // The reference may already have been resolved lazily by accessing its `ref` property.
         if ('_ref' in ref && ref._ref === undefined) {
-            ref._ref = ref_resolving;
+            ref._ref = RefResolving;
             try {
                 const description = this.getCandidate(refInfo);
                 if (isLinkingError(description)) {
@@ -134,7 +134,7 @@ export class DefaultLinker implements Linker {
             }
             document.references.push(ref);
         } else if ('_items' in ref && ref._items === undefined) {
-            ref._items = ref_resolving;
+            ref._items = RefResolving;
             try {
                 const descriptions = this.getCandidates(refInfo);
                 const items: MultiReferenceItem[] = [];
@@ -205,7 +205,7 @@ export class DefaultLinker implements Linker {
                         linker.createLinkingError({ reference, container: node, property }, this._nodeDescription);
                 } else if (this._ref === undefined) {
                     // The reference has not been linked yet, so do that now.
-                    this._ref = ref_resolving;
+                    this._ref = RefResolving;
                     const document = findRootNode(node).$document;
                     const refData = linker.getLinkedNode({ reference, container: node, property });
                     if (refData.error && document && document.state < DocumentState.ComputedScopes) {
@@ -215,7 +215,7 @@ export class DefaultLinker implements Linker {
                     this._ref = refData.node ?? refData.error;
                     this._nodeDescription = refData.descr;
                     document?.references.push(this);
-                } else if (this._ref === ref_resolving) {
+                } else if (this._ref === RefResolving) {
                     linker.throwCyclicReferenceError(node, property, refText);
                 }
                 return isAstNode(this._ref) ? this._ref : undefined;
@@ -243,7 +243,7 @@ export class DefaultLinker implements Linker {
                 if (Array.isArray(this._items)) {
                     return this._items;
                 } else if (this._items === undefined) {
-                    this._items = ref_resolving;
+                    this._items = RefResolving;
                     const document = findRootNode(node).$document;
                     const descriptions = linker.getCandidates({
                         reference,
@@ -263,7 +263,7 @@ export class DefaultLinker implements Linker {
                     }
                     this._items = items;
                     document?.references.push(this);
-                } else if (this._items === ref_resolving) {
+                } else if (this._items === RefResolving) {
                     linker.throwCyclicReferenceError(node, property, refText);
                 }
                 return Array.isArray(this._items) ? this._items : [];
