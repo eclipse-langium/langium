@@ -78,9 +78,9 @@ export interface Linker {
 
 }
 
-const ref_resolving = Symbol('ref_resolving');
+export const ref_resolving = Symbol('ref_resolving');
 
-interface DefaultReference extends Reference {
+export interface DefaultReference extends Reference {
     _ref?: AstNode | LinkingError | typeof ref_resolving;
     _nodeDescription?: AstNodeDescription;
 }
