@@ -48,8 +48,9 @@ function generateAstReflection(config: LangiumConfig, astTypes: AstTypes): Gener
             override readonly types = {
                 ${joinToNode(typeNames, typeName => {
                     const interfaceType = astTypes.interfaces.find(t => t.name === typeName);
-                    if (interfaceType) {
-                        const props = interfaceType.superProperties;
+                    const unionType = astTypes.unions.find(t => t.name === typeName);
+                    if (interfaceType || unionType) {
+                        const props = interfaceType?.superProperties ?? [];
                         const superTypes = typeHierarchy.superTypes.get(typeName) || [];
                         return expandToNode`
                             ${typeName}: {

@@ -4,9 +4,11 @@
 // terms of the MIT License, which is available in the project root.
 // *****************************************************************************
 
-type AbstractRule = InfixRule | ParserRule | TerminalRule;
+type AbstractRule = AbstractParserRule | TerminalRule;
 
-type AbstractType = InferredType | InfixRule | Interface | ParserRule | Type;
+type AbstractParserRule = InfixRule | ParserRule;
+
+type AbstractType = Interface | Type | AbstractParserRule | InferredType;
 
 type Associativity = "left" | "right";
 
@@ -104,9 +106,12 @@ interface InferredType {
 
 interface InfixRule {
     call: RuleCall;
+    dataType?: PrimitiveType;
+    inferredType?: InferredType;
     name: string;
     operators: InfixRuleOperators;
     parameters: Parameter[];
+    returnType?: @AbstractType;
 }
 
 interface InfixRuleOperatorList {

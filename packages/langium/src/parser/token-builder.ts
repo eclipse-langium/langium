@@ -8,7 +8,7 @@ import type { CustomPatternMatcherFunc, ILexingError, TokenPattern, TokenType, T
 import type { AbstractRule, Grammar, Keyword, TerminalRule } from '../languages/generated/ast.js';
 import type { Stream } from '../utils/stream.js';
 import { Lexer } from 'chevrotain';
-import { isInfixRule, isKeyword, isParserRule, isTerminalRule } from '../languages/generated/ast.js';
+import { isAbstractParserRule, isKeyword, isTerminalRule } from '../languages/generated/ast.js';
 import { streamAllContents } from '../utils/ast-utils.js';
 import { getAllReachableRules, terminalRegex } from '../utils/grammar-utils.js';
 import { escapeRegExp, isWhitespace, partialMatches } from '../utils/regexp-utils.js';
@@ -119,7 +119,7 @@ export class DefaultTokenBuilder implements TokenBuilder {
     protected buildKeywordTokens(rules: Stream<AbstractRule>, terminalTokens: TokenType[], options?: TokenBuilderOptions): TokenType[] {
         return rules
             // We filter by parser rules, since keywords in terminal rules get transformed into regex and are not actual tokens
-            .filter(rule => isParserRule(rule) || isInfixRule(rule))
+            .filter(isAbstractParserRule)
             .flatMap(rule => streamAllContents(rule).filter(isKeyword))
             .distinct(e => e.value).toArray()
             // Sort keywords by descending length

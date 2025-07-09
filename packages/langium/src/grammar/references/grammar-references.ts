@@ -7,17 +7,18 @@
 import type { AstNode, CstNode } from '../../syntax-tree.js';
 import type { Stream } from '../../utils/stream.js';
 import type { ReferenceDescription } from '../../workspace/ast-descriptions.js';
-import type { Action, Assignment, Interface, ParserRule, Type, TypeAttribute } from '../../languages/generated/ast.js';
+import type { AbstractParserRule, Action, Assignment, Interface, Type, TypeAttribute } from '../../languages/generated/ast.js';
 import type { FindReferencesOptions } from '../../references/references.js';
 import { DefaultReferences } from '../../references/references.js';
 import { getContainerOfType, getDocument } from '../../utils/ast-utils.js';
 import { toDocumentSegment } from '../../utils/cst-utils.js';
-import { findAssignment, findNodeForProperty, getActionAtElement } from '../../utils/grammar-utils.js';
+import { findAssignment, findNodeForKeyword, findNodeForProperty, getActionAtElement } from '../../utils/grammar-utils.js';
 import { stream } from '../../utils/stream.js';
 import { UriUtils } from '../../utils/uri-utils.js';
-import { isAction, isAssignment, isInterface, isParserRule, isType, isTypeAttribute } from '../../languages/generated/ast.js';
+import { isAbstractParserRule, isAction, isAssignment, isInfixRule, isInterface, isParserRule, isType, isTypeAttribute } from '../../languages/generated/ast.js';
 import { extractAssignments } from '../internal-grammar-util.js';
 import { collectChildrenTypes, collectSuperTypes } from '../type-system/types-util.js';
+import { assertUnreachable } from '../../utils/errors.js';
 
 export class LangiumGrammarReferences extends DefaultReferences {
 
@@ -53,7 +54,7 @@ export class LangiumGrammarReferences extends DefaultReferences {
                 refs.push(...this.getSelfReferences(targetNode));
             }
             const interfaces = collectChildrenTypes(interfaceNode, this, this.documents, this.nodeLocator);
-            const targetRules: Array<ParserRule | Action> = [];
+            const targetRules: Array<AbstractParserRule | Action> = [];
             interfaces.forEach(interf => {
                 const rules = this.findRulesWithReturnType(interf);
                 targetRules.push(...rules);
@@ -66,41 +67,69 @@ export class LangiumGrammarReferences extends DefaultReferences {
         return stream(refs);
     }
 
-    protected createReferencesToAttribute(ruleOrAction: ParserRule | Action, attribute: TypeAttribute): ReferenceDescription[] {
+    protected createReferencesToAttribute(ruleOrAction: AbstractParserRule | Action, attribute: TypeAttribute): ReferenceDescription[] {
         const refs: ReferenceDescription[] = [];
         if (isParserRule(ruleOrAction)) {
             const assignment = extractAssignments(ruleOrAction.definition).find(a => a.feature === attribute.name);
             if (assignment?.$cstNode) {
                 const leaf = this.nameProvider.getNameNode(assignment);
                 if (leaf) {
+                    const assignmentUri = getDocument(assignment).uri;
+                    const attributeUri = getDocument(attribute).uri;
                     refs.push({
-                        sourceUri: getDocument(assignment).uri,
+                        sourceUri: assignmentUri,
                         sourcePath: this.nodeLocator.getAstNodePath(assignment),
-                        targetUri: getDocument(attribute).uri,
+                        targetUri: attributeUri,
                         targetPath: this.nodeLocator.getAstNodePath(attribute),
                         segment: toDocumentSegment(leaf),
-                        local: UriUtils.equals(getDocument(assignment).uri, getDocument(attribute).uri)
+                        local: UriUtils.equals(assignmentUri, attributeUri)
                     });
                 }
             }
-        } else {
+        } else if (isInfixRule(ruleOrAction)) {
+            let leaf: CstNode | undefined;
+            if (attribute.name === 'left' || attribute.name === 'right') {
+                // Use the 'on' keyword as segment
+                leaf = findNodeForKeyword(ruleOrAction.$cstNode, 'on');
+            } else if (attribute.name === 'operator') {
+                // Use the rule definition in 'operators' as segment
+                leaf = findNodeForProperty(ruleOrAction.$cstNode, 'operators');
+            }
+
+            if (leaf) {
+                const ruleUri = getDocument(ruleOrAction).uri;
+                const attributeUri = getDocument(attribute).uri;
+                refs.push({
+                    sourceUri: ruleUri,
+                    sourcePath: this.nodeLocator.getAstNodePath(ruleOrAction),
+                    targetUri: attributeUri,
+                    targetPath: this.nodeLocator.getAstNodePath(attribute),
+                    segment: toDocumentSegment(leaf),
+                    local: UriUtils.equals(ruleUri, attributeUri)
+                });
+            }
+        } else if (isAction(ruleOrAction)) {
             // If the action references the attribute directly
             if (ruleOrAction.feature === attribute.name) {
                 const leaf = findNodeForProperty(ruleOrAction.$cstNode, 'feature');
                 if (leaf) {
+                    const actionUri = getDocument(ruleOrAction).uri;
+                    const attributeUri = getDocument(attribute).uri;
                     refs.push({
-                        sourceUri: getDocument(ruleOrAction).uri,
+                        sourceUri: actionUri,
                         sourcePath: this.nodeLocator.getAstNodePath(ruleOrAction),
-                        targetUri: getDocument(attribute).uri,
+                        targetUri: attributeUri,
                         targetPath: this.nodeLocator.getAstNodePath(attribute),
                         segment: toDocumentSegment(leaf),
-                        local: UriUtils.equals(getDocument(ruleOrAction).uri, getDocument(attribute).uri)
+                        local: UriUtils.equals(actionUri, attributeUri)
                     });
                 }
             }
             // Find all references within the parser rule that contains this action
             const parserRule = getContainerOfType(ruleOrAction, isParserRule);
             refs.push(...this.createReferencesToAttribute(parserRule!, attribute));
+        } else {
+            assertUnreachable(ruleOrAction);
         }
         return refs;
     }
@@ -142,14 +171,14 @@ export class LangiumGrammarReferences extends DefaultReferences {
         return undefined;
     }
 
-    protected findRulesWithReturnType(interf: Interface | Type): Array<ParserRule | Action> {
-        const rules: Array<ParserRule | Action> = [];
+    protected findRulesWithReturnType(interf: Interface | Type): Array<AbstractParserRule | Action> {
+        const rules: Array<AbstractParserRule | Action> = [];
         const refs = this.index.findAllReferences(interf, this.nodeLocator.getAstNodePath(interf));
         for (const ref of refs) {
             const doc = this.documents.getDocument(ref.sourceUri);
             if (doc) {
                 const astNode = this.nodeLocator.getAstNode(doc.parseResult.value, ref.sourcePath);
-                if (isParserRule(astNode) || isAction(astNode)) {
+                if (isAbstractParserRule(astNode) || isAction(astNode)) {
                     rules.push(astNode);
                 }
             }

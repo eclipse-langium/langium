@@ -44,3 +44,7 @@ export function isInferred(type: InferredInfo | DeclaredInfo | InferredInfo & De
 export function isInferredAndDeclared(type: InferredInfo | DeclaredInfo | InferredInfo & DeclaredInfo): type is InferredInfo & DeclaredInfo {
     return type && 'inferred' in type && 'declared' in type;
 }
+
+export function getTypeOption(info: InferredInfo | DeclaredInfo): TypeOption {
+    return isDeclared(info) ? info.declared : info.inferred;
+}
