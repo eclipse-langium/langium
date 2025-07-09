@@ -196,7 +196,8 @@ export class ArithmeticsAstReflection extends langium.AbstractAstReflection {
     override readonly types = {
         AbstractDefinition: {
             name: AbstractDefinition.$type,
-            properties: {},
+            properties: {
+            },
             superTypes: []
         },
         BinaryExpression: {
@@ -250,7 +251,8 @@ export class ArithmeticsAstReflection extends langium.AbstractAstReflection {
         },
         Expression: {
             name: Expression.$type,
-            properties: {},
+            properties: {
+            },
             superTypes: []
         },
         FunctionCall: {
@@ -291,7 +293,8 @@ export class ArithmeticsAstReflection extends langium.AbstractAstReflection {
         },
         Statement: {
             name: Statement.$type,
-            properties: {},
+            properties: {
+            },
             superTypes: []
         }
     } as const satisfies langium.AstMetaData

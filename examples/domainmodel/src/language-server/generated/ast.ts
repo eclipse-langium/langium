@@ -152,7 +152,8 @@ export class DomainModelAstReflection extends langium.AbstractAstReflection {
     override readonly types = {
         AbstractElement: {
             name: AbstractElement.$type,
-            properties: {},
+            properties: {
+            },
             superTypes: []
         },
         DataType: {
@@ -223,8 +224,9 @@ export class DomainModelAstReflection extends langium.AbstractAstReflection {
         },
         Type: {
             name: Type.$type,
-            properties: {},
-            superTypes: ['AbstractElement']
+            properties: {
+            },
+            superTypes: [AbstractElement.$type]
         }
     } as const satisfies langium.AstMetaData
 }
