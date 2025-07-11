@@ -549,7 +549,7 @@ function abstractElementToRegex(element: ast.AbstractElement, flags?: Flags): st
             parenthesized: element.parenthesized
         });
     } else {
-        throw new Error(`Invalid terminal element: ${element?.$type}`);
+        throw new Error(`Invalid terminal element: ${element?.$type}, ${element?.$cstNode?.text}`);
     }
 }
 
