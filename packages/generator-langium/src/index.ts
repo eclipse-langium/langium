@@ -133,6 +133,15 @@ export class LangiumGenerator extends Generator {
                         : 'A file extension can start with . and must contain only letters and digits. Extensions must be separated by commas.',
             } as PromptQuestion<Answers>,
             {
+                type: 'input',
+                name: 'entryName',
+                prefix: description(
+                    'The name of the entry rule in your grammar file.'
+                ),
+                message: 'Your grammar entry rule name:',
+                default: 'Model',
+            } as PromptQuestion<Answers>,
+            {
                 type: 'confirm',
                 name: 'includeVSCode',
                 prefix: description(
@@ -169,16 +178,6 @@ export class LangiumGenerator extends Generator {
                 message: 'Include language tests?',
                 default: true,
             } as PromptQuestion<Answers>,
-            {
-                type: 'input',
-                name: 'entryName',
-                prefix: description(
-                    'The name of the entry rule in your grammar file.'
-                ),
-                message: 'Your grammar entry rule name:',
-                default: 'Model',
-                when: (answers) => !answers.includeExampleProject
-            } as PromptQuestion<Answers>
         ]);
     }
 
