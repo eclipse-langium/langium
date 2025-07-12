@@ -97,7 +97,7 @@ export class LangiumGenerator extends Generator {
                 name: 'extensionName',
                 prefix: description(
                     'Welcome to Langium!',
-                    'This tool generates a VS Code extension with a "Hello World" language to get started quickly.',
+                    'This tool generates one or more npm packages to create your own language based on Langium.',
                     'The extension name is an identifier used in the extension marketplace or package registry.'
                 ),
                 message: 'Your extension name:',
