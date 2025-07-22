@@ -57,13 +57,16 @@ export const AllSemanticTokenModifiers: Record<string, number> = {
     [SemanticTokenModifiers.static]: 1 << 9
 };
 
+/**
+ * @deprecated `SemanticTokenProvider` now supplies its own options.
+ */
 export const DefaultSemanticTokenOptions: SemanticTokensOptions = {
     legend: {
         tokenTypes: Object.keys(AllSemanticTokenTypes),
         tokenModifiers: Object.keys(AllSemanticTokenModifiers)
     },
     full: {
-        delta: true
+        delta: false
     },
     range: true
 };
@@ -217,10 +220,8 @@ export class SemanticTokensBuilder extends BaseSemanticTokensBuilder {
     }
 
     private compareTokens(a: SemanticToken, b: SemanticToken): number {
-        if (a.line === b.line) {
-            return a.char - b.char;
-        }
-        return a.line - b.line;
+        // Branchless comparison for line and character
+        return (a.line - b.line) || (a.char - b.char);
     }
 }
 
@@ -272,7 +273,10 @@ export abstract class AbstractSemanticTokenProvider implements SemanticTokenProv
                 tokenModifiers: Object.keys(this.tokenModifiers),
             },
             full: {
-                delta: true
+                // The semantic token delta support is disabled by default in Langium.
+                // Since Langium recomputes the whole document on every change, we cannot provide a good delta.
+                // Adopters can override this if they support it.
+                delta: false
             },
             range: true,
         };
