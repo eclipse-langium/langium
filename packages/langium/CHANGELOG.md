@@ -1,5 +1,79 @@
 # Change Log of `langium`
 
+## v4.0.0 (Jul. 2025)
+
+### Multi-Target References
+
+With the new multi-target references ([#1509](https://github.com/eclipse-langium/langium/pull/1509)), references in your language can now target multiple elements at once:
+
+```typescript
+interface Obj {
+    A: number
+}
+interface Obj {
+    B: string
+}
+// `Obj` is a reference to both interfaces (not only one of them)
+// Our type system should merge those definitions
+const x: Obj = {
+    A: 123,
+    B: "hello world"
+}
+```
+
+There are a lot of existing programming languages out there that provide features like [interface merging](https://www.typescriptlang.org/docs/handbook/declaration-merging.html#merging-interfaces) or [partial classes](https://learn.microsoft.com/en-us/dotnet/csharp/programming-guide/classes-and-structs/partial-classes-and-methods), which allow you to target multiple AST elements with one reference.
+This feature is now available in the grammar language via the `[*ReferenceType]` syntax:
+
+```langium
+Item: name=ID;
+ReferenceElement: item=[*Item]; // Can reference multiple items with the same name
+```
+
+This will generate a `item: MultiReference<Item>` field now.
+
+### Infix Operator Rules
+
+To improve readability of grammars, adopters can now use the new infix rule notation ([#1836](https://github.com/eclipse-langium/langium/pull/1836)) to declare parsing rules used for infix operator parsing:
+
+```langium
+infix BinaryExpression on PrimaryExpression:
+    '%' // <-- Highest precedence
+    > '^'
+    > '*' | '/'
+    > '+' | '-';  // <-- Lowest precedence
+
+PrimaryExpression infers Expression:
+    '(' Expression ')' |
+    {infer NumberLiteral} value=NUMBER;
+```
+
+Note that the previous tree-rewriting action based grammar is still (and always will be) supported.
+In addition to better readability, the new notation also makes use of performance optimizations to speed up expression parsing by roughly 50% compared to the typical way of writing expressions.
+
+### General Improvements
+
+* Added grammar validation config, added strict mode for types ([#1951](https://github.com/eclipse-langium/langium/pull/1951)).
+* Added DocumentBuilder method to reset document state ([#1977](https://github.com/eclipse-langium/langium/pull/1977)).
+* Support named rule arguments ([#1946](https://github.com/eclipse-langium/langium/pull/1946)).
+* Watch changes on directories ([#1768](https://github.com/eclipse-langium/langium/pull/1786)).
+* Extend file system provider interface ([#1784](https://github.com/eclipse-langium/langium/pull/1784)).
+* Add factory method to `DefaultDocumentSymbolProvider` ([#1947](https://github.com/eclipse-langium/langium/pull/1947)).
+* Improve range calculation for linking errors ([#1937](https://github.com/eclipse-langium/langium/pull/1937)).
+* Improvements to the generator API ([#1965](https://github.com/eclipse-langium/langium/pull/1965)).
+* Refactored AST reflection ([#1942](https://github.com/eclipse-langium/langium/pull/1942), [#1969](https://github.com/eclipse-langium/langium/pull/1969)).
+* Drop topological sorting of interfaces, refine EBNF-based terminals to avoid synthetic capturing groups ([#1968](https://github.com/eclipse-langium/langium/pull/1968)).
+* Enable passing `refInfo` and `context` to `createReferenceCompletionItem` ([#1976](https://github.com/eclipse-langium/langium/pull/1976)).
+
+### Bug Fixes
+
+* Fixed erroneous source module modification in dependency injection code ([#1939](https://github.com/eclipse-langium/langium/pull/1939)).
+* Disable syntax highlighting delta ([#1985](https://github.com/eclipse-langium/langium/pull/1985)).
+
+### Breaking Changes
+
+* Renamed `PrecomputedScopes` to `LocalSymbols` and introduced a dedicated interface for it ([#1788](https://github.com/eclipse-langium/langium/pull/1788)).
+* Removed unused Xtext features from the Langium grammar ([#1945](https://github.com/eclipse-langium/langium/pull/1945)).
+
 ## v3.5.0 (Apr. 2025)
 
 * Improve parser error recovery ([#1822](https://github.com/eclipse-langium/langium/pull/1822)).

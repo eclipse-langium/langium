@@ -1,5 +1,19 @@
 # Change Log of `langium-cli`
 
+## v4.0.0 (Jul. 2025)
+
+* Update the internal `langium` version to 4.0.0.
+* Add strict mode for types ([#1951](https://github.com/eclipse-langium/langium/pull/1951)).
+* Improve generated `ast.ts` file for projects with multiple languages ([#1979](https://github.com/eclipse-langium/langium/pull/1979)).
+
+## v3.5.2 (Jun. 2025)
+
+* Fixed a build issue in the v3.5.1 package.
+
+## v3.5.1 (Jun. 2025)
+
+* Fixed an issue that crashed the EBNF generator ([#1975](https://github.com/eclipse-langium/langium/pull/1975)).
+
 ## v3.5.0 (Apr. 2025)
 
 * Update the internal `langium` version to 3.5.
