@@ -28,7 +28,7 @@
   "devDependencies": {
     "@eslint/eslintrc": "~3.3.1",
     "@eslint/js": "~9.31.0",
-    "@stylistic/eslint-plugin": "~5.2.2",
+    "@stylistic/eslint-plugin": "~4.2.0",
     "@types/node": "~20.17.48",
     "@types/vscode": "~1.67.0",
     "@typescript-eslint/eslint-plugin": "~8.38.0",
