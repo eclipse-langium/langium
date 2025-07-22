@@ -1,5 +1,10 @@
 # Change Log of `generator-langium`
 
+## v4.0.0 (Jul. 2025)
+
+* Now generates an npm workspaces project ([#1810](https://github.com/eclipse-langium/langium/pull/1810)).
+* Update eslint to v9 ([#1935](https://github.com/eclipse-langium/langium/pull/1935)).
+
 ## v3.0.0 (Feb. 2024)
 
 * Added templates of unit test stubs based on [Vitest](https://vitest.dev/) covering parsing, linking, and validation ([#1298](https://github.com/eclipse-langium/langium/pull/1298))

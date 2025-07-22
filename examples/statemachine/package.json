@@ -1,7 +1,7 @@
 {
   "name": "langium-statemachine-dsl",
   "displayName": "State Machine DSL",
-  "version": "3.5.0",
+  "version": "4.0.0",
   "description": "Example language built with Langium",
   "homepage": "https://langium.org",
   "engines": {
@@ -58,20 +58,20 @@
   "dependencies": {
     "chalk": "~5.4.1",
     "commander": "~14.0.0",
-    "langium": "~3.5.0",
+    "langium": "~4.0.0",
     "vscode-languageclient": "~9.0.1",
     "vscode-languageserver": "~9.0.1"
   },
   "devDependencies": {
-    "langium-cli": "~3.5.0"
+    "langium-cli": "~4.0.0"
   },
   "volta": {
-      "node": "20.19.2",
-      "npm": "10.8.2"
+    "node": "20.19.2",
+    "npm": "10.8.2"
   },
   "repository": {
     "type": "git",
-    "url": "https://github.com/eclipse-langium/langium",
+    "url": "git+https://github.com/eclipse-langium/langium.git",
     "directory": "examples/statemachine"
   },
   "bugs": "https://github.com/eclipse-langium/langium/issues",
