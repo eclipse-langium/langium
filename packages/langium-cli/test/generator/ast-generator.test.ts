@@ -5,7 +5,7 @@
  ******************************************************************************/
 
 import { EmptyFileSystem, URI, type Grammar, type LangiumDocument } from 'langium';
-import { CompositeGeneratorNode, expandToNode, expandToString, IndentNode, normalizeEOL, toString, type Generated } from 'langium/generate';
+import { expandToNode, expandToString, normalizeEOL, toString, type Generated } from 'langium/generate';
 import { createLangiumGrammarServices } from 'langium/grammar';
 import { clearDocuments, expectNoIssues, parseHelper } from 'langium/test';
 import { beforeEach, describe, expect, test } from 'vitest';
@@ -726,17 +726,18 @@ describe('Ast generator (with multiple *.langium files)', () => {
                     hidden terminal WS: /\s+/;
                 `,
                 expectedAstContentParts: [
-                    expandToStringIndented(2, expandToNode`
-                        A: {
-                            name: A.$type,
-                            properties: {
-                                a: {
-                                    name: A.a
+                    expandToNode`
+                        ${undefined /* tweak the template to have more indentation */}
+                                A: {
+                                    name: A.$type,
+                                    properties: {
+                                        a: {
+                                            name: A.a
+                                        }
+                                    },
+                                    superTypes: [Entry.$type]
                                 }
-                            },
-                            superTypes: [Entry.$type]
-                        }
-                    `)
+                    `
                 ],
             }, {
                 path: 'two.langium',
@@ -747,17 +748,18 @@ describe('Ast generator (with multiple *.langium files)', () => {
                     hidden terminal WS2: /\s+/;
                 `,
                 expectedAstContentParts: [
-                    expandToStringIndented(2, expandToNode`
-                        B: {
-                            name: B.$type,
-                            properties: {
-                                b: {
-                                    name: B.b
+                    expandToNode`
+                        ${undefined /* tweak the template to have more indentation */}
+                                B: {
+                                    name: B.$type,
+                                    properties: {
+                                        b: {
+                                            name: B.b
+                                        }
+                                    },
+                                    superTypes: [Entry.$type]
                                 }
-                            },
-                            superTypes: [Entry.$type]
-                        }
-                    `)
+                    `
                 ],
             }],
             expandToString`
@@ -1695,7 +1697,7 @@ interface GrammarFile {
     path: string;
     languageID: string | undefined; // If not undefined, this grammar file is used as entry point for a language with the given value as 'id'
     grammarContent: string;
-    expectedAstContentParts: string[];
+    expectedAstContentParts: Generated[];
 }
 async function testMultiProject(grammarFiles: GrammarFile[], ...moreExpectedParts: string[]): Promise<void> {
     // collect all information
@@ -1713,7 +1715,7 @@ async function testMultiProject(grammarFiles: GrammarFile[], ...moreExpectedPart
         const document = services.shared.workspace.LangiumDocumentFactory.fromString(file.grammarContent, uri);
         services.shared.workspace.LangiumDocuments.addDocument(document);
         documents.push(document);
-        expectedParts.push(...file.expectedAstContentParts);
+        expectedParts.push(...file.expectedAstContentParts.map(toString));
         if (file.languageID) { // use this grammar file as entry point for a language
             const languageConfig = {
                 id: file.languageID,
@@ -1761,8 +1763,4 @@ async function testMultiProject(grammarFiles: GrammarFile[], ...moreExpectedPart
 
     // check the generated content
     expectedParts.forEach(part => expect(generated).toContain(part));
-}
-
-function expandToStringIndented(columns: number, content: Generated): string {
-    return toString(new CompositeGeneratorNode().append(new IndentNode(columns * 4 /*spaces*/).append(content)));
 }
