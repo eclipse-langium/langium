@@ -114,7 +114,7 @@ describe('Check yeoman generator works', () => {
             });
     }, 120_000);
 
-    test('2 Should produce files for workspace and languag (plus test) and cli', async () => {
+    test('2 Should produce files for workspace and language (plus test) and cli', async () => {
         const context = createHelpers({}).run<LangiumGenerator>(path.join(moduleRoot));
 
         // generate in examples
@@ -139,7 +139,9 @@ describe('Check yeoman generator works', () => {
                 extensionName,
                 includeCLI: true,
                 includeTest: true
-            }).then((result) => {
+            })
+            .withArguments('use-local-langium')
+            .then((result) => {
                 const projectRoot = targetRoot + '/' + extensionName;
 
                 result.assertFile(files(projectRoot));
@@ -190,6 +192,7 @@ describe('Check yeoman generator works', () => {
                 includeCLI: true,
                 includeVSCode: true
             })
+            .withArguments('use-local-langium')
             .then((result) => {
                 const projectRoot = targetRoot + '/' + extensionName;
 
