@@ -73,6 +73,10 @@ In addition to better readability, the new notation also makes use of performanc
 
 * Renamed `PrecomputedScopes` to `LocalSymbols` and introduced a dedicated interface for it ([#1788](https://github.com/eclipse-langium/langium/pull/1788)).
 * Removed unused Xtext features from the Langium grammar ([#1945](https://github.com/eclipse-langium/langium/pull/1945)).
+* The type of references used throughout the linker service and scope provider is now `Reference | MultiReference` ([#1509](https://github.com/eclipse-langium/langium/pull/1509)).
+* The generated type names from `ast.ts` have been moved from `<typeName>` to `<typeName>.$type` ([#1942](https://github.com/eclipse-langium/langium/pull/1942)).
+* Rules are no longer allowed to use the same name as the grammar in which they are contained ([#1979](https://github.com/eclipse-langium/langium/pull/1979)).
+* Grammar names now have to be unique ([#1979](https://github.com/eclipse-langium/langium/pull/1979)).
 
 ## v3.5.0 (Apr. 2025)
 
