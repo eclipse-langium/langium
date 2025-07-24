@@ -33,8 +33,7 @@ export function generateAstSingleLanguageProject(services: LangiumCoreServices, 
 
         ${generateTerminalsAndKeywords([embeddedGrammar], config.projectName)}
 
-        ${joinToNode(astTypes.unions, union => union.toAstTypesString(isAstType(union.type)), { appendNewLineIfNotEmpty: true })}
-        ${joinToNode(astTypes.interfaces, iFace => iFace.toAstTypesString(true), { appendNewLineIfNotEmpty: true, skipNewLineAfterLastItem: true })}
+        ${joinToNode(generateTypeDefinitions(astTypes), t => t.generatedCode, { appendNewLineIfNotEmpty: true, skipNewLineAfterLastItem: true })}
         ${generateAstType(config.projectName, astTypesFiltered)}
 
         ${generateAstReflection(config.projectName, astTypesFiltered)}
@@ -75,14 +74,25 @@ export function generateAstMultiLanguageProject(services: LangiumCoreServices, l
 
         // all type definitions of the the whole '${config.projectName}' project
 
-        ${joinToNode(astTypes.unions, union => union.toAstTypesString(isAstType(union.type)), { appendNewLineIfNotEmpty: true })}
-        ${joinToNode(astTypes.interfaces, iFace => iFace.toAstTypesString(true), { appendNewLineIfNotEmpty: true, skipNewLineAfterLastItem: true })}
+        ${joinToNode(generateTypeDefinitions(astTypes), t => t.generatedCode, { appendNewLineIfNotEmpty: true, skipNewLineAfterLastItem: true })}
         ${ // reflection for the whole project
             astTypes.unions = astTypes.unions.filter(e => isAstType(e.type)), // Note that the `unions` are changed in-place here!
             generateAstReflection(config.projectName, astTypes) // Note that here are some more in-place changes!
         }
     `.appendNewLine();
     return toString(fileNode);
+}
+
+interface TypeWithCode {
+    typeName: string;
+    generatedCode: string;
+}
+
+function generateTypeDefinitions(astTypes: AstTypes): TypeWithCode[] {
+    return [
+        ...astTypes.unions.map(union => <TypeWithCode>{ typeName: union.name, generatedCode: union.toAstTypesString(isAstType(union.type)) }),
+        ...astTypes.interfaces.map(iFace => <TypeWithCode>{ typeName: iFace.name, generatedCode: iFace.toAstTypesString(true) }),
+    ].sort((l, r) => l.typeName.localeCompare(r.typeName));
 }
 
 export interface LanguageInfo {

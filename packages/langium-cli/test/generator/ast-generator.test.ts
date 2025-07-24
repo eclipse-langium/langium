@@ -763,16 +763,6 @@ describe('Ast generator (with multiple *.langium files)', () => {
                 ],
             }],
             expandToString`
-                export type Entry = A | B;
-
-                export const Entry = {
-                    $type: 'Entry'
-                } as const;
-
-                export function isEntry(item: unknown): item is Entry {
-                    return reflection.isInstance(item, Entry.$type);
-                }
-
                 export interface A extends langium.AstNode {
                     readonly $type: 'A';
                     a: string;
@@ -799,6 +789,16 @@ describe('Ast generator (with multiple *.langium files)', () => {
 
                 export function isB(item: unknown): item is B {
                     return reflection.isInstance(item, B.$type);
+                }
+
+                export type Entry = A | B;
+
+                export const Entry = {
+                    $type: 'Entry'
+                } as const;
+
+                export function isEntry(item: unknown): item is Entry {
+                    return reflection.isInstance(item, Entry.$type);
                 }
             `, expandToString`
                 export type testAstType = {
