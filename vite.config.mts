@@ -25,7 +25,11 @@ export default defineConfig({
             '**/templates/**',
             '**/examples/hello*/**',
             '**/generator-tests/**'
-        ],
-        watchExclude: [ '**/examples/hello*/**' /* populated by the yeoman generator test */]
+        ]
+    },
+    server: {
+        watch: {
+            ignored: [ '**/generator-tests/**' /* populated by the yeoman generator test */]
+        }
     }
 });

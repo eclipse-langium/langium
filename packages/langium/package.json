@@ -1,6 +1,6 @@
 {
   "name": "langium",
-  "version": "3.5.0",
+  "version": "4.0.0",
   "description": "A language engineering tool for the Language Server Protocol",
   "homepage": "https://langium.org",
   "engines": {
@@ -72,7 +72,7 @@
     "vscode-uri": "~3.1.0"
   },
   "devDependencies": {
-    "langium-cli": "~3.5.0",
+    "langium-cli": "~4.0.0",
     "typedoc": "~0.28.2"
   },
   "volta": {
@@ -81,7 +81,7 @@
   },
   "repository": {
     "type": "git",
-    "url": "https://github.com/eclipse-langium/langium",
+    "url": "git+https://github.com/eclipse-langium/langium.git",
     "directory": "packages/langium"
   },
   "bugs": "https://github.com/eclipse-langium/langium/issues",
