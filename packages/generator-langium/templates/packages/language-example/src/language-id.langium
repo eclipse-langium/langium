@@ -1,6 +1,6 @@
 grammar <%= LanguageName %>
 
-entry Model:
+entry <%= EntryName %>:
     (persons+=Person | greetings+=Greeting)*;
 
 Person:

@@ -1,4 +1,4 @@
-import type { Model } from '<%= language-id %>-language';
+import type { <%= EntryName %> } from '<%= language-id %>-language';
 import { create<%= LanguageName %>Services, <%= LanguageName %>LanguageMetaData } from '<%= language-id %>-language';
 import chalk from 'chalk';
 import { Command } from 'commander';
@@ -15,7 +15,7 @@ const packageContent = await fs.readFile(packagePath, 'utf-8');
 
 export const generateAction = async (fileName: string, opts: GenerateOptions): Promise<void> => {
     const services = create<%= LanguageName %>Services(NodeFileSystem).<%= LanguageName %>;
-    const model = await extractAstNode<Model>(fileName, services);
+    const model = await extractAstNode<<%= EntryName %>>(fileName, services);
     const generatedFilePath = generateJavaScript(model, fileName, opts.destination);
     console.log(chalk.green(`JavaScript code generated successfully: ${generatedFilePath}`));
 };
