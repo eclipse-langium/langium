@@ -139,6 +139,7 @@ describe('Check yeoman generator works', () => {
             .withAnswers( <Answers>{
                 ...answersForCore,
                 extensionName,
+                includeExampleProject: true,
                 includeCLI: true,
                 includeTest: true
             }).then((result) => {
