@@ -982,7 +982,7 @@ describe('Ast generator (with multiple *.langium files)', () => {
                 grammarContent: `
                         grammar Test
                         import "two";
-                        entry Test returns Test: 'a' a=ID;
+                        entry Test1 returns Test1: 'a' a=ID;
                         terminal ID: /[a-zA-Z0-9]+/;
                         hidden terminal WS: /\s+/;
                     `,
@@ -991,24 +991,24 @@ describe('Ast generator (with multiple *.langium files)', () => {
                 path: 'two.langium',
                 languageID: undefined,
                 grammarContent: `
-                        interface Test {
+                        interface Test1 {
                             a: string
                         }
                     `,
                 expectedAstContentParts: [
                     expandToString`
-                        export interface Test extends langium.AstNode {
-                            readonly $type: 'Test';
+                        export interface Test1 extends langium.AstNode {
+                            readonly $type: 'Test1';
                             a: string;
                         }
 
-                        export const Test = {
-                            $type: 'Test',
+                        export const Test1 = {
+                            $type: 'Test1',
                             a: 'a'
                         } as const;
 
-                        export function isTest(item: unknown): item is Test {
-                            return reflection.isInstance(item, Test.$type);
+                        export function isTest1(item: unknown): item is Test1 {
+                            return reflection.isInstance(item, Test1.$type);
                         }
                     `
                 ],
@@ -1016,11 +1016,11 @@ describe('Ast generator (with multiple *.langium files)', () => {
             expandToString`
                 export class testAstReflection extends langium.AbstractAstReflection {
                     override readonly types = {
-                        Test: {
-                            name: Test.$type,
+                        Test1: {
+                            name: Test1.$type,
                             properties: {
                                 a: {
-                                    name: Test.a
+                                    name: Test1.a
                                 }
                             },
                             superTypes: []
@@ -1039,7 +1039,7 @@ describe('Ast generator (with multiple *.langium files)', () => {
                 grammarContent: `
                         grammar Test
                         import "myFolder/Test";
-                        entry Test returns Test: 'a' a=ID;
+                        entry Test1 returns Test1: 'a' a=ID;
                         terminal ID: /[a-zA-Z0-9]+/;
                         hidden terminal WS: /\s+/;
                     `,
@@ -1048,7 +1048,7 @@ describe('Ast generator (with multiple *.langium files)', () => {
                 path: 'myFolder/Test.langium',
                 languageID: undefined,
                 grammarContent: `
-                        interface Test {
+                        interface Test1 {
                             a: string
                         }
                     `,

@@ -4,12 +4,12 @@
  * terms of the MIT License, which is available in the project root.
  ******************************************************************************/
 
-import type { AstNode, GrammarAST as GrammarTypes, Properties } from 'langium';
-import { AstUtils, EmptyFileSystem, GrammarAST } from 'langium';
+import type { AstNode, Grammar, GrammarAST as GrammarTypes, LangiumDocument, Properties } from 'langium';
+import { AstUtils, EmptyFileSystem, GrammarAST, URI } from 'langium';
 import { IssueCodes, createLangiumGrammarServices } from 'langium/grammar';
 import type { ValidationResult } from 'langium/test';
 import { clearDocuments, expectError, expectIssue, expectNoIssues, expectWarning, parseHelper, validationHelper } from 'langium/test';
-import { afterEach, beforeAll, describe, expect, test } from 'vitest';
+import { afterEach, beforeAll, beforeEach, describe, expect, test } from 'vitest';
 import { DiagnosticSeverity } from 'vscode-languageserver';
 import { beforeAnotherRule, beforeSinglelternative, beforeTwoAlternatives, beforeWithInfers } from './lsp/grammar-code-actions.test.js';
 
@@ -17,6 +17,8 @@ const services = createLangiumGrammarServices(EmptyFileSystem);
 const parse = parseHelper(services.grammar);
 const locator = services.grammar.workspace.AstNodeLocator;
 const validate = validationHelper<GrammarAST.Grammar>(services.grammar);
+
+beforeEach(() => clearDocuments(services.shared));
 
 describe('Langium grammar validation', () => {
 
@@ -611,6 +613,150 @@ describe('Reserved names', () => {
         });
     }
 
+});
+
+describe('Check grammar names', () => {
+
+    test('Unique grammar name: 2 grammars', () => checkNamesInGrammars(
+        {
+            grammar: `
+                grammar MyGrammar
+                entry Rule1: 'r1' name='MyName';
+            `,
+            filename: 'one.langium',
+            expectedErrors: [
+                "This grammar name 'MyGrammar' is also used by the grammar in 'two.langium'.",
+            ],
+        },
+        {
+            grammar: `
+                grammar MyGrammar
+                entry Rule2: 'r2' name='MyName2';
+            `,
+            filename: 'two.langium',
+            expectedErrors: [
+                "This grammar name 'MyGrammar' is also used by the grammar in 'one.langium'.",
+            ],
+        }
+    ));
+
+    test('Unique grammar name: 3 grammars', () => checkNamesInGrammars(
+        {
+            grammar: `
+                grammar MyGrammar
+                entry Rule1: 'r1' name='MyName';
+            `,
+            filename: 'one.langium',
+            expectedErrors: [
+                "This grammar name 'MyGrammar' is also used by the grammar in 'two.langium'.",
+                "This grammar name 'MyGrammar' is also used by the grammar in 'three.langium'.",
+            ],
+        },
+        {
+            grammar: `
+                grammar MyGrammar
+                entry Rule2: 'r2' name='MyName2';
+            `,
+            filename: 'two.langium',
+            expectedErrors: [
+                "This grammar name 'MyGrammar' is also used by the grammar in 'one.langium'.",
+                "This grammar name 'MyGrammar' is also used by the grammar in 'three.langium'.",
+            ],
+        },
+        {
+            grammar: `
+                grammar MyGrammar
+                entry Rule3: 'r3' name='MyName3';
+            `,
+            filename: 'three.langium',
+            expectedErrors: [
+                "This grammar name 'MyGrammar' is also used by the grammar in 'one.langium'.",
+                "This grammar name 'MyGrammar' is also used by the grammar in 'two.langium'.",
+            ],
+        }
+    ));
+
+    test('Parser rule name is used as name by own grammar', () => checkNamesInGrammars(
+        {
+            grammar: `
+                grammar MyGrammar
+                entry MyGrammar: 'r1' name='MyName';
+            `,
+            filename: 'one.langium',
+            expectedErrors: [
+                "'MyGrammar' is already used as grammar name in 'one.langium'.",
+            ],
+        }
+    ));
+
+    test('Parser rule name is used as name by another grammar', () => checkNamesInGrammars(
+        {
+            grammar: `
+                grammar MyGrammar
+                entry OtherGrammar: 'r1' name='MyName';
+            `,
+            filename: 'one.langium',
+            expectedErrors: [
+                "'OtherGrammar' is already used as grammar name in 'two.langium'.",
+            ],
+        },
+        {
+            grammar: `
+                grammar OtherGrammar
+                entry Rule2: 'r2' name='MyName2';
+            `,
+            filename: 'two.langium',
+            expectedErrors: [],
+        }
+    ));
+
+    test('Parser rule name is used as name by own and another grammar', () => checkNamesInGrammars(
+        {
+            grammar: `
+                grammar MyGrammar
+                entry MyGrammar: 'r1' name='MyName';
+            `,
+            filename: 'one.langium',
+            expectedErrors: [
+                "This grammar name 'MyGrammar' is also used by the grammar in 'two.langium'.",
+                "'MyGrammar' is already used as grammar name in 'one.langium'.",
+                "'MyGrammar' is already used as grammar name in 'two.langium'.",
+            ],
+        },
+        {
+            grammar: `
+                grammar MyGrammar
+                entry Rule2: 'r2' name='MyName2';
+            `,
+            filename: 'two.langium',
+            expectedErrors: [
+                "This grammar name 'MyGrammar' is also used by the grammar in 'one.langium'.",
+            ],
+        }
+    ));
+
+    interface GrammarInfo {
+        grammar: string;
+        filename: string;
+        expectedErrors: string[];
+        document?: LangiumDocument<Grammar>; // internally used
+    }
+
+    async function checkNamesInGrammars(...grammars: GrammarInfo[]): Promise<void> {
+        for (const info of grammars) {
+            const document = services.shared.workspace.LangiumDocumentFactory.fromString<Grammar>(info.grammar, URI.parse(`file:///${info.filename}`));
+            services.shared.workspace.LangiumDocuments.addDocument(document);
+            info.document = document; // remember the created document for easier checking later
+        }
+        await services.shared.workspace.DocumentBuilder.build(grammars.map(g => g.document!), { validation: true });
+        for (const info of grammars) {
+            const foundErrors = (info.document!.diagnostics ?? []).filter(d => d.severity === DiagnosticSeverity.Error).map(d => d.message);
+            expect(foundErrors.length, `${info.filename}:\n${foundErrors.join('\n')}`).toBe(info.expectedErrors.length);
+            for (let i = 0; i < foundErrors.length; i++) {
+                expect(foundErrors[i]).toBe(info.expectedErrors[i]);
+            }
+        }
+    }
 });
 
 describe('Whitespace keywords', () => {
@@ -1680,6 +1826,8 @@ describe('Strict type validation', () => {
     const strictModeServices = createLangiumGrammarServices(EmptyFileSystem);
     strictModeServices.grammar.validation.LangiumGrammarValidator.options = { types: 'strict' };
     const validateStrict = validationHelper<GrammarAST.Grammar>(strictModeServices.grammar);
+
+    beforeEach(() => clearDocuments(strictModeServices.shared));
 
     test('Inferred parser rules should error in strict mode', async () => {
         const grammar = `

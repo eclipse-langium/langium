@@ -8,7 +8,7 @@ import chalk from 'chalk';
 import { Command } from 'commander';
 import { NodeFileSystem } from 'langium/node';
 import type { Statemachine } from '../language-server/generated/ast.js';
-import { StatemachineLanguageMetaData } from '../language-server/generated/module.js';
+import { StatemachineModelLanguageMetaData } from '../language-server/generated/module.js';
 import { createStatemachineServices } from '../language-server/statemachine-module.js';
 import { extractAstNode } from './cli-util.js';
 import { generateCpp } from './generator.js';
@@ -18,7 +18,7 @@ import * as path from 'node:path';
 
 export const generateAction = async (fileName: string, opts: GenerateOptions): Promise<void> => {
     const services = createStatemachineServices(NodeFileSystem).statemachine;
-    const statemachine = await extractAstNode<Statemachine>(fileName, StatemachineLanguageMetaData.fileExtensions, services);
+    const statemachine = await extractAstNode<Statemachine>(fileName, StatemachineModelLanguageMetaData.fileExtensions, services);
     const generatedFilePath = generateCpp(statemachine, fileName, opts.destination);
     console.log(chalk.green(`C++ code generated successfully: ${generatedFilePath}`));
 };
@@ -38,7 +38,7 @@ program.version(JSON.parse(packageContent).version);
 
 program
     .command('generate')
-    .argument('<file>', `possible file extensions: ${StatemachineLanguageMetaData.fileExtensions.join(', ')}`)
+    .argument('<file>', `possible file extensions: ${StatemachineModelLanguageMetaData.fileExtensions.join(', ')}`)
     .option('-d, --destination <dir>', 'destination directory of generating')
     .description('generates a C++ CLI to walk over states')
     .action(generateAction);

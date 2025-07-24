@@ -16,6 +16,7 @@ import { toDocumentSegment } from '../../utils/cst-utils.js';
 import { findNameAssignment, findNodeForKeyword, findNodeForProperty, getAllReachableRules, getAllRulesUsedForCrossReferences, isArrayCardinality, isDataTypeRule, isOptionalCardinality, terminalRegex } from '../../utils/grammar-utils.js';
 import type { Stream } from '../../utils/stream.js';
 import { stream } from '../../utils/stream.js';
+import { UriUtils } from '../../utils/uri-utils.js';
 import type { DiagnosticData, ValidationAcceptor, ValidationChecks } from '../../validation/validation-registry.js';
 import { diagnosticData } from '../../validation/validation-registry.js';
 import type { AstNodeLocator } from '../../workspace/ast-node-locator.js';
@@ -158,6 +159,14 @@ export class LangiumGrammarValidator {
                     property: 'name',
                     data: diagnosticData(IssueCodes.GrammarNameUppercase)
                 });
+            }
+            for (const otherGrammar of (this.documents.all.toArray()).map(doc => doc.parseResult.value).filter(ast.isGrammar)) {
+                if (otherGrammar !== grammar && otherGrammar.name === grammar.name) {
+                    accept('error', `This grammar name '${grammar.name}' is also used by the grammar in '${UriUtils.basename(otherGrammar.$document!.uri)}'.`, {
+                        node: grammar,
+                        property: 'name',
+                    });
+                }
             }
         }
     }
@@ -814,11 +823,16 @@ export class LangiumGrammarValidator {
 
     private checkReservedName<N extends AstNode>(node: N, property: Properties<N>, accept: ValidationAcceptor): void {
         const name = node[property as keyof N];
-        if (typeof name === 'string' && reservedNames.has(name)) {
-            accept('error', `'${name}' is a reserved name of the JavaScript runtime.`, {
-                node,
-                property
-            });
+        if (typeof name === 'string') {
+            if (reservedNames.has(name)) {
+                accept('error', `'${name}' is a reserved name of the JavaScript runtime.`, { node, property });
+            }
+            // don't use names of grammars:
+            for (const grammar of this.documents.all.map(doc => doc.parseResult.value).filter(ast.isGrammar)) {
+                if (grammar.name === name) {
+                    accept('error', `'${name}' is already used as grammar name in '${UriUtils.basename(grammar.$document!.uri)}'.`, { node, property });
+                }
+            }
         }
     }
 
