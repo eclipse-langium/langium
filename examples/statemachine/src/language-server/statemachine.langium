@@ -1,4 +1,4 @@
-grammar Statemachine
+grammar StatemachineModel
 
 /** A textual representation of a state machine */
 entry Statemachine:

@@ -4,12 +4,12 @@
  * terms of the MIT License, which is available in the project root.
  ******************************************************************************/
 
-import type { AstNode, GrammarAST as GrammarTypes, Properties } from 'langium';
-import { AstUtils, EmptyFileSystem, GrammarAST } from 'langium';
+import type { AstNode, Grammar, GrammarAST as GrammarTypes, LangiumDocument, Properties } from 'langium';
+import { AstUtils, EmptyFileSystem, GrammarAST, URI } from 'langium';
 import { IssueCodes, createLangiumGrammarServices } from 'langium/grammar';
 import type { ValidationResult } from 'langium/test';
 import { clearDocuments, expectError, expectIssue, expectNoIssues, expectWarning, parseHelper, validationHelper } from 'langium/test';
-import { afterEach, beforeAll, describe, expect, test } from 'vitest';
+import { afterEach, beforeAll, beforeEach, describe, expect, test } from 'vitest';
 import { DiagnosticSeverity } from 'vscode-languageserver';
 import { beforeAnotherRule, beforeSinglelternative, beforeTwoAlternatives, beforeWithInfers } from './lsp/grammar-code-actions.test.js';
 
@@ -17,6 +17,8 @@ const services = createLangiumGrammarServices(EmptyFileSystem);
 const parse = parseHelper(services.grammar);
 const locator = services.grammar.workspace.AstNodeLocator;
 const validate = validationHelper<GrammarAST.Grammar>(services.grammar);
+
+beforeEach(() => clearDocuments(services.shared));
 
 describe('Langium grammar validation', () => {
 
@@ -611,6 +613,460 @@ describe('Reserved names', () => {
         });
     }
 
+});
+
+describe('Check grammar names', () => {
+
+    test('Unique grammar names: 2 independent grammars', () => checkNamesInGrammars(
+        {
+            grammar: `
+                grammar MyGrammar
+                entry Rule1: 'r1' name='MyName';
+            `,
+            filename: 'one.langium',
+            expectedErrors: [],
+        },
+        {
+            grammar: `
+                grammar MyGrammar
+                entry Rule2: 'r2' name='MyName2';
+            `,
+            filename: 'two.langium',
+            expectedErrors: [],
+        }
+    ));
+    test('Unique grammar names: grammar 1 imports grammar 2', () => checkNamesInGrammars(
+        {
+            grammar: `
+                grammar MyGrammar
+                import "two"
+                entry Rule1: 'r1' name='MyName';
+            `,
+            filename: 'one.langium',
+            expectedErrors: [
+                "This grammar name 'MyGrammar' is also used by the grammar in 'two.langium'.",
+            ],
+        },
+        {
+            grammar: `
+                grammar MyGrammar
+                entry Rule2: 'r2' name='MyName2';
+            `,
+            filename: 'two.langium',
+            expectedErrors: [],
+        }
+    ));
+    test('Unique grammar names: 2 grammars import each other', () => checkNamesInGrammars(
+        {
+            grammar: `
+                grammar MyGrammar
+                import "two"
+                entry Rule1: 'r1' name='MyName';
+            `,
+            filename: 'one.langium',
+            expectedErrors: [
+                "This grammar name 'MyGrammar' is also used by the grammar in 'two.langium'.",
+            ],
+        },
+        {
+            grammar: `
+                grammar MyGrammar
+                import "one"
+                entry Rule2: 'r2' name='MyName2';
+            `,
+            filename: 'two.langium',
+            expectedErrors: [
+                "This grammar name 'MyGrammar' is also used by the grammar in 'one.langium'.",
+            ],
+        }
+    ));
+
+    test('Unique grammar names: 3 grammars import each other', () => checkNamesInGrammars(
+        {
+            grammar: `
+                grammar MyGrammar
+                import "two"
+                entry Rule1: 'r1' name='MyName';
+            `,
+            filename: 'one.langium',
+            expectedErrors: [
+                "This grammar name 'MyGrammar' is also used by the grammar in 'two.langium'.",
+                "This grammar name 'MyGrammar' is also used by the grammar in 'three.langium'.",
+            ],
+        },
+        {
+            grammar: `
+                grammar MyGrammar
+                import "three"
+                entry Rule2: 'r2' name='MyName2';
+            `,
+            filename: 'two.langium',
+            expectedErrors: [
+                "This grammar name 'MyGrammar' is also used by the grammar in 'three.langium'.",
+                "This grammar name 'MyGrammar' is also used by the grammar in 'one.langium'.",
+            ],
+        },
+        {
+            grammar: `
+                grammar MyGrammar
+                import "one"
+                entry Rule3: 'r3' name='MyName3';
+            `,
+            filename: 'three.langium',
+            expectedErrors: [
+                "This grammar name 'MyGrammar' is also used by the grammar in 'one.langium'.",
+                "This grammar name 'MyGrammar' is also used by the grammar in 'two.langium'.",
+            ],
+        }
+    ));
+
+    test('Unique grammar names: grammar 1 imports grammar 2, grammar 2 imports grammar 3, only grammar 1 and grammar 3 have the same name', () => checkNamesInGrammars(
+        {
+            grammar: `
+                grammar MyGrammar
+                import "two"
+                entry Rule1: 'r1' name='MyName';
+            `,
+            filename: 'one.langium',
+            expectedErrors: [
+                "This grammar name 'MyGrammar' is also used by the grammar in 'three.langium'.",
+            ],
+        },
+        {
+            grammar: `
+                grammar MyGrammar2
+                import "three"
+                entry Rule2: 'r2' name='MyName2';
+            `,
+            filename: 'two.langium',
+            expectedErrors: [],
+        },
+        {
+            grammar: `
+                grammar MyGrammar
+                entry Rule3: 'r3' name='MyName3';
+            `,
+            filename: 'three.langium',
+            expectedErrors: [],
+        }
+    ));
+
+    test('Parser rule name is used as name by own grammar', () => checkNamesInGrammars(
+        {
+            grammar: `
+                grammar MyGrammar
+                entry MyGrammar: 'r1' name='MyName';
+            `,
+            filename: 'one.langium',
+            expectedErrors: [
+                "'MyGrammar' is already used here as grammar name.",
+            ],
+        }
+    ));
+
+    test('Parser rule name is used as name by another, directly imported grammar', () => checkNamesInGrammars(
+        {
+            grammar: `
+                grammar MyGrammar
+                import "two"
+                entry OtherGrammar: 'r1' name='MyName';
+            `,
+            filename: 'one.langium',
+            expectedErrors: [
+                "'OtherGrammar' is already used as grammar name in 'two.langium'.",
+            ],
+        },
+        {
+            grammar: `
+                grammar OtherGrammar
+                entry Rule2: 'r2' name='MyName2';
+            `,
+            filename: 'two.langium',
+            expectedErrors: [],
+        }
+    ));
+
+    test('Type name is used as name by another, directly imported grammar', () => checkNamesInGrammars(
+        {
+            grammar: `
+                grammar MyGrammar
+                import "two"
+                entry Rule1: 'r1' name='MyName';
+                type OtherGrammar = 'Type1';
+            `,
+            filename: 'one.langium',
+            expectedErrors: [
+                "'OtherGrammar' is already used as grammar name in 'two.langium'.",
+            ],
+        },
+        {
+            grammar: `
+                grammar OtherGrammar
+                entry Rule2: 'r2' name='MyName2';
+            `,
+            filename: 'two.langium',
+            expectedErrors: [],
+        }
+    ));
+
+    test('Interface name is used as name by another, directly imported grammar', () => checkNamesInGrammars(
+        {
+            grammar: `
+                grammar MyGrammar
+                import "two"
+                entry Rule1: 'r1' name='MyName';
+                interface OtherGrammar {};
+            `,
+            filename: 'one.langium',
+            expectedErrors: [
+                "'OtherGrammar' is already used as grammar name in 'two.langium'.",
+            ],
+        },
+        {
+            grammar: `
+                grammar OtherGrammar
+                entry Rule2: 'r2' name='MyName2';
+            `,
+            filename: 'two.langium',
+            expectedErrors: [],
+        }
+    ));
+
+    test('Action inferrs type whose name is used as name by another, directly imported grammar', () => checkNamesInGrammars(
+        {
+            grammar: `
+                grammar MyGrammar
+                import "two"
+                entry Rule1: 'r1' {infer OtherGrammar} name='MyName';
+            `,
+            filename: 'one.langium',
+            expectedErrors: [
+                "'OtherGrammar' is already used as grammar name in 'two.langium'.",
+            ],
+        },
+        {
+            grammar: `
+                grammar OtherGrammar
+                entry Rule2: 'r2' name='MyName2';
+            `,
+            filename: 'two.langium',
+            expectedErrors: [],
+        }
+    ));
+
+    test('Fragment rule name might be used as name by another, directly imported grammar', () => checkNamesInGrammars(
+        {
+            grammar: `
+                grammar MyGrammar
+                import "two"
+                entry Rule1: OtherGrammar;
+                fragment OtherGrammar: 'r1' name='MyName';
+            `,
+            filename: 'one.langium',
+            expectedErrors: [],
+        },
+        {
+            grammar: `
+                grammar OtherGrammar
+                entry Rule2: 'r2' name='MyName2';
+            `,
+            filename: 'two.langium',
+            expectedErrors: [],
+        }
+    ));
+
+    test('Parser rule name is used as name by another, transitively imported grammar', () => checkNamesInGrammars(
+        {
+            grammar: `
+                grammar MyGrammar
+                import "two"
+                entry OtherGrammar: 'r1' name='MyName';
+            `,
+            filename: 'one.langium',
+            expectedErrors: [
+                "'OtherGrammar' is already used as grammar name in 'three.langium'.",
+            ],
+        },
+        {
+            grammar: `
+                grammar MyGrammar2
+                import "three"
+                entry Rule2: 'r2' name='MyName2';
+            `,
+            filename: 'two.langium',
+            expectedErrors: [],
+        },
+        {
+            grammar: `
+                grammar OtherGrammar
+                entry Rule3: 'r3' name='MyName3';
+            `,
+            filename: 'three.langium',
+            expectedErrors: [],
+        }
+    ));
+
+    test('Grammar directly imports another grammar with a parser rule whose name is used as name by the importing grammar', () => checkNamesInGrammars(
+        {
+            grammar: `
+                grammar MyGrammar
+                import "two"
+                entry Rule1: 'r1' name='MyName';
+            `,
+            filename: 'one.langium',
+            expectedErrors: [
+                "'MyGrammar' is already used as ParserRule name in 'two.langium'.",
+            ],
+        },
+        {
+            grammar: `
+                grammar OtherGrammar
+                entry MyGrammar: 'r2' name='MyName2';
+            `,
+            filename: 'two.langium',
+            expectedErrors: [],
+        }
+    ));
+
+    test('Grammar directly imports another grammar with a parser rule whose name is used as name by the imported grammar', () => checkNamesInGrammars(
+        {
+            grammar: `
+                grammar MyGrammar
+                import "two"
+                entry Rule1: 'r1' name='MyName';
+            `,
+            filename: 'one.langium',
+            expectedErrors: [], // don't report the issue of the imported grammar here again
+        },
+        {
+            grammar: `
+                grammar OtherGrammar
+                entry OtherGrammar: 'r2' name='MyName2';
+            `,
+            filename: 'two.langium',
+            expectedErrors: [
+                "'OtherGrammar' is already used here as grammar name.",
+            ],
+        }
+    ));
+
+    test('Grammar transitively imports another grammar with a parser rule whose name is used as name by the importing grammar', () => checkNamesInGrammars(
+        {
+            grammar: `
+                grammar MyGrammar1
+                import "two"
+                entry Rule1: 'r1' name='MyName';
+            `,
+            filename: 'one.langium',
+            expectedErrors: [
+                "'MyGrammar1' is already used as ParserRule name in 'three.langium'.",
+            ],
+        },
+        {
+            grammar: `
+                grammar MyGrammar2
+                import "three"
+                entry Rule2: 'r2' name='MyName2';
+            `,
+            filename: 'two.langium',
+            expectedErrors: [],
+        },
+        {
+            grammar: `
+                grammar MyGrammar3
+                entry MyGrammar1: 'r3' name='MyName3';
+            `,
+            filename: 'three.langium',
+            expectedErrors: [],
+        }
+    ));
+
+    test('Grammar 1 directly imports grammar 2 whose name is used by a parser rule in grammar 3 which is directly imported by grammar 2', () => checkNamesInGrammars(
+        {
+            grammar: `
+                grammar MyGrammar
+                import "two"
+                entry Rule1: 'r1' name='MyName';
+            `,
+            filename: 'one.langium',
+            expectedErrors: [
+                "'three.langium' contains the ParserRule with the name 'MyGrammar2', which is already the name of the grammar in 'two.langium'.",
+            ],
+        },
+        {
+            grammar: `
+                grammar MyGrammar2
+                import "three"
+                entry Rule2: 'r2' name='MyName2';
+            `,
+            filename: 'two.langium',
+            expectedErrors: [
+                "'MyGrammar2' is already used as ParserRule name in 'three.langium'.",
+            ],
+        },
+        {
+            grammar: `
+                grammar MyGrammar3
+                entry MyGrammar2: 'r3' name='MyName3';
+            `,
+            filename: 'three.langium',
+            expectedErrors: [],
+        }
+    ));
+
+    test('Grammar 1 directly imports grammar 2 whose name is used by a parser rule in grammar 3 which is directly imported by grammar 1', () => checkNamesInGrammars(
+        {
+            grammar: `
+                grammar MyGrammar
+                import "two"
+                import "three"
+                entry Rule1: 'r1' name='MyName';
+            `,
+            filename: 'one.langium',
+            expectedErrors: [
+                "'three.langium' contains the ParserRule with the name 'MyGrammar2', which is already the name of the grammar in 'two.langium'.",
+            ],
+        },
+        {
+            grammar: `
+                grammar MyGrammar2
+                entry Rule2: 'r2' name='MyName2';
+            `,
+            filename: 'two.langium',
+            expectedErrors: [],
+        },
+        {
+            grammar: `
+                grammar MyGrammar3
+                entry MyGrammar2: 'r3' name='MyName3';
+            `,
+            filename: 'three.langium',
+            expectedErrors: [],
+        }
+    ));
+
+    interface GrammarInfo {
+        grammar: string;
+        filename: string;
+        expectedErrors: string[];
+        document?: LangiumDocument<Grammar>; // internally used
+    }
+
+    async function checkNamesInGrammars(...grammars: GrammarInfo[]): Promise<void> {
+        for (const info of grammars) {
+            const document = services.shared.workspace.LangiumDocumentFactory.fromString<Grammar>(info.grammar, URI.parse(`file:///${info.filename}`));
+            services.shared.workspace.LangiumDocuments.addDocument(document);
+            info.document = document; // remember the created document for easier checking later
+        }
+        await services.shared.workspace.DocumentBuilder.build(grammars.map(g => g.document!), { validation: true });
+        for (const info of grammars) {
+            const foundErrors = (info.document!.diagnostics ?? []).filter(d => d.severity === DiagnosticSeverity.Error).map(d => d.message);
+            expect(foundErrors.length, `${info.filename}:\n${foundErrors.join('\n')}`).toBe(info.expectedErrors.length);
+            for (let i = 0; i < foundErrors.length; i++) {
+                expect(foundErrors[i]).toBe(info.expectedErrors[i]);
+            }
+        }
+    }
 });
 
 describe('Whitespace keywords', () => {
@@ -1680,6 +2136,8 @@ describe('Strict type validation', () => {
     const strictModeServices = createLangiumGrammarServices(EmptyFileSystem);
     strictModeServices.grammar.validation.LangiumGrammarValidator.options = { types: 'strict' };
     const validateStrict = validationHelper<GrammarAST.Grammar>(strictModeServices.grammar);
+
+    beforeEach(() => clearDocuments(strictModeServices.shared));
 
     test('Inferred parser rules should error in strict mode', async () => {
         const grammar = `

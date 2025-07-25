@@ -4,31 +4,28 @@
  * terms of the MIT License, which is available in the project root.
  ******************************************************************************/
 
-import type { AstNode, Grammar, LangiumDocument, Mutable } from 'langium';
-import type { LangiumConfig, LangiumLanguageConfig } from './package-types.js';
-import { URI } from 'langium';
-import { loadConfig } from './package.js';
-import { AstUtils, GrammarAST } from 'langium';
-import { createLangiumGrammarServices, resolveImport, resolveImportUri, resolveTransitiveImports } from 'langium/grammar';
+import chalk from 'chalk';
+import fs from 'fs-extra';
+import { validate } from 'jsonschema';
+import { AstUtils, GrammarAST, URI, type AstNode, type Grammar, type LangiumDocument, type Mutable } from 'langium';
+import { createGrammarDiagramHtml, createGrammarDiagramSvg } from 'langium-railroad';
+import { createLangiumGrammarServices, resolveImport, resolveImportUri, resolveTransitiveImports, type LangiumGrammarServices } from 'langium/grammar';
 import { NodeFileSystem } from 'langium/node';
-import { generateAst } from './generator/ast-generator.js';
-import { serializeGrammar } from './generator/grammar-serializer.js';
-import { generateModule } from './generator/module-generator.js';
+import * as path from 'path';
+import { generateAstMultiLanguageProject, generateAstSingleLanguageProject, getLanguageIdentifier, type LanguageInfo } from './generator/ast-generator.js';
 import { generateBnf } from './generator/bnf-generator.js';
-import { generateTextMate } from './generator/highlighting/textmate-generator.js';
+import { serializeGrammar } from './generator/grammar-serializer.js';
 import { generateMonarch } from './generator/highlighting/monarch-generator.js';
 import { generatePrismHighlighting } from './generator/highlighting/prism-generator.js';
+import { generateTextMate } from './generator/highlighting/textmate-generator.js';
 import { getTime, log } from './generator/langium-util.js';
+import { generateModule } from './generator/module-generator.js';
 import { elapsedTime, getUserChoice, schema } from './generator/node-util.js';
-import { RelativePath } from './package-types.js';
-import { getFilePath } from './package.js';
-import { validateParser } from './parser-validation.js';
 import { generateTypesFile } from './generator/types-generator.js';
-import { createGrammarDiagramHtml, createGrammarDiagramSvg } from 'langium-railroad';
-import { validate } from 'jsonschema';
-import chalk from 'chalk';
-import * as path from 'path';
-import fs from 'fs-extra';
+import type { LangiumConfig, LangiumLanguageConfig } from './package-types.js';
+import { RelativePath } from './package-types.js';
+import { getFilePath, loadConfig } from './package.js';
+import { validateParser } from './parser-validation.js';
 
 export async function generate(options: GenerateOptions): Promise<boolean> {
     const config = await loadConfig(options);
@@ -149,7 +146,7 @@ async function eagerLoad(document: LangiumDocument, uris: Set<string> = new Set(
  * Creates a map that contains elements of all grammars.
  * This includes both input grammars and their transitive dependencies.
  */
-function mapGrammarElements(grammars: Grammar[], visited: Set<string> = new Set(), map: Map<Grammar, GrammarElement[]> = new Map()): Map<Grammar, GrammarElement[]> {
+function mapGrammarElements(grammars: Grammar[], grammarServices: LangiumGrammarServices, visited: Set<string> = new Set(), map: Map<Grammar, GrammarElement[]> = new Map()): Map<Grammar, GrammarElement[]> {
     for (const grammar of grammars) {
         const doc = AstUtils.getDocument(grammar);
         const uriString = doc.uri.toString();
@@ -157,45 +154,50 @@ function mapGrammarElements(grammars: Grammar[], visited: Set<string> = new Set(
             visited.add(uriString);
             map.set(
                 grammar,
-                (grammar.rules as GrammarElement[])
-                    .concat(grammar.types)
-                    .concat(grammar.interfaces)
+                [ ...grammar.rules, ...grammar.types, ...grammar.interfaces ]
             );
-            const importedGrammars = grammar.imports.map(e => resolveImport(documents, e)).filter(e => e !== undefined);
-            mapGrammarElements(importedGrammars, visited, map);
+            const importedGrammars = grammar.imports.map(e => resolveImport(grammarServices.shared.workspace.LangiumDocuments, e)).filter(e => e !== undefined);
+            mapGrammarElements(importedGrammars, grammarServices, visited, map);
         }
     }
     return map;
 }
 
-function embedReferencedGrammar(grammar: Grammar, map: Map<Grammar, GrammarElement[]>): Grammar {
-    const allGrammars = resolveTransitiveImports(documents, grammar);
+/**
+ * Embedds all imported grammars into the given grammar.
+ * @param grammar entry grammar, which is changed in-place!
+ * @param map map with all elements from imported grammars, only these elements are copied into the embedded grammar
+ * @param grammarServices Langium grammar services
+ * @returns the embedded grammar, i.e. a new grammar instance, which contains all elements from the given grammar and copies of all elements of the imported grammars
+ */
+function embedReferencedGrammar(grammar: Grammar, map: Map<Grammar, GrammarElement[]>, grammarServices: LangiumGrammarServices): Grammar {
+    const allImportedGrammars = resolveTransitiveImports(grammarServices.shared.workspace.LangiumDocuments, grammar);
     const linker = grammarServices.references.Linker;
     const buildReference = linker.buildReference.bind(linker);
-    for (const importedGrammar of allGrammars) {
+    const grammarCopy: Grammar = { // create a new copy of the input grammar in order to keep it unchanged; but ...
+        ...grammar, // ... this produces changes in the copied grammar, since its arrays for types, rules, and so on are reused and filled with more entries below ...
+        // ... but leads to no issues here, since the given grammar is not used elsewhere and only the elements from the 'map' are copied (not the current content of the grammar)
+        imports: [], // remove all imports, as their contents are now available in the grammar
+    };
+    for (const importedGrammar of allImportedGrammars) {
         const grammarElements = map.get(importedGrammar) ?? [];
         for (const element of grammarElements) {
-            const copy = AstUtils.copyAstNode(element, buildReference);
+            const copy = AstUtils.copyAstNode(element, buildReference); // deeply copies all properties (ignores all $xxx-properties, except $type)
             // Deactivate copied entry rule
             if (GrammarAST.isParserRule(copy)) {
                 copy.entry = false;
             }
             if (GrammarAST.isAbstractRule(copy)) {
-                grammar.rules.push(copy);
+                grammarCopy.rules.push(copy);
             } else if (GrammarAST.isType(copy)) {
-                grammar.types.push(copy);
+                grammarCopy.types.push(copy);
             } else if (GrammarAST.isInterface(copy)) {
-                grammar.interfaces.push(copy);
+                grammarCopy.interfaces.push(copy);
             } else {
                 throw new Error('Received invalid grammar element while generating project with multiple languages');
             }
         }
     }
-    // Remove all imports, as their contents are now available in the grammar
-    const grammarCopy: Grammar = {
-        ...grammar,
-        imports: []
-    };
     // Link newly added elements to grammar
     AstUtils.linkContentToContainer(grammarCopy);
     return grammarCopy;
@@ -260,7 +262,7 @@ export async function runGenerator(config: LangiumConfig, options: GenerateOptio
         grammarServices.validation.LangiumGrammarValidator.options = config.validation;
     }
 
-    const all = await buildAll(config);
+    const all = await buildAll(config); // all parsed *.langium documents with their "doc.uri.fsPath" as key
     const buildResult: (success: boolean) => GeneratorResult = (success: boolean) => ({
         success,
         files: Array.from(all.keys())
@@ -290,42 +292,31 @@ export async function runGenerator(config: LangiumConfig, options: GenerateOptio
         return buildResult(false);
     }
 
-    const grammars: Grammar[] = [];
-    const configMap: Map<Grammar, LangiumLanguageConfig> = new Map();
+    // identify all relevant grammars
+    const languages: LanguageInfo[] = [];
     const relPath = config[RelativePath];
     for (const languageConfig of config.languages) {
         const absGrammarPath = URI.file(path.resolve(relPath, languageConfig.grammar)).fsPath;
         const document = all.get(absGrammarPath);
         if (document) {
-            const grammar = document.parseResult.value as Grammar;
-            if (!grammar.isDeclared) {
+            const entryGrammar = document.parseResult.value as Grammar;
+            if (!entryGrammar.isDeclared) {
                 log('error', options, chalk.red(`${absGrammarPath}: The entry grammar must start with the 'grammar' keyword.`));
                 return buildResult(false);
             }
-            grammars.push(grammar);
-            configMap.set(grammar, languageConfig);
+            languages.push({
+                entryGrammar,
+                embeddedGrammar: undefined!, // will be set later
+                languageConfig,
+                identifier: getLanguageIdentifier(config, entryGrammar),
+            });
         }
     }
-
-    const grammarElements = mapGrammarElements(grammars);
-
-    const embeddedGrammars: Grammar[] = [];
-    for (const grammar of grammars) {
-        const embeddedGrammar = embedReferencedGrammar(grammar, grammarElements);
-        embeddedGrammars.push(embeddedGrammar);
-        configMap.set(embeddedGrammar, configMap.get(grammar)!);
-    }
-    // We need to rescope the grammars again
-    // They need to pick up on the embedded references
-    await relinkGrammars(embeddedGrammars);
-
-    for (const grammar of embeddedGrammars) {
-        // Create and validate the in-memory parser
-        const parserAnalysis = await validateParser(grammar, config, configMap, grammarServices);
-        if (parserAnalysis instanceof Error) {
-            log('error', options, chalk.red(parserAnalysis.toString()));
-            return buildResult(false);
-        }
+    languages.sort((e1, e2) => e1.identifier.localeCompare(e2.identifier));
+    // embedd the entry grammars of all languages (the embedded grammar will be stored in LanguageInfo.embeddedGrammar)
+    const embeddingSuccessful = await embedGrammars(languages, config, options, grammarServices);
+    if (embeddingSuccessful !== true) {
+        return buildResult(false);
     }
 
     // Generate the output files
@@ -339,15 +330,29 @@ export async function runGenerator(config: LangiumConfig, options: GenerateOptio
         return buildResult(false);
     }
 
-    const genAst = generateAst(grammarServices, embeddedGrammars, config);
-    await writeWithFail(path.resolve(updateLangiumInternalAstPath(output, config), 'ast.ts'), genAst, options);
+    // ast.ts
+    if (languages.length === 1) {
+        // single language
+        const genAst = generateAstSingleLanguageProject(grammarServices, languages[0].embeddedGrammar, config);
+        await writeWithFail(path.resolve(updateLangiumInternalAstPath(output, config), 'ast.ts'), genAst, options);
+    } else {
+        // multiple languages
+        const genAst = generateAstMultiLanguageProject(grammarServices, languages, config);
+        await writeWithFail(path.resolve(updateLangiumInternalAstPath(output, config), 'ast.ts'), genAst, options);
+    }
 
+    const configMap = languages.reduce((prev, curr) => { prev.set(curr.embeddedGrammar, curr.languageConfig); return prev; }, new Map<Grammar, LangiumLanguageConfig>());
+    const embeddedGrammars: Grammar[] = languages.map(l => l.embeddedGrammar);
+
+    // grammar.ts
     const serializedGrammar = serializeGrammar(grammarServices, embeddedGrammars, config);
     await writeWithFail(path.resolve(output, 'grammar.ts'), serializedGrammar, options);
 
+    // module.ts
     const genModule = generateModule(embeddedGrammars, config, configMap);
     await writeWithFail(path.resolve(output, 'module.ts'), genModule, options);
 
+    // additional artifacts
     for (const grammar of embeddedGrammars) {
         const languageConfig = configMap.get(grammar);
 
@@ -408,6 +413,26 @@ export async function runGenerator(config: LangiumConfig, options: GenerateOptio
     }
 
     return buildResult(true);
+}
+
+export async function embedGrammars(languages: LanguageInfo[], config: LangiumConfig, options: GenerateOptions, grammarServices: LangiumGrammarServices): Promise<boolean> {
+    // Merges the elements of all imported grammars into the entry grammar and uses these embedded grammars (which are copies!) in the following steps
+    const grammarElements = mapGrammarElements(languages.map(l => l.entryGrammar), grammarServices);
+    for (const language of languages) {
+        language.embeddedGrammar = embedReferencedGrammar(language.entryGrammar, grammarElements, grammarServices); // changes the 'grammar' in-place and returns a new grammar instance
+    }
+    // We need to rescope the grammars again
+    // They need to pick up on the embedded references
+    await relinkGrammars(languages.map(l => l.embeddedGrammar));
+    // Create and validate the in-memory parser
+    for (const language of languages) {
+        const parserAnalysis = await validateParser(language.embeddedGrammar, config, language.languageConfig, grammarServices);
+        if (parserAnalysis instanceof Error) {
+            log('error', options, chalk.red(parserAnalysis.toString()));
+            return false;
+        }
+    }
+    return true;
 }
 
 function updateLangiumInternalAstPath(output: string, config: LangiumConfig): string {

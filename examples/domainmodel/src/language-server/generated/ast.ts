@@ -38,22 +38,6 @@ export function isAbstractElement(item: unknown): item is AbstractElement {
     return reflection.isInstance(item, AbstractElement.$type);
 }
 
-export type QualifiedName = string;
-
-export function isQualifiedName(item: unknown): item is QualifiedName {
-    return typeof item === 'string';
-}
-
-export type Type = DataType | Entity;
-
-export const Type = {
-    $type: 'Type'
-} as const;
-
-export function isType(item: unknown): item is Type {
-    return reflection.isInstance(item, Type.$type);
-}
-
 export interface DataType extends langium.AstNode {
     readonly $container: Domainmodel | PackageDeclaration;
     readonly $type: 'DataType';
@@ -136,6 +120,22 @@ export const PackageDeclaration = {
 
 export function isPackageDeclaration(item: unknown): item is PackageDeclaration {
     return reflection.isInstance(item, PackageDeclaration.$type);
+}
+
+export type QualifiedName = string;
+
+export function isQualifiedName(item: unknown): item is QualifiedName {
+    return typeof item === 'string';
+}
+
+export type Type = DataType | Entity;
+
+export const Type = {
+    $type: 'Type'
+} as const;
+
+export function isType(item: unknown): item is Type {
+    return reflection.isInstance(item, Type.$type);
 }
 
 export type DomainModelAstType = {

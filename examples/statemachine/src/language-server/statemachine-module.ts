@@ -7,7 +7,7 @@
 import { type Module, inject } from 'langium';
 import type { LangiumServices, LangiumSharedServices, PartialLangiumServices } from 'langium/lsp';
 import { createDefaultModule, createDefaultSharedModule, type DefaultSharedModuleContext } from 'langium/lsp';
-import { StatemachineGeneratedModule, StatemachineGeneratedSharedModule } from './generated/module.js';
+import { StatemachineGeneratedSharedModule, StatemachineModelGeneratedModule } from './generated/module.js';
 import { StatemachineValidator, registerValidationChecks } from './statemachine-validator.js';
 
 /**
@@ -61,7 +61,7 @@ export function createStatemachineServices(context: DefaultSharedModuleContext):
     );
     const statemachine = inject(
         createDefaultModule({ shared }),
-        StatemachineGeneratedModule,
+        StatemachineModelGeneratedModule,
         StatemachineModule
     );
     shared.ServiceRegistry.register(statemachine);

@@ -5,9 +5,9 @@
 
 import type { LangiumSharedCoreServices, LangiumCoreServices, LangiumGeneratedCoreServices, LangiumGeneratedSharedCoreServices, LanguageMetaData, Module } from 'langium';
 import { StatemachineAstReflection } from './ast.js';
-import { StatemachineGrammar } from './grammar.js';
+import { StatemachineModelGrammar } from './grammar.js';
 
-export const StatemachineLanguageMetaData = {
+export const StatemachineModelLanguageMetaData = {
     languageId: 'statemachine',
     fileExtensions: ['.statemachine'],
     caseInsensitive: false,
@@ -18,8 +18,8 @@ export const StatemachineGeneratedSharedModule: Module<LangiumSharedCoreServices
     AstReflection: () => new StatemachineAstReflection()
 };
 
-export const StatemachineGeneratedModule: Module<LangiumCoreServices, LangiumGeneratedCoreServices> = {
-    Grammar: () => StatemachineGrammar(),
-    LanguageMetaData: () => StatemachineLanguageMetaData,
+export const StatemachineModelGeneratedModule: Module<LangiumCoreServices, LangiumGeneratedCoreServices> = {
+    Grammar: () => StatemachineModelGrammar(),
+    LanguageMetaData: () => StatemachineModelLanguageMetaData,
     parser: {}
 };

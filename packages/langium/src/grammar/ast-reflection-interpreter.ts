@@ -19,7 +19,7 @@ export function interpretAstReflection(grammar: Grammar, services?: LangiumCoreS
 export function interpretAstReflection(grammarOrTypes: Grammar | AstTypes, services?: LangiumCoreServices): AstReflection {
     let collectedTypes: AstTypes;
     if (isGrammar(grammarOrTypes)) {
-        collectedTypes = collectAst(grammarOrTypes, services);
+        collectedTypes = collectAst(grammarOrTypes, { services });
     } else {
         collectedTypes = grammarOrTypes;
     }
