@@ -5,18 +5,16 @@
  ******************************************************************************/
 
 import type { Diagnostic } from 'vscode-languageserver';
-import { beforeEach, describe, expect, test } from 'vitest';
+import { describe, expect, test } from 'vitest';
 import { DiagnosticSeverity } from 'vscode-languageserver';
 import { AstUtils, EmptyFileSystem, GrammarAST } from 'langium';
 import { createLangiumGrammarServices } from 'langium/grammar';
-import { expectError, expectNoIssues, parseDocument, validationHelper, clearDocuments } from 'langium/test';
+import { expectError, expectNoIssues, parseDocument, validationHelper } from 'langium/test';
 import { isCrossReference, isInferredType, isParserRule } from '../../../src/languages/generated/ast.js';
 import type { Assignment, CrossReference, Group, ParserRule } from '../../../src/languages/generated/ast.js';
 
 const grammarServices = createLangiumGrammarServices(EmptyFileSystem).grammar;
 const validate = validationHelper<GrammarAST.Grammar>(grammarServices);
-
-beforeEach(() => clearDocuments(grammarServices));
 
 describe('Validate params in types', () => {
 
@@ -672,7 +670,7 @@ describe('Property type is not a mix of cross-ref and non-cross-ref types.', () 
 
             Entity returns Entity:
                 'entity' type=[+Entity:ID];
-
+            
             terminal ID: /[a-zA-Z_][\\w_]*/;
             `);
 

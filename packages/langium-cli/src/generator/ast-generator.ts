@@ -214,6 +214,7 @@ function generateTerminalsAndKeywords(grammars: Grammar[], name: string): Genera
     //  However, the value converter is always asked for converting terminals being accepted by a expanded terminal regex.
     //  Thus, using the expanded terminal definition and doing finer evaluations by checking for matched groups according to the actual terminal regex is the natural way to go"
     //  (https://github.com/eclipse-langium/langium/pull/1979#issuecomment-3089241029).
+    // Terminals are not alphabetically sorted, since the current order reflects the order of terminals during parsing.
     let collection: Record<string, RegExp> = {};
     const keywordTokens = new Set<string>();
     grammars.forEach(grammar => {
