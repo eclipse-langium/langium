@@ -397,6 +397,7 @@ export * from './generated/module.js';
     }
 
     _replaceLocalLangium(content: string): string {
+        // Only used for testing purposes in this repo
         if (this.args.includes('use-local-langium')) {
             const levels = 6;
             const relativePath = '../'.repeat(levels);

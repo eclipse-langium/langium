@@ -22,11 +22,11 @@ const x: Obj = {
 ```
 
 There are a lot of existing programming languages out there that provide features like [interface merging](https://www.typescriptlang.org/docs/handbook/declaration-merging.html#merging-interfaces) or [partial classes](https://learn.microsoft.com/en-us/dotnet/csharp/programming-guide/classes-and-structs/partial-classes-and-methods), which allow you to target multiple AST elements with one reference.
-This feature is now available in the grammar language via the `[*ReferenceType]` syntax:
+This feature is now available in the grammar language via the `[+ReferenceType]` syntax:
 
 ```langium
 Item: name=ID;
-ReferenceElement: item=[*Item]; // Can reference multiple items with the same name
+ReferenceElement: item=[+Item]; // Can reference multiple `Item` elements with the same name
 ```
 
 This will generate a `item: MultiReference<Item>` field now.
@@ -52,7 +52,6 @@ In addition to better readability, the new notation also makes use of performanc
 
 ### General Improvements
 
-* Added grammar validation config, added strict mode for types ([#1951](https://github.com/eclipse-langium/langium/pull/1951)).
 * Added DocumentBuilder method to reset document state ([#1977](https://github.com/eclipse-langium/langium/pull/1977)).
 * Support named rule arguments ([#1946](https://github.com/eclipse-langium/langium/pull/1946)).
 * Watch changes on directories ([#1768](https://github.com/eclipse-langium/langium/pull/1786)).
@@ -74,9 +73,12 @@ In addition to better readability, the new notation also makes use of performanc
 * Renamed `PrecomputedScopes` to `LocalSymbols` and introduced a dedicated interface for it ([#1788](https://github.com/eclipse-langium/langium/pull/1788)).
 * Removed unused Xtext features from the Langium grammar ([#1945](https://github.com/eclipse-langium/langium/pull/1945)).
 * The type of references used throughout the linker service and scope provider is now `Reference | MultiReference` ([#1509](https://github.com/eclipse-langium/langium/pull/1509)).
+* The `References#findDeclaration` method has been renamed to `findDeclarations` and returns an array of objects ([#1509](https://github.com/eclipse-langium/langium/pull/1509)). 
 * The generated type names from `ast.ts` have been moved from `<typeName>` to `<typeName>.$type` ([#1942](https://github.com/eclipse-langium/langium/pull/1942)).
 * Rules are no longer allowed to use the same name as the grammar in which they are contained ([#1979](https://github.com/eclipse-langium/langium/pull/1979)).
 * Grammar names now have to be unique ([#1979](https://github.com/eclipse-langium/langium/pull/1979)).
+* `DefaultCompletionProvider#createReferenceCompletionItem` now requires more arguments ([#1976](https://github.com/eclipse-langium/langium/pull/1976)).
+* The `singleton` item in the `DefaultServiceRegistry` has been removed ([#1768](https://github.com/eclipse-langium/langium/pull/1786)).
 
 ## v3.5.0 (Apr. 2025)
 

@@ -3,6 +3,7 @@
 ## v4.0.0 (Jul. 2025)
 
 * Now generates an npm workspaces project ([#1810](https://github.com/eclipse-langium/langium/pull/1810)).
+* Allows to generate empty projects ([#1967](https://github.com/eclipse-langium/langium/pull/1967)).
 * Update eslint to v9 ([#1935](https://github.com/eclipse-langium/langium/pull/1935)).
 
 ## v3.0.0 (Feb. 2024)

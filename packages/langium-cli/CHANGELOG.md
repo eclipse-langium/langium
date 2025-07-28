@@ -3,7 +3,15 @@
 ## v4.0.0 (Jul. 2025)
 
 * Update the internal `langium` version to 4.0.0.
-* Add strict mode for types ([#1951](https://github.com/eclipse-langium/langium/pull/1951)).
+* Adopters can now enable strict mode in their `langium-config.json` ([#1951](https://github.com/eclipse-langium/langium/pull/1951)):
+  ```json
+  {
+    ...
+    "validation": {
+      "types": "strict"
+    }
+  }
+  ```
 * Improve generated `ast.ts` file for projects with multiple languages ([#1979](https://github.com/eclipse-langium/langium/pull/1979)).
 
 ## v3.5.2 (Jun. 2025)
