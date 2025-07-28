@@ -17,7 +17,11 @@ const __dirname = url.fileURLToPath(new URL('.', import.meta.url));
 
 const BASE_DIR = '../templates';
 const PACKAGE_LANGUAGE = 'packages/language';
+const PACKAGE_LANGUAGE_EXAMPLE = 'packages/language-example';
+const PACKAGE_LANGUAGE_MINIMAL = 'packages/language-minimal';
 const PACKAGE_CLI = 'packages/cli';
+const PACKAGE_CLI_EXAMPLE = 'packages/cli-example';
+const PACKAGE_CLI_MINIMAL = 'packages/cli-minimal';
 const PACKAGE_EXTENSION = 'packages/extension';
 const USER_DIR = '.';
 
@@ -30,6 +34,8 @@ const LANGUAGE_NAME = /<%= LanguageName %>/g;
 const LANGUAGE_ID = /<%= language-id %>/g;
 const LANGUAGE_PATH_ID = /language-id/g;
 
+const ENTRY_NAME = /<%= EntryName %>/g;
+
 const NEWLINES = /\r?\n/g;
 
 export interface Answers {
@@ -38,7 +44,9 @@ export interface Answers {
     fileExtensions: string;
     includeVSCode: boolean;
     includeCLI: boolean;
+    includeExampleProject: boolean;
     includeTest: boolean;
+    entryName: string;
 }
 
 export interface PostAnwers {
@@ -89,7 +97,7 @@ export class LangiumGenerator extends Generator {
                 name: 'extensionName',
                 prefix: description(
                     'Welcome to Langium!',
-                    'This tool generates a VS Code extension with a "Hello World" language to get started quickly.',
+                    'This tool generates one or more npm packages to create your own language based on Langium.',
                     'The extension name is an identifier used in the extension marketplace or package registry.'
                 ),
                 message: 'Your extension name:',
@@ -125,12 +133,31 @@ export class LangiumGenerator extends Generator {
                         : 'A file extension can start with . and must contain only letters and digits. Extensions must be separated by commas.',
             } as PromptQuestion<Answers>,
             {
+                type: 'input',
+                name: 'entryName',
+                prefix: description(
+                    'The name of the entry rule in your grammar file.'
+                ),
+                message: 'Your grammar entry rule name:',
+                default: 'Model',
+            } as PromptQuestion<Answers>,
+            {
                 type: 'confirm',
                 name: 'includeVSCode',
                 prefix: description(
                     'Your language can be run inside of a VSCode extension.'
                 ),
                 message: 'Include VSCode extension?',
+                default: true
+            } as PromptQuestion<Answers>,
+            {
+                type: 'confirm',
+                name: 'includeExampleProject',
+                prefix: description(
+                    'You can generate an example project to play around with Langium (with a "Hello world" grammar, generator and validator).',
+                    'If not, a minimal project will be generated.'
+                ),
+                message: 'Generate example project?',
                 default: true
             } as PromptQuestion<Answers>,
             {
@@ -149,8 +176,8 @@ export class LangiumGenerator extends Generator {
                     'You can add the setup for language tests using Vitest.'
                 ),
                 message: 'Include language tests?',
-                default: true
-            } as PromptQuestion<Answers>
+                default: true,
+            } as PromptQuestion<Answers>,
         ]);
     }
 
@@ -201,7 +228,8 @@ export class LangiumGenerator extends Generator {
         // .gitignore files don't get published to npm, so we need to copy it under a different name
         this.fs.copy(this.templatePath('gitignore.txt'), this._extensionPath('.gitignore'));
 
-        this.sourceRoot(path.join(__dirname, `${BASE_DIR}/${PACKAGE_LANGUAGE}`));
+        this.sourceRoot(path.join(__dirname, `${BASE_DIR}/${this.answers.includeExampleProject ? PACKAGE_LANGUAGE_EXAMPLE : PACKAGE_LANGUAGE_MINIMAL}`));
+
         const languageFiles = [
             'package.json',
             'README.md',
@@ -241,6 +269,9 @@ export * from './generated/ast.js';
 export * from './generated/grammar.js';
 export * from './generated/module.js';
 `;
+        // Write language index.ts and langium-config.json
+        this.fs.write(this._extensionPath('packages/language/src/index.ts'), languageIndex);
+        this.fs.writeJSON(this._extensionPath('packages/language/langium-config.json'), langiumConfigJson, undefined, 4);
 
         if (this.answers.includeTest) {
             mainPackageJson.scripts.test = 'npm run --workspace packages/language test';
@@ -261,7 +292,9 @@ export * from './generated/module.js';
         }
 
         if (this.answers.includeCLI) {
-            this.sourceRoot(path.join(__dirname, `${BASE_DIR}/${PACKAGE_CLI}`));
+            this.sourceRoot(path.join(__dirname, `${BASE_DIR}/${
+                this.answers.includeExampleProject ? PACKAGE_CLI_EXAMPLE : PACKAGE_CLI_MINIMAL
+            }`));
             const cliFiles = [
                 'package.json',
                 'tsconfig.json',
@@ -279,10 +312,6 @@ export * from './generated/module.js';
             mainPackageJson.workspaces.push('packages/cli');
             tsConfigBuildJson.references.push({ path: './packages/cli/tsconfig.json' });
         }
-
-        // Write language index.ts and langium-config.json
-        this.fs.write(this._extensionPath('packages/language/src/index.ts'), languageIndex);
-        this.fs.writeJSON(this._extensionPath('packages/language/langium-config.json'), langiumConfigJson, undefined, 4);
 
         if (this.answers.includeVSCode) {
             this.sourceRoot(path.join(__dirname, `${BASE_DIR}/${PACKAGE_EXTENSION}`));
@@ -363,6 +392,7 @@ export * from './generated/module.js';
             .replace(FILE_EXTENSION_GLOB, fileExtensionGlob)
             .replace(LANGUAGE_NAME, languageName)
             .replace(LANGUAGE_ID, languageId)
+            .replace(ENTRY_NAME, this.answers.entryName)
             .replace(NEWLINES, EOL);
     }
 

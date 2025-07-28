@@ -3,16 +3,16 @@ import { EmptyFileSystem, type LangiumDocument } from "langium";
 import { expandToString as s } from "langium/generate";
 import { parseHelper } from "langium/test";
 import type { Diagnostic } from "vscode-languageserver-types";
-import type { Model } from "<%= language-id %>-language";
-import { create<%= LanguageName %>Services, isModel } from "<%= language-id %>-language";
+import type { <%= EntryName %> } from "<%= language-id %>-language";
+import { create<%= LanguageName %>Services, is<%= EntryName %> } from "<%= language-id %>-language";
 
 let services: ReturnType<typeof create<%= LanguageName %>Services>;
-let parse:    ReturnType<typeof parseHelper<Model>>;
-let document: LangiumDocument<Model> | undefined;
+let parse:    ReturnType<typeof parseHelper<<%= EntryName %>>>;
+let document: LangiumDocument<<%= EntryName %>> | undefined;
 
 beforeAll(async () => {
     services = create<%= LanguageName %>Services(EmptyFileSystem);
-    const doParse = parseHelper<Model>(services.<%= LanguageName %>);
+    const doParse = parseHelper<<%= EntryName %>>(services.<%= LanguageName %>);
     parse = (input: string) => doParse(input, { validation: true });
 
     // activate the following if your linking test requires elements from a built-in library, for example
@@ -57,7 +57,7 @@ function checkDocumentValid(document: LangiumDocument): string | undefined {
           ${document.parseResult.parserErrors.map(e => e.message).join('\n  ')}
     `
         || document.parseResult.value === undefined && `ParseResult is 'undefined'.`
-        || !isModel(document.parseResult.value) && `Root AST object is a ${document.parseResult.value.$type}, expected a 'Model'.`
+        || !is<%= EntryName %>(document.parseResult.value) && `Root AST object is a ${document.parseResult.value.$type}, expected a '<%= EntryName %>'.`
         || undefined;
 }
 
