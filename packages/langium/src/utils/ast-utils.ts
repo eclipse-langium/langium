@@ -263,10 +263,17 @@ function copyDefaultValue(propertyType: PropertyType): PropertyType {
  * Creates a deep copy of the specified AST node.
  * The resulting copy will only contain semantically relevant information, such as the `$type` property and AST properties.
  *
- * References are copied without resolved cross reference. The specified function is used to rebuild them.
+ * @param node The AST node to deeply copy.
+ * @param buildReference References are not copied, instead this function is called to rebuild them.
+ * @param trace For the sake of tracking copied nodes and their originals a `trace` map can be provided (optional).
  */
-export function copyAstNode<T extends AstNode = AstNode>(node: T, buildReference: (node: AstNode, property: string, refNode: CstNode | undefined, refText: string) => Reference<AstNode>): T {
+export function copyAstNode<T extends AstNode = AstNode>(node: T, buildReference: (node: AstNode, property: string, refNode: CstNode | undefined, refText: string, origReference: Reference<AstNode>) => Reference<AstNode>, trace?: Map<AstNode, AstNode>): T {
     const copy: GenericAstNode = { $type: node.$type };
+
+    if (trace) {
+        trace.set(node, copy);
+        trace.set(copy, node);
+    }
 
     for (const [name, value] of Object.entries(node)) {
         if (!name.startsWith('$')) {
@@ -277,7 +284,8 @@ export function copyAstNode<T extends AstNode = AstNode>(node: T, buildReference
                     copy,
                     name,
                     value.$refNode,
-                    value.$refText
+                    value.$refText,
+                    value
                 );
             } else if (Array.isArray(value)) {
                 const copiedArray: unknown[] = [];
@@ -290,7 +298,8 @@ export function copyAstNode<T extends AstNode = AstNode>(node: T, buildReference
                                 copy,
                                 name,
                                 element.$refNode,
-                                element.$refText
+                                element.$refText,
+                                element
                             )
                         );
                     } else {
