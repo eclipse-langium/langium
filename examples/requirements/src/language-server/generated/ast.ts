@@ -6,30 +6,94 @@
 /* eslint-disable */
 import * as langium from 'langium';
 
+/** Contains the reachable terminals & keywords and all available types of the 'Requirements' language. */
+export namespace Requirements {
+
+    export const Terminals = {
+        WS: /\s+/,
+        ID: /[_a-zA-Z][\w_]*/,
+        STRING: /"(\\.|[^"\\])*"|'(\\.|[^'\\])*'/,
+        ML_COMMENT: /\/\*[\s\S]*?\*\//,
+        SL_COMMENT: /\/\/[^\n\r]*/,
+    };
+
+    export type TerminalNames = keyof typeof Terminals;
+
+    export type KeywordNames =
+        | ","
+        | ":"
+        | "applicable"
+        | "contact"
+        | "environment"
+        | "for"
+        | "req";
+
+    export type TokenNames = TerminalNames | KeywordNames;
+
+    export type AstType = {
+        Contact: Contact
+        Environment: Environment
+        Requirement: Requirement
+        RequirementModel: RequirementModel
+    }
+
+}
+
+/** Contains the reachable terminals & keywords and all available types of the 'Tests' language. */
+export namespace Tests {
+
+    export const Terminals = {
+        WS: /\s+/,
+        ID: /[_a-zA-Z][\w_]*/,
+        STRING: /"(\\.|[^"\\])*"|'(\\.|[^'\\])*'/,
+        ML_COMMENT: /\/\*[\s\S]*?\*\//,
+        SL_COMMENT: /\/\/[^\n\r]*/,
+    };
+
+    export type TerminalNames = keyof typeof Terminals;
+
+    export type KeywordNames =
+        | ","
+        | ":"
+        | "="
+        | "applicable"
+        | "contact"
+        | "for"
+        | "testFile"
+        | "tests"
+        | "tst";
+
+    export type TokenNames = TerminalNames | KeywordNames;
+
+    export type AstType = {
+        Contact: Contact
+        Environment: Environment
+        Requirement: Requirement
+        RequirementModel: RequirementModel
+        Test: Test
+        TestModel: TestModel
+    }
+
+}
+
+
+// the terminals, keywords and types of the whole 'RequirementsAndTests' project
+
 export const RequirementsAndTestsTerminals = {
-    WS: /\s+/,
-    ID: /[_a-zA-Z][\w_]*/,
-    STRING: /"(\\.|[^"\\])*"|'(\\.|[^'\\])*'/,
-    ML_COMMENT: /\/\*[\s\S]*?\*\//,
-    SL_COMMENT: /\/\/[^\n\r]*/,
+    ...Requirements.Terminals,
+    ...Tests.Terminals,
 };
 
 export type RequirementsAndTestsTerminalNames = keyof typeof RequirementsAndTestsTerminals;
 
-export type RequirementsAndTestsKeywordNames =
-    | ","
-    | ":"
-    | "="
-    | "applicable"
-    | "contact"
-    | "environment"
-    | "for"
-    | "req"
-    | "testFile"
-    | "tests"
-    | "tst";
+export type RequirementsAndTestsKeywordNames = Requirements.KeywordNames | Tests.KeywordNames;
 
 export type RequirementsAndTestsTokenNames = RequirementsAndTestsTerminalNames | RequirementsAndTestsKeywordNames;
+
+export type RequirementsAndTestsAstType = Requirements.AstType & Tests.AstType
+
+
+// all type definitions of the the whole 'RequirementsAndTests' project
 
 export interface Contact extends langium.AstNode {
     readonly $container: RequirementModel | TestModel;
@@ -135,15 +199,6 @@ export const TestModel = {
 
 export function isTestModel(item: unknown): item is TestModel {
     return reflection.isInstance(item, TestModel.$type);
-}
-
-export type RequirementsAndTestsAstType = {
-    Contact: Contact
-    Environment: Environment
-    Requirement: Requirement
-    RequirementModel: RequirementModel
-    Test: Test
-    TestModel: TestModel
 }
 
 export class RequirementsAndTestsAstReflection extends langium.AbstractAstReflection {

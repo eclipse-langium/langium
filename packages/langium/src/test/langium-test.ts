@@ -682,12 +682,12 @@ export function filterByOptions<T extends AstNode = AstNode, N extends AstNode =
 
 export function expectNoIssues<T extends AstNode = AstNode, N extends AstNode = AstNode>(validationResult: ValidationResult<T>, filterOptions?: ExpectDiagnosticOptions<N>): void {
     const filtered = filterOptions ? filterByOptions<T, N>(validationResult, filterOptions) : validationResult.diagnostics;
-    expectedFunction(filtered.length, 0, `Expected no issues, but found ${filtered.length}:\n${printDiagnostics(filtered)}`);
+    expectedFunction(filtered.length, 0, `Expected no issues in '${validationResult.document.uri.toString()}', but found ${filtered.length}:\n${printDiagnostics(filtered)}`);
 }
 
 export function expectIssue<T extends AstNode = AstNode, N extends AstNode = AstNode>(validationResult: ValidationResult<T>, filterOptions?: ExpectDiagnosticOptions<N>): void {
     const filtered = filterOptions ? filterByOptions<T, N>(validationResult, filterOptions) : validationResult.diagnostics;
-    expectedFunction(filtered.length > 0, true, 'Found no issues');
+    expectedFunction(filtered.length > 0, true, `Found no issues in '${validationResult.document.uri.toString()}'`);
 }
 
 export function expectError<T extends AstNode = AstNode, N extends AstNode = AstNode>(validationResult: ValidationResult<T>, message: string | RegExp, filterOptions: ExpectDiagnosticOptionsWithoutContent<N>): void {

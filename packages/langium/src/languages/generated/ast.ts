@@ -77,6 +77,20 @@ export type LangiumGrammarKeywordNames =
 
 export type LangiumGrammarTokenNames = LangiumGrammarTerminalNames | LangiumGrammarKeywordNames;
 
+export interface AbstractElement extends langium.AstNode {
+    readonly $type: 'AbstractElement' | 'Action' | 'Alternatives' | 'Assignment' | 'CharacterRange' | 'CrossReference' | 'EndOfFile' | 'Group' | 'Keyword' | 'NegatedToken' | 'RegexToken' | 'RuleCall' | 'TerminalAlternatives' | 'TerminalElement' | 'TerminalGroup' | 'TerminalRuleCall' | 'UnorderedGroup' | 'UntilToken' | 'Wildcard';
+    cardinality?: '*' | '+' | '?';
+}
+
+export const AbstractElement = {
+    $type: 'AbstractElement',
+    cardinality: 'cardinality'
+} as const;
+
+export function isAbstractElement(item: unknown): item is AbstractElement {
+    return reflection.isInstance(item, AbstractElement.$type);
+}
+
 export type AbstractParserRule = InfixRule | ParserRule;
 
 export const AbstractParserRule = {
@@ -105,56 +119,6 @@ export const AbstractType = {
 
 export function isAbstractType(item: unknown): item is AbstractType {
     return reflection.isInstance(item, AbstractType.$type);
-}
-
-export type Associativity = 'left' | 'right';
-
-export type Condition = BooleanLiteral | Conjunction | Disjunction | Negation | ParameterReference;
-
-export const Condition = {
-    $type: 'Condition'
-} as const;
-
-export function isCondition(item: unknown): item is Condition {
-    return reflection.isInstance(item, Condition.$type);
-}
-
-export type FeatureName = 'assoc' | 'current' | 'entry' | 'extends' | 'false' | 'fragment' | 'grammar' | 'hidden' | 'import' | 'infer' | 'infers' | 'infix' | 'interface' | 'left' | 'on' | 'returns' | 'right' | 'terminal' | 'true' | 'type' | 'with' | PrimitiveType | string;
-
-export type PrimitiveType = 'Date' | 'bigint' | 'boolean' | 'number' | 'string';
-
-export type TypeDefinition = ArrayType | ReferenceType | SimpleType | UnionType;
-
-export const TypeDefinition = {
-    $type: 'TypeDefinition'
-} as const;
-
-export function isTypeDefinition(item: unknown): item is TypeDefinition {
-    return reflection.isInstance(item, TypeDefinition.$type);
-}
-
-export type ValueLiteral = ArrayLiteral | BooleanLiteral | NumberLiteral | StringLiteral;
-
-export const ValueLiteral = {
-    $type: 'ValueLiteral'
-} as const;
-
-export function isValueLiteral(item: unknown): item is ValueLiteral {
-    return reflection.isInstance(item, ValueLiteral.$type);
-}
-
-export interface AbstractElement extends langium.AstNode {
-    readonly $type: 'AbstractElement' | 'Action' | 'Alternatives' | 'Assignment' | 'CharacterRange' | 'CrossReference' | 'EndOfFile' | 'Group' | 'Keyword' | 'NegatedToken' | 'RegexToken' | 'RuleCall' | 'TerminalAlternatives' | 'TerminalElement' | 'TerminalGroup' | 'TerminalRuleCall' | 'UnorderedGroup' | 'UntilToken' | 'Wildcard';
-    cardinality?: '*' | '+' | '?';
-}
-
-export const AbstractElement = {
-    $type: 'AbstractElement',
-    cardinality: 'cardinality'
-} as const;
-
-export function isAbstractElement(item: unknown): item is AbstractElement {
-    return reflection.isInstance(item, AbstractElement.$type);
 }
 
 export interface Action extends AbstractElement {
@@ -244,6 +208,8 @@ export function isAssignment(item: unknown): item is Assignment {
     return reflection.isInstance(item, Assignment.$type);
 }
 
+export type Associativity = 'left' | 'right';
+
 export interface BooleanLiteral extends langium.AstNode {
     readonly $container: ArrayLiteral | Conjunction | Disjunction | Group | NamedArgument | Negation | TypeAttribute;
     readonly $type: 'BooleanLiteral';
@@ -276,6 +242,16 @@ export const CharacterRange = {
 
 export function isCharacterRange(item: unknown): item is CharacterRange {
     return reflection.isInstance(item, CharacterRange.$type);
+}
+
+export type Condition = BooleanLiteral | Conjunction | Disjunction | Negation | ParameterReference;
+
+export const Condition = {
+    $type: 'Condition'
+} as const;
+
+export function isCondition(item: unknown): item is Condition {
+    return reflection.isInstance(item, Condition.$type);
 }
 
 export interface Conjunction extends langium.AstNode {
@@ -345,6 +321,8 @@ export const EndOfFile = {
 export function isEndOfFile(item: unknown): item is EndOfFile {
     return reflection.isInstance(item, EndOfFile.$type);
 }
+
+export type FeatureName = 'assoc' | 'current' | 'entry' | 'extends' | 'false' | 'fragment' | 'grammar' | 'hidden' | 'import' | 'infer' | 'infers' | 'infix' | 'interface' | 'left' | 'on' | 'returns' | 'right' | 'terminal' | 'true' | 'type' | 'with' | PrimitiveType | string;
 
 export interface Grammar extends langium.AstNode {
     readonly $type: 'Grammar';
@@ -640,6 +618,8 @@ export function isParserRule(item: unknown): item is ParserRule {
     return reflection.isInstance(item, ParserRule.$type);
 }
 
+export type PrimitiveType = 'Date' | 'bigint' | 'boolean' | 'number' | 'string';
+
 export interface ReferenceType extends langium.AstNode {
     readonly $container: ArrayType | ReferenceType | Type | TypeAttribute | UnionType;
     readonly $type: 'ReferenceType';
@@ -872,6 +852,16 @@ export function isTypeAttribute(item: unknown): item is TypeAttribute {
     return reflection.isInstance(item, TypeAttribute.$type);
 }
 
+export type TypeDefinition = ArrayType | ReferenceType | SimpleType | UnionType;
+
+export const TypeDefinition = {
+    $type: 'TypeDefinition'
+} as const;
+
+export function isTypeDefinition(item: unknown): item is TypeDefinition {
+    return reflection.isInstance(item, TypeDefinition.$type);
+}
+
 export interface UnionType extends langium.AstNode {
     readonly $container: ArrayType | ReferenceType | Type | TypeAttribute | UnionType;
     readonly $type: 'UnionType';
@@ -917,6 +907,16 @@ export const UntilToken = {
 
 export function isUntilToken(item: unknown): item is UntilToken {
     return reflection.isInstance(item, UntilToken.$type);
+}
+
+export type ValueLiteral = ArrayLiteral | BooleanLiteral | NumberLiteral | StringLiteral;
+
+export const ValueLiteral = {
+    $type: 'ValueLiteral'
+} as const;
+
+export function isValueLiteral(item: unknown): item is ValueLiteral {
+    return reflection.isInstance(item, ValueLiteral.$type);
 }
 
 export interface Wildcard extends TerminalElement {

@@ -4,25 +4,33 @@
  * terms of the MIT License, which is available in the project root.
  ******************************************************************************/
 
-import type { Grammar } from '../../languages/generated/ast.js';
-import type { LangiumCoreServices } from '../../index.js';
-import type { AstTypes, InterfaceType, PropertyType, TypeOption, UnionType } from './type-collector/types.js';
+import { type Grammar } from '../../languages/generated/ast.js';
+import { type LangiumCoreServices } from '../../services.js';
 import type { ValidationAstTypes } from './type-collector/all-types.js';
-import type { PlainAstTypes, PlainInterface, PlainUnion } from './type-collector/plain-types.js';
-import { findAstTypes } from './types-util.js';
-import { isInterfaceType, isPrimitiveType, isPropertyUnion, isStringType, isUnionType, isValueType } from './type-collector/types.js';
 import { collectTypeResources } from './type-collector/all-types.js';
+import type { PlainAstTypes, PlainInterface, PlainUnion } from './type-collector/plain-types.js';
 import { plainToTypes } from './type-collector/plain-types.js';
+import type { AstTypes, InterfaceType, PropertyType, TypeOption, UnionType } from './type-collector/types.js';
+import { isInterfaceType, isPrimitiveType, isPropertyUnion, isStringType, isUnionType, isValueType } from './type-collector/types.js';
+import { findAstTypes, isAstType } from './types-util.js';
 
 /**
  * Collects all types for the generated AST. The types collector entry point.
  *
  * @param grammars All grammars involved in the type generation process
- * @param services Langium core services to resolve imports as needed, and to pass along JSDoc comments to the generated AST
+ * @param config some optional configurations
  */
-export function collectAst(grammars: Grammar | Grammar[], services?: LangiumCoreServices): AstTypes {
-    const { inferred, declared } = collectTypeResources(grammars, services);
-    return createAstTypes(inferred, declared);
+export function collectAst(grammars: Grammar | Grammar[], config?: {
+    /** Langium core services to resolve imports as needed, and to pass along JSDoc comments to the generated AST */
+    services?: LangiumCoreServices,
+    filterNonAstTypeUnions?: boolean,
+}): AstTypes {
+    const { inferred, declared } = collectTypeResources(grammars, config?.services);
+    const result = createAstTypes(inferred, declared);
+    if (config?.filterNonAstTypeUnions) {
+        result.unions = result.unions.filter(e => isAstType(e.type));
+    }
+    return result;
 }
 
 /**

@@ -13,9 +13,11 @@ import type { AstNode, Properties, Reference } from '../../syntax-tree.js';
 import { getContainerOfType, streamAllContents } from '../../utils/ast-utils.js';
 import { MultiMap } from '../../utils/collections.js';
 import { toDocumentSegment } from '../../utils/cst-utils.js';
+import { assertUnreachable } from '../../utils/errors.js';
 import { findNameAssignment, findNodeForKeyword, findNodeForProperty, getAllReachableRules, getAllRulesUsedForCrossReferences, isArrayCardinality, isDataTypeRule, isOptionalCardinality, terminalRegex } from '../../utils/grammar-utils.js';
 import type { Stream } from '../../utils/stream.js';
 import { stream } from '../../utils/stream.js';
+import { UriUtils } from '../../utils/uri-utils.js';
 import type { DiagnosticData, ValidationAcceptor, ValidationChecks } from '../../validation/validation-registry.js';
 import { diagnosticData } from '../../validation/validation-registry.js';
 import type { AstNodeLocator } from '../../workspace/ast-node-locator.js';
@@ -24,6 +26,8 @@ import { getTypeNameWithoutError, hasDataTypeReturn, isPrimitiveGrammarType, isS
 import type { LangiumGrammarServices } from '../langium-grammar-module.js';
 import { typeDefinitionToPropertyType } from '../type-system/type-collector/declared-types.js';
 import { flattenPlainType, isPlainReferenceType } from '../type-system/type-collector/plain-types.js';
+import type { DeclaredInfo, InferredInfo } from '../workspace/documents.js';
+import { type LangiumGrammarDocument, isDeclared, isInferred } from '../workspace/documents.js';
 
 export interface LangiumGrammarValidationOptions {
     /**
@@ -75,6 +79,7 @@ export function registerValidationChecks(services: LangiumGrammarServices): void
             validator.checkEntryGrammarRule,
             validator.checkUniqueRuleName,
             validator.checkUniqueTypeName,
+            validator.checkUniqueTypeAndGrammarNames,
             validator.checkUniqueImportedRules,
             validator.checkDuplicateImportedGrammar,
             validator.checkGrammarForUnusedRules,
@@ -159,6 +164,15 @@ export class LangiumGrammarValidator {
                     data: diagnosticData(IssueCodes.GrammarNameUppercase)
                 });
             }
+            // this grammar and all its transitively imported grammars need to have different names
+            for (const otherGrammar of resolveTransitiveImports(this.documents, grammar)/* never contains the given initial grammar! */) {
+                if (otherGrammar.name === grammar.name) {
+                    accept('error', `This grammar name '${grammar.name}' is also used by the grammar in '${UriUtils.basename(otherGrammar.$document!.uri)}'.`, {
+                        node: grammar,
+                        property: 'name',
+                    });
+                }
+            }
         }
     }
 
@@ -205,7 +219,7 @@ export class LangiumGrammarValidator {
     }
 
     private checkUniqueName(grammar: ast.Grammar, accept: ValidationAcceptor, extractor: (grammar: ast.Grammar) => Stream<NamedAstNode>, uniqueObjName: string): void {
-        const map = new MultiMap<string, { name: string } & AstNode>();
+        const map = new MultiMap<string, NamedAstNode>();
         extractor(grammar).forEach(e => map.add(e.name, e));
 
         for (const [, types] of map.entriesGroupedByKey()) {
@@ -226,6 +240,78 @@ export class LangiumGrammarValidator {
                 types.forEach(e => {
                     accept('error', `A ${uniqueObjName} with the name '${e.name}' already exists in an imported grammar.`, { node: e, property: 'name' });
                 });
+            }
+        }
+    }
+
+    // ensures for the set of transitively imported grammars that all their resulting types have names which are different compared to the given input grammar name
+    checkUniqueTypeAndGrammarNames(inputGrammar: ast.Grammar, accept: ValidationAcceptor): void {
+        // Collect all relevant grammars. Grammars without name are ignored.
+        const allGrammars = [ inputGrammar, ...resolveTransitiveImports(this.documents, inputGrammar) ].filter(g => g.name);
+
+        // Try to find types which are declared in or inferred by the current grammar and all its transitively imported grammars, which have the same name as one of the grammars.
+        //  Reuse precomputed types in order not to `streamAllContents` of all grammars to improve performance.
+        //   (`streamContents` is not sufficient since actions might infer new types, but are no top-level elements!)
+        //  Since there are validations which ensure that types and rules have unique names, multiple resulting types with the same name don't need to be considered here.
+        const declaredOrInferredTypes: Map<string, InferredInfo | DeclaredInfo | InferredInfo & DeclaredInfo> = (inputGrammar.$document as LangiumGrammarDocument).validationResources?.typeToValidationInfo ?? new Map();
+        for (const grammar of allGrammars) {
+            const type = declaredOrInferredTypes.get(grammar.name!);
+            if (type !== undefined) {
+                if (isDeclared(type)) { // Type, Interface
+                    reportNonUniqueName(grammar, type.declaredNode, 'name');
+                }
+                if (isInferred(type)) {
+                    for (const node of type.inferredNodes) {
+                        if (ast.isParserRule(node)) { // ParserRule
+                            reportNonUniqueName(grammar, node, 'name');
+                        } else if (ast.isAction(node)) { // Action
+                            if (node.inferredType) {
+                                reportNonUniqueName(grammar, node, 'inferredType');
+                            } else {
+                                reportNonUniqueName(grammar, node, 'type');
+                            }
+                        } else {
+                            assertUnreachable(node);
+                        }
+                    }
+                }
+            }
+        }
+
+        function reportNonUniqueName<T extends AstNode>(notUniquelyNamedGrammar: ast.Grammar, node: T, property: Properties<T>): void {
+            const nodeGrammar = getContainerOfType(node, ast.isGrammar)!;
+            if (nodeGrammar === inputGrammar) {
+                // the node is in the current grammar => report the issue at the node
+                if (notUniquelyNamedGrammar === inputGrammar) {
+                    // the own grammar has the critical name
+                    accept('error',
+                        `'${notUniquelyNamedGrammar.name}' is already used here as grammar name.`,
+                        { node, property }
+                    );
+                } else {
+                    // the grammar with the critical name is transitively imported
+                    accept('error',
+                        `'${notUniquelyNamedGrammar.name}' is already used as grammar name in '${UriUtils.basename(notUniquelyNamedGrammar.$document!.uri)}'.`,
+                        { node, property }
+                    );
+                }
+            } else {
+                // the node is transitively imported => it is not possible to report the issue at the node
+                if (nodeGrammar === notUniquelyNamedGrammar) {
+                    // the name of the node is in conflict with the name of its own grammar => report the issue at the node when validating the node's grammar => do nothing here
+                } else if (notUniquelyNamedGrammar === inputGrammar) {
+                    // the imported node is in conflict with the current grammar to validate => report the issue at the name of the current grammar
+                    accept('error',
+                        `'${notUniquelyNamedGrammar.name}' is already used as ${node.$type} name in '${UriUtils.basename(nodeGrammar.$document!.uri)}'.`,
+                        { node: inputGrammar, property: 'name' }
+                    );
+                } else {
+                    // the imported node is in conflict with a transitively imported grammar => report the issue for the current grammar in general
+                    accept('error',
+                        `'${UriUtils.basename(nodeGrammar.$document!.uri)}' contains the ${node.$type} with the name '${notUniquelyNamedGrammar.name}', which is already the name of the grammar in '${UriUtils.basename(notUniquelyNamedGrammar.$document!.uri)}'.`,
+                        { node: inputGrammar, keyword: 'grammar' }
+                    );
+                }
             }
         }
     }

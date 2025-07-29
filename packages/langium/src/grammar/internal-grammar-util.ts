@@ -120,6 +120,17 @@ export function resolveTransitiveImports(documents: LangiumDocuments, grammarOrI
     }
 }
 
+/**
+ * Resolves all transitively imported grammars of the given grammar.
+ * In case of grammars importing each other in circular way, each grammar is remembered only once.
+ * The initial grammar will never be part of the result.
+ * @param documents the service to get all available Langium documents
+ * @param grammar the grammar to transitively resolve its imported grammars
+ * @param initialGrammar Even if the initial grammar transitively imports itself in circular way again, the initial grammar will not be part of the result!
+ * @param visited since grammars might import each other in circular way, this set remembers the already visited gramar URIs to prevent loops
+ * @param grammars the result set of already imported and resolved grammars
+ * @returns the collected `grammars` in a new array
+ */
 function resolveTransitiveImportsInternal(documents: LangiumDocuments, grammar: ast.Grammar, initialGrammar = grammar, visited: Set<URI> = new Set(), grammars: Set<ast.Grammar> = new Set()): ast.Grammar[] {
     const doc = getDocument(grammar);
     if (initialGrammar !== grammar) {

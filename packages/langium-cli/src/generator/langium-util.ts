@@ -3,8 +3,8 @@
  * This program and the accompanying materials are made available under the
  * terms of the MIT License, which is available in the project root.
  ******************************************************************************/
-import { AstUtils, type Grammar, GrammarAST, GrammarUtils, stream } from 'langium';
 import chalk from 'chalk';
+import { AstUtils, type Grammar, GrammarAST, GrammarUtils, stream } from 'langium';
 
 //eslint-disable-next-line @typescript-eslint/no-explicit-any
 export function log(level: 'log' | 'warn' | 'error', options: { watch?: boolean }, message: string, ...args: any[]): void {

@@ -43,26 +43,6 @@ export function isAbstractDefinition(item: unknown): item is AbstractDefinition 
     return reflection.isInstance(item, AbstractDefinition.$type);
 }
 
-export type Expression = BinaryExpression | FunctionCall | NumberLiteral;
-
-export const Expression = {
-    $type: 'Expression'
-} as const;
-
-export function isExpression(item: unknown): item is Expression {
-    return reflection.isInstance(item, Expression.$type);
-}
-
-export type Statement = Definition | Evaluation;
-
-export const Statement = {
-    $type: 'Statement'
-} as const;
-
-export function isStatement(item: unknown): item is Statement {
-    return reflection.isInstance(item, Statement.$type);
-}
-
 export interface BinaryExpression extends langium.AstNode {
     readonly $container: BinaryExpression | Definition | Evaluation | FunctionCall;
     readonly $type: 'BinaryExpression';
@@ -131,6 +111,16 @@ export function isEvaluation(item: unknown): item is Evaluation {
     return reflection.isInstance(item, Evaluation.$type);
 }
 
+export type Expression = BinaryExpression | FunctionCall | NumberLiteral;
+
+export const Expression = {
+    $type: 'Expression'
+} as const;
+
+export function isExpression(item: unknown): item is Expression {
+    return reflection.isInstance(item, Expression.$type);
+}
+
 export interface FunctionCall extends langium.AstNode {
     readonly $container: BinaryExpression | Definition | Evaluation | FunctionCall;
     readonly $type: 'FunctionCall';
@@ -177,6 +167,16 @@ export const NumberLiteral = {
 
 export function isNumberLiteral(item: unknown): item is NumberLiteral {
     return reflection.isInstance(item, NumberLiteral.$type);
+}
+
+export type Statement = Definition | Evaluation;
+
+export const Statement = {
+    $type: 'Statement'
+} as const;
+
+export function isStatement(item: unknown): item is Statement {
+    return reflection.isInstance(item, Statement.$type);
 }
 
 export type ArithmeticsAstType = {
