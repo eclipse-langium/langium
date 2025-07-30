@@ -79,6 +79,7 @@ In addition to better readability, the new notation also makes use of performanc
 * Grammar names now have to be unique ([#1979](https://github.com/eclipse-langium/langium/pull/1979)).
 * `DefaultCompletionProvider#createReferenceCompletionItem` now requires more arguments ([#1976](https://github.com/eclipse-langium/langium/pull/1976)).
 * The `singleton` item in the `DefaultServiceRegistry` has been removed ([#1768](https://github.com/eclipse-langium/langium/pull/1786)).
+* Removed several deprecated fields and functions ([#1991](https://github.com/eclipse-langium/langium/pull/1991)).
 
 ## v3.5.0 (Apr. 2025)
 
