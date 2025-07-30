@@ -303,20 +303,14 @@ export type PropertyType = number | string | boolean | PropertyType[];
 export interface CstNode extends DocumentSegment {
     /** The container node in the CST */
     readonly container?: CompositeCstNode;
-    /** @deprecated use `container` instead. */
-    readonly parent?: CompositeCstNode;
     /** The actual text */
     readonly text: string;
     /** The root CST node */
     readonly root: RootCstNode;
     /** The grammar element from which this node was parsed */
     readonly grammarSource?: AbstractElement;
-    /** @deprecated use `grammarSource` instead. */
-    readonly feature?: AbstractElement;
     /** The AST node created from this CST node */
     readonly astNode: AstNode;
-    /** @deprecated use `astNode` instead. */
-    readonly element: AstNode;
     /** Whether the token is hidden, i.e. not explicitly part of the containing grammar rule */
     readonly hidden: boolean;
 }
@@ -326,8 +320,6 @@ export interface CstNode extends DocumentSegment {
  */
 export interface CompositeCstNode extends CstNode {
     readonly content: CstNode[];
-    /** @deprecated use `content` instead. */
-    readonly children: CstNode[];
 }
 
 export function isCompositeCstNode(node: unknown): node is CompositeCstNode {

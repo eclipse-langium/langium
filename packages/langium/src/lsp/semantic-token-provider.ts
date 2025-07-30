@@ -58,7 +58,7 @@ export const AllSemanticTokenModifiers: Record<string, number> = {
 };
 
 /**
- * @deprecated `SemanticTokenProvider` now supplies its own options.
+ * @deprecated Since 3.2.0. `SemanticTokenProvider` now supplies its own options.
  */
 export const DefaultSemanticTokenOptions: SemanticTokensOptions = {
     legend: {
