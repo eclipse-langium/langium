@@ -46,7 +46,7 @@ export class DefaultServiceRegistry implements ServiceRegistry {
     protected readonly fileNameMap = new Map<string, LangiumCoreServices>();
 
     /**
-     * @deprecated Use the new `fileExtensionMap` (or `languageIdMap`) property instead.
+     * @deprecated Since 3.1.0. Use the new `fileExtensionMap` (or `languageIdMap`) property instead.
      */
     protected get map(): Map<string, LangiumCoreServices> | undefined {
         return this.fileExtensionMap;

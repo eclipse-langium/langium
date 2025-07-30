@@ -49,18 +49,9 @@ export function parseHelper<T extends AstNode = AstNode>(services: LangiumCoreSe
 
 export type ExpectFunction = (actual: unknown, expected: unknown, message?: string) => void;
 
-let expectedFunction: ExpectFunction = (actual, expected, message) => {
+const expectedFunction: ExpectFunction = (actual, expected, message) => {
     assert.deepStrictEqual(actual, expected, message);
 };
-
-/**
- * Overrides the assertion function used by tests. Uses `assert.deepStrictEqual` by default
- *
- * @deprecated Since 1.2.0. Do not override the assertion functionality.
- */
-export function expectFunction(functions: ExpectFunction): void {
-    expectedFunction = functions;
-}
 
 export interface ExpectedBase {
     /**

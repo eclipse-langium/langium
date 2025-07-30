@@ -115,16 +115,6 @@ export abstract class AbstractCstNode implements CstNode {
     root: RootCstNode;
     private _astNode?: AstNode;
 
-    /** @deprecated use `container` instead. */
-    get parent(): CompositeCstNode | undefined {
-        return this.container;
-    }
-
-    /** @deprecated use `grammarSource` instead. */
-    get feature(): AbstractElement | undefined {
-        return this.grammarSource;
-    }
-
     get hidden(): boolean {
         return false;
     }
@@ -139,11 +129,6 @@ export abstract class AbstractCstNode implements CstNode {
 
     set astNode(value: AstNode | undefined) {
         this._astNode = value;
-    }
-
-    /** @deprecated use `astNode` instead. */
-    get element(): AstNode {
-        return this.astNode;
     }
 
     get text(): string {
@@ -195,11 +180,6 @@ export class LeafCstNodeImpl extends AbstractCstNode implements LeafCstNode {
 export class CompositeCstNodeImpl extends AbstractCstNode implements CompositeCstNode {
     readonly content: CstNode[] = new CstNodeContainer(this);
     private _rangeCache?: Range;
-
-    /** @deprecated use `content` instead. */
-    get children(): CstNode[] {
-        return this.content;
-    }
 
     get offset(): number {
         return this.firstNonHiddenNode?.offset ?? 0;
