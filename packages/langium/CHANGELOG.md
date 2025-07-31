@@ -60,7 +60,7 @@ In addition to better readability, the new notation also makes use of performanc
 * Improve range calculation for linking errors ([#1937](https://github.com/eclipse-langium/langium/pull/1937)).
 * Improvements to the generator API ([#1965](https://github.com/eclipse-langium/langium/pull/1965)).
 * Refactored AST reflection ([#1942](https://github.com/eclipse-langium/langium/pull/1942), [#1969](https://github.com/eclipse-langium/langium/pull/1969)).
-* Drop topological sorting of interfaces, refine EBNF-based terminals to avoid synthetic capturing groups ([#1968](https://github.com/eclipse-langium/langium/pull/1968)).
+* Drop superfluous topological sorting of interfaces ([#1966](https://github.com/eclipse-langium/langium/pull/1966)).
 * Enable passing `refInfo` and `context` to `createReferenceCompletionItem` ([#1976](https://github.com/eclipse-langium/langium/pull/1976)).
 
 ### Bug Fixes
@@ -75,6 +75,7 @@ In addition to better readability, the new notation also makes use of performanc
 * The type of references used throughout the linker service and scope provider is now `Reference | MultiReference` ([#1509](https://github.com/eclipse-langium/langium/pull/1509)).
 * The `References#findDeclaration` method has been renamed to `findDeclarations` and returns an array of objects ([#1509](https://github.com/eclipse-langium/langium/pull/1509)). 
 * The generated type names from `ast.ts` have been moved from `<typeName>` to `<typeName>.$type` ([#1942](https://github.com/eclipse-langium/langium/pull/1942)).
+* Refined EBNF-based terminals to avoid synthetic capturing groups ([#1966](https://github.com/eclipse-langium/langium/pull/1966)).
 * Rules are no longer allowed to use the same name as the grammar in which they are contained ([#1979](https://github.com/eclipse-langium/langium/pull/1979)).
 * Grammar names now have to be unique ([#1979](https://github.com/eclipse-langium/langium/pull/1979)).
 * `DefaultCompletionProvider#createReferenceCompletionItem` now requires more arguments ([#1976](https://github.com/eclipse-langium/langium/pull/1976)).
