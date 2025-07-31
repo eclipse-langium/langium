@@ -1,5 +1,11 @@
 # Change Log of `langium-vscode`
 
+## v4.0.0 (Jul. 2025)
+
+* Update the internal `langium` version to 4.0.
+* Remove unused code ([#1943](https://github.com/eclipse-langium/langium/pull/1943)).
+* The Langium config file can now be referenced in the `langium.config` setting ([#1951](https://github.com/eclipse-langium/langium/pull/1951)).
+
 ## v3.5.0 (Apr. 2025)
 
 * Update the internal `langium` version to 3.5.

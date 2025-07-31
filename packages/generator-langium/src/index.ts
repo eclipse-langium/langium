@@ -203,7 +203,7 @@ export class LangiumGenerator extends Generator {
         const languageId = _.kebabCase(this.answers.rawLanguageName);
 
         const templateCopyOptions: CopyOptions = {
-            process: content => this._replaceTemplateWords(fileExtensionGlob, languageName, languageId, content),
+            process: content => this._replaceLocalLangium(this._replaceTemplateWords(fileExtensionGlob, languageName, languageId, content)),
             processDestinationPath: path => this._replaceTemplateNames(languageId, path)
         };
 
@@ -394,6 +394,24 @@ export * from './generated/module.js';
             .replace(LANGUAGE_ID, languageId)
             .replace(ENTRY_NAME, this.answers.entryName)
             .replace(NEWLINES, EOL);
+    }
+
+    _replaceLocalLangium(content: string): string {
+        // Only used for testing purposes in this repo
+        if (this.args.includes('use-local-langium')) {
+            const levels = 6;
+            const relativePath = '../'.repeat(levels);
+            // replace local langium with relative path
+            content = content.replace(
+                /"langium": "~?\d\.\d\.\d"/g,
+                `"langium": "file:${relativePath}langium"`
+            );
+            content = content.replace(
+                /"langium-cli": "~?\d\.\d\.\d"/g,
+                `"langium-cli": "file:${relativePath}langium-cli"`
+            );
+        }
+        return content;
     }
 
     _replaceTemplateNames(languageId: string, path: string): string {
