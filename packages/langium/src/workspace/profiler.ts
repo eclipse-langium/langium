@@ -4,15 +4,15 @@
  * terms of the MIT License, which is available in the project root.
  ******************************************************************************/
 
-import type { LangiumSharedCoreServices } from '../services.js';
 import { MultiMap } from '../utils/collections.js';
 import type { Stream } from '../utils/stream.js';
 import { stream } from '../utils/stream.js';
 
 export class LangiumProfiler {
-    protected activeCategories: Set<string> | boolean = true; // TODO to be disabled by default (true for debugging purpose)
+    protected activeCategories: Set<string> | boolean;
 
-    constructor(_services: LangiumSharedCoreServices) {
+    constructor(defaultActiveCategories?: Set<string> | boolean) {
+        this.activeCategories = defaultActiveCategories ?? false;
     }
 
     isActive(category: string): boolean {
