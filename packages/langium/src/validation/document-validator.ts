@@ -54,7 +54,7 @@ export class DefaultDocumentValidator implements DocumentValidator {
 
     protected readonly validationRegistry: ValidationRegistry;
     protected readonly metadata: LanguageMetaData;
-    protected readonly profiler: LangiumProfiler;
+    protected readonly profiler: LangiumProfiler | undefined;
     protected readonly languageId: string;
 
     constructor(services: LangiumCoreServices) {
@@ -206,7 +206,7 @@ export class DefaultDocumentValidator implements DocumentValidator {
     }
 
     protected async validateAstNodes(rootNode: AstNode, options: ValidationOptions, acceptor: ValidationAcceptor, cancelToken = CancellationToken.None): Promise<void> {
-        if (this.profiler.isActive('validating')) {
+        if (this.profiler?.isActive('validating')) {
             const task = this.profiler.createTask('validating', this.languageId);
             task.start();
             try {

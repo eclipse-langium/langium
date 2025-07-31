@@ -141,7 +141,7 @@ export abstract class AbstractLangiumParser implements BaseParser {
         this.lexer = services.parser.Lexer;
         const tokens = this.lexer.definition;
         const production = services.LanguageMetaData.mode === 'production';
-        if (services.shared.workspace.LangiumProfiler.isActive('parsing'))
+        if (services.shared.workspace.LangiumProfiler?.isActive('parsing'))
 
             this.wrapper = new ProfilerWrapper(tokens, {
                 ...services.parser.ParserConfig,

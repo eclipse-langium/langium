@@ -96,7 +96,7 @@ export class DefaultLinker implements Linker {
     protected readonly scopeProvider: ScopeProvider;
     protected readonly astNodeLocator: AstNodeLocator;
     protected readonly langiumDocuments: () => LangiumDocuments;
-    protected readonly profiler: LangiumProfiler;
+    protected readonly profiler: LangiumProfiler | undefined;
     protected readonly languageId: string;
 
     constructor(services: LangiumCoreServices) {
@@ -109,7 +109,7 @@ export class DefaultLinker implements Linker {
     }
 
     async link(document: LangiumDocument, cancelToken = CancellationToken.None): Promise<void> {
-        if (this.profiler.isActive('linking')) {
+        if (this.profiler?.isActive('linking')) {
             const task = this.profiler.createTask('linking', this.languageId);
             task.start();
             try {

@@ -6,7 +6,8 @@
 
 import { MultiMap } from '../utils/collections.js';
 import type { Stream } from '../utils/stream.js';
-import { stream } from '../utils/stream.js';
+
+export type ProfilingCategory = 'validating' | 'parsing' | 'linking';
 
 export interface LangiumProfiler {
 
@@ -15,76 +16,65 @@ export interface LangiumProfiler {
      * @param category The category to check.
      * @returns `true` if the category is active, `false` otherwise.
      */
-    isActive(category: string): boolean;
+    isActive(category: ProfilingCategory): boolean;
 
     /**
      * Starts the profiling for the given categories. If none are provided, all categories are started.
      * @param categories The categories to start profiling for.
      */
-    start(categories?: string | string[]): void;
+    start(...categories: ProfilingCategory[]): void;
 
     /**
      * Stops the profiling for the given categories. If none are provided, all categories are stopped.
      * @param categories The categories to stop profiling for.
      */
-    stop(categories?: string | string[]): void;
+    stop(...categories: ProfilingCategory[]): void;
 
     /**
      * Creates a new {@link ProfilingTask} for the given category.
      * @param category The category to create the task for.
      * @param taskId The identifier of the task.
      */
-    createTask(category: string, taskId: string): ProfilingTask;
+    createTask(category: ProfilingCategory, taskId: string): ProfilingTask;
 
     /**
      * Gets the {@link ProfilingRecord}s for the given categories. If none are provided, all records are returned.
      * @param categories The categories to get the records for.
      * @returns A stream of profiling records.
      */
-    getRecords(categories?: string | string[]): Stream<ProfilingRecord>;
+    getRecords(...categories: ProfilingCategory[]): Stream<ProfilingRecord>;
 }
 
 export class DefaultLangiumProfiler implements LangiumProfiler {
-    protected activeCategories: Set<string> | boolean;
+    protected activeCategories: Set<ProfilingCategory> = new Set<ProfilingCategory>();
+    private readonly allCategories: ReadonlySet<ProfilingCategory> = new Set<ProfilingCategory>([ 'validating', 'parsing', 'linking' ]);
 
-    constructor(defaultActiveCategories?: Set<string> | boolean) {
-        this.activeCategories = defaultActiveCategories ?? false;
+    constructor(activeCategories?: Set<ProfilingCategory>) {
+        this.activeCategories = activeCategories ?? new Set<ProfilingCategory>(this.allCategories);
     }
 
-    isActive(category: string): boolean {
-        if (typeof this.activeCategories === 'boolean')
-            return this.activeCategories;
+    isActive(category: ProfilingCategory): boolean {
         return this.activeCategories.has(category);
     }
 
-    start(categories?: string | string[]): void {
+    start(...categories: ProfilingCategory[]): void {
         if (!categories) {
-            this.activeCategories = true;
-        } else {
-            if (typeof this.activeCategories === 'boolean') {
-                this.activeCategories = new Set<string>();
-            }
-            if (Array.isArray(categories)) {
-                for (const category of categories)
-                    this.activeCategories.add(category);
-            } else {
-                this.activeCategories.add(categories);
-            }
+            // Create a new set with all categories (immutable copy)
+            this.activeCategories = new Set(this.allCategories);
+        }
+        else {
+            categories.forEach(category => this.activeCategories.add(category));
         }
     }
 
-    stop(categories?: string | string[]): void {
-        if (!categories || typeof this.activeCategories === 'boolean') {
-            this.activeCategories = false;
-        }
-        else if (Array.isArray(categories)) {
-            for (const category of categories)
-                this.activeCategories.delete(category);
+    stop(...categories: ProfilingCategory[]): void {
+        if (!categories) {
+            this.activeCategories.clear();
         } else {
-            this.activeCategories.delete(categories);
+            categories.forEach(category => this.activeCategories.delete(category));
         }
     }
-    createTask(category: string, taskId: string): ProfilingTask {
+    createTask(category: ProfilingCategory, taskId: string): ProfilingTask {
         if (!this.isActive(category)) {
             throw new Error(`Category "${category}" is not active.`);
         }
@@ -112,17 +102,13 @@ export class DefaultLangiumProfiler implements LangiumProfiler {
         console.table(result.map(e => { return { Element: e.name, Count: e.count, 'Self %': Round(100 * e.duration / record.duration), 'Time (ms)': Round(e.duration) }; }));
         return record;
     }
-    getRecords(categories?: string | string[]): Stream<ProfilingRecord> {
-        if (!categories) {
+    getRecords(...categories: ProfilingCategory[]): Stream<ProfilingRecord> {
+        if (categories.length === 0) {
             // return all records
             return this.records.values();
-        }
-        else if (Array.isArray(categories)) {
+        } else {
             // return records for the given categories
             return this.records.entries().filter((e) => categories.some(c => c === e[0])).flatMap(e => e[1]);
-        } else {
-            // return records for the given category
-            return stream(this.records.get(categories));
         }
     }
     protected readonly records: MultiMap<string, ProfilingRecord> = new MultiMap();
