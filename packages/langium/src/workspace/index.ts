@@ -13,3 +13,4 @@ export * from './file-system-provider.js';
 export * from './index-manager.js';
 export * from './workspace-lock.js';
 export * from './workspace-manager.js';
+export * from './profiler.js';
