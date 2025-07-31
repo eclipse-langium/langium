@@ -35,7 +35,7 @@ import { LangiumParserErrorMessageProvider } from './parser/langium-parser.js';
 import { DefaultAsyncParser } from './parser/async-parser.js';
 import { DefaultWorkspaceLock } from './workspace/workspace-lock.js';
 import { DefaultHydrator } from './serializer/hydrator.js';
-import { LangiumProfiler } from './workspace/profiler.js';
+import { DefaultLangiumProfiler } from './workspace/profiler.js';
 
 /**
  * Context required for creating the default language-specific dependency injection module.
@@ -119,7 +119,7 @@ export function createDefaultSharedCoreModule(context: DefaultSharedCoreModuleCo
             FileSystemProvider: (services) => context.fileSystemProvider(services),
             WorkspaceLock: () => new DefaultWorkspaceLock(),
             ConfigurationProvider: (services) => new DefaultConfigurationProvider(services),
-            LangiumProfiler: ()=> new LangiumProfiler(),
+            LangiumProfiler: ()=> new DefaultLangiumProfiler(),
         }
     };
 }

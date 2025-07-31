@@ -8,7 +8,43 @@ import { MultiMap } from '../utils/collections.js';
 import type { Stream } from '../utils/stream.js';
 import { stream } from '../utils/stream.js';
 
-export class LangiumProfiler {
+export interface LangiumProfiler {
+
+    /**
+     * Checks if the given category is active.
+     * @param category The category to check.
+     * @returns `true` if the category is active, `false` otherwise.
+     */
+    isActive(category: string): boolean;
+
+    /**
+     * Starts the profiling for the given categories. If none are provided, all categories are started.
+     * @param categories The categories to start profiling for.
+     */
+    start(categories?: string | string[]): void;
+
+    /**
+     * Stops the profiling for the given categories. If none are provided, all categories are stopped.
+     * @param categories The categories to stop profiling for.
+     */
+    stop(categories?: string | string[]): void;
+
+    /**
+     * Creates a new {@link ProfilingTask} for the given category.
+     * @param category The category to create the task for.
+     * @param taskId The identifier of the task.
+     */
+    createTask(category: string, taskId: string): ProfilingTask;
+
+    /**
+     * Gets the {@link ProfilingRecord}s for the given categories. If none are provided, all records are returned.
+     * @param categories The categories to get the records for.
+     * @returns A stream of profiling records.
+     */
+    getRecords(categories?: string | string[]): Stream<ProfilingRecord>;
+}
+
+export class DefaultLangiumProfiler implements LangiumProfiler {
     protected activeCategories: Set<string> | boolean;
 
     constructor(defaultActiveCategories?: Set<string> | boolean) {
@@ -91,7 +127,8 @@ export class LangiumProfiler {
     }
     protected readonly records: MultiMap<string, ProfilingRecord> = new MultiMap();
 }
-export interface ProfilingRecord {
+
+interface ProfilingRecord {
     // the record identifier (e.g: the grammar name)
     identifier: string
     // the date at which the record is generated
@@ -102,6 +139,7 @@ export interface ProfilingRecord {
     // for each sub-task the duration of each call.
     entries: MultiMap<string, number>
 }
+
 export class ProfilingTask {
     private startTime?: number;
     private readonly addRecord: (record: ProfilingRecord) => void;
