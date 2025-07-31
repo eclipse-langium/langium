@@ -73,7 +73,7 @@ In addition to better readability, the new notation also makes use of performanc
 * Renamed `PrecomputedScopes` to `LocalSymbols` and introduced a dedicated interface for it ([#1788](https://github.com/eclipse-langium/langium/pull/1788)).
 * Removed unused Xtext features from the Langium grammar ([#1945](https://github.com/eclipse-langium/langium/pull/1945)).
 * The type of references used throughout the linker service and scope provider is now `Reference | MultiReference` ([#1509](https://github.com/eclipse-langium/langium/pull/1509)).
-* The `References#findDeclaration` method has been renamed to `findDeclarations` and returns an array of objects ([#1509](https://github.com/eclipse-langium/langium/pull/1509)). 
+* The `References#findDeclaration` method has been renamed to `findDeclarations` and returns an array of objects ([#1509](https://github.com/eclipse-langium/langium/pull/1509)).
 * The generated type names from `ast.ts` have been moved from `<typeName>` to `<typeName>.$type` ([#1942](https://github.com/eclipse-langium/langium/pull/1942)).
 * Refined EBNF-based terminals to avoid synthetic capturing groups ([#1966](https://github.com/eclipse-langium/langium/pull/1966)).
 * Rules are no longer allowed to use the same name as the grammar in which they are contained ([#1979](https://github.com/eclipse-langium/langium/pull/1979)).
@@ -81,6 +81,7 @@ In addition to better readability, the new notation also makes use of performanc
 * `DefaultCompletionProvider#createReferenceCompletionItem` now requires more arguments ([#1976](https://github.com/eclipse-langium/langium/pull/1976)).
 * The `singleton` item in the `DefaultServiceRegistry` has been removed ([#1768](https://github.com/eclipse-langium/langium/pull/1786)).
 * Removed several deprecated fields and functions ([#1991](https://github.com/eclipse-langium/langium/pull/1991)).
+* The extended file system provider interface requires to implement more methods ([#1784](https://github.com/eclipse-langium/langium/pull/1784)).
 
 ## v3.5.0 (Apr. 2025)
 
@@ -197,7 +198,7 @@ Note that adopters generally shouldn't need to use this import at all.
 
 All language server related functionality has been moved to `langium/lsp` ([#1258](https://github.com/eclipse-langium/langium/pull/1258)):
 * This includes all services in the `lsp` object of the langium service instance and the `startLanguageServer` function.
-* The `langium` import now only exposes the `LangiumCoreServices` service. 
+* The `langium` import now only exposes the `LangiumCoreServices` service.
 Adopters using Langium to build a language server should continue using the known `LangiumServices`, which is now imported from `langium/lsp`.
 
 ### Asynchronous Parsing
@@ -230,7 +231,7 @@ If you're upgrading from v2 of Langium, there are a few breaking changes you sho
 
 * All exports related to code generation have been moved from `langium` to `langium/generate`
 * All LSP related services/functions have been moved to `langium/lsp`. This includes the types `LangiumServices` and `LangiumSharedServices`, as well as the function `startLanguageServer`.
-* All code related to the internal workings of the grammar language have been moved to `langium/grammar`. 
+* All code related to the internal workings of the grammar language have been moved to `langium/grammar`.
 * Utility functions related to AST/CST nodes, RegExp and some of the grammar are now exposed via namespaces to improve API surface area. They are now available under `AstUtils`, `CstUtils`, `GrammarUtils` and `RegExpUtils`. The names of the functions haven't changed.
 * The `FileSystemProvider#readFileSync` method has been removed.
 * The `LangiumDocuments#getOrCreateDocument` method now returns a `Promise<LangiumDocument>`. To use the `LangiumDocuments` in a sync context, use the `getDocument` method - optionally with the `createDocument` method - to get/create documents.
@@ -283,7 +284,7 @@ We also have [a guide available on our website](https://langium.org/guides/code-
 
 ### Breaking Changes
 
-* The `CodeLensProvider`, `DocumentLinkProvider` and `InlayHintProvider` services were moved from the shared LSP services container to the language specific services container. Additionally, their `resolve` methods have been removed ([#1107](https://github.com/eclipse-langium/langium/pull/1107)). 
+* The `CodeLensProvider`, `DocumentLinkProvider` and `InlayHintProvider` services were moved from the shared LSP services container to the language specific services container. Additionally, their `resolve` methods have been removed ([#1107](https://github.com/eclipse-langium/langium/pull/1107)).
 * Deprecated a few properties available on CST nodes. They have been renamed and their old property names will be deleted in a future version ([#1131](https://github.com/eclipse-langium/langium/pull/1131)):
     * `CstNode#parent` -> `container`
     * `CstNode#feature` -> `grammarSource`
