@@ -278,7 +278,7 @@ export function copyAstNode<T extends AstNode = AstNode>(node: T, buildReference
     for (const [name, value] of Object.entries(node)) {
         if (!name.startsWith('$')) {
             if (isAstNode(value)) {
-                copy[name] = copyAstNode(value, buildReference);
+                copy[name] = copyAstNode(value, buildReference, trace);
             } else if (isReference(value)) {
                 copy[name] = buildReference(
                     copy,
@@ -291,7 +291,7 @@ export function copyAstNode<T extends AstNode = AstNode>(node: T, buildReference
                 const copiedArray: unknown[] = [];
                 for (const element of value) {
                     if (isAstNode(element)) {
-                        copiedArray.push(copyAstNode(element, buildReference));
+                        copiedArray.push(copyAstNode(element, buildReference, trace));
                     } else if (isReference(element)) {
                         copiedArray.push(
                             buildReference(
