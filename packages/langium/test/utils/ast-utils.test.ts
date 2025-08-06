@@ -98,4 +98,69 @@ describe('AST Utils', () => {
         expectType<PartialTestNode>((null as unknown) as ResultType);
         expectType<ResultType>((null as unknown) as PartialTestNode);
     });
+
+    test('copyAstNode with trace should add all involved ast nodes to trace', () => {
+        interface MyType extends AstNode {
+            readonly $type: 'MyType';
+            name?: string;
+            singleChild?: MyType;
+            children?: MyType[];
+            buddy?: Reference<MyType>;
+        }
+
+        const root: MyType = {
+            $type: 'MyType',
+            name: 'root',
+            singleChild: {
+                $type: 'MyType',
+                name: 'singleChild',
+            },
+            children: [
+                {
+                    $type: 'MyType',
+                    name: 'child1',
+                    buddy: {
+                        $refText: 'child2',
+                        get ref() { return root.children?.[1]; },
+                    }
+                },
+                {
+                    $type: 'MyType',
+                    name: 'child2',
+                    buddy: {
+                        $refText: 'child1',
+                        get ref() { return root.children?.[0]; },
+                    }
+                }
+            ]
+        };
+
+        const trace = new Map<AstNode, AstNode>();
+
+        // a simple reference builder function that identifies the to be referenced nodes
+        //  based on the trace map and the original reference
+        // this approach might not work in general because of project-specific details
+        //  but it nicely illustrates the utility of the trace map and also checks it's proper population
+        const buildReference: Parameters<typeof AstUtils.copyAstNode>['1'] = (_, _1, _2, _3, origRef) => ({
+            ...origRef,
+            get ref() { return origRef.ref && trace.get(origRef.ref); }
+        });
+
+        const copy = AstUtils.copyAstNode(root, buildReference, trace);
+
+        expect(trace.get(root)).toBe(copy);
+        expect(trace.get(copy)).toBe(root);
+
+        expect(trace.get(root.singleChild!)).toBe(copy.singleChild);
+        expect(trace.get(copy.singleChild!)).toBe(root.singleChild);
+
+        expect(trace.get(root.children![0])).toBe(copy.children![0]);
+        expect(trace.get(copy.children![0])).toBe(root.children![0]);
+
+        expect(trace.get(root.children![1])).toBe(copy.children![1]);
+        expect(trace.get(copy.children![1])).toBe(root.children![1]);
+
+        expect(copy.children![1].buddy!.ref).toBe(copy.children![0]);
+        expect(copy.children![0].buddy!.ref).toBe(copy.children![1]);
+    });
 });
