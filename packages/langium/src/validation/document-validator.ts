@@ -60,7 +60,7 @@ export class DefaultDocumentValidator implements DocumentValidator {
     constructor(services: LangiumCoreServices) {
         this.validationRegistry = services.validation.ValidationRegistry;
         this.metadata = services.LanguageMetaData;
-        this.profiler = services.shared.workspace.LangiumProfiler;
+        this.profiler = services.shared.profilers.LangiumProfiler;
         this.languageId = services.LanguageMetaData.languageId;
     }
 

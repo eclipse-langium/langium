@@ -104,7 +104,7 @@ export class DefaultLinker implements Linker {
         this.langiumDocuments = () => services.shared.workspace.LangiumDocuments;
         this.scopeProvider = services.references.ScopeProvider;
         this.astNodeLocator = services.workspace.AstNodeLocator;
-        this.profiler = services.shared.workspace.LangiumProfiler;
+        this.profiler = services.shared.profilers.LangiumProfiler;
         this.languageId = services.LanguageMetaData.languageId;
     }
 

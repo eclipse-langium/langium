@@ -47,10 +47,12 @@ export interface LangiumProfiler {
 
 export class DefaultLangiumProfiler implements LangiumProfiler {
     protected activeCategories: Set<ProfilingCategory> = new Set<ProfilingCategory>();
-    private readonly allCategories: ReadonlySet<ProfilingCategory> = new Set<ProfilingCategory>([ 'validating', 'parsing', 'linking' ]);
+    protected readonly allCategories: ReadonlySet<ProfilingCategory> = new Set<ProfilingCategory>([ 'validating', 'parsing', 'linking' ]);
+    protected readonly records: MultiMap<string, ProfilingRecord>;
 
     constructor(activeCategories?: Set<ProfilingCategory>) {
         this.activeCategories = activeCategories ?? new Set<ProfilingCategory>(this.allCategories);
+        this.records = new MultiMap();
     }
 
     isActive(category: ProfilingCategory): boolean {
@@ -74,6 +76,7 @@ export class DefaultLangiumProfiler implements LangiumProfiler {
             categories.forEach(category => this.activeCategories.delete(category));
         }
     }
+
     createTask(category: ProfilingCategory, taskId: string): ProfilingTask {
         if (!this.isActive(category)) {
             throw new Error(`Category "${category}" is not active.`);
@@ -82,7 +85,7 @@ export class DefaultLangiumProfiler implements LangiumProfiler {
         return new ProfilingTask((record: ProfilingRecord) => this.records.add(category, this.dumpRecord(category, record)), taskId);
     }
 
-    private dumpRecord(category: string, record: ProfilingRecord): ProfilingRecord {
+    protected dumpRecord(category: string, record: ProfilingRecord): ProfilingRecord {
         console.info(`Task ${category}.${record.identifier} executed in ${record.duration.toFixed(2)}ms and ended at ${record.date.toISOString()}`);
 
         const result: Array<{ name: string, count: number, duration: number }> = [];
@@ -102,6 +105,7 @@ export class DefaultLangiumProfiler implements LangiumProfiler {
         console.table(result.map(e => { return { Element: e.name, Count: e.count, 'Self %': Round(100 * e.duration / record.duration), 'Time (ms)': Round(e.duration) }; }));
         return record;
     }
+
     getRecords(...categories: ProfilingCategory[]): Stream<ProfilingRecord> {
         if (categories.length === 0) {
             // return all records
@@ -111,10 +115,9 @@ export class DefaultLangiumProfiler implements LangiumProfiler {
             return this.records.entries().filter((e) => categories.some(c => c === e[0])).flatMap(e => e[1]);
         }
     }
-    protected readonly records: MultiMap<string, ProfilingRecord> = new MultiMap();
 }
 
-interface ProfilingRecord {
+export interface ProfilingRecord {
     // the record identifier (e.g: the grammar name)
     identifier: string
     // the date at which the record is generated
@@ -127,12 +130,12 @@ interface ProfilingRecord {
 }
 
 export class ProfilingTask {
-    private startTime?: number;
-    private readonly addRecord: (record: ProfilingRecord) => void;
+    protected startTime?: number;
+    protected readonly addRecord: (record: ProfilingRecord) => void;
 
-    private readonly identifier: string;
-    private readonly stack: Array<{ id: string, start: number, content: number }> = [];
-    private readonly entries = new MultiMap<string, number>();
+    protected readonly identifier: string;
+    protected readonly stack: Array<{ id: string, start: number, content: number }> = [];
+    protected readonly entries = new MultiMap<string, number>();
 
     constructor(addRecord: (record: ProfilingRecord) => void, identifier: string) {
         this.addRecord = addRecord;

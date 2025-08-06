@@ -141,19 +141,19 @@ export abstract class AbstractLangiumParser implements BaseParser {
         this.lexer = services.parser.Lexer;
         const tokens = this.lexer.definition;
         const production = services.LanguageMetaData.mode === 'production';
-        if (services.shared.workspace.LangiumProfiler?.isActive('parsing'))
-
+        if (services.shared.profilers.LangiumProfiler?.isActive('parsing')) {
             this.wrapper = new ProfilerWrapper(tokens, {
                 ...services.parser.ParserConfig,
                 skipValidations: production,
                 errorMessageProvider: services.parser.ParserErrorMessageProvider
-            }, services.shared.workspace.LangiumProfiler.createTask('parsing', services.LanguageMetaData.languageId));
-        else
+            }, services.shared.profilers.LangiumProfiler.createTask('parsing', services.LanguageMetaData.languageId));
+        } else {
             this.wrapper = new ChevrotainWrapper(tokens, {
                 ...services.parser.ParserConfig,
                 skipValidations: production,
                 errorMessageProvider: services.parser.ParserErrorMessageProvider
             });
+        }
     }
 
     alternatives(idx: number, choices: Array<IOrAlt<any>>): void {

@@ -122,6 +122,8 @@ export type LangiumDefaultSharedCoreServices = {
         readonly TextDocuments?: TextDocumentProvider
         readonly WorkspaceLock: WorkspaceLock
         readonly WorkspaceManager: WorkspaceManager
+    }
+    readonly profilers: {
         readonly LangiumProfiler?: LangiumProfiler
     }
 }

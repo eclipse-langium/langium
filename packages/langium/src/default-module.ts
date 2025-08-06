@@ -118,6 +118,7 @@ export function createDefaultSharedCoreModule(context: DefaultSharedCoreModuleCo
             FileSystemProvider: (services) => context.fileSystemProvider(services),
             WorkspaceLock: () => new DefaultWorkspaceLock(),
             ConfigurationProvider: (services) => new DefaultConfigurationProvider(services),
-        }
+        },
+        profilers: {}
     };
 }
