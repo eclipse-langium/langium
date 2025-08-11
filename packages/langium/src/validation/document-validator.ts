@@ -19,6 +19,7 @@ import { tokenToRange } from '../utils/cst-utils.js';
 import { interruptAndCheck, isOperationCancelled } from '../utils/promise-utils.js';
 import { diagnosticData } from './validation-registry.js';
 import type { LexingDiagnostic, LexingDiagnosticSeverity } from '../parser/token-builder.js';
+import type { LangiumProfiler } from '../workspace/profiler.js';
 
 export interface ValidationOptions {
     /**
@@ -53,10 +54,14 @@ export class DefaultDocumentValidator implements DocumentValidator {
 
     protected readonly validationRegistry: ValidationRegistry;
     protected readonly metadata: LanguageMetaData;
+    protected readonly profiler: LangiumProfiler | undefined;
+    protected readonly languageId: string;
 
     constructor(services: LangiumCoreServices) {
         this.validationRegistry = services.validation.ValidationRegistry;
         this.metadata = services.LanguageMetaData;
+        this.profiler = services.shared.profilers.LangiumProfiler;
+        this.languageId = services.LanguageMetaData.languageId;
     }
 
     async validateDocument(document: LangiumDocument, options: ValidationOptions = {}, cancelToken = CancellationToken.None): Promise<Diagnostic[]> {
@@ -201,13 +206,34 @@ export class DefaultDocumentValidator implements DocumentValidator {
     }
 
     protected async validateAstNodes(rootNode: AstNode, options: ValidationOptions, acceptor: ValidationAcceptor, cancelToken = CancellationToken.None): Promise<void> {
-        await Promise.all(streamAst(rootNode).map(async node => {
-            await interruptAndCheck(cancelToken);
-            const checks = this.validationRegistry.getChecks(node.$type, options.categories);
-            for (const check of checks) {
-                await check(node, acceptor, cancelToken);
+        if (this.profiler?.isActive('validating')) {
+            const task = this.profiler.createTask('validating', this.languageId);
+            task.start();
+            try {
+                streamAst(rootNode).forEach(node => {
+                    task.startSubTask(node.$type);
+                    try {
+                        const checks = this.validationRegistry.getChecks(node.$type, options.categories);
+                        for (const check of checks) {
+                            check(node, acceptor, cancelToken);
+                        }
+                    } finally {
+                        task.stopSubTask(node.$type);
+                    }
+                });
+            } finally {
+                task.stop();
             }
-        }));
+        }
+        else {
+            await Promise.all(streamAst(rootNode).map(async node => {
+                await interruptAndCheck(cancelToken);
+                const checks = this.validationRegistry.getChecks(node.$type, options.categories);
+                for (const check of checks) {
+                    await check(node, acceptor, cancelToken);
+                }
+            }));
+        }
     }
 
     protected async validateAstAfter(rootNode: AstNode, options: ValidationOptions, acceptor: ValidationAcceptor, cancelToken = CancellationToken.None): Promise<void> {

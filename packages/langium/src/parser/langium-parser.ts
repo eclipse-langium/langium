@@ -5,9 +5,9 @@
  ******************************************************************************/
 
 /* eslint-disable @typescript-eslint/no-explicit-any */
-import type { DSLMethodOpts, ILexingError, IOrAlt, IParserErrorMessageProvider, IRecognitionException, IToken, TokenType, TokenVocabulary, IRuleConfig } from 'chevrotain';
-import type { AbstractElement, Action, Assignment, InfixRule, ParserRule } from '../languages/generated/ast.js';
 import { isInfixRule } from '../languages/generated/ast.js';
+import type { AbstractElement, Action, Assignment, InfixRule, ParserRule } from '../languages/generated/ast.js';
+import type { DSLMethodOpts, ILexingError, IOrAlt, IParserErrorMessageProvider, IRecognitionException, IToken, ParserMethod, SubruleMethodOpts, TokenType, TokenVocabulary, IRuleConfig } from 'chevrotain';
 import type { Linker } from '../references/linker.js';
 import type { LangiumCoreServices } from '../services.js';
 import type { AstNode, AstReflection, CompositeCstNode, CstNode } from '../syntax-tree.js';
@@ -21,6 +21,7 @@ import { getExplicitRuleType, isDataTypeRule } from '../utils/grammar-utils.js';
 import { assignMandatoryProperties, getContainerOfType, linkContentToContainer } from '../utils/ast-utils.js';
 import { CstNodeBuilder } from './cst-node-builder.js';
 import type { LexingReport } from './token-builder.js';
+import type { ProfilingTask } from '../workspace/profiler.js';
 
 export type ParseResult<T = AstNode> = {
     value: T,
@@ -140,11 +141,19 @@ export abstract class AbstractLangiumParser implements BaseParser {
         this.lexer = services.parser.Lexer;
         const tokens = this.lexer.definition;
         const production = services.LanguageMetaData.mode === 'production';
-        this.wrapper = new ChevrotainWrapper(tokens, {
-            ...services.parser.ParserConfig,
-            skipValidations: production,
-            errorMessageProvider: services.parser.ParserErrorMessageProvider
-        });
+        if (services.shared.profilers.LangiumProfiler?.isActive('parsing')) {
+            this.wrapper = new ProfilerWrapper(tokens, {
+                ...services.parser.ParserConfig,
+                skipValidations: production,
+                errorMessageProvider: services.parser.ParserErrorMessageProvider
+            }, services.shared.profilers.LangiumProfiler.createTask('parsing', services.LanguageMetaData.languageId));
+        } else {
+            this.wrapper = new ChevrotainWrapper(tokens, {
+                ...services.parser.ParserConfig,
+                skipValidations: production,
+                errorMessageProvider: services.parser.ParserErrorMessageProvider
+            });
+        }
     }
 
     alternatives(idx: number, choices: Array<IOrAlt<any>>): void {
@@ -283,7 +292,7 @@ export class LangiumParser extends AbstractLangiumParser {
     }
 
     private doParse(rule: RuleResult): any {
-        let result = rule.call(this.wrapper, {});
+        let result = this.wrapper.rule(rule);
         if (this.stack.length > 0) {
             // In case the parser throws on the entry rule, `construct` is not called
             // We need to call it manually here
@@ -845,5 +854,41 @@ class ChevrotainWrapper extends EmbeddedActionsParser {
 
     wrapAtLeastOne(idx: number, callback: DSLMethodOpts<unknown>): void {
         this.atLeastOne(idx, callback);
+    }
+    rule(rule: RuleResult): any {
+        return rule.call(this, {});
+    }
+}
+
+class ProfilerWrapper extends ChevrotainWrapper {
+    private readonly task: ProfilingTask;
+    constructor(tokens: TokenVocabulary, config: IParserConfig, task: ProfilingTask) {
+        super(tokens, config);
+        this.task = task;
+    }
+
+    override rule(rule: RuleResult): any {
+        this.task.start();
+        this.task.startSubTask(this.ruleName(rule));
+        try {
+            return super.rule(rule);
+        }
+        finally {
+            this.task.stopSubTask(this.ruleName(rule));
+            this.task.stop();
+        }
+    }
+
+    private ruleName(rule: any): string {
+        return rule.ruleName as string;
+    }
+    protected override subrule<ARGS extends unknown[], R>(idx: number, ruleToCall: ParserMethod<ARGS, R>, options?: SubruleMethodOpts<ARGS>): R {
+        this.task.startSubTask(this.ruleName(ruleToCall));
+        try {
+            return super.subrule<ARGS, R>(idx, ruleToCall, options);
+        }
+        finally {
+            this.task.stopSubTask(this.ruleName(ruleToCall));
+        }
     }
 }
