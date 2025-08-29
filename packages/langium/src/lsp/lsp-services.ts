@@ -6,7 +6,7 @@
 
 import type { Connection } from 'vscode-languageserver';
 import type { DeepPartial, LangiumCoreServices, LangiumSharedCoreServices } from '../services.js';
-import type { TextDocument } from '../workspace/documents.js';
+import type { DocumentState, TextDocument } from '../workspace/documents.js';
 import type { CallHierarchyProvider } from './call-hierarchy-provider.js';
 import type { CodeActionProvider } from './code-action.js';
 import type { CodeLensProvider } from './code-lens-provider.js';
@@ -88,6 +88,29 @@ export type LangiumSharedLSPServices = {
         readonly LanguageServer: LanguageServer
         readonly NodeKindProvider: NodeKindProvider
         readonly WorkspaceSymbolProvider?: WorkspaceSymbolProvider
+        readonly serviceRequirements: {
+            readonly CallHierarchyProvider: DocumentState
+            readonly CodeActionProvider: DocumentState
+            readonly CodeLensProvider: DocumentState
+            readonly CompletionProvider: DocumentState
+            readonly DeclarationProvider: DocumentState
+            readonly DefinitionProvider: DocumentState
+            readonly DocumentHighlightProvider: DocumentState
+            readonly DocumentLinkProvider: DocumentState
+            readonly DocumentSymbolProvider: DocumentState
+            readonly FoldingRangeProvider: DocumentState
+            readonly Formatter: DocumentState
+            readonly HoverProvider: DocumentState
+            readonly ImplementationProvider: DocumentState
+            readonly InlayHintProvider: DocumentState
+            readonly ReferencesProvider: DocumentState
+            readonly RenameProvider: DocumentState
+            readonly SemanticTokenProvider: DocumentState
+            readonly SignatureHelp: DocumentState
+            readonly TypeHierarchyProvider: DocumentState
+            readonly TypeProvider: DocumentState
+            readonly WorkspaceSymbolProvider: DocumentState
+        }
     },
     readonly workspace: {
         readonly TextDocuments: TextDocuments<TextDocument>

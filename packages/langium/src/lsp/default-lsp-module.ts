@@ -8,7 +8,7 @@ import type { Connection } from 'vscode-languageserver';
 import { createDefaultCoreModule, createDefaultSharedCoreModule, type DefaultCoreModuleContext, type DefaultSharedCoreModuleContext } from '../default-module.js';
 import { Module } from '../dependency-injection.js';
 import type { LangiumDefaultCoreServices, LangiumDefaultSharedCoreServices } from '../services.js';
-import { TextDocument } from '../workspace/documents.js';
+import { DocumentState, TextDocument } from '../workspace/documents.js';
 import { DefaultCompletionProvider } from './completion/completion-provider.js';
 import { DefaultDefinitionProvider } from './definition-provider.js';
 import { DefaultDocumentHighlightProvider } from './document-highlight-provider.js';
@@ -94,6 +94,29 @@ export function createDefaultSharedLSPModule(context: DefaultSharedModuleContext
             WorkspaceSymbolProvider: (services) => new DefaultWorkspaceSymbolProvider(services),
             NodeKindProvider: () => new DefaultNodeKindProvider(),
             FuzzyMatcher: () => new DefaultFuzzyMatcher(),
+            serviceRequirements: {
+                CallHierarchyProvider: DocumentState.IndexedReferences,
+                CodeActionProvider: DocumentState.Validated,
+                CodeLensProvider: DocumentState.IndexedReferences,
+                CompletionProvider: DocumentState.Linked,
+                DeclarationProvider: DocumentState.Linked,
+                DefinitionProvider: DocumentState.Linked,
+                DocumentHighlightProvider: DocumentState.IndexedReferences,
+                DocumentLinkProvider: DocumentState.Parsed,
+                DocumentSymbolProvider: DocumentState.Parsed,
+                FoldingRangeProvider: DocumentState.Parsed,
+                Formatter: DocumentState.Parsed,
+                HoverProvider: DocumentState.Linked,
+                ImplementationProvider: DocumentState.Linked,
+                InlayHintProvider: DocumentState.IndexedReferences,
+                ReferencesProvider: DocumentState.IndexedReferences,
+                RenameProvider: DocumentState.IndexedReferences,
+                SemanticTokenProvider: DocumentState.Linked,
+                SignatureHelp: DocumentState.IndexedReferences,
+                TypeHierarchyProvider: DocumentState.IndexedReferences,
+                TypeProvider: DocumentState.Linked,
+                WorkspaceSymbolProvider: DocumentState.IndexedContent
+            }
         },
         workspace: {
             TextDocuments: () => new NormalizedTextDocuments(TextDocument),

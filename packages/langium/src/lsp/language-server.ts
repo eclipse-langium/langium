@@ -349,7 +349,7 @@ export function addCompletionHandler(connection: Connection, services: LangiumSh
             return services.lsp?.CompletionProvider?.getCompletion(document, params, cancelToken);
         },
         services,
-        DocumentState.IndexedReferences
+        services.lsp.serviceRequirements.CompletionProvider
     ));
 }
 
@@ -357,7 +357,7 @@ export function addFindReferencesHandler(connection: Connection, services: Langi
     connection.onReferences(createRequestHandler(
         (services, document, params, cancelToken) => services.lsp?.ReferencesProvider?.findReferences(document, params, cancelToken),
         services,
-        DocumentState.IndexedReferences
+        services.lsp.serviceRequirements.ReferencesProvider
     ));
 }
 
@@ -365,7 +365,7 @@ export function addCodeActionHandler(connection: Connection, services: LangiumSh
     connection.onCodeAction(createRequestHandler(
         (services, document, params, cancelToken) => services.lsp?.CodeActionProvider?.getCodeActions(document, params, cancelToken),
         services,
-        DocumentState.Validated
+        services.lsp.serviceRequirements.CodeActionProvider
     ));
 }
 
@@ -373,7 +373,7 @@ export function addDocumentSymbolHandler(connection: Connection, services: Langi
     connection.onDocumentSymbol(createRequestHandler(
         (services, document, params, cancelToken) => services.lsp?.DocumentSymbolProvider?.getSymbols(document, params, cancelToken),
         services,
-        DocumentState.Parsed
+        services.lsp.serviceRequirements.DocumentSymbolProvider
     ));
 }
 
@@ -381,7 +381,7 @@ export function addGotoDefinitionHandler(connection: Connection, services: Langi
     connection.onDefinition(createRequestHandler(
         (services, document, params, cancelToken) => services.lsp?.DefinitionProvider?.getDefinition(document, params, cancelToken),
         services,
-        DocumentState.IndexedReferences
+        services.lsp.serviceRequirements.DefinitionProvider
     ));
 }
 
@@ -389,7 +389,7 @@ export function addGoToTypeDefinitionHandler(connection: Connection, services: L
     connection.onTypeDefinition(createRequestHandler(
         (services, document, params, cancelToken) => services.lsp?.TypeProvider?.getTypeDefinition(document, params, cancelToken),
         services,
-        DocumentState.IndexedReferences
+        services.lsp.serviceRequirements.TypeProvider
     ));
 }
 
@@ -397,7 +397,7 @@ export function addGoToImplementationHandler(connection: Connection, services: L
     connection.onImplementation(createRequestHandler(
         (services, document, params, cancelToken) => services.lsp?.ImplementationProvider?.getImplementation(document, params, cancelToken),
         services,
-        DocumentState.IndexedReferences
+        services.lsp.serviceRequirements.ImplementationProvider
     ));
 }
 
@@ -405,7 +405,7 @@ export function addGoToDeclarationHandler(connection: Connection, services: Lang
     connection.onDeclaration(createRequestHandler(
         (services, document, params, cancelToken) => services.lsp?.DeclarationProvider?.getDeclaration(document, params, cancelToken),
         services,
-        DocumentState.IndexedReferences
+        services.lsp.serviceRequirements.DeclarationProvider
     ));
 }
 
@@ -413,7 +413,7 @@ export function addDocumentHighlightsHandler(connection: Connection, services: L
     connection.onDocumentHighlight(createRequestHandler(
         (services, document, params, cancelToken) => services.lsp?.DocumentHighlightProvider?.getDocumentHighlight(document, params, cancelToken),
         services,
-        DocumentState.IndexedReferences
+        services.lsp.serviceRequirements.DocumentHighlightProvider
     ));
 }
 
@@ -421,7 +421,7 @@ export function addHoverHandler(connection: Connection, services: LangiumSharedS
     connection.onHover(createRequestHandler(
         (services, document, params, cancelToken) => services.lsp?.HoverProvider?.getHoverContent(document, params, cancelToken),
         services,
-        DocumentState.IndexedReferences
+        services.lsp.serviceRequirements.HoverProvider
     ));
 }
 
@@ -429,38 +429,42 @@ export function addFoldingRangeHandler(connection: Connection, services: Langium
     connection.onFoldingRanges(createRequestHandler(
         (services, document, params, cancelToken) => services.lsp?.FoldingRangeProvider?.getFoldingRanges(document, params, cancelToken),
         services,
-        DocumentState.Parsed
+        services.lsp.serviceRequirements.FoldingRangeProvider
     ));
 }
 
 export function addFormattingHandler(connection: Connection, services: LangiumSharedServices): void {
+    const targetState = services.lsp.serviceRequirements.Formatter;
+
     connection.onDocumentFormatting(createRequestHandler(
         (services, document, params, cancelToken) => services.lsp?.Formatter?.formatDocument(document, params, cancelToken),
         services,
-        DocumentState.Parsed
+        targetState
     ));
     connection.onDocumentRangeFormatting(createRequestHandler(
         (services, document, params, cancelToken) => services.lsp?.Formatter?.formatDocumentRange(document, params, cancelToken),
         services,
-        DocumentState.Parsed
+        targetState
     ));
     connection.onDocumentOnTypeFormatting(createRequestHandler(
         (services, document, params, cancelToken) => services.lsp?.Formatter?.formatDocumentOnType(document, params, cancelToken),
         services,
-        DocumentState.Parsed
+        targetState
     ));
 }
 
 export function addRenameHandler(connection: Connection, services: LangiumSharedServices): void {
+    const targetState = services.lsp.serviceRequirements.RenameProvider;
+
     connection.onRenameRequest(createRequestHandler(
         (services, document, params, cancelToken) => services.lsp?.RenameProvider?.rename(document, params, cancelToken),
         services,
-        DocumentState.IndexedReferences
+        targetState
     ));
     connection.onPrepareRename(createRequestHandler(
         (services, document, params, cancelToken) => services.lsp?.RenameProvider?.prepareRename(document, params, cancelToken),
         services,
-        DocumentState.IndexedReferences
+        targetState
     ));
 }
 
@@ -468,11 +472,13 @@ export function addInlayHintHandler(connection: Connection, services: LangiumSha
     connection.languages.inlayHint.on(createServerRequestHandler(
         (services, document, params, cancelToken) => services.lsp?.InlayHintProvider?.getInlayHints(document, params, cancelToken),
         services,
-        DocumentState.IndexedReferences
+        services.lsp.serviceRequirements.InlayHintProvider
     ));
 }
 
 export function addSemanticTokenHandler(connection: Connection, services: LangiumSharedServices): void {
+    const targetState = services.lsp.serviceRequirements.SemanticTokenProvider;
+
     // If no semantic token provider is registered that's fine. Just return an empty result
     const emptyResult: SemanticTokens = { data: [] };
     connection.languages.semanticTokens.on(createServerRequestHandler<SemanticTokensParams, SemanticTokens, SemanticTokensPartialResult, void>(
@@ -483,7 +489,7 @@ export function addSemanticTokenHandler(connection: Connection, services: Langiu
             return emptyResult;
         },
         services,
-        DocumentState.IndexedReferences
+        targetState
     ));
     connection.languages.semanticTokens.onDelta(createServerRequestHandler<SemanticTokensDeltaParams, SemanticTokens | SemanticTokensDelta, SemanticTokensDeltaPartialResult, void>(
         (services, document, params, cancelToken) => {
@@ -493,7 +499,7 @@ export function addSemanticTokenHandler(connection: Connection, services: Langiu
             return emptyResult;
         },
         services,
-        DocumentState.IndexedReferences
+        targetState
     ));
     connection.languages.semanticTokens.onRange(createServerRequestHandler<SemanticTokensRangeParams, SemanticTokens, SemanticTokensPartialResult, void>(
         (services, document, params, cancelToken) => {
@@ -503,7 +509,7 @@ export function addSemanticTokenHandler(connection: Connection, services: Langiu
             return emptyResult;
         },
         services,
-        DocumentState.IndexedReferences
+        targetState
     ));
 }
 export function addConfigurationChangeHandler(connection: Connection, services: LangiumSharedServices): void {
@@ -529,7 +535,7 @@ export function addDocumentLinkHandler(connection: Connection, services: Langium
     connection.onDocumentLinks(createServerRequestHandler(
         (services, document, params, cancelToken) => services.lsp?.DocumentLinkProvider?.getDocumentLinks(document, params, cancelToken),
         services,
-        DocumentState.Parsed
+        services.lsp.serviceRequirements.DocumentLinkProvider
     ));
 }
 
@@ -537,7 +543,7 @@ export function addSignatureHelpHandler(connection: Connection, services: Langiu
     connection.onSignatureHelp(createServerRequestHandler(
         (services, document, params, cancelToken) => services.lsp?.SignatureHelp?.provideSignatureHelp(document, params, cancelToken),
         services,
-        DocumentState.IndexedReferences
+        services.lsp.serviceRequirements.SignatureHelp
     ));
 }
 
@@ -545,17 +551,19 @@ export function addCodeLensHandler(connection: Connection, services: LangiumShar
     connection.onCodeLens(createServerRequestHandler(
         (services, document, params, cancelToken) => services.lsp?.CodeLensProvider?.provideCodeLens(document, params, cancelToken),
         services,
-        DocumentState.IndexedReferences
+        services.lsp.serviceRequirements.CodeLensProvider
     ));
 }
 
 export function addWorkspaceSymbolHandler(connection: Connection, services: LangiumSharedServices): void {
     const workspaceSymbolProvider = services.lsp.WorkspaceSymbolProvider;
     if (workspaceSymbolProvider) {
+        const targetState = services.lsp.serviceRequirements.WorkspaceSymbolProvider;
+
         const documentBuilder = services.workspace.DocumentBuilder;
         connection.onWorkspaceSymbol(async (params, token) => {
             try {
-                await documentBuilder.waitUntil(DocumentState.IndexedContent, token);
+                await documentBuilder.waitUntil(targetState, token);
                 return await workspaceSymbolProvider.getSymbols(params, token);
             } catch (err) {
                 return responseError(err);
@@ -565,7 +573,7 @@ export function addWorkspaceSymbolHandler(connection: Connection, services: Lang
         if (resolveWorkspaceSymbol) {
             connection.onWorkspaceSymbolResolve(async (workspaceSymbol, token) => {
                 try {
-                    await documentBuilder.waitUntil(DocumentState.IndexedContent, token);
+                    await documentBuilder.waitUntil(targetState, token);
                     return await resolveWorkspaceSymbol(workspaceSymbol, token);
                 } catch (err) {
                     return responseError(err);
@@ -576,6 +584,8 @@ export function addWorkspaceSymbolHandler(connection: Connection, services: Lang
 }
 
 export function addCallHierarchyHandler(connection: Connection, services: LangiumSharedServices): void {
+    const targetState = services.lsp.serviceRequirements.CallHierarchyProvider;
+
     connection.languages.callHierarchy.onPrepare(createServerRequestHandler(
         async (services, document, params, cancelToken) => {
             if (services.lsp?.CallHierarchyProvider) {
@@ -585,7 +595,7 @@ export function addCallHierarchyHandler(connection: Connection, services: Langiu
             return null;
         },
         services,
-        DocumentState.IndexedReferences
+        targetState
     ));
 
     connection.languages.callHierarchy.onIncomingCalls(createHierarchyRequestHandler(
@@ -596,7 +606,8 @@ export function addCallHierarchyHandler(connection: Connection, services: Langiu
             }
             return null;
         },
-        services
+        services,
+        targetState
     ));
 
     connection.languages.callHierarchy.onOutgoingCalls(createHierarchyRequestHandler(
@@ -607,7 +618,8 @@ export function addCallHierarchyHandler(connection: Connection, services: Langiu
             }
             return null;
         },
-        services
+        services,
+        targetState
     ));
 }
 
@@ -617,6 +629,8 @@ export function addTypeHierarchyHandler(connection: Connection, sharedServices: 
         return;
     }
 
+    const targetState = sharedServices.lsp.serviceRequirements.TypeHierarchyProvider;
+
     connection.languages.typeHierarchy.onPrepare(
         createServerRequestHandler(
             async (services, document, params, cancelToken) => {
@@ -624,7 +638,7 @@ export function addTypeHierarchyHandler(connection: Connection, sharedServices: 
                 return result ?? null;
             },
             sharedServices,
-            DocumentState.IndexedReferences
+            targetState
         ),
     );
 
@@ -634,7 +648,8 @@ export function addTypeHierarchyHandler(connection: Connection, sharedServices: 
                 const result = await services.lsp?.TypeHierarchyProvider?.supertypes(params, cancelToken);
                 return result ?? null;
             },
-            sharedServices
+            sharedServices,
+            targetState
         ),
     );
 
@@ -644,7 +659,8 @@ export function addTypeHierarchyHandler(connection: Connection, sharedServices: 
                 const result = await services.lsp?.TypeHierarchyProvider?.subtypes(params, cancelToken);
                 return result ?? null;
             },
-            sharedServices
+            sharedServices,
+            targetState
         ),
     );
 }
@@ -652,11 +668,12 @@ export function addTypeHierarchyHandler(connection: Connection, sharedServices: 
 export function createHierarchyRequestHandler<P extends TypeHierarchySupertypesParams | TypeHierarchySubtypesParams | CallHierarchyIncomingCallsParams | CallHierarchyOutgoingCallsParams, R, PR, E = void>(
     serviceCall: (services: LangiumCoreAndPartialLSPServices, params: P, cancelToken: CancellationToken) => HandlerResult<R, E>,
     sharedServices: LangiumSharedServices,
+    targetState: DocumentState
 ): ServerRequestHandler<P, R, PR, E> {
     const serviceRegistry = sharedServices.ServiceRegistry;
     return async (params: P, cancelToken: CancellationToken) => {
         const uri = URI.parse(params.item.uri);
-        const cancellationError = await waitUntilPhase<E>(sharedServices, cancelToken, uri, DocumentState.IndexedReferences);
+        const cancellationError = await waitUntilPhase<E>(sharedServices, cancelToken, uri, targetState);
         if (cancellationError) {
             return cancellationError;
         }
