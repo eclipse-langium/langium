@@ -668,6 +668,70 @@ describe('DefaultDocumentBuilder', () => {
         }
     });
 
+    test("References are unlinked on custom reset of document state even if the document didn't reach linked phase yet", async () => {
+        const services = await createServices();
+        const workspace = services.shared.workspace;
+        const documentFactory = workspace.LangiumDocumentFactory;
+        const documents = workspace.LangiumDocuments;
+        const document = documentFactory.fromString<Model>(`
+            foo 1 A
+            foo 11 B
+            bar A
+            bar B
+        `, URI.parse('file:///test1.txt'));
+        documents.addDocument(document);
+
+        const tokenSource = startCancelableOperation();
+        const builder = workspace.DocumentBuilder;
+        builder.onBuildPhase(DocumentState.ComputedScopes, () => {
+            tokenSource.cancel();
+        });
+        try {
+            await builder.build([document], undefined, tokenSource.token);
+            fail('The update is supposed to be cancelled');
+        } catch (err) {
+            expect(isOperationCancelled(err)).toBe(true);
+        }
+        expect(document.state).toBe(DocumentState.ComputedScopes);
+        expect(document.localSymbols).toBeDefined();
+        expect(document.references).toHaveLength(0);
+
+        // Resolve the reference "on-the-fly"
+        // We would expect that doing so will add the reference to the document references
+        let first = document.parseResult.value.foos[0].bar.ref;
+        expect(first).toBeDefined();
+        expect(first!.$type).toBe('Bar');
+        expect(document.references).toHaveLength(1);
+
+        // Primary testing goal: Reset the document state and clean references in order to get rid of any stale ones;
+        // here resetting to IndexedContent in order to also clear any pre-computed scopes/local symbol tables
+        builder.resetToState(document, DocumentState.IndexedContent);
+
+        expect(document.state).toBe(DocumentState.IndexedContent);
+        expect(document.localSymbols).toBeUndefined();
+        expect(document.references).toHaveLength(0);
+
+        // Again, resolve the reference "on-the-fly", this is supposed to work as
+        first = document.parseResult.value.foos[0].bar.ref;
+        expect(first).toBeDefined();
+        expect(first!.$type).toBe('Bar');
+        expect(document.references).toHaveLength(1);
+
+        // In addition: Alternatively, attempt to reset the document state to ComputedScopes
+        builder.resetToState(document, DocumentState.ComputedScopes);
+
+        expect(document.state).toBe(DocumentState.IndexedContent);
+        expect(document.references).toHaveLength(0);
+
+        const astNodeReferences = AstUtils.streamAst(document.parseResult.value).flatMap(AstUtils.streamReferences).toArray();
+        expect(astNodeReferences).toHaveLength(2);
+        for (const ref of astNodeReferences) {
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
+            const defaultRef = ref.reference as any;
+            expect(defaultRef._ref).toBeUndefined();
+        }
+    });
+
     describe('DefaultDocumentBuilder document sorting', () => {
         let services: LangiumServices;
         let documentFactory: LangiumDocumentFactory;

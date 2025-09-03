@@ -353,35 +353,20 @@ export class DefaultDocumentBuilder implements DocumentBuilder {
                 // Else fall through
             }
             case DocumentState.Parsed:
-                if (document.state <= DocumentState.Parsed) {
-                    break;
-                }
                 this.indexManager.removeContent(document.uri);
                 // Fall through
             case DocumentState.IndexedContent:
-                if (document.state <= DocumentState.IndexedContent) {
-                    break;
-                }
                 document.localSymbols = undefined;
                 // Fall through
             case DocumentState.ComputedScopes: {
-                if (document.state <= DocumentState.ComputedScopes) {
-                    break;
-                }
                 const linker = this.serviceRegistry.getServices(document.uri).references.Linker;
                 linker.unlink(document);
                 // Fall through
             }
             case DocumentState.Linked:
-                if (document.state <= DocumentState.Linked) {
-                    break;
-                }
                 this.indexManager.removeReferences(document.uri);
                 // Fall through
             case DocumentState.IndexedReferences:
-                if (document.state <= DocumentState.IndexedReferences) {
-                    break;
-                }
                 document.diagnostics = undefined;
         }
         if (document.state > state) {
