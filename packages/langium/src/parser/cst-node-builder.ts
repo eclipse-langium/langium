@@ -87,11 +87,11 @@ export class CstNodeBuilder {
         }
     }
 
-    construct(item: { $type: string | symbol | undefined, $cstNode: CstNode }): void {
+    construct(item: { $type: string | symbol | undefined, $cstNode: CstNode, $infix?: boolean }): void {
         const current: CstNode = this.current;
-        // The specified item could be a datatype ($type is symbol) or a fragment ($type is undefined)
+        // The specified item could be a datatype ($type is symbol), fragment ($type is undefined) or infix rule ($infix is true)
         // Only if the $type is a string, we actually assign the element
-        if (typeof item.$type === 'string') {
+        if (typeof item.$type === 'string' && !item.$infix) {
             this.current.astNode = <AstNode>item;
         }
         item.$cstNode = current;
