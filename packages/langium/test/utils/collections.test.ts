@@ -5,9 +5,21 @@
  ******************************************************************************/
 
 import { describe, expect, test } from 'vitest';
-import { MultiMap } from 'langium';
+import { MultiMap, stream } from 'langium';
 
 describe('MultiMap', () => {
+
+    test('constructor with array', () => {
+        const multimap = new MultiMap<string, string>([['a', 'foo'], ['a', 'bar'], ['b', 'baz']]);
+        expect(multimap.size).toBe(3);
+        expect(multimap.keys().toArray().length).toBe(2);
+    });
+
+    test('constructor with iterable', () => {
+        const multimap = new MultiMap<string, string>(stream([['a', 'foo'], ['a', 'bar'], ['b', 'baz']]));
+        expect(multimap.size).toBe(3);
+        expect(multimap.keys().toArray().length).toBe(2);
+    });
 
     test('addAll when empty', () => {
         const multimap = new MultiMap<string, string>();
