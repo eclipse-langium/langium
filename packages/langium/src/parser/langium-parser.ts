@@ -40,6 +40,7 @@ interface DataTypeNode {
 }
 
 interface InfixElement {
+    $infix: true;
     $type: string;
     $cstNode: CompositeCstNode;
     parts: AstNode[];
@@ -503,12 +504,14 @@ export class LangiumParser extends AbstractLangiumParser {
 
         // Create sub-expressions
         const leftInfix: InfixElement = {
+            $infix: true,
             $type: obj.$type,
             $cstNode: obj.$cstNode,
             parts: leftParts,
             operators: leftOperators
         };
         const rightInfix: InfixElement = {
+            $infix: true,
             $type: obj.$type,
             $cstNode: obj.$cstNode,
             parts: rightParts,
