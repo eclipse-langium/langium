@@ -468,7 +468,7 @@ export class LangiumParser extends AbstractLangiumParser {
     private constructInfix(obj: InfixElement, precedence: Map<string, OperatorPrecedence>): any {
         const parts = obj.parts ?? [];
         const operators = obj.operators ?? [];
-        if (parts.length < 2) {
+        if (!Array.isArray(parts) || !Array.isArray(operators) || parts.length < 2) {
             // Captured just a single, non-binary expression
             // Simply return the expression as is.
             return parts[0];
