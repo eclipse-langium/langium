@@ -711,7 +711,7 @@ describe('DefaultDocumentBuilder', () => {
         expect(document.localSymbols).toBeUndefined();
         expect(document.references).toHaveLength(0);
 
-        // Again, resolve the reference "on-the-fly", this is supposed to work as
+        // Again, resolve the reference "on-the-fly", this is supposed to work as 'A' is accessible via the index
         first = document.parseResult.value.foos[0].bar.ref;
         expect(first).toBeDefined();
         expect(first!.$type).toBe('Bar');
