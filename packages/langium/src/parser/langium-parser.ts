@@ -43,8 +43,8 @@ interface InfixElement {
     $infix: true;
     $type: string;
     $cstNode: CompositeCstNode;
-    parts: AstNode[];
-    operators: string[];
+    parts?: AstNode[];
+    operators?: string[];
 }
 
 function isDataTypeNode(node: { $type: string | symbol | undefined }): node is DataTypeNode {
@@ -458,21 +458,23 @@ export class LangiumParser extends AbstractLangiumParser {
     }
 
     private constructInfix(obj: InfixElement, precedence: Map<string, OperatorPrecedence>): any {
-        if (obj.parts.length === 1) {
+        const parts = obj.parts;
+        if (!Array.isArray(parts) || parts.length === 0) {
+            // Likely the result of a syntax error, simply return undefined
+            return undefined;
+        }
+        const operators = obj.operators;
+        if (!Array.isArray(operators) || parts.length < 2) {
             // Captured just a single, non-binary expression
             // Simply return the expression as is.
-            return obj.parts[0];
-        }
-        if (obj.parts.length === 0) {
-            // This can happen if the expression is incomplete
-            return undefined;
+            return parts[0];
         }
         // Find the operator with the lowest precedence (highest value in precedence map)
         let lowestPrecedenceIdx = 0;
         let lowestPrecedenceValue = -1;
 
-        for (let i = 0; i < obj.operators.length; i++) {
-            const operator = obj.operators[i];
+        for (let i = 0; i < operators.length; i++) {
+            const operator = operators[i];
             const opPrecedence = precedence.get(operator) ?? {
                 precedence: Infinity,
                 rightAssoc: false
@@ -496,11 +498,11 @@ export class LangiumParser extends AbstractLangiumParser {
         }
 
         // Split the expression at the lowest precedence operator
-        const leftOperators = obj.operators.slice(0, lowestPrecedenceIdx);
-        const rightOperators = obj.operators.slice(lowestPrecedenceIdx + 1);
+        const leftOperators = operators.slice(0, lowestPrecedenceIdx);
+        const rightOperators = operators.slice(lowestPrecedenceIdx + 1);
 
-        const leftParts = obj.parts.slice(0, lowestPrecedenceIdx + 1);
-        const rightParts = obj.parts.slice(lowestPrecedenceIdx + 1);
+        const leftParts = parts.slice(0, lowestPrecedenceIdx + 1);
+        const rightParts = parts.slice(lowestPrecedenceIdx + 1);
 
         // Create sub-expressions
         const leftInfix: InfixElement = {
@@ -527,7 +529,7 @@ export class LangiumParser extends AbstractLangiumParser {
             $type: obj.$type,
             $cstNode: obj.$cstNode,
             left: leftTree,
-            operator: obj.operators[lowestPrecedenceIdx],
+            operator: operators[lowestPrecedenceIdx],
             right: rightTree
         };
     }

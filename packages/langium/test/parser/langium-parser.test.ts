@@ -139,6 +139,10 @@ describe('Infix operator parsing', async () => {
         await expectExpr('1', '1');
     });
 
+    test('Should not throw when parsing an empty expression', async () => {
+        await expectExpr('', 'undefined', 1);
+    });
+
     test('Should parse infix operator with two expressions', async () => {
         await expectExpr('1 + 2', '(1 + 2)');
     });
