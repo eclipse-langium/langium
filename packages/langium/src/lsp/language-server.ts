@@ -731,8 +731,10 @@ export function createRequestHandler<P extends { textDocument: TextDocumentIdent
 
 async function waitUntilPhase<E>(services: LangiumSharedServices, cancelToken: CancellationToken, uri?: URI, targetState?: DocumentState): Promise<ResponseError<E> | undefined> {
     if (targetState !== undefined) {
+        const workspaceManager = services.workspace.WorkspaceManager;
         const documentBuilder = services.workspace.DocumentBuilder;
         try {
+            await workspaceManager.ready; // mandatory if awaiting the state of a document (uri !== undefined) while the LS is starting
             await documentBuilder.waitUntil(targetState, uri, cancelToken);
         } catch (err) {
             return responseError(err);

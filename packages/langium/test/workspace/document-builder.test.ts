@@ -497,6 +497,31 @@ describe('DefaultDocumentBuilder', () => {
         ).resolves.toEqual(documentUri);
     });
 
+    test('`waitUntil` on document fires as soon as document reaches required state.', async () => {
+        const services = await createServices();
+        const documentFactory = services.shared.workspace.LangiumDocumentFactory;
+        const documents = services.shared.workspace.LangiumDocuments;
+        const builder = services.shared.workspace.DocumentBuilder;
+
+        const document = documentFactory.fromString<Model>(`
+            foo 1 A
+            foo 11 B
+            bar A
+            bar B
+        `, URI.parse('file:///test1.txt'));
+        documents.addDocument(document);
+        const document2 = documentFactory.fromString<Model>('', URI.parse('file:///test2.txt'));
+        documents.addDocument(document2);
+
+        const states: DocumentState[] = [];
+        builder.waitUntil(DocumentState.Linked, document.uri).then(() => {
+            states.push(document.state, document2.state);
+        });
+
+        await builder.build(documents.all.toArray());
+        expect(states).toEqual([ DocumentState.Linked, DocumentState.ComputedScopes ]);
+    });
+
     test('`onDocumentPhase` always triggers before the respective `onBuildPhase`', async () => {
         const services = await createServices();
         const documentFactory = services.shared.workspace.LangiumDocumentFactory;
