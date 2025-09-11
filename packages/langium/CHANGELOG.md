@@ -1,5 +1,12 @@
 # Change Log of `langium`
 
+## v4.0.1 (Sep. 2025)
+
+* Fixes multiple issues related to the stability of infix rules ([#2011](https://github.com/eclipse-langium/langium/pull/2011), [#2023](https://github.com/eclipse-langium/langium/pull/2023)).
+* Fixes an issue related to the `trace` parameter of `copyAstNode` ([#1995](https://github.com/eclipse-langium/langium/pull/1995)).
+* Extends the `MultiMap` constructor to accept an `Iterable` ([#2020](https://github.com/eclipse-langium/langium/pull/2020)).
+* Removed a problematic performance optimization in the `resetToState` method ([#2022](https://github.com/eclipse-langium/langium/pull/2022)).
+
 ## v4.0.0 (Jul. 2025)
 
 ### Multi-Target References
