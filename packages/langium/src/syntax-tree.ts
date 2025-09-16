@@ -257,7 +257,7 @@ export abstract class AbstractAstReflection implements AstReflection {
  * A map of all AST node types and their meta data.
  */
 export interface AstMetaData {
-    [type: string]: TypeMetaData
+    readonly [type: string]: TypeMetaData
 }
 
 /**
@@ -265,13 +265,13 @@ export interface AstMetaData {
  */
 export interface TypeMetaData {
     /** The name of this AST node type. Corresponds to the `AstNode.$type` value. */
-    name: string
+    readonly name: string
     /** A list of properties with their relevant meta data. */
-    properties: {
-        [name: string]: PropertyMetaData
+    readonly properties: {
+        readonly [name: string]: PropertyMetaData
     }
     /** The super types of this AST node type. */
-    superTypes: string[]
+    readonly superTypes: readonly string[]
 }
 
 /**
@@ -279,17 +279,17 @@ export interface TypeMetaData {
  */
 export interface PropertyMetaData {
     /** The name of this property. */
-    name: string
+    readonly name: string
     /**
      * Indicates that the property is mandatory in the AST node.
      * For example, if an AST node contains an array, but no elements of this array have been parsed,
      * we still expect an empty array instead of `undefined`.
      */
-    defaultValue?: PropertyType
+    readonly defaultValue?: PropertyType
     /**
      * If the property is a reference, this is the type of the reference target.
      */
-    referenceType?: string
+    readonly referenceType?: string
 }
 
 /**
