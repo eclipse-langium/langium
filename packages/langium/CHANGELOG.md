@@ -1,5 +1,9 @@
 # Change Log of `langium`
 
+## v4.0.2 (Sep. 2025)
+
+* Fixes an issue in the typing of the `TypeMetaData` ([#2032](https://github.com/eclipse-langium/langium/pull/2032)).
+
 ## v4.0.1 (Sep. 2025)
 
 * Fixes multiple issues related to the stability of infix rules ([#2011](https://github.com/eclipse-langium/langium/pull/2011), [#2023](https://github.com/eclipse-langium/langium/pull/2023)).
