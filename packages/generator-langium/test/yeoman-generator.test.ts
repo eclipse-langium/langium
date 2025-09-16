@@ -307,7 +307,7 @@ const PACKAGE_JSON_EXPECTATION_EXTENSION: Record<string, any> = {
     main: './out/extension/main.cjs',
     scripts: {
         'clean': 'shx rm -fr *.tsbuildinfo out syntaxes',
-        'vscode:prepublish': 'npm run build && npm run --include-workspace-root --workspace=../.. lint',
+        'vscode:prepublish': 'npm run build',
         'build:prepare': 'shx mkdir -p ./syntaxes/ && shx cp -f ../language/syntaxes/hello-world.tmLanguage.json ./syntaxes/hello-world.tmLanguage.json',
         'build': 'npm run build:prepare && tsc -b tsconfig.json && node esbuild.mjs',
         'build:clean': 'npm run clean && npm run build',
