@@ -1,6 +1,6 @@
 {
   "name": "generator-langium",
-  "version": "4.0.0",
+  "version": "4.1.0",
   "description": "Yeoman generator for Langium - the language engineering tool",
   "homepage": "https://langium.org",
   "engines": {

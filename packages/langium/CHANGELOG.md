@@ -91,6 +91,7 @@ In addition to better readability, the new notation also makes use of performanc
 
 ### Breaking Changes
 
+* Due to various type-related changes, `langium` now requires version `>= 5.8.0` of TypeScript.
 * Renamed `PrecomputedScopes` to `LocalSymbols` and introduced a dedicated interface for it ([#1788](https://github.com/eclipse-langium/langium/pull/1788)).
 * Removed unused Xtext features from the Langium grammar ([#1945](https://github.com/eclipse-langium/langium/pull/1945)).
 * The type of references used throughout the linker service and scope provider is now `Reference | MultiReference` ([#1509](https://github.com/eclipse-langium/langium/pull/1509)).
