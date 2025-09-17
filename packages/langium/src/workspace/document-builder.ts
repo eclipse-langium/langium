@@ -4,6 +4,7 @@
  * terms of the MIT License, which is available in the project root.
  ******************************************************************************/
 
+import { LSPErrorCodes, ResponseError } from 'vscode-languageserver-protocol';
 import { CancellationToken } from '../utils/cancellation.js';
 import { Disposable } from '../utils/disposable.js';
 import type { ServiceRegistry } from '../service-registry.js';
@@ -17,7 +18,7 @@ import type { LangiumDocument, LangiumDocuments, LangiumDocumentFactory, TextDoc
 import { MultiMap } from '../utils/collections.js';
 import { OperationCancelled, interruptAndCheck, isOperationCancelled } from '../utils/promise-utils.js';
 import { stream } from '../utils/stream.js';
-import type { URI } from '../utils/uri-utils.js';
+import { UriUtils, type URI } from '../utils/uri-utils.js';
 import { ValidationCategory } from '../validation/validation-registry.js';
 import { DocumentState } from './documents.js';
 import type { FileSystemProvider } from './file-system-provider.js';
@@ -490,8 +491,8 @@ export class DefaultDocumentBuilder implements DocumentBuilder {
     }
 
     waitUntil(state: DocumentState, cancelToken?: CancellationToken): Promise<void>;
-    waitUntil(state: DocumentState, uri?: URI, cancelToken?: CancellationToken): Promise<URI | undefined>;
-    waitUntil(state: DocumentState, uriOrToken?: URI | CancellationToken, cancelToken?: CancellationToken): Promise<URI | undefined | void> {
+    waitUntil(state: DocumentState, uri?: URI, cancelToken?: CancellationToken): Promise<URI>;
+    waitUntil(state: DocumentState, uriOrToken?: URI | CancellationToken, cancelToken?: CancellationToken): Promise<URI | void> {
         let uri: URI | undefined = undefined;
         if (uriOrToken && 'path' in uriOrToken) {
             uri = uriOrToken;
@@ -500,13 +501,59 @@ export class DefaultDocumentBuilder implements DocumentBuilder {
         }
         cancelToken ??= CancellationToken.None;
         if (uri) {
-            const document = this.langiumDocuments.getDocument(uri);
-            if (document && document.state >= state) {
-                return Promise.resolve(uri);
-            }
+            return this.awaitDocumentState(state, uri, cancelToken);
+
+        } else {
+            return this.awaitBuilderState(state, cancelToken);
         }
+    }
+
+    protected awaitDocumentState(state: DocumentState, uri: URI, cancelToken: CancellationToken): Promise<URI> {
+        const document = this.langiumDocuments.getDocument(uri);
+        if (!document) {
+            return Promise.reject(
+                new ResponseError(
+                    LSPErrorCodes.ServerCancelled,
+                    `No document found for URI: ${uri.toString()}`
+                )
+            );
+
+        } else if (document.state >= state) {
+            return Promise.resolve(uri);
+
+        } else if (cancelToken.isCancellationRequested) {
+            return Promise.reject(OperationCancelled);
+
+        } else if (this.currentState >= state && state > document.state) {
+            // this would imply that the document has been excluded from linking or validation, for example;
+            // this should never occur, the LS need to make sure that the affected document is properly built,
+            //  alternatively, the build state requirement need to be relaxed.
+            return Promise.reject(
+                new ResponseError(
+                    LSPErrorCodes.RequestFailed,
+                    `Document state of ${uri.toString()} is ${DocumentState[document.state]}, requiring ${DocumentState[state]}, but workspace state is already ${DocumentState[this.currentState]}. Returning undefined.`
+                )
+            );
+        }
+        return new Promise((resolve, reject) => {
+            const buildDisposable = this.onDocumentPhase(state, (doc) => {
+                if (UriUtils.equals(doc.uri, uri)) {
+                    buildDisposable.dispose();
+                    cancelDisposable.dispose();
+                    resolve(doc.uri);
+                }
+            });
+            const cancelDisposable = cancelToken!.onCancellationRequested(() => {
+                buildDisposable.dispose();
+                cancelDisposable.dispose();
+                reject(OperationCancelled);
+            });
+        });
+    }
+
+    protected awaitBuilderState(state: DocumentState, cancelToken: CancellationToken): Promise<void> {
         if (this.currentState >= state) {
-            return Promise.resolve(undefined);
+            return Promise.resolve();
         } else if (cancelToken.isCancellationRequested) {
             return Promise.reject(OperationCancelled);
         }
@@ -514,12 +561,7 @@ export class DefaultDocumentBuilder implements DocumentBuilder {
             const buildDisposable = this.onBuildPhase(state, () => {
                 buildDisposable.dispose();
                 cancelDisposable.dispose();
-                if (uri) {
-                    const document = this.langiumDocuments.getDocument(uri);
-                    resolve(document?.uri);
-                } else {
-                    resolve(undefined);
-                }
+                resolve();
             });
             const cancelDisposable = cancelToken!.onCancellationRequested(() => {
                 buildDisposable.dispose();
