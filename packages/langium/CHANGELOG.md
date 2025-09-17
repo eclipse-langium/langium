@@ -1,5 +1,19 @@
 # Change Log of `langium`
 
+## v4.1.0 (Sep. 2025)
+
+* Add a profiler service for parsing, linking and validation ([#1993](https://github.com/eclipse-langium/langium/pull/1993)).
+* Enable configuration of document state settings in the `startLanguageServer` function ([#2019](https://github.com/eclipse-langium/langium/pull/2019)).
+* Improvements to the responsiveness of the `DocumentBuilder#waitUntil` method when providing a document URI ([#2024](https://github.com/eclipse-langium/langium/pull/2024)).
+
+## v4.0.3 (Sep. 2025)
+
+Rollback of v4.0.2.
+
+## v4.0.2 (Sep. 2025)
+
+Attempted to fix a bug, which was later identified as a TypeScript compiler issue
+
 ## v4.0.1 (Sep. 2025)
 
 * Fixes multiple issues related to the stability of infix rules ([#2011](https://github.com/eclipse-langium/langium/pull/2011), [#2023](https://github.com/eclipse-langium/langium/pull/2023)).
