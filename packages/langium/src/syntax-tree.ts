@@ -356,12 +356,14 @@ export function isRootCstNode(node: unknown): node is RootCstNode {
  */
 type ExtractKeysOfValueType<T, K> = { [I in keyof T]-?: Required<T>[I] extends K ? I : never }[keyof T];
 
+export type SingleCrossReferencesOfAstNodeType<N extends AstNode> = ExtractKeysOfValueType<N, Reference | Reference[]>;
+export type MultiCrossReferencesOfAstNodeType<N extends AstNode> = ExtractKeysOfValueType<N, MultiReference | MultiReference[]>;
 /**
  * Describes a union type including only names(!) of the cross-reference properties of the given AstNode type.
  * Enhances compile-time validation of cross-reference distinctions, e.g. in scope providers
  *  in combination with `assertUnreachable(context.property)`.
  */
-export type CrossReferencesOfAstNodeType<N extends AstNode> = ExtractKeysOfValueType<N, Reference | Reference[]>;
+export type CrossReferencesOfAstNodeType<N extends AstNode> = SingleCrossReferencesOfAstNodeType<N> | MultiCrossReferencesOfAstNodeType<N>;
 
 /**
  * Represents the enumeration-like type, that lists all AstNode types of your grammar.
