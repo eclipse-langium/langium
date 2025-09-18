@@ -50,6 +50,16 @@ export interface DocumentValidator {
     validateDocument(document: LangiumDocument, options?: ValidationOptions, cancelToken?: CancellationToken): Promise<Diagnostic[]>;
 }
 
+export interface ValidateSingleNodeOptions {
+    validateNode: boolean;
+    validateChildren: boolean;
+}
+
+export const VALIDATE_EACH_NODE: ValidateSingleNodeOptions = {
+    validateNode: true,
+    validateChildren: true,
+};
+
 export class DefaultDocumentValidator implements DocumentValidator {
 
     protected readonly validationRegistry: ValidationRegistry;
@@ -210,30 +220,48 @@ export class DefaultDocumentValidator implements DocumentValidator {
             const task = this.profiler.createTask('validating', this.languageId);
             task.start();
             try {
-                streamAst(rootNode).forEach(node => {
+                const nodes = streamAst(rootNode).iterator();
+                for (const node of nodes) {
                     task.startSubTask(node.$type);
-                    try {
-                        const checks = this.validationRegistry.getChecks(node.$type, options.categories);
-                        for (const check of checks) {
-                            check(node, acceptor, cancelToken);
+                    const nodeOptions = this.validateSingleNodeOptions(node, options);
+                    if (nodeOptions.validateNode) {
+                        try {
+                            const checks = this.validationRegistry.getChecks(node.$type, options.categories);
+                            for (const check of checks) {
+                                await check(node, acceptor, cancelToken);
+                            }
+                        } finally {
+                            task.stopSubTask(node.$type);
                         }
-                    } finally {
-                        task.stopSubTask(node.$type);
                     }
-                });
+                    if (!nodeOptions.validateChildren) {
+                        nodes.prune();
+                    }
+                }
             } finally {
                 task.stop();
             }
         }
         else {
-            await Promise.all(streamAst(rootNode).map(async node => {
+            const nodes = streamAst(rootNode).iterator();
+            for (const node of nodes) {
                 await interruptAndCheck(cancelToken);
-                const checks = this.validationRegistry.getChecks(node.$type, options.categories);
-                for (const check of checks) {
-                    await check(node, acceptor, cancelToken);
+                const nodeOptions = this.validateSingleNodeOptions(node, options);
+                if (nodeOptions.validateNode) {
+                    const checks = this.validationRegistry.getChecks(node.$type, options.categories);
+                    for (const check of checks) {
+                        await check(node, acceptor, cancelToken);
+                    }
                 }
-            }));
+                if (!nodeOptions.validateChildren) {
+                    nodes.prune();
+                }
+            }
         }
+    }
+
+    protected validateSingleNodeOptions(_node: AstNode, _options: ValidationOptions): ValidateSingleNodeOptions {
+        return VALIDATE_EACH_NODE;
     }
 
     protected async validateAstAfter(rootNode: AstNode, options: ValidationOptions, acceptor: ValidationAcceptor, cancelToken = CancellationToken.None): Promise<void> {

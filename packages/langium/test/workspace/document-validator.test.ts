@@ -4,9 +4,9 @@
  * terms of the MIT License, which is available in the project root.
  ******************************************************************************/
 
-import type { AstNode, ValidationChecks } from 'langium';
+import type { AstNode, LangiumCoreServices, Module, PartialLangiumCoreServices, ValidateSingleNodeOptions, ValidationChecks, ValidationOptions } from 'langium';
 import { describe, expect, test } from 'vitest';
-import { EmptyFileSystem, URI } from 'langium';
+import { DefaultDocumentValidator, EmptyFileSystem, URI } from 'langium';
 import { createLangiumGrammarServices, createServicesForGrammar } from 'langium/grammar';
 
 describe('DefaultDocumentValidator', () => {
@@ -89,6 +89,83 @@ describe('DefaultDocumentValidator', () => {
         expect(diagnostics.map(d => d.message)).toEqual([
             'Expecting token of type \'INT\' but found `foo`.'
         ]);
+    });
+
+});
+
+describe('Customized DefaultDocumentValidator to ignore some nodes during validation', () => {
+    async function createServices() {
+        const grammar = `
+            grammar Test
+            entry Model:
+                foos+=Foo*;
+            Foo:
+                'foo' value=INT;
+            terminal INT returns number: /[0-9]+/;
+            hidden terminal WS: /\\s+/;
+        `;
+        const services = await createServicesForGrammar({ grammar, module: <Module<LangiumCoreServices, PartialLangiumCoreServices>>{
+            validation: {
+                DocumentValidator: (services) => new CustomizedDefaultDocumentValidator(services),
+            },
+        }, });
+        const checks: ValidationChecks<TestAstType> = {
+            Model: (node, accept) => {
+                accept('warning', `Model has ${node.foos.length} children.`, { node });
+            },
+            Foo: (node, accept) => {
+                accept('warning', 'Value ' + node.value, { node });
+            }
+        };
+        services.validation.ValidationRegistry.register(checks);
+        return services;
+    }
+
+    class CustomizedDefaultDocumentValidator extends DefaultDocumentValidator {
+        protected override validateSingleNodeOptions(node: AstNode, _options: ValidationOptions): ValidateSingleNodeOptions {
+            return {
+                validateNode: node.$type !== 'Model' || (node as Model).foos.length <= 1, // all Foo, only Model's with at maximum one child
+                validateChildren: node.$type !== 'Model' || (node as Model).foos.length <= 2, // all Foo (which have never children), only Model's with at maximum two children
+            };
+        }
+    }
+
+    test('Three children => no validations at all', async () => {
+        const services = await createServices();
+        const document = services.shared.workspace.LangiumDocumentFactory.fromString(`
+            foo 1
+            foo 2
+            foo 3
+        `, URI.parse('file:///test.txt'));
+        const diagnostics = await services.validation.DocumentValidator.validateDocument(document);
+        expect(diagnostics.map(d => d.message)).toEqual([]);
+    });
+
+    test('Two children => validate only the children', async () => {
+        const services = await createServices();
+        const document = services.shared.workspace.LangiumDocumentFactory.fromString(`
+            foo 1
+            foo 2
+        `, URI.parse('file:///test.txt'));
+        const diagnostics = await services.validation.DocumentValidator.validateDocument(document);
+        expect(diagnostics.map(d => d.message)).toEqual(['Value 1', 'Value 2']);
+    });
+
+    test('One child => validate the child and the root Model', async () => {
+        const services = await createServices();
+        const document = services.shared.workspace.LangiumDocumentFactory.fromString(`
+            foo 1
+        `, URI.parse('file:///test.txt'));
+        const diagnostics = await services.validation.DocumentValidator.validateDocument(document);
+        expect(diagnostics.map(d => d.message)).toEqual(['Model has 1 children.', 'Value 1']);
+    });
+
+    test('No child => validate the root Model', async () => {
+        const services = await createServices();
+        const document = services.shared.workspace.LangiumDocumentFactory.fromString(`
+        `, URI.parse('file:///test.txt'));
+        const diagnostics = await services.validation.DocumentValidator.validateDocument(document);
+        expect(diagnostics.map(d => d.message)).toEqual(['Model has 0 children.']);
     });
 
 });

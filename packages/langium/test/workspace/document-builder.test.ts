@@ -315,8 +315,8 @@ describe('DefaultDocumentBuilder', () => {
         await builder.build([document1], { validation: true });
         expect(document1.state).toBe(DocumentState.Validated);
         expect(document1.diagnostics?.map(d => d.message)).toEqual([
+            'Bar is too long: AnotherStrangeBar',
             'Value is too large: 11',
-            'Bar is too long: AnotherStrangeBar'
         ]);
     });
 
