@@ -55,10 +55,10 @@ export interface ValidateSingleNodeOptions {
     validateChildren: boolean;
 }
 
-export const VALIDATE_EACH_NODE: ValidateSingleNodeOptions = {
+export const VALIDATE_EACH_NODE: ValidateSingleNodeOptions = Object.freeze({
     validateNode: true,
     validateChildren: true,
-};
+});
 
 export class DefaultDocumentValidator implements DocumentValidator {
 

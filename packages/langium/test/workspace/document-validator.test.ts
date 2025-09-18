@@ -9,18 +9,19 @@ import { describe, expect, test } from 'vitest';
 import { DefaultDocumentValidator, EmptyFileSystem, URI } from 'langium';
 import { createLangiumGrammarServices, createServicesForGrammar } from 'langium/grammar';
 
+const grammar = `
+    grammar Test
+    entry Model:
+        foos+=Foo*;
+    Foo:
+        'foo' value=INT;
+    terminal INT returns number: /[0-9]+/;
+    hidden terminal WS: /\\s+/;
+`;
+
 describe('DefaultDocumentValidator', () => {
     const grammarServices = createLangiumGrammarServices(EmptyFileSystem).grammar;
     async function createServices() {
-        const grammar = `
-            grammar Test
-            entry Model:
-                foos+=Foo*;
-            Foo:
-                'foo' value=INT;
-            terminal INT returns number: /[0-9]+/;
-            hidden terminal WS: /\\s+/;
-        `;
         const services = await createServicesForGrammar({ grammar, grammarServices });
         const checks: ValidationChecks<TestAstType> = {
             Foo: (node, accept) => {
@@ -95,15 +96,6 @@ describe('DefaultDocumentValidator', () => {
 
 describe('Customized DefaultDocumentValidator to ignore some nodes during validation', () => {
     async function createServices() {
-        const grammar = `
-            grammar Test
-            entry Model:
-                foos+=Foo*;
-            Foo:
-                'foo' value=INT;
-            terminal INT returns number: /[0-9]+/;
-            hidden terminal WS: /\\s+/;
-        `;
         const services = await createServicesForGrammar({ grammar, module: <Module<LangiumCoreServices, PartialLangiumCoreServices>>{
             validation: {
                 DocumentValidator: (services) => new CustomizedDefaultDocumentValidator(services),
