@@ -5,6 +5,8 @@
 * Add a profiler service for parsing, linking and validation ([#1993](https://github.com/eclipse-langium/langium/pull/1993)).
 * Enable configuration of document state settings in the `startLanguageServer` function ([#2019](https://github.com/eclipse-langium/langium/pull/2019)).
 * Improvements to the responsiveness of the `DocumentBuilder#waitUntil` method when providing a document URI ([#2024](https://github.com/eclipse-langium/langium/pull/2024)).
+* Update the `CrossReferencesOfAstNodeType` to include multi-references ([#2036](https://github.com/eclipse-langium/langium/pull/2036)).
+* Add a way to prevent validation of specific AST nodes to improve performance ([#2035](https://github.com/eclipse-langium/langium/pull/2035)).
 
 ## v4.0.3 (Sep. 2025)
 
