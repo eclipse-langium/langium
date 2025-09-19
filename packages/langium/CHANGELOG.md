@@ -1,5 +1,21 @@
 # Change Log of `langium`
 
+## v4.1.0 (Sep. 2025)
+
+* Add a profiler service for parsing, linking and validation ([#1993](https://github.com/eclipse-langium/langium/pull/1993)).
+* Enable configuration of document state settings in the `startLanguageServer` function ([#2019](https://github.com/eclipse-langium/langium/pull/2019)).
+* Improvements to the responsiveness of the `DocumentBuilder#waitUntil` method when providing a document URI ([#2024](https://github.com/eclipse-langium/langium/pull/2024)).
+* Update the `CrossReferencesOfAstNodeType` to include multi-references ([#2036](https://github.com/eclipse-langium/langium/pull/2036)).
+* Add a way to prevent validation of specific AST nodes to improve performance ([#2035](https://github.com/eclipse-langium/langium/pull/2035)).
+
+## v4.0.3 (Sep. 2025)
+
+Rollback of v4.0.2.
+
+## v4.0.2 (Sep. 2025)
+
+Attempted to fix a bug, which was later identified as a TypeScript compiler issue
+
 ## v4.0.1 (Sep. 2025)
 
 * Fixes multiple issues related to the stability of infix rules ([#2011](https://github.com/eclipse-langium/langium/pull/2011), [#2023](https://github.com/eclipse-langium/langium/pull/2023)).
@@ -77,6 +93,7 @@ In addition to better readability, the new notation also makes use of performanc
 
 ### Breaking Changes
 
+* Due to various type-related changes, `langium` now requires version `>= 5.8.0` of TypeScript.
 * Renamed `PrecomputedScopes` to `LocalSymbols` and introduced a dedicated interface for it ([#1788](https://github.com/eclipse-langium/langium/pull/1788)).
 * Removed unused Xtext features from the Langium grammar ([#1945](https://github.com/eclipse-langium/langium/pull/1945)).
 * The type of references used throughout the linker service and scope provider is now `Reference | MultiReference` ([#1509](https://github.com/eclipse-langium/langium/pull/1509)).
