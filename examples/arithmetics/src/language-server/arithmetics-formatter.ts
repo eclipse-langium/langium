@@ -22,7 +22,6 @@ export class ArithmeticsFormatter extends AbstractFormatter {
             const formatter = this.getNodeFormatter(node);
             formatter.keyword('def').append(Formatting.oneSpace());
             formatter.keyword(':').prepend(Formatting.noSpace());
-
             if (node.args.length > 0) {
                 // Format Definition of a function
                 formatParameters(formatter);
@@ -35,18 +34,30 @@ export class ArithmeticsFormatter extends AbstractFormatter {
         } else if (ast.isFunctionCall(node)) {
             const formatter = this.getNodeFormatter(node);
             formatParameters(formatter);
-        }  else if (ast.isGroupedExpression(node)) {
+        } else if (ast.isGroupedExpression(node)) {
             const formatter = this.getNodeFormatter(node);
             // Keep parentheses tight with no spaces inside (but don't restrict spaces outside)
             formatter.keyword('(').append(Formatting.noSpace());
             formatter.keyword(')').prepend(Formatting.noSpace());
         } else if (ast.isBinaryExpression(node)) {
             // const formatter = this.getNodeFormatter(node);
-            // TODO: Infix rules cannot be formatted
+            // FIXME: Infix rules assign incorrect CST nodes to left/right in some cases.
+            /* Example:
+            * ```calc
+            * module Single
+            *
+            * def adaduf(x, y, z):
+            *   x+y+z;
+            * ```
+            * The `+` between `x` and `y` is incorrectly represented with left CST text =`x+y+z`, right CST text = `z`
+            * AST Nodes, however, seems to be attached correctly: on the left CST node we have a BinaryExpression with left=`x`, right=`y`
+            *
+            * For now, we don't apply spacing within BinaryExpressions at all, else it not only gets partial formatting,
+            * but even unexpectedly affects rules *outside* of the BinaryExpression CST!
+            */
             // operators cannot be formatted neither as keywords nor as properties
             // left/right property cannot be formatted either
-            // const leftNode = formatter.node(node.left);
-            // leftNode.append(getOperatorSpacing(node.operator));
+            // formatter.node(node.left).append(getOperatorSpacing(node.operator));
             // formatter.node(node.right).prepend(getOperatorSpacing(node.operator));
         }
 
@@ -63,8 +74,6 @@ function formatParameters(formatter: NodeFormatter<ast.AbstractDefinition | ast.
 }
 
 // function getOperatorSpacing(operator: ast.BinaryExpression['operator']): FormattingAction {
-//     // Keep spaces around operators if they are present in the original text
-//     // Otherwise, enforce a single space on both sides
 //     switch (operator) {
 //         case '+':
 //         case '-':
@@ -75,5 +84,4 @@ function formatParameters(formatter: NodeFormatter<ast.AbstractDefinition | ast.
 //         case '^':
 //             return Formatting.noSpace();
 //     }
-//     return Formatting.oneSpace({ allowMore: false });
 // }

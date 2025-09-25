@@ -1,24 +1,21 @@
 Module basicMath
-
 def a: 5;
 def b: 3;
-def c: a + b; // 8
-def d: (a^b); // 164
+def c: a  +    b; // 8
+def d: (a  ^ b); // 164
 
 def root(x, y):
-    x^(1/y);
-
-def empty(_):
-    0;
+    x ^(  1  / y);
 
 def sqrt(x):
     root(x, 2);
 
+def empty(_):
+    a   +b+  c;
 2 * c; // 16
-b % 2; // 1
+b %    2; // 1
 
 // This language is case-insensitive regarding symbol names
-Root(D, 3); // 32
+Root(D, 3); //   32
 Root(64, 3); // 4
 Sqrt(81); // 9
-empty(a + b); // 0
