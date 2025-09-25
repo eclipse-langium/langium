@@ -23,30 +23,34 @@ export class ArithmeticsFormatter extends AbstractFormatter {
             formatter.keyword('def').append(Formatting.oneSpace());
             formatter.keyword(':').prepend(Formatting.noSpace());
 
-            // Format Definition of a function
+            // TODO: Incorrectly handles function definitions with single _ as a parameter
             if (node.args.length > 0) {
+                // Format Definition of a function
                 formatter.keywords('(', ')').surround(Formatting.noSpace());
-                // Space after commas in parameter lists
                 formatter.keywords(',').append(Formatting.oneSpace());
                 formatter.property('expr').prepend(Formatting.indent());
-            // Format Definition of a constant
             } else {
+                // Format Definition of a constant
                 formatter.property('expr').prepend(Formatting.oneSpace());
             }
+
         } else if (ast.isEvaluation(node)) {
             const formatter = this.getNodeFormatter(node);
             // No space before semicolon
             formatter.keyword(';').prepend(Formatting.noSpace());
         } else if (ast.isExpression(node)) {
             const formatter = this.getNodeFormatter(node);
+            // Keep parentheses tight with no spaces inside
             formatter.keyword('(').append(Formatting.noSpace());
             formatter.keyword(')').prepend(Formatting.noSpace());
+
+            // For binary expressions, try to keep everything on one line
             if (ast.isBinaryExpression(node)) {
                 // const formatter = this.getNodeFormatter(node);
-                // Spaces around all binary operators
                 // TODO: Infix rules cannot be formatted
                 // operators cannot be formatted neither as keywords nor as properties
                 // left/right property cannot be formatted either
+                // formatter.node(node.operator).surround(getOperatorSpacing(node.operator));
             }
         } else if (ast.isFunctionCall(node)) {
             const formatter = this.getNodeFormatter(node);
