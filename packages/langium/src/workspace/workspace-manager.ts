@@ -195,16 +195,25 @@ export class DefaultWorkspaceManager implements WorkspaceManager {
      * contained files that match the file extensions are added to the `uris` array.
      */
     protected async traverseFolder(folderPath: URI, uris: URI[]): Promise<void> {
-        const content = await this.fileSystemProvider.readDirectory(folderPath);
-        await Promise.all(content.map(async entry => {
-            if (this.shouldIncludeEntry(entry)) {
-                if (entry.isDirectory) {
-                    await this.traverseFolder(entry.uri, uris);
-                } else if (entry.isFile) {
-                    uris.push(entry.uri);
-                }
+        try {
+            if( ! this.fileSystemProvider.existsSync(folderPath) ) {
+                console.info(`Directory ${folderPath} does not exist`);
+                return Promise.resolve();
             }
-        }));
+            const content = await this.fileSystemProvider.readDirectory(folderPath);
+            await Promise.all(content.map(async entry => {
+                if (this.shouldIncludeEntry(entry)) {
+                    if (entry.isDirectory) {
+                        await this.traverseFolder(entry.uri, uris);
+                    } else if (entry.isFile) {
+                        uris.push(entry.uri);
+                    }
+                }
+            }));
+        } catch(e) {
+            console.error('Failure while reading directory content', e);
+            return Promise.resolve();
+        }
     }
 
     async searchFolder(uri: URI): Promise<URI[]> {
