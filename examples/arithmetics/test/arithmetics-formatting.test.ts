@@ -115,39 +115,11 @@ b % 2;`
         });
     });
 
-    test('Should preserve extra empty lines, but not extra spaces ', async () => {
+    test('Should preserve extra empty lines and comments', async () => {
+        const multilineArithmetics = 'Module test\n\ndef a: 5;// this is a comment\n//   Another comment\n\ndef root(x, y):\n    x^(1/y);\n\n2*a;';
         await formatting({
-            before: `Module    test
-
-def   a   :   5   ;
-
-
-def   root(   x,  y   )   :
-      x^(1/y)   ;
-
-2*a    ; `,
-            after: `Module test
-
-def a: 5;
-
-
-def root(x, y):
-    x^(1/y);
-
-2*a;`
-        });
-    });
-
-    test('Should preserve comments', async () => {
-        await formatting({
-            before: `Module test
-def a: 5;    // this is a comment
-//   Another comment
-def b: 3;`,
-            after: `Module test
-def a: 5; // this is a comment
-//   Another comment
-def b: 3;`
+            before: multilineArithmetics,
+            after: multilineArithmetics
         });
     });
 });
