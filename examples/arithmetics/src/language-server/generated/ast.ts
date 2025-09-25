@@ -44,7 +44,7 @@ export function isAbstractDefinition(item: unknown): item is AbstractDefinition 
 }
 
 export interface BinaryExpression extends langium.AstNode {
-    readonly $container: BinaryExpression | Definition | Evaluation | FunctionCall;
+    readonly $container: BinaryExpression | Definition | Evaluation | FunctionCall | GroupedExpression;
     readonly $type: 'BinaryExpression';
     left: Expression;
     operator: '%' | '*' | '+' | '-' | '/' | '^';
@@ -111,7 +111,7 @@ export function isEvaluation(item: unknown): item is Evaluation {
     return reflection.isInstance(item, Evaluation.$type);
 }
 
-export type Expression = BinaryExpression | FunctionCall | NumberLiteral;
+export type Expression = BinaryExpression | FunctionCall | GroupedExpression | NumberLiteral;
 
 export const Expression = {
     $type: 'Expression'
@@ -122,7 +122,7 @@ export function isExpression(item: unknown): item is Expression {
 }
 
 export interface FunctionCall extends langium.AstNode {
-    readonly $container: BinaryExpression | Definition | Evaluation | FunctionCall;
+    readonly $container: BinaryExpression | Definition | Evaluation | FunctionCall | GroupedExpression;
     readonly $type: 'FunctionCall';
     args: Array<Expression>;
     func: langium.Reference<AbstractDefinition>;
@@ -136,6 +136,21 @@ export const FunctionCall = {
 
 export function isFunctionCall(item: unknown): item is FunctionCall {
     return reflection.isInstance(item, FunctionCall.$type);
+}
+
+export interface GroupedExpression extends langium.AstNode {
+    readonly $container: BinaryExpression | Definition | Evaluation | FunctionCall | GroupedExpression;
+    readonly $type: 'GroupedExpression';
+    value: Expression;
+}
+
+export const GroupedExpression = {
+    $type: 'GroupedExpression',
+    value: 'value'
+} as const;
+
+export function isGroupedExpression(item: unknown): item is GroupedExpression {
+    return reflection.isInstance(item, GroupedExpression.$type);
 }
 
 export interface Module extends langium.AstNode {
@@ -155,7 +170,7 @@ export function isModule(item: unknown): item is Module {
 }
 
 export interface NumberLiteral extends langium.AstNode {
-    readonly $container: BinaryExpression | Definition | Evaluation | FunctionCall;
+    readonly $container: BinaryExpression | Definition | Evaluation | FunctionCall | GroupedExpression;
     readonly $type: 'NumberLiteral';
     value: number;
 }
@@ -187,6 +202,7 @@ export type ArithmeticsAstType = {
     Evaluation: Evaluation
     Expression: Expression
     FunctionCall: FunctionCall
+    GroupedExpression: GroupedExpression
     Module: Module
     NumberLiteral: NumberLiteral
     Statement: Statement
@@ -265,6 +281,15 @@ export class ArithmeticsAstReflection extends langium.AbstractAstReflection {
                 func: {
                     name: FunctionCall.func,
                     referenceType: AbstractDefinition.$type
+                }
+            },
+            superTypes: [Expression.$type]
+        },
+        GroupedExpression: {
+            name: GroupedExpression.$type,
+            properties: {
+                value: {
+                    name: GroupedExpression.value
                 }
             },
             superTypes: [Expression.$type]

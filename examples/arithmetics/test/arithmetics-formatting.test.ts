@@ -43,14 +43,18 @@ def b: 3;`
         });
     });
 
-    test('Should format parentheses with no surrounding spaces', async () => {
+    test('Should format parentheses of grouped expressions', async () => {
         await formatting({
             before: `Module test
-def result: ( a + b ) * c;
-def nested: ( ( a + b ) * ( c - d ) );`,
+def result: ( a + b ) * c^(  1/a);
+def root(x, y):x^(  1/y);
+def reuse(a,b):(  root (  a,b )  ) ;`,
             after: `Module test
-def result: (a + b) * c;
-def nested: ((a + b) * (c - d));`
+def result: (a + b) * c^(1/a);
+def root(x, y):
+    x^(1/y);
+def reuse(a, b):
+    (root(a, b));`
         });
     });
 

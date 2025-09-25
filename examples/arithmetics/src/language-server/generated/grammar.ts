@@ -311,15 +311,27 @@ export const ArithmeticsGrammar = (): Grammar => loadedArithmeticsGrammar ?? (lo
             "$type": "Group",
             "elements": [
               {
+                "$type": "Action",
+                "inferredType": {
+                  "$type": "InferredType",
+                  "name": "GroupedExpression"
+                }
+              },
+              {
                 "$type": "Keyword",
                 "value": "("
               },
               {
-                "$type": "RuleCall",
-                "rule": {
-                  "$ref": "#/rules@5"
-                },
-                "arguments": []
+                "$type": "Assignment",
+                "feature": "value",
+                "operator": "=",
+                "terminal": {
+                  "$type": "RuleCall",
+                  "rule": {
+                    "$ref": "#/rules@5"
+                  },
+                  "arguments": []
+                }
               },
               {
                 "$type": "Keyword",

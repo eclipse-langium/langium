@@ -35,20 +35,19 @@ export class ArithmeticsFormatter extends AbstractFormatter {
         } else if (ast.isFunctionCall(node)) {
             const formatter = this.getNodeFormatter(node);
             formatParameters(formatter);
-        } else if (ast.isExpression(node)) {
+        }  else if (ast.isGroupedExpression(node)) {
             const formatter = this.getNodeFormatter(node);
             // Keep parentheses tight with no spaces inside (but don't restrict spaces outside)
             formatter.keyword('(').append(Formatting.noSpace());
             formatter.keyword(')').prepend(Formatting.noSpace());
-
-            // For binary expressions, try to keep everything on one line
-            if (ast.isBinaryExpression(node)) {
-                // const formatter = this.getNodeFormatter(node);
-                // TODO: Infix rules cannot be formatted
-                // operators cannot be formatted neither as keywords nor as properties
-                // left/right property cannot be formatted either
-                // formatter.node(node.operator).surround(getOperatorSpacing(node.operator));
-            }
+        } else if (ast.isBinaryExpression(node)) {
+            // const formatter = this.getNodeFormatter(node);
+            // TODO: Infix rules cannot be formatted
+            // operators cannot be formatted neither as keywords nor as properties
+            // left/right property cannot be formatted either
+            // const leftNode = formatter.node(node.left);
+            // leftNode.append(getOperatorSpacing(node.operator));
+            // formatter.node(node.right).prepend(getOperatorSpacing(node.operator));
         }
 
         // No space around semicolons in all cases
@@ -62,3 +61,19 @@ function formatParameters(formatter: NodeFormatter<ast.AbstractDefinition | ast.
     formatter.keywords(',')
         .prepend(Formatting.noSpace()).append(Formatting.oneSpace({ allowMore: false }));
 }
+
+// function getOperatorSpacing(operator: ast.BinaryExpression['operator']): FormattingAction {
+//     // Keep spaces around operators if they are present in the original text
+//     // Otherwise, enforce a single space on both sides
+//     switch (operator) {
+//         case '+':
+//         case '-':
+//         case '%':
+//             return Formatting.oneSpace({ allowMore: false });
+//         case '*':
+//         case '/':
+//         case '^':
+//             return Formatting.noSpace();
+//     }
+//     return Formatting.oneSpace({ allowMore: false });
+// }
