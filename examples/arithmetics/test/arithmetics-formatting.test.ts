@@ -16,9 +16,6 @@ const formatting = expectFormatting(services);
 
 describe('Arithmetics formatting', () => {
 
-    // Note: The current formatter preserves existing spacing around commas in parameter lists
-    // due to a known limitation (see TODO comment in ArithmeticsFormatter)
-
     test('Should preserve well-formatted example.calc content', async () => {
         const examplePath = resolve(__dirname, '../example/example.calc');
         const exampleContent = readFileSync(examplePath, 'utf-8');
@@ -37,7 +34,7 @@ def a: 5;`
         });
     });
 
-    test('Should format constant definitions with proper spacing', async () => {
+    test('Should keep each definition on a separate line', async () => {
         await formatting({
             before: 'Module test\ndef a:5;\ndef b   :   3;',
             after: `Module test
@@ -46,53 +43,90 @@ def b: 3;`
         });
     });
 
-    test('Should format function definitions with parameters (preserving existing comma spacing)', async () => {
+    test('Should format parentheses with no surrounding spaces', async () => {
         await formatting({
-            before: 'Module test\ndef root( x, y ):\n  x^(1/y);',
+            before: `Module test
+def result: ( a + b ) * c;
+def nested: ( ( a + b ) * ( c - d ) );`,
             after: `Module test
-def root(x, y):
-    x^(1/y);`
+def result: (a + b) * c;
+def nested: ((a + b) * (c - d));`
         });
     });
 
-    test('Should format function calls with proper spacing (preserving existing comma spacing)', async () => {
+    test('Should have space after colon for expression definitions', async () => {
         await formatting({
-            before: 'Module test\ndef a: 5;\nroot( a, 2 );',
+            before: `Module test
+def d:(x*y);`,
+            after: `Module test
+def d: (x*y);`
+        });
+    });
+
+    test('Should handle function calls with no spaces around parentheses and a single space after comma', async () => {
+        await formatting({
+            before: `Module test
+def a: 5;
+root  (   a  ,   2   );
+sqrt(   x   );`,
             after: `Module test
 def a: 5;
-root(a, 2);`
+root(a, 2);
+sqrt(x);`
         });
     });
 
-    test('Should format binary expressions with parentheses correctly', async () => {
+    test('Should format function definitions with no spaces around parentheses and a single space after comma', async () => {
         await formatting({
-            before: 'Module test\ndef result: ( a + b ) * c;',
+            before: `Module test
+def root(  x  ,y,   z   ):
+    x^y;`,
             after: `Module test
-def result: (a + b) * c;`
+def root(x, y, z):
+    x^y;`
         });
     });
 
-    test('Should format evaluation statements correctly', async () => {
+    test('Should format nested expressions with proper parentheses spacing (preserving operator spacing)', async () => {
         await formatting({
-            before: 'Module test\n  def a\n:\n   5 \n; \n2 * a    ;',
+            before: `Module test
+def complex: (  ( a + b )  *  ( c - d )  )  +  ( e / f );`,
+            after: `Module test
+def complex: ((a + b)  *  (c - d))  +  (e / f);`
+        });
+    });
+
+    test('Should format statements with proper semicolon spacing', async () => {
+        await formatting({
+            before: `Module test
+def a: 5;
+def root(x, y, z):
+    x^y ;
+b % 2    ;`,
             after: `Module test
 def a: 5;
-2 * a;`
+def root(x, y, z):
+    x^y;
+b % 2;`
         });
     });
 
-    test('Should handle mixed formatting issues (preserving empty lines between statements and comma spacing)', async () => {
+    test('Should preserve extra empty lines, but not extra spaces ', async () => {
         await formatting({
             before: `Module    test
 
 def   a   :   5   ;
-def   root(   x, y   )   :
+
+
+def   root(   x,  y   )   :
       x^(1/y)   ;
 
-2*a    ;`,
+2*a    ; `,
             after: `Module test
 
 def a: 5;
+
+
 def root(x, y):
     x^(1/y);
 
@@ -103,14 +137,13 @@ def root(x, y):
     test('Should preserve comments', async () => {
         await formatting({
             before: `Module test
-def a: 5; // this is a comment
-// Another comment
+def a: 5;    // this is a comment
+//   Another comment
 def b: 3;`,
             after: `Module test
 def a: 5; // this is a comment
-// Another comment
+//   Another comment
 def b: 3;`
         });
     });
-
 });

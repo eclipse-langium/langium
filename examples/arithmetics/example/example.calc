@@ -8,6 +8,9 @@ def d: (a^b); // 164
 def root(x, y):
     x^(1/y);
 
+def empty(_):
+    0;
+
 def sqrt(x):
     root(x, 2);
 
@@ -18,3 +21,4 @@ b % 2; // 1
 Root(D, 3); // 32
 Root(64, 3); // 4
 Sqrt(81); // 9
+empty(a+b); // 0

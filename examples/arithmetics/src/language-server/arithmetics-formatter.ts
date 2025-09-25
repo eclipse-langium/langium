@@ -5,7 +5,7 @@
  ******************************************************************************/
 
 import type { AstNode } from 'langium';
-import { AbstractFormatter, Formatting } from 'langium/lsp';
+import { AbstractFormatter, Formatting, type NodeFormatter } from 'langium/lsp';
 import * as ast from './generated/ast.js';
 
 export class ArithmeticsFormatter extends AbstractFormatter {
@@ -23,24 +23,21 @@ export class ArithmeticsFormatter extends AbstractFormatter {
             formatter.keyword('def').append(Formatting.oneSpace());
             formatter.keyword(':').prepend(Formatting.noSpace());
 
-            // TODO: Incorrectly handles function definitions with single _ as a parameter
             if (node.args.length > 0) {
                 // Format Definition of a function
-                formatter.keywords('(', ')').surround(Formatting.noSpace());
-                formatter.keywords(',').append(Formatting.oneSpace());
+                formatParameters(formatter);
                 formatter.property('expr').prepend(Formatting.indent());
             } else {
                 // Format Definition of a constant
                 formatter.property('expr').prepend(Formatting.oneSpace());
             }
 
-        } else if (ast.isEvaluation(node)) {
+        } else if (ast.isFunctionCall(node)) {
             const formatter = this.getNodeFormatter(node);
-            // No space before semicolon
-            formatter.keyword(';').prepend(Formatting.noSpace());
+            formatParameters(formatter);
         } else if (ast.isExpression(node)) {
             const formatter = this.getNodeFormatter(node);
-            // Keep parentheses tight with no spaces inside
+            // Keep parentheses tight with no spaces inside (but don't restrict spaces outside)
             formatter.keyword('(').append(Formatting.noSpace());
             formatter.keyword(')').prepend(Formatting.noSpace());
 
@@ -52,18 +49,16 @@ export class ArithmeticsFormatter extends AbstractFormatter {
                 // left/right property cannot be formatted either
                 // formatter.node(node.operator).surround(getOperatorSpacing(node.operator));
             }
-        } else if (ast.isFunctionCall(node)) {
-            const formatter = this.getNodeFormatter(node);
-            // Format parentheses and arguments (if any)
-            if (node.args.length > 0) {
-                formatter.keywords('(', ')').surround(Formatting.noSpace());
-                // Space after commas in argument lists
-                formatter.keywords(',').append(Formatting.oneSpace());
-            }
         }
 
         // No space around semicolons in all cases
         const formatter = this.getNodeFormatter(node);
         formatter.keyword(';').surround(Formatting.noSpace());
     }
+}
+
+function formatParameters(formatter: NodeFormatter<ast.AbstractDefinition | ast.FunctionCall>): void {
+    formatter.keywords('(', ')').surround(Formatting.noSpace());
+    formatter.keywords(',')
+        .prepend(Formatting.noSpace()).append(Formatting.oneSpace({ allowMore: false }));
 }
