@@ -11,9 +11,7 @@
 
   [![npm](https://img.shields.io/npm/v/langium)](https://www.npmjs.com/package/langium)
   [![Build](https://github.com/eclipse-langium/langium/actions/workflows/actions.yml/badge.svg)](https://github.com/eclipse-langium/langium/actions/workflows/actions.yml)
-  [![Gitter Chat](https://img.shields.io/badge/chat-on%20gitter-0DBD8B?logo=gitter)](https://app.gitter.im/#/room/#langium:gitter.im)
   [![Github Discussions](https://img.shields.io/badge/github-discussions-blue?logo=github)](https://github.com/eclipse-langium/langium/discussions)
-  [![Gitpod Ready-to-Code](https://img.shields.io/badge/Gitpod-ready--to--code-FFAE33?logo=gitpod)](https://gitpod.io/#https://github.com/eclipse-langium/langium)
 
 </div>
 
@@ -40,7 +38,7 @@ yo langium
 
 You can find the Langium documentation on [the website](https://langium.org/).
 
-If you're new to building programming languages, take a look at [our overview to see what Langium offers](https://langium.org/docs/features/). 
+If you're new to building programming languages, take a look at [our overview to see what Langium offers](https://langium.org/docs/features/).
 
 The documentation is divided into several sections:
 
