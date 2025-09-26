@@ -34,7 +34,7 @@ export class ArithmeticsFormatter extends AbstractFormatter {
         } else if (ast.isFunctionCall(node)) {
             const formatter = this.getNodeFormatter(node);
             formatParameters(formatter);
-        } else if (ast.isGroupedExpression(node)) {
+        } else if (ast.isNestedExpression(node)) {
             const formatter = this.getNodeFormatter(node);
             // Keep parentheses tight with no spaces inside (but don't restrict spaces outside)
             formatter.keyword('(').append(Formatting.noSpace());

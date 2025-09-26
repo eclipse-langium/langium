@@ -43,18 +43,20 @@ def b: 3;`
         });
     });
 
-    test('Should format parentheses of grouped expressions', async () => {
+    test('Should format parentheses of nested expressions', async () => {
         await formatting({
             before: `Module test
-def result: ( a + b ) * c^(  1/a);
+def result: ( a + (  b ) ) * c^(  1/a);
 def root(x, y):x^(  1/y);
-def reuse(a,b):(  root (  a,b )  ) ;`,
+def reuse(a,b):(  root (  a,b )  ) ;
+ ( result + root ( result ,reuse  (  2 , 3 )  ) )/2;`,
             after: `Module test
-def result: (a + b) * c^(1/a);
+def result: (a + (b)) * c^(1/a);
 def root(x, y):
     x^(1/y);
 def reuse(a, b):
-    (root(a, b));`
+    (root(a, b));
+(result + root(result, reuse(2, 3)))/2;`
         });
     });
 

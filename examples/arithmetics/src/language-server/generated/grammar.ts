@@ -314,7 +314,7 @@ export const ArithmeticsGrammar = (): Grammar => loadedArithmeticsGrammar ?? (lo
                 "$type": "Action",
                 "inferredType": {
                   "$type": "InferredType",
-                  "name": "GroupedExpression"
+                  "name": "NestedExpression"
                 }
               },
               {
