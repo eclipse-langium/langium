@@ -5,7 +5,7 @@
  ******************************************************************************/
 
 import type { AstNode, Grammar, GrammarAST as GrammarTypes, LangiumDocument, Properties } from 'langium';
-import { AstUtils, EmptyFileSystem, GrammarAST, URI } from 'langium';
+import { AstUtils, EmptyFileSystem, GrammarAST, stream, URI } from 'langium';
 import { IssueCodes, createLangiumGrammarServices } from 'langium/grammar';
 import type { ValidationResult } from 'langium/test';
 import { clearDocuments, expectError, expectIssue, expectNoIssues, expectWarning, parseHelper, validationHelper } from 'langium/test';
@@ -1641,6 +1641,57 @@ describe('Assignments with = (or ?=) instead of +=', () => {
         expect(validation.diagnostics[0].message).toBe(getMessage('active', '?='));
     });
 
+});
+
+describe('Mixed use of "?=", "=" and "+=" for the same feature', () => {
+    function getMessage(featureName: string, ...operators: Array<'?=' | '=' | '+='>): string {
+        return `Don't mix operators (${stream(operators).map(op => `'${op}'`).join(', ')}) when assigning values to the same feature '${featureName}'.`;
+    }
+    function getGrammar(content: string): string {
+        return `
+            grammar HelloWorld
+            ${content}
+            hidden terminal WS: /\\s+/;
+            terminal ID: /[_a-zA-Z][\\w_]*/;
+        `;
+    }
+
+    test('= and +=', async () => {
+        const validation = await validate(getGrammar(`
+            entry Person: 'person' name=ID name+=ID;
+        `));
+        expect(validation.diagnostics.length).toBe(2);
+        expect(validation.diagnostics[0].message).toBe(getMessage('name', '=', '+='));
+        expect(validation.diagnostics[1].message).toBe(getMessage('name', '=', '+='));
+    });
+
+    test('= and ?=', async () => {
+        const validation = await validate(getGrammar(`
+            entry Person: 'person' name=ID name?=ID;
+        `));
+        expect(validation.diagnostics.length).toBe(2);
+        expect(validation.diagnostics[0].message).toBe(getMessage('name', '=', '?='));
+        expect(validation.diagnostics[1].message).toBe(getMessage('name', '=', '?='));
+    });
+
+    test('?= and +=', async () => {
+        const validation = await validate(getGrammar(`
+            entry Person: 'person' name?=ID name+=ID;
+        `));
+        expect(validation.diagnostics.length).toBe(2);
+        expect(validation.diagnostics[0].message).toBe(getMessage('name', '?=', '+='));
+        expect(validation.diagnostics[1].message).toBe(getMessage('name', '?=', '+='));
+    });
+
+    test('?=, = and +=', async () => {
+        const validation = await validate(getGrammar(`
+            entry Person: 'person' name?=ID name=ID name+=ID;
+        `));
+        expect(validation.diagnostics.length).toBe(3);
+        expect(validation.diagnostics[0].message).toBe(getMessage('name', '?=', '=', '+='));
+        expect(validation.diagnostics[1].message).toBe(getMessage('name', '?=', '=', '+='));
+        expect(validation.diagnostics[2].message).toBe(getMessage('name', '?=', '=', '+='));
+    });
 });
 
 describe('Missing required properties are not arrays or booleans', () => {

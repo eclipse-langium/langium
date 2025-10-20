@@ -58,7 +58,7 @@ export function registerValidationChecks(services: LangiumGrammarServices): void
             validator.checkRuleParameters,
             validator.checkEmptyParserRule,
             validator.checkParserRuleReservedName,
-            validator.checkOperatorMultiplicitiesForMultiAssignments,
+            validator.checkAssignmentsToTheSameFeature,
         ],
         InfixRule: [
             validator.checkInfixRuleDataType,
@@ -139,6 +139,7 @@ export namespace IssueCodes {
     export const OptionalUnorderedGroup = 'optional-unordered-group';
     export const ParsingRuleEmpty = 'parsing-rule-empty';
     export const ReplaceOperatorMultiAssignment = 'replace-operator-for-multi-assignments';
+    export const MixedAssignmentOperators = 'mixed-use-of-assignment-operators';
 }
 
 export class LangiumGrammarValidator {
@@ -1018,22 +1019,45 @@ export class LangiumGrammarValidator {
         }
     }
 
-    /** This validation recursively looks at all assignments (and rewriting actions) with '=' as assignment operator and checks,
-     * whether the operator should be '+=' instead. */
-    checkOperatorMultiplicitiesForMultiAssignments(rule: ast.ParserRule, accept: ValidationAcceptor): void {
+    /**
+     * This validation recursively collects all assignments (and rewriting actions) to the same feature and validates them:
+     * Assignment operators '?=', '=' and '+=' should not be mixed.
+     * Assignments with '=' as assignment operator should be replaced be '+=', if assignments to the feature might occure more than once.
+     */
+    checkAssignmentsToTheSameFeature(rule: ast.ParserRule, accept: ValidationAcceptor): void {
         // for usual parser rules AND for fragments, but not for data type rules!
         if (!rule.dataType) {
-            this.checkOperatorMultiplicitiesForMultiAssignmentsIndependent([rule.definition], accept);
+            this.checkAssignmentsToTheSameFeatureIndependent([rule.definition], accept);
         }
     }
 
-    private checkOperatorMultiplicitiesForMultiAssignmentsIndependent(startNodes: AstNode[], accept: ValidationAcceptor, map: Map<string, AssignmentUse> = new Map()): void {
+    private checkAssignmentsToTheSameFeatureIndependent(startNodes: AstNode[], accept: ValidationAcceptor, map: Map<string, AssignmentUse> = new Map()): void {
         // check all starting nodes
-        this.checkOperatorMultiplicitiesForMultiAssignmentsNested(startNodes, 1, map, accept);
+        this.checkAssignmentsToTheSameFeatureNested(startNodes, 1, map, accept);
 
         // create the warnings
         for (const entry of map.values()) {
-            if (entry.counter >= 2) {
+            // check mixed use of ?=, = and +=
+            const usedOperators = new Set<string>();
+            for (const assignment of entry.assignments) {
+                if (assignment.operator) {
+                    usedOperators.add(assignment.operator);
+                }
+            }
+            if (usedOperators.size >= 2) {
+                for (const assignment of entry.assignments) {
+                    accept(
+                        'warning',
+                        `Don't mix operators (${stream(usedOperators).map(op => `'${op}'`).join(', ')}) when assigning values to the same feature '${assignment.feature}'.`,
+                        {
+                            node: assignment,
+                            property: 'feature', // use 'feature' instead of 'operator', since it is pretty hard to see
+                            data: diagnosticData(IssueCodes.MixedAssignmentOperators), // no code action, but is relevant for serializability
+                        }
+                    );
+                }
+            } else if (entry.counter >= 2) {
+                // check for multiple assignments with '?=' or '=' instead of '+='
                 for (const assignment of entry.assignments) {
                     if (assignment.operator !== '+=') {
                         accept(
@@ -1042,16 +1066,18 @@ export class LangiumGrammarValidator {
                             {
                                 node: assignment,
                                 property: 'feature', // use 'feature' instead of 'operator', since it is pretty hard to see
-                                data: diagnosticData(IssueCodes.ReplaceOperatorMultiAssignment),
+                                data: diagnosticData(IssueCodes.ReplaceOperatorMultiAssignment), // for code action, is relevant for serializability as well
                             }
                         );
                     }
                 }
+            } else {
+                // the assignments to this feature are fine
             }
         }
     }
 
-    private checkOperatorMultiplicitiesForMultiAssignmentsNested(nodes: AstNode[], parentMultiplicity: number, map: Map<string, AssignmentUse>, accept: ValidationAcceptor): boolean {
+    private checkAssignmentsToTheSameFeatureNested(nodes: AstNode[], parentMultiplicity: number, map: Map<string, AssignmentUse>, accept: ValidationAcceptor): boolean {
         let resultCreatedNewObject = false;
         // check all given elements
         for (let i = 0; i < nodes.length; i++) {
@@ -1063,7 +1089,7 @@ export class LangiumGrammarValidator {
                 const mapForNewObject = new Map();
                 storeAssignmentUse(mapForNewObject, currentNode.feature, 1, currentNode); // remember the special rewriting feature
                 // all following nodes are put into the new object => check their assignments independently
-                this.checkOperatorMultiplicitiesForMultiAssignmentsIndependent(nodes.slice(i + 1), accept, mapForNewObject);
+                this.checkAssignmentsToTheSameFeatureIndependent(nodes.slice(i + 1), accept, mapForNewObject);
                 resultCreatedNewObject = true;
                 break; // breaks the current loop
             }
@@ -1084,7 +1110,7 @@ export class LangiumGrammarValidator {
             // Search for assignments in used fragments as well, since their property values are stored in the current object.
             // But do not search in calls of regular parser rules, since parser rules create new objects.
             if (ast.isRuleCall(currentNode) && ast.isParserRule(currentNode.rule.ref) && currentNode.rule.ref.fragment) {
-                const createdNewObject = this.checkOperatorMultiplicitiesForMultiAssignmentsNested([currentNode.rule.ref.definition], currentMultiplicity, map, accept);
+                const createdNewObject = this.checkAssignmentsToTheSameFeatureNested([currentNode.rule.ref.definition], currentMultiplicity, map, accept);
                 resultCreatedNewObject = createdNewObject || resultCreatedNewObject;
             }
 
@@ -1092,7 +1118,7 @@ export class LangiumGrammarValidator {
             if (ast.isGroup(currentNode) || ast.isUnorderedGroup(currentNode)) {
                 // all members of the group are relavant => collect them all
                 const mapGroup: Map<string, AssignmentUse> = new Map(); // store assignments for Alternatives separately
-                const createdNewObject = this.checkOperatorMultiplicitiesForMultiAssignmentsNested(currentNode.elements, 1, mapGroup, accept);
+                const createdNewObject = this.checkAssignmentsToTheSameFeatureNested(currentNode.elements, 1, mapGroup, accept);
                 mergeAssignmentUse(mapGroup, map, createdNewObject
                     ? (s, t) => (s + t)                         // if a new object is created in the group: ignore the current multiplicity, since a new object is created for each loop cycle!
                     : (s, t) => (s * currentMultiplicity + t)   // otherwise as usual: take the current multiplicity into account
@@ -1106,7 +1132,7 @@ export class LangiumGrammarValidator {
                 let countCreatedObjects = 0;
                 for (const alternative of currentNode.elements) {
                     const mapCurrentAlternative: Map<string, AssignmentUse> = new Map();
-                    const createdNewObject = this.checkOperatorMultiplicitiesForMultiAssignmentsNested([alternative], 1, mapCurrentAlternative, accept);
+                    const createdNewObject = this.checkAssignmentsToTheSameFeatureNested([alternative], 1, mapCurrentAlternative, accept);
                     mergeAssignmentUse(mapCurrentAlternative, mapAllAlternatives, createdNewObject
                         ? (s, t) => Math.max(s, t)                         // if a new object is created in an alternative: ignore the current multiplicity, since a new object is created for each loop cycle!
                         : (s, t) => Math.max(s * currentMultiplicity, t)   // otherwise as usual: take the current multiplicity into account
