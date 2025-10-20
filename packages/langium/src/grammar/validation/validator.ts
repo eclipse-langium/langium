@@ -10,7 +10,7 @@ import * as ast from '../../languages/generated/ast.js';
 import type { NamedAstNode } from '../../references/name-provider.js';
 import type { References } from '../../references/references.js';
 import type { AstNode, Properties, Reference } from '../../syntax-tree.js';
-import { getContainerOfType, streamAllContents } from '../../utils/ast-utils.js';
+import { getContainerOfType, getDocument, streamAllContents } from '../../utils/ast-utils.js';
 import { MultiMap } from '../../utils/collections.js';
 import { toDocumentSegment } from '../../utils/cst-utils.js';
 import { assertUnreachable } from '../../utils/errors.js';
@@ -18,7 +18,7 @@ import { findNameAssignment, findNodeForKeyword, findNodeForProperty, getAllReac
 import type { Stream } from '../../utils/stream.js';
 import { stream } from '../../utils/stream.js';
 import { UriUtils } from '../../utils/uri-utils.js';
-import type { DiagnosticData, ValidationAcceptor, ValidationChecks } from '../../validation/validation-registry.js';
+import type { DiagnosticData, DiagnosticInfo, ValidationAcceptor, ValidationChecks } from '../../validation/validation-registry.js';
 import { diagnosticData } from '../../validation/validation-registry.js';
 import type { AstNodeLocator } from '../../workspace/ast-node-locator.js';
 import type { LangiumDocuments } from '../../workspace/documents.js';
@@ -1027,13 +1027,13 @@ export class LangiumGrammarValidator {
     checkAssignmentsToTheSameFeature(rule: ast.ParserRule, accept: ValidationAcceptor): void {
         // for usual parser rules AND for fragments, but not for data type rules!
         if (!rule.dataType) {
-            this.checkAssignmentsToTheSameFeatureIndependent([rule.definition], accept);
+            this.checkAssignmentsToTheSameFeatureIndependent(rule, [rule.definition], accept);
         }
     }
 
-    private checkAssignmentsToTheSameFeatureIndependent(startNodes: AstNode[], accept: ValidationAcceptor, map: Map<string, AssignmentUse> = new Map()): void {
+    private checkAssignmentsToTheSameFeatureIndependent(startRule: ast.ParserRule|ast.Action, startNodes: AstNode[], accept: ValidationAcceptor, map: Map<string, AssignmentUse> = new Map()): void {
         // check all starting nodes
-        this.checkAssignmentsToTheSameFeatureNested(startNodes, 1, map, accept);
+        this.checkAssignmentsToTheSameFeatureNested(startRule, startNodes, 1, map, accept);
 
         // create the warnings
         for (const entry of map.values()) {
@@ -1045,29 +1045,24 @@ export class LangiumGrammarValidator {
                 }
             }
             if (usedOperators.size >= 2) {
+                const usedOperatorsPrinted = stream(usedOperators).map(op => `'${op}'`).join(', ');
                 for (const assignment of entry.assignments) {
+                    const [info, docMsg] = createInfo(assignment, IssueCodes.MixedAssignmentOperators);
                     accept(
                         'warning',
-                        `Don't mix operators (${stream(usedOperators).map(op => `'${op}'`).join(', ')}) when assigning values to the same feature '${assignment.feature}'.`,
-                        {
-                            node: assignment,
-                            property: 'feature', // use 'feature' instead of 'operator', since it is pretty hard to see
-                            data: diagnosticData(IssueCodes.MixedAssignmentOperators), // no code action, but is relevant for serializability
-                        }
+                        `Don't mix operators (${usedOperatorsPrinted}) when assigning values to the same feature '${assignment.feature}'${docMsg}.`,
+                        info, // the issue code is not used for a code action, but is relevant for serializability
                     );
                 }
             } else if (entry.counter >= 2) {
                 // check for multiple assignments with '?=' or '=' instead of '+='
                 for (const assignment of entry.assignments) {
                     if (assignment.operator !== '+=') {
+                        const [info, docMsg] = createInfo(assignment, IssueCodes.ReplaceOperatorMultiAssignment);
                         accept(
                             'warning',
-                            `Found multiple assignments to '${assignment.feature}' with the '${assignment.operator}' assignment operator. Consider using '+=' instead to prevent data loss.`,
-                            {
-                                node: assignment,
-                                property: 'feature', // use 'feature' instead of 'operator', since it is pretty hard to see
-                                data: diagnosticData(IssueCodes.ReplaceOperatorMultiAssignment), // for code action, is relevant for serializability as well
-                            }
+                            `Found multiple assignments to '${assignment.feature}' with the '${assignment.operator}' assignment operator${docMsg}. Consider using '+=' instead to prevent data loss.`,
+                            info, // the issue code is used for a code action, and it is relevant for serializability as well
                         );
                     }
                 }
@@ -1075,9 +1070,30 @@ export class LangiumGrammarValidator {
                 // the assignments to this feature are fine
             }
         }
+
+        const startDocument = getDocument(startRule);
+        // Utility to handle the case, that the critical assignment is located in another document (for which validation markers cannot be reported now).
+        function createInfo(assignment: ast.Assignment | ast.Action, code: string): [DiagnosticInfo<ast.Assignment | ast.Action | ast.ParserRule>, string] {
+            const assignmentDocument = getDocument(assignment);
+            if (assignmentDocument === startDocument) {
+                // the assignment is located in the document of the start rule which is currently validated
+                return [<DiagnosticInfo<ast.Assignment | ast.Action>>{
+                    node: assignment,
+                    property: 'feature', // use 'feature' instead of 'operator', since it is pretty hard to see
+                    data: diagnosticData(code),
+                }, ''];
+            } else {
+                // the assignment is located inside another document => annotate the issue at the start rule
+                return [<DiagnosticInfo<ast.ParserRule>>{
+                    node: startRule,
+                    property: 'name',
+                    data: diagnosticData(code),
+                }, ` by rule '${getContainerOfType(assignment, ast.isParserRule)?.name}' in the grammar '${UriUtils.basename(assignmentDocument.uri)}'`];
+            }
+        }
     }
 
-    private checkAssignmentsToTheSameFeatureNested(nodes: AstNode[], parentMultiplicity: number, map: Map<string, AssignmentUse>, accept: ValidationAcceptor): boolean {
+    private checkAssignmentsToTheSameFeatureNested(startRule: ast.ParserRule|ast.Action, nodes: AstNode[], parentMultiplicity: number, map: Map<string, AssignmentUse>, accept: ValidationAcceptor): boolean {
         let resultCreatedNewObject = false;
         // check all given elements
         for (let i = 0; i < nodes.length; i++) {
@@ -1089,7 +1105,11 @@ export class LangiumGrammarValidator {
                 const mapForNewObject = new Map();
                 storeAssignmentUse(mapForNewObject, currentNode.feature, 1, currentNode); // remember the special rewriting feature
                 // all following nodes are put into the new object => check their assignments independently
-                this.checkAssignmentsToTheSameFeatureIndependent(nodes.slice(i + 1), accept, mapForNewObject);
+                if (getDocument(currentNode) === getDocument(startRule)) {
+                    this.checkAssignmentsToTheSameFeatureIndependent(currentNode, nodes.slice(i + 1), accept, mapForNewObject);
+                } else {
+                    // if the rewrite action is inside another document, validate it, when its document is validated (otherwise, it is done twice and validation markers are added to the wrong document)
+                }
                 resultCreatedNewObject = true;
                 break; // breaks the current loop
             }
@@ -1110,7 +1130,7 @@ export class LangiumGrammarValidator {
             // Search for assignments in used fragments as well, since their property values are stored in the current object.
             // But do not search in calls of regular parser rules, since parser rules create new objects.
             if (ast.isRuleCall(currentNode) && ast.isParserRule(currentNode.rule.ref) && currentNode.rule.ref.fragment) {
-                const createdNewObject = this.checkAssignmentsToTheSameFeatureNested([currentNode.rule.ref.definition], currentMultiplicity, map, accept);
+                const createdNewObject = this.checkAssignmentsToTheSameFeatureNested(startRule, [currentNode.rule.ref.definition], currentMultiplicity, map, accept);
                 resultCreatedNewObject = createdNewObject || resultCreatedNewObject;
             }
 
@@ -1118,7 +1138,7 @@ export class LangiumGrammarValidator {
             if (ast.isGroup(currentNode) || ast.isUnorderedGroup(currentNode)) {
                 // all members of the group are relavant => collect them all
                 const mapGroup: Map<string, AssignmentUse> = new Map(); // store assignments for Alternatives separately
-                const createdNewObject = this.checkAssignmentsToTheSameFeatureNested(currentNode.elements, 1, mapGroup, accept);
+                const createdNewObject = this.checkAssignmentsToTheSameFeatureNested(startRule, currentNode.elements, 1, mapGroup, accept);
                 mergeAssignmentUse(mapGroup, map, createdNewObject
                     ? (s, t) => (s + t)                         // if a new object is created in the group: ignore the current multiplicity, since a new object is created for each loop cycle!
                     : (s, t) => (s * currentMultiplicity + t)   // otherwise as usual: take the current multiplicity into account
@@ -1132,7 +1152,7 @@ export class LangiumGrammarValidator {
                 let countCreatedObjects = 0;
                 for (const alternative of currentNode.elements) {
                     const mapCurrentAlternative: Map<string, AssignmentUse> = new Map();
-                    const createdNewObject = this.checkAssignmentsToTheSameFeatureNested([alternative], 1, mapCurrentAlternative, accept);
+                    const createdNewObject = this.checkAssignmentsToTheSameFeatureNested(startRule, [alternative], 1, mapCurrentAlternative, accept);
                     mergeAssignmentUse(mapCurrentAlternative, mapAllAlternatives, createdNewObject
                         ? (s, t) => Math.max(s, t)                         // if a new object is created in an alternative: ignore the current multiplicity, since a new object is created for each loop cycle!
                         : (s, t) => Math.max(s * currentMultiplicity, t)   // otherwise as usual: take the current multiplicity into account
