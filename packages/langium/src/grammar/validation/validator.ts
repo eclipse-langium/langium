@@ -138,6 +138,7 @@ export namespace IssueCodes {
     export const SuperfluousInfer = 'superfluous-infer';
     export const OptionalUnorderedGroup = 'optional-unordered-group';
     export const ParsingRuleEmpty = 'parsing-rule-empty';
+    export const ReplaceOperatorMultiAssignment = 'replace-operator-for-multi-assignments';
 }
 
 export class LangiumGrammarValidator {
@@ -1038,7 +1039,11 @@ export class LangiumGrammarValidator {
                         accept(
                             'warning',
                             `Found multiple assignments to '${assignment.feature}' with the '${assignment.operator}' assignment operator. Consider using '+=' instead to prevent data loss.`,
-                            { node: assignment, property: 'feature' } // use 'feature' instead of 'operator', since it is pretty hard to see
+                            {
+                                node: assignment,
+                                property: 'feature', // use 'feature' instead of 'operator', since it is pretty hard to see
+                                data: diagnosticData(IssueCodes.ReplaceOperatorMultiAssignment),
+                            }
                         );
                     }
                 }
@@ -1099,9 +1104,9 @@ export class LangiumGrammarValidator {
             if (ast.isAlternatives(currentNode)) {
                 const mapAllAlternatives: Map<string, AssignmentUse> = new Map(); // store assignments for Alternatives separately
                 let countCreatedObjects = 0;
-                for (const child of currentNode.elements) {
+                for (const alternative of currentNode.elements) {
                     const mapCurrentAlternative: Map<string, AssignmentUse> = new Map();
-                    const createdNewObject = this.checkOperatorMultiplicitiesForMultiAssignmentsNested([child], 1, mapCurrentAlternative, accept);
+                    const createdNewObject = this.checkOperatorMultiplicitiesForMultiAssignmentsNested([alternative], 1, mapCurrentAlternative, accept);
                     mergeAssignmentUse(mapCurrentAlternative, mapAllAlternatives, createdNewObject
                         ? (s, t) => Math.max(s, t)                         // if a new object is created in an alternative: ignore the current multiplicity, since a new object is created for each loop cycle!
                         : (s, t) => Math.max(s * currentMultiplicity, t)   // otherwise as usual: take the current multiplicity into account

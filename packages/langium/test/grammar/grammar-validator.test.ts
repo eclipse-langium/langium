@@ -1269,9 +1269,9 @@ describe('Property type is not a mix of cross-ref and non-cross-ref types.', () 
 
 });
 
-describe('Assignments with = instead of +=', () => {
-    function getMessage(featureName: string): string {
-        return `Found multiple assignments to '${featureName}' with the '=' assignment operator. Consider using '+=' instead to prevent data loss.`;
+describe('Assignments with = (or ?=) instead of +=', () => {
+    function getMessage(featureName: string, operator: ('=' | '?=') = '='): string {
+        return `Found multiple assignments to '${featureName}' with the '${operator}' assignment operator. Consider using '+=' instead to prevent data loss.`;
     }
     function getGrammar(content: string): string {
         return `
@@ -1615,6 +1615,30 @@ describe('Assignments with = instead of +=', () => {
             Person: 'person' name=ID ;
         `));
         expectNoIssues(validation);
+    });
+
+    // the test cases for multiple ?= assignments are not complete, since the logic to identify them is the same as for multiple = assignments
+
+    test('Looped ?= assignment', async () => {
+        const validation = await validate(getGrammar(`
+            entry Model:
+                persons=Person;
+            Person: ('person' name+=ID active?='active')+;
+        `));
+        expect(validation.diagnostics.length).toBe(1);
+        expect(validation.diagnostics[0].message).toBe(getMessage('active', '?='));
+    });
+
+    test('Looped ?= assignment via fragment', async () => {
+        const validation = await validate(getGrammar(`
+            entry Model:
+                persons=Person;
+            fragment Assign:
+                'person' name+=ID active?='active';
+            Person: Assign+;
+        `));
+        expect(validation.diagnostics.length).toBe(1);
+        expect(validation.diagnostics[0].message).toBe(getMessage('active', '?='));
     });
 
 });
