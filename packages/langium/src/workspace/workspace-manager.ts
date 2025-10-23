@@ -196,10 +196,6 @@ export class DefaultWorkspaceManager implements WorkspaceManager {
      */
     protected async traverseFolder(folderPath: URI, uris: URI[]): Promise<void> {
         try {
-            if( ! this.fileSystemProvider.existsSync(folderPath) ) {
-                console.info(`Directory ${folderPath} does not exist`);
-                return Promise.resolve();
-            }
             const content = await this.fileSystemProvider.readDirectory(folderPath);
             await Promise.all(content.map(async entry => {
                 if (this.shouldIncludeEntry(entry)) {
