@@ -206,9 +206,8 @@ export class DefaultWorkspaceManager implements WorkspaceManager {
                     }
                 }
             }));
-        } catch(e) {
-            console.error('Failure while reading directory content', e);
-            return Promise.resolve();
+        } catch (e) {
+            console.error('Failure to read directory content of ' + folderPath.toString(true), e);
         }
     }
 
