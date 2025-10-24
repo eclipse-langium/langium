@@ -6,6 +6,7 @@
 
 import type { AstNode, Grammar, LangiumDocument, Properties } from 'langium';
 import { AstUtils, EmptyFileSystem, GrammarAST, URI } from 'langium';
+import { expandToString } from 'langium/generate';
 import { IssueCodes, createLangiumGrammarServices } from 'langium/grammar';
 import type { ValidationResult } from 'langium/test';
 import { clearDocuments, expectError, expectIssue, expectNoIssues, expectWarning, parseHelper, validationHelper } from 'langium/test';
@@ -322,22 +323,52 @@ describe('checkReferenceToRuleButNotType', () => {
 });
 
 describe('Check Rule Fragment Validation', () => {
-    const grammar = `
-    grammar g
-    type Type = Fragment;
-    fragment Fragment: name=ID;
-    terminal ID: /[_a-zA-Z][\\w_]*/;
-    `.trim();
-
-    let validationResult: ValidationResult<GrammarAST.Grammar>;
-
-    beforeAll(async () => {
-        validationResult = await validate(grammar);
+    test('Fragment used in type definition', async () => {
+        const grammar = expandToString`
+            grammar g
+            type Type = Fragment;
+            fragment Fragment: name=ID;
+            terminal ID: /[_a-zA-Z][\\w_]*/;
+        `;
+        const validationResult = await validate(grammar);
+        const range = { start: { character: 12, line: 1 }, end: { character: 20, line: 1 } };
+        expectError(validationResult, 'Cannot use rule fragments in types.', { range });
     });
 
-    test('Rule Fragment Validation', () => {
-        const range = { start: { character: 16, line: 1 }, end: { character: 24, line: 1 } };
-        expectError(validationResult, 'Cannot use rule fragments in types.', { range });
+    test('Fragment with defined data type', async () => {
+        const grammar = expandToString`
+            grammar G
+            entry R: r1=ID F;
+            fragment F returns string: r2=ID;
+            terminal ID: /[_a-zA-Z][\\w_]*/;
+        `;
+        const validationResult = await validate(grammar);
+        const range = { start: { character: 19, line: 2 }, end: { character: 25, line: 2 } };
+        expectError(validationResult, "Fragments assign values to the object of the caller, but don't create a new object themselves. Therefore specifying the type of the returned object is not possible.", { range });
+    });
+
+    test('Fragment with defined returnType', async () => {
+        const grammar = expandToString`
+            grammar G
+            entry R: r1=ID F;
+            fragment F returns R: r2=ID;
+            terminal ID: /[_a-zA-Z][\\w_]*/;
+        `;
+        const validationResult = await validate(grammar);
+        const range = { start: { character: 19, line: 2 }, end: { character: 20, line: 2 } };
+        expectError(validationResult, "Fragments assign values to the object of the caller, but don't create a new object themselves. Therefore specifying the type of the returned object is not possible.", { range });
+    });
+
+    test('Fragment with defined inferredType', async () => {
+        const grammar = expandToString`
+            grammar G
+            entry R: r1=ID F;
+            fragment F infers R: r2=ID;
+            terminal ID: /[_a-zA-Z][\\w_]*/;
+        `;
+        const validationResult = await validate(grammar);
+        const range = { start: { character: 11, line: 2 }, end: { character: 19, line: 2 } };
+        expectError(validationResult, "Fragments assign values to the object of the caller, but don't create a new object themselves. Therefore specifying the type of the returned object is not possible.", { range });
     });
 });
 
@@ -354,9 +385,6 @@ describe('Check cross-references to inferred types', () => {
         terminal ID: /[a-zA-Z_][a-zA-Z0-9_]*/;
         `.trim());
         expectNoIssues(validationResult);
-        // expect(validationResult.diagnostics).toHaveLength(1);
-        // expect(validationResult.diagnostics[0].message).toBe('Cannot infer terminal or data type rule for cross-reference.');
-        // expectError(validationResult, 'Cannot use rule fragments in types.');
     });
 
     test('infer in the parser rules body', async () => {
@@ -371,9 +399,6 @@ describe('Check cross-references to inferred types', () => {
         terminal ID: /[a-zA-Z_][a-zA-Z0-9_]*/;
         `.trim());
         expectNoIssues(validationResult);
-        // expect(validationResult.diagnostics).toHaveLength(1);
-        // expect(validationResult.diagnostics[0].message).toBe('Cannot infer terminal or data type rule for cross-reference.');
-        // expectError(validationResult, 'Cannot use rule fragments in types.');
     });
 });
 
