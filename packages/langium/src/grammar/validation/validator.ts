@@ -10,7 +10,7 @@ import * as ast from '../../languages/generated/ast.js';
 import type { NamedAstNode } from '../../references/name-provider.js';
 import type { References } from '../../references/references.js';
 import type { AstNode, Properties, Reference } from '../../syntax-tree.js';
-import { getContainerOfType, getDocument, streamAllContents } from '../../utils/ast-utils.js';
+import { getContainerOfType, getDocument, streamAllContents, streamAst } from '../../utils/ast-utils.js';
 import { MultiMap } from '../../utils/collections.js';
 import { toDocumentSegment } from '../../utils/cst-utils.js';
 import { assertCondition, assertUnreachable } from '../../utils/errors.js';
@@ -986,12 +986,11 @@ export class LangiumGrammarValidator {
     }
 
     checkAssignmentToFragmentRule(assignment: ast.Assignment, accept: ValidationAcceptor): void {
-        if (!assignment.terminal) {
-            return;
-        }
-        if (ast.isRuleCall(assignment.terminal) && ast.isParserRule(assignment.terminal.rule.ref) && assignment.terminal.rule.ref.fragment) {
-            accept('error', `Cannot use fragment rule '${assignment.terminal.rule.ref.name}' for assignment of property '${assignment.feature}'.`, { node: assignment, property: 'terminal' });
-        }
+        streamAst(assignment.terminal).forEach(node => {
+            if (ast.isRuleCall(node) && ast.isParserRule(node.rule.ref) && node.rule.ref.fragment) {
+                accept('error', `Cannot use fragment rule '${node.rule.ref.name}' for assignment of property '${assignment.feature}'.`, { node: node, property: 'rule' });
+            }
+        });
     }
 
     checkAssignmentTypes(assignment: ast.Assignment, accept: ValidationAcceptor): void {

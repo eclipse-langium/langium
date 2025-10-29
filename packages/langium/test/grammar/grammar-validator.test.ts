@@ -4,7 +4,7 @@
  * terms of the MIT License, which is available in the project root.
  ******************************************************************************/
 
-import type { AstNode, Grammar, GrammarAST as GrammarTypes, LangiumDocument, Properties } from 'langium';
+import type { AstNode, Grammar, LangiumDocument, Properties } from 'langium';
 import { AstUtils, EmptyFileSystem, GrammarAST, stream, URI } from 'langium';
 import { IssueCodes, createLangiumGrammarServices } from 'langium/grammar';
 import type { ValidationResult } from 'langium/test';
@@ -39,8 +39,9 @@ describe('Langium grammar validation', () => {
         // arrange
         const grammarText = `
         grammar Test
-        entry A: b=B;
+        entry A: b=B c=('c' | C);
         fragment B: name=ID;
+        fragment C: name=ID;
         terminal ID returns string: /[a-z]+/;
         `;
 
@@ -48,9 +49,14 @@ describe('Langium grammar validation', () => {
         const validationResult = await validate(grammarText);
 
         // assert
+        const assignments = AstUtils.streamAst(validationResult.document.parseResult.value).filter(GrammarAST.isAssignment).toArray();
         expectError(validationResult, /Cannot use fragment rule 'B' for assignment of property 'b'./, {
-            node: (validationResult.document.parseResult.value.rules[0] as GrammarAST.ParserRule).definition as GrammarAST.Assignment,
-            property: 'terminal'
+            node: (assignments[0].terminal as GrammarAST.RuleCall),
+            property: 'rule'
+        });
+        expectError(validationResult, /Cannot use fragment rule 'C' for assignment of property 'c'./, {
+            node: (assignments[1].terminal as GrammarAST.Alternatives).elements[1] as GrammarAST.RuleCall,
+            property: 'rule'
         });
     });
 
@@ -237,7 +243,7 @@ describe('Data type rule return type', () => {
             ParserRule returns string: name='ParserRule';
         `);
         expectError(validationResult, 'Normal parser rules are not allowed to return a primitive value. Use a datatype rule for that.', {
-            node: validationResult.document.parseResult.value.rules[0] as GrammarTypes.ParserRule,
+            node: validationResult.document.parseResult.value.rules[0] as GrammarAST.ParserRule,
             property: 'dataType'
         });
     });
@@ -263,7 +269,7 @@ describe('Data type rule return type', () => {
             type ParserRuleType = 'ParserRule';
         `);
         expectError(validationResult, 'Normal parser rules are not allowed to return a primitive value. Use a datatype rule for that.', {
-            node: validationResult.document.parseResult.value.rules[0] as GrammarTypes.ParserRule,
+            node: validationResult.document.parseResult.value.rules[0] as GrammarAST.ParserRule,
             property: 'returnType'
         });
     });
@@ -306,7 +312,7 @@ describe('checkReferenceToRuleButNotType', () => {
     });
 
     test('AtomType validation', () => {
-        const unionType = validationResult.document.parseResult.value.types[0].type as GrammarTypes.UnionType;
+        const unionType = validationResult.document.parseResult.value.types[0].type as GrammarAST.UnionType;
         const missingType = unionType.types[0];
         expectError(validationResult, "Could not resolve reference to AbstractType named 'Reference'.", {
             node: missingType
@@ -1240,7 +1246,7 @@ describe('Property type is not a mix of cross-ref and non-cross-ref types.', () 
         ;
         `);
         const rule1Assignment = AstUtils.streamContents(validation.document.parseResult.value.rules[1])
-            .filter(node => GrammarAST.isAssignment(node)).head() as GrammarTypes.Assignment;
+            .filter(node => GrammarAST.isAssignment(node)).head() as GrammarAST.Assignment;
         expect(rule1Assignment).not.toBe(undefined);
 
         expectError(validation, /Mixing a cross-reference with other types is not supported. Consider splitting property /, {
@@ -1258,7 +1264,7 @@ describe('Property type is not a mix of cross-ref and non-cross-ref types.', () 
         ;
         `);
         const rule1Assignment = AstUtils.streamContents(validation.document.parseResult.value.rules[1])
-            .filter(node => GrammarAST.isAssignment(node)).head() as GrammarTypes.Assignment;
+            .filter(node => GrammarAST.isAssignment(node)).head() as GrammarAST.Assignment;
         expect(rule1Assignment).not.toBe(undefined);
 
         expectError(validation, /Mixing a cross-reference with other types is not supported. Consider splitting property /, {
@@ -1936,8 +1942,8 @@ describe('Cross-reference to type union is only valid if all alternatives are AS
 
         terminal ID returns string: /[a-z]+/;
         `);
-        const rule = validationResult.document.parseResult.value.rules[1] as GrammarTypes.ParserRule;
-        const reference = ((rule.definition as GrammarTypes.Assignment).terminal as GrammarTypes.Assignment).terminal as GrammarTypes.CrossReference;
+        const rule = validationResult.document.parseResult.value.rules[1] as GrammarAST.ParserRule;
+        const reference = ((rule.definition as GrammarAST.Assignment).terminal as GrammarAST.Assignment).terminal as GrammarAST.CrossReference;
         expectError(
             validationResult,
             /Cross-reference on type union is only valid if all alternatives are AST nodes. B is not an AST node./,
@@ -1959,8 +1965,8 @@ describe('Cross-reference to type union is only valid if all alternatives are AS
 
         terminal ID returns string: /[a-z]+/;
         `);
-        const rule = validationResult.document.parseResult.value.rules[2] as GrammarTypes.ParserRule;
-        const reference = ((rule.definition as GrammarTypes.Assignment).terminal as GrammarTypes.Assignment).terminal as GrammarTypes.CrossReference;
+        const rule = validationResult.document.parseResult.value.rules[2] as GrammarAST.ParserRule;
+        const reference = ((rule.definition as GrammarAST.Assignment).terminal as GrammarAST.Assignment).terminal as GrammarAST.CrossReference;
         expectError(
             validationResult,
             /Cross-reference on type union is only valid if all alternatives are AST nodes. C is not an AST node./,
@@ -1979,8 +1985,8 @@ describe('Cross-reference to type union is only valid if all alternatives are AS
 
         terminal ID returns string: /[a-z]+/;
         `);
-        const rule = validationResult.document.parseResult.value.rules[0] as GrammarTypes.ParserRule;
-        const reference = ((rule.definition as GrammarTypes.Assignment).terminal as GrammarTypes.Assignment).terminal as GrammarTypes.CrossReference;
+        const rule = validationResult.document.parseResult.value.rules[0] as GrammarAST.ParserRule;
+        const reference = ((rule.definition as GrammarAST.Assignment).terminal as GrammarAST.Assignment).terminal as GrammarAST.CrossReference;
         expectError(
             validationResult,
             /Cross-reference on type union is only valid if all alternatives are AST nodes. A, "foo" are not AST nodes./,
@@ -2048,7 +2054,7 @@ describe('Cross-reference to type union is only valid if all alternatives are AS
 
 describe('Prohibit empty parser rules', async () => {
 
-    function detectEmptyRules(validationResult: ValidationResult<GrammarTypes.Grammar>, ...ruleNames: string[]) {
+    function detectEmptyRules(validationResult: ValidationResult<GrammarAST.Grammar>, ...ruleNames: string[]) {
         for (const rule of validationResult.document.parseResult.value.rules) {
             if (GrammarAST.isParserRule(rule)) {
                 if (ruleNames.includes(rule.name)) {
@@ -2353,7 +2359,7 @@ describe('Infix rule type validation', () => {
         Primary: value=ID;
         terminal ID: /[_a-zA-Z][\\w_]*/;
         `);
-        const rule = validation.document.parseResult.value.rules[1] as GrammarTypes.InfixRule;
+        const rule = validation.document.parseResult.value.rules[1] as GrammarAST.InfixRule;
         expectError(validation, 'Infix rules are not allowed to return a primitive value.', {
             node: rule,
             property: 'dataType'
