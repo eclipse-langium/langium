@@ -981,7 +981,7 @@ export class LangiumGrammarValidator {
         if (rule.fragment) {
             if (rule.dataType || rule.returnType || rule.inferredType) {
                 accept('error',
-                    "Fragments assign values to the object of the caller, but don't create a new object themselves. Therefore specifying the type of the returned object is not possible.",
+                    'Fragment rules cannot specify a return type.',
                     { node: rule, property: rule.dataType ? 'dataType' : rule.returnType ? 'returnType' : 'inferredType' }
                 );
             }

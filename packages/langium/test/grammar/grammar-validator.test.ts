@@ -344,7 +344,7 @@ describe('Check Rule Fragment Validation', () => {
         `;
         const validationResult = await validate(grammar);
         const range = { start: { character: 19, line: 2 }, end: { character: 25, line: 2 } };
-        expectError(validationResult, "Fragments assign values to the object of the caller, but don't create a new object themselves. Therefore specifying the type of the returned object is not possible.", { range });
+        expectError(validationResult, 'Fragment rules cannot specify a return type.', { range });
     });
 
     test('Fragment with defined returnType', async () => {
@@ -356,7 +356,7 @@ describe('Check Rule Fragment Validation', () => {
         `;
         const validationResult = await validate(grammar);
         const range = { start: { character: 19, line: 2 }, end: { character: 20, line: 2 } };
-        expectError(validationResult, "Fragments assign values to the object of the caller, but don't create a new object themselves. Therefore specifying the type of the returned object is not possible.", { range });
+        expectError(validationResult, 'Fragment rules cannot specify a return type.', { range });
     });
 
     test('Fragment with defined inferredType', async () => {
@@ -368,7 +368,7 @@ describe('Check Rule Fragment Validation', () => {
         `;
         const validationResult = await validate(grammar);
         const range = { start: { character: 11, line: 2 }, end: { character: 19, line: 2 } };
-        expectError(validationResult, "Fragments assign values to the object of the caller, but don't create a new object themselves. Therefore specifying the type of the returned object is not possible.", { range });
+        expectError(validationResult, 'Fragment rules cannot specify a return type.', { range });
     });
 });
 
