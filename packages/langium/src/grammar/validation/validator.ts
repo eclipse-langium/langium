@@ -56,6 +56,7 @@ export function registerValidationChecks(services: LangiumGrammarServices): void
         ],
         ParserRule: [
             validator.checkParserRuleDataType,
+            validator.checkFragmentKeywords,
             validator.checkRuleParameters,
             validator.checkEmptyParserRule,
             validator.checkParserRuleReservedName,
@@ -974,8 +975,20 @@ export class LangiumGrammarValidator {
         const dataTypeRule = isDataTypeRule(rule);
         if (!hasDatatypeReturnType && dataTypeRule) {
             accept('error', 'This parser rule does not create an object. Add a primitive return type or an action to the start of the rule to force object instantiation.', { node: rule, property: 'name' });
-        } else if (hasDatatypeReturnType && !dataTypeRule) {
+        } else if (hasDatatypeReturnType && !dataTypeRule && !rule.fragment) { // fragments are validated in the next check below
             accept('error', 'Normal parser rules are not allowed to return a primitive value. Use a datatype rule for that.', { node: rule, property: rule.dataType ? 'dataType' : 'returnType' });
+        }
+    }
+
+    checkFragmentKeywords(rule: ast.ParserRule, accept: ValidationAcceptor): void {
+        if (rule.fragment) {
+            if (rule.dataType || rule.returnType || rule.inferredType) {
+                accept('error',
+                    'Fragment rules cannot specify a return type.',
+                    { node: rule, property: rule.dataType ? 'dataType' : rule.returnType ? 'returnType' : 'inferredType' }
+                );
+            }
+            // `rule.entry` don't need to be checked, since the grammar allows either `rule.fragment` or `rule.entry`.
         }
     }
 
