@@ -10,15 +10,15 @@ import * as ast from '../../languages/generated/ast.js';
 import type { NamedAstNode } from '../../references/name-provider.js';
 import type { References } from '../../references/references.js';
 import type { AstNode, Properties, Reference } from '../../syntax-tree.js';
-import { getContainerOfType, streamAllContents, streamAst } from '../../utils/ast-utils.js';
+import { getContainerOfType, getDocument, streamAllContents, streamAst } from '../../utils/ast-utils.js';
 import { MultiMap } from '../../utils/collections.js';
 import { toDocumentSegment } from '../../utils/cst-utils.js';
-import { assertUnreachable } from '../../utils/errors.js';
+import { assertCondition, assertUnreachable } from '../../utils/errors.js';
 import { findNameAssignment, findNodeForKeyword, findNodeForProperty, getAllReachableRules, getAllRulesUsedForCrossReferences, isArrayCardinality, isDataTypeRule, isOptionalCardinality, terminalRegex } from '../../utils/grammar-utils.js';
 import type { Stream } from '../../utils/stream.js';
 import { stream } from '../../utils/stream.js';
 import { UriUtils } from '../../utils/uri-utils.js';
-import type { DiagnosticData, ValidationAcceptor, ValidationChecks } from '../../validation/validation-registry.js';
+import type { DiagnosticData, DiagnosticInfo, ValidationAcceptor, ValidationChecks } from '../../validation/validation-registry.js';
 import { diagnosticData } from '../../validation/validation-registry.js';
 import type { AstNodeLocator } from '../../workspace/ast-node-locator.js';
 import type { LangiumDocuments } from '../../workspace/documents.js';
@@ -44,6 +44,7 @@ export function registerValidationChecks(services: LangiumGrammarServices): void
     const checks: ValidationChecks<ast.LangiumGrammarAstType> = {
         Action: [
             validator.checkAssignmentReservedName,
+            validator.checkActionAssignmentsToTheSameFeature,
         ],
         AbstractRule: validator.checkRuleName,
         Assignment: [
@@ -59,7 +60,7 @@ export function registerValidationChecks(services: LangiumGrammarServices): void
             validator.checkRuleParameters,
             validator.checkEmptyParserRule,
             validator.checkParserRuleReservedName,
-            validator.checkOperatorMultiplicitiesForMultiAssignments,
+            validator.checkRuleAssignmentsToTheSameFeature,
         ],
         InfixRule: [
             validator.checkInfixRuleDataType,
@@ -139,6 +140,8 @@ export namespace IssueCodes {
     export const SuperfluousInfer = 'superfluous-infer';
     export const OptionalUnorderedGroup = 'optional-unordered-group';
     export const ParsingRuleEmpty = 'parsing-rule-empty';
+    export const ReplaceOperatorMultiAssignment = 'replace-operator-for-multi-assignments';
+    export const MixedAssignmentOperators = 'mixed-use-of-assignment-operators';
 }
 
 export class LangiumGrammarValidator {
@@ -1029,48 +1032,118 @@ export class LangiumGrammarValidator {
         }
     }
 
-    /** This validation recursively looks at all assignments (and rewriting actions) with '=' as assignment operator and checks,
-     * whether the operator should be '+=' instead. */
-    checkOperatorMultiplicitiesForMultiAssignments(rule: ast.ParserRule, accept: ValidationAcceptor): void {
-        // for usual parser rules AND for fragments, but not for data type rules!
-        if (!rule.dataType) {
-            this.checkOperatorMultiplicitiesForMultiAssignmentsIndependent([rule.definition], accept);
+    /**
+     * This validation recursively collects all assignments (and rewriting actions: see the check/entry point in the next function) to the same feature and validates them:
+     * Assignment operators '?=', '=' and '+=' should not be mixed.
+     * Assignments with '=' as assignment operator should be replaced be '+=', if assignments to the feature might occure more than once.
+     */
+    checkRuleAssignmentsToTheSameFeature(rule: ast.ParserRule, accept: ValidationAcceptor): void {
+        // validate only usual parser rules, but no fragments (they are validated when validating their using parser rules) and no data type rules!
+        if (!rule.dataType && !rule.fragment) {
+            this.checkAssignmentsToTheSameFeature(rule, [rule.definition], new Map(), accept);
         }
     }
 
-    private checkOperatorMultiplicitiesForMultiAssignmentsIndependent(startNodes: AstNode[], accept: ValidationAcceptor, map: Map<string, AssignmentUse> = new Map()): void {
+    checkActionAssignmentsToTheSameFeature(action: ast.Action, accept: ValidationAcceptor): void {
+        if (action.feature) {
+            // tree rewriting action
+            const mapForNewObject = new Map();
+            storeAssignmentUse(mapForNewObject, action.feature, 1, action); // remember the special rewriting feature
+            // all following nodes are put into the new object => check their assignments independently
+            const sibblings = ast.isGroup(action.$container) || ast.isUnorderedGroup(action.$container) ? action.$container.elements : [action];
+            this.checkAssignmentsToTheSameFeature(action, sibblings.slice(sibblings.indexOf(action) + 1), mapForNewObject, accept);
+        } else {
+            // this action does not create a new AstNode => no assignments to check
+        }
+    }
+
+    private checkAssignmentsToTheSameFeature(
+        startRule: ast.ParserRule|ast.Action, startNodes: AstNode[], map: Map<string, AssignmentUse>, accept: ValidationAcceptor
+    ): void {
         // check all starting nodes
-        this.checkOperatorMultiplicitiesForMultiAssignmentsNested(startNodes, 1, map, accept);
+        const circularFragments = new Set<ast.ParserRule>();
+        this.checkAssignmentsToTheSameFeatureNested(startRule, startNodes, 1, map, [], circularFragments, accept);
+
+        // handle properties of fragments which are called in circular way => count its properties multiple times
+        for (const values of map.values()) {
+            for (const assignment of values.assignments) {
+                // for each found assignment, check whether it is defined inside a fragment which is called in circular way
+                const fragmentContainer = getContainerOfType(assignment, ast.isParserRule);
+                if (fragmentContainer && circularFragments.has(fragmentContainer)) {
+                    values.counter += 1; // This calculation is not accurate, it is only important to know, that this assignment is called multiple times (>= 2).
+                }
+            }
+        }
 
         // create the warnings
         for (const entry of map.values()) {
-            if (entry.counter >= 2) {
+            // check mixed use of ?=, = and +=
+            const usedOperators = new Set<string>();
+            for (const assignment of entry.assignments) {
+                if (assignment.operator) {
+                    usedOperators.add(assignment.operator);
+                }
+            }
+            if (usedOperators.size >= 2) {
+                const usedOperatorsPrinted = stream(usedOperators).map(op => `'${op}'`).join(', ');
+                for (const assignment of entry.assignments) {
+                    const [info, docMsg] = createInfo(assignment, IssueCodes.MixedAssignmentOperators);
+                    accept(
+                        'warning',
+                        `Don't mix operators (${usedOperatorsPrinted}) when assigning values to the same feature '${assignment.feature}'${docMsg}.`,
+                        info, // the issue code is not used for a code action, but is relevant for serializability
+                    );
+                }
+            } else if (entry.counter >= 2) {
+                // check for multiple assignments with '?=' or '=' instead of '+='
                 for (const assignment of entry.assignments) {
                     if (assignment.operator !== '+=') {
+                        const [info, docMsg] = createInfo(assignment, IssueCodes.ReplaceOperatorMultiAssignment);
                         accept(
                             'warning',
-                            `Found multiple assignments to '${assignment.feature}' with the '${assignment.operator}' assignment operator. Consider using '+=' instead to prevent data loss.`,
-                            { node: assignment, property: 'feature' } // use 'feature' instead of 'operator', since it is pretty hard to see
+                            `Found multiple assignments to '${assignment.feature}' with the '${assignment.operator}' assignment operator${docMsg}. Consider using '+=' instead to prevent data loss.`,
+                            info, // the issue code is used for a code action, and it is relevant for serializability as well
                         );
                     }
                 }
+            } else {
+                // the assignments to this feature are fine
+            }
+        }
+
+        // Utility to handle the case, that the critical assignment is located in another document (for which validation markers cannot be reported now).
+        function createInfo(assignment: ast.Assignment | ast.Action, code: string): [DiagnosticInfo<ast.Assignment | ast.Action | ast.ParserRule>, string] {
+            const assignmentDocument = getDocument(assignment);
+            if (assignmentDocument === getDocument(startRule)) {
+                // the assignment is located in the document of the start rule which is currently validated
+                return [<DiagnosticInfo<ast.Assignment | ast.Action>>{
+                    node: assignment,
+                    property: 'feature', // use 'feature' instead of 'operator', since it is pretty hard to see
+                    data: diagnosticData(code),
+                }, ''];
+            } else {
+                // the assignment is located inside another document => annotate the issue at the start rule
+                return [<DiagnosticInfo<ast.ParserRule>>{
+                    node: startRule,
+                    property: 'name',
+                    data: diagnosticData(code),
+                }, ` by rule '${getContainerOfType(assignment, ast.isParserRule)?.name}' in the grammar '${UriUtils.basename(assignmentDocument.uri)}'`];
             }
         }
     }
 
-    private checkOperatorMultiplicitiesForMultiAssignmentsNested(nodes: AstNode[], parentMultiplicity: number, map: Map<string, AssignmentUse>, accept: ValidationAcceptor): boolean {
+    private checkAssignmentsToTheSameFeatureNested(
+        startRule: ast.ParserRule|ast.Action, nodes: AstNode[], parentMultiplicity: number, map: Map<string, AssignmentUse>,
+        visiting: ast.ParserRule[], circularFragments: Set<ast.ParserRule>, accept: ValidationAcceptor
+    ): boolean {
         let resultCreatedNewObject = false;
         // check all given elements
-        for (let i = 0; i < nodes.length; i++) {
-            const currentNode = nodes[i];
+        for (const currentNode of nodes) {
 
             // Tree-Rewrite-Actions are a special case: a new object is created => following assignments are put into the new object
             if (ast.isAction(currentNode) && currentNode.feature) {
                 // (This does NOT count for unassigned actions, i.e. actions without feature name, since they change only the type of the current object.)
-                const mapForNewObject = new Map();
-                storeAssignmentUse(mapForNewObject, currentNode.feature, 1, currentNode); // remember the special rewriting feature
-                // all following nodes are put into the new object => check their assignments independently
-                this.checkOperatorMultiplicitiesForMultiAssignmentsIndependent(nodes.slice(i + 1), accept, mapForNewObject);
+                // The assignments to AstNodes created by this action are validated by another validation check => nothing to do here
                 resultCreatedNewObject = true;
                 break; // breaks the current loop
             }
@@ -1091,15 +1164,27 @@ export class LangiumGrammarValidator {
             // Search for assignments in used fragments as well, since their property values are stored in the current object.
             // But do not search in calls of regular parser rules, since parser rules create new objects.
             if (ast.isRuleCall(currentNode) && ast.isParserRule(currentNode.rule.ref) && currentNode.rule.ref.fragment) {
-                const createdNewObject = this.checkOperatorMultiplicitiesForMultiAssignmentsNested([currentNode.rule.ref.definition], currentMultiplicity, map, accept);
-                resultCreatedNewObject = createdNewObject || resultCreatedNewObject;
+                const foundIndex = visiting.indexOf(currentNode.rule.ref);
+                if (foundIndex >= 0) {
+                    // remember fragments which are called in circular way (their assignments will be counted more often later)
+                    //  all currently visited fragments are part of the circle/path
+                    for (let i = foundIndex; i < visiting.length; i++) {
+                        const circleParticipant = visiting[i];
+                        circularFragments.add(circleParticipant);
+                    }
+                } else {
+                    visiting.push(currentNode.rule.ref);
+                    const createdNewObject = this.checkAssignmentsToTheSameFeatureNested(startRule, [currentNode.rule.ref.definition], currentMultiplicity, map, visiting, circularFragments, accept);
+                    resultCreatedNewObject = createdNewObject || resultCreatedNewObject;
+                    assertCondition(visiting.pop() === currentNode.rule.ref); // prevent circles, but don't "cache" the results, since the fragment could be called multiple times in non-circular way
+                }
             }
 
             // look for assignments to the same feature nested within groups
             if (ast.isGroup(currentNode) || ast.isUnorderedGroup(currentNode)) {
                 // all members of the group are relavant => collect them all
                 const mapGroup: Map<string, AssignmentUse> = new Map(); // store assignments for Alternatives separately
-                const createdNewObject = this.checkOperatorMultiplicitiesForMultiAssignmentsNested(currentNode.elements, 1, mapGroup, accept);
+                const createdNewObject = this.checkAssignmentsToTheSameFeatureNested(startRule, currentNode.elements, 1, mapGroup, visiting, circularFragments, accept);
                 mergeAssignmentUse(mapGroup, map, createdNewObject
                     ? (s, t) => (s + t)                         // if a new object is created in the group: ignore the current multiplicity, since a new object is created for each loop cycle!
                     : (s, t) => (s * currentMultiplicity + t)   // otherwise as usual: take the current multiplicity into account
@@ -1111,9 +1196,9 @@ export class LangiumGrammarValidator {
             if (ast.isAlternatives(currentNode)) {
                 const mapAllAlternatives: Map<string, AssignmentUse> = new Map(); // store assignments for Alternatives separately
                 let countCreatedObjects = 0;
-                for (const child of currentNode.elements) {
+                for (const alternative of currentNode.elements) {
                     const mapCurrentAlternative: Map<string, AssignmentUse> = new Map();
-                    const createdNewObject = this.checkOperatorMultiplicitiesForMultiAssignmentsNested([child], 1, mapCurrentAlternative, accept);
+                    const createdNewObject = this.checkAssignmentsToTheSameFeatureNested(startRule, [alternative], 1, mapCurrentAlternative, visiting, circularFragments, accept);
                     mergeAssignmentUse(mapCurrentAlternative, mapAllAlternatives, createdNewObject
                         ? (s, t) => Math.max(s, t)                         // if a new object is created in an alternative: ignore the current multiplicity, since a new object is created for each loop cycle!
                         : (s, t) => Math.max(s * currentMultiplicity, t)   // otherwise as usual: take the current multiplicity into account
