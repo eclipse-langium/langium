@@ -24,7 +24,7 @@ import type { MarkupContent } from 'vscode-languageserver';
 import { CompletionItemKind, CompletionList, Position } from 'vscode-languageserver';
 import * as ast from '../../languages/generated/ast.js';
 import { assignMandatoryProperties, getContainerOfType } from '../../utils/ast-utils.js';
-import { findDeclarationNodeAtOffset, findLeafNodeBeforeOffset } from '../../utils/cst-utils.js';
+import { findDeclarationNodeAtOffset, findLeafNodeBeforeOffset, getDatatypeNode } from '../../utils/cst-utils.js';
 import { getEntryRule, getExplicitRuleType } from '../../utils/grammar-utils.js';
 import { stream, type Stream } from '../../utils/stream.js';
 import { findFirstFeatures, findNextFeatures } from './follow-element-computation.js';
@@ -326,18 +326,14 @@ export class DefaultCompletionProvider implements CompletionProvider {
     }
 
     protected findDataTypeRuleStart(cst: CstNode, offset: number): [number, number] | undefined {
-        let containerNode: CstNode | undefined = findDeclarationNodeAtOffset(cst, offset, this.grammarConfig.nameRegexp);
+        const containerNode = findDeclarationNodeAtOffset(cst, offset, this.grammarConfig.nameRegexp);
+        if (!containerNode) {
+            return undefined;
+        }
         // Identify whether the element was parsed as part of a data type rule
-        let isDataTypeNode = Boolean(getContainerOfType(containerNode?.grammarSource, ast.isParserRule)?.dataType);
-        if (isDataTypeNode) {
-            while (isDataTypeNode) {
-                // Use the container to find the correct parent element
-                containerNode = containerNode?.container;
-                isDataTypeNode = Boolean(getContainerOfType(containerNode?.grammarSource, ast.isParserRule)?.dataType);
-            }
-            if (containerNode) {
-                return [containerNode.offset, containerNode.end];
-            }
+        const fullNode = getDatatypeNode(containerNode);
+        if (fullNode) {
+            return [fullNode.offset, fullNode.end];
         }
         return undefined;
     }

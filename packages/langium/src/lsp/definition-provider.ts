@@ -15,7 +15,7 @@ import type { MaybePromise } from '../utils/promise-utils.js';
 import type { LangiumDocument } from '../workspace/documents.js';
 import { LocationLink } from 'vscode-languageserver';
 import { getDocument } from '../utils/ast-utils.js';
-import { findDeclarationNodeAtOffset } from '../utils/cst-utils.js';
+import { findDeclarationNodeAtOffset, getDatatypeNode } from '../utils/cst-utils.js';
 
 /**
  * Language-specific service for handling go to definition requests.
@@ -79,12 +79,17 @@ export class DefaultDefinitionProvider implements DefinitionProvider {
     }
 
     protected findLinks(source: CstNode): GoToLink[] {
+        const datatypeSourceNode = getDatatypeNode(source) ?? source;
         const targets = this.references.findDeclarationNodes(source);
         const links: GoToLink[] = [];
         for (const target of targets) {
             const targetDocument = getDocument(target.astNode);
             if (targets && targetDocument) {
-                links.push({ source, target, targetDocument });
+                links.push({
+                    source: datatypeSourceNode,
+                    target,
+                    targetDocument
+                });
             }
         }
         return links;
