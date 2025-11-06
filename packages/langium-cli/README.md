@@ -63,7 +63,12 @@ Schema:
             out: string
             // Whether to print diagrams all into a single html file or in separate svg files (optional)
             mode: 'html' | 'svg'
-        }
+        },
+        // Enable generating a BNF-style grammar file
+        bnf: {
+            // Output path to BNF grammar file
+            out: string
+        },
         // Configure the chevrotain parser for a single language
         chevrotainParserConfig: IParserConfig
     }[]

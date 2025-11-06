@@ -408,6 +408,7 @@ export async function runGenerator(config: LangiumConfig, options: GenerateOptio
                 commentStyle: languageConfig.bnf.comment
             });
             const bnfPath = path.resolve(relPath, languageConfig.bnf.out ?? `${grammar.name ?? 'grammar'}.gbnf`);
+            log('log', options, `Writing BNF grammar to ${chalk.white.bold(bnfPath)}`);
             await writeWithFail(bnfPath, genBnf, options);
         }
     }
