@@ -35,12 +35,10 @@ export abstract class AstNodeHoverProvider implements HoverProvider {
 
     protected readonly references: References;
     protected readonly grammarConfig: GrammarConfig;
-    protected readonly languageId: string;
 
     constructor(services: LangiumServices) {
         this.references = services.references.References;
         this.grammarConfig = services.parser.GrammarConfig;
-        this.languageId = services.LanguageMetaData.languageId;
     }
 
     async getHoverContent(document: LangiumDocument, params: HoverParams): Promise<Hover | undefined> {
@@ -61,7 +59,6 @@ export abstract class AstNodeHoverProvider implements HoverProvider {
                     return {
                         contents: {
                             kind: 'markdown',
-                            language: this.languageId,
                             value: contents.join(' ')
                         }
                     };
