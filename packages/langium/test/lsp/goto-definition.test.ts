@@ -4,10 +4,12 @@
  * terms of the MIT License, which is available in the project root.
  ******************************************************************************/
 
-import { describe, test } from 'vitest';
-import { EmptyFileSystem } from 'langium';
+import { describe, expect, test } from 'vitest';
+import { EmptyFileSystem, URI } from 'langium';
 import { createLangiumGrammarServices, createServicesForGrammar } from 'langium/grammar';
 import { expectGoToDefinition } from 'langium/test';
+import { expandToString } from 'langium/generate';
+import type { Range } from 'vscode-languageserver';
 
 /**
  * Represents a grammar file
@@ -112,6 +114,57 @@ describe('Definition Provider', () => {
                 rangeIndex: []
             });
         });
+    });
+
+    test('Should highlight full datatype rule node', async () => {
+        const grammar = `
+        grammar Test
+        entry Model: (elements+=Element)*;
+        Element: Source | Target;
+        Source: 'source' name=FQN;
+        Target: 'target' ref=[Source];
+        FQN returns string: ID ('.' ID)*;
+        terminal ID: /\\w+/;
+        hidden terminal WS: /\\s+/;
+        `;
+        const services = await createServicesForGrammar({ grammar });
+        const text = expandToString`
+            target a.b.c;
+            source a.b.c;
+        `;
+        const workspace = services.shared.workspace;
+        const document = workspace.LangiumDocumentFactory.fromString(text, URI.file('test.txt'));
+        workspace.LangiumDocuments.addDocument(document);
+        await workspace.DocumentBuilder.build([document]);
+        const targetTextRange: Range = {
+            start: document.textDocument.positionAt(text.indexOf('a.b.c')),
+            end: document.textDocument.positionAt(text.indexOf('a.b.c') + 'a.b.c'.length)
+        };
+        const sourceTextRange: Range = {
+            start: document.textDocument.positionAt(text.lastIndexOf('a.b.c')),
+            end: document.textDocument.positionAt(text.lastIndexOf('a.b.c') + 'a.b.c'.length)
+        };
+        const provider = services.lsp.DefinitionProvider!;
+        // Go to definition from target to source
+        const defFromTarget = await provider.getDefinition(document, {
+            textDocument: { uri: document.uri.toString() },
+            position: targetTextRange.start,
+        });
+        expect(defFromTarget).toBeDefined();
+        expect(defFromTarget).toHaveLength(1);
+        const targetSourceRange = defFromTarget![0].originSelectionRange!;
+        expect(targetSourceRange).toBeDefined();
+        expect(targetSourceRange).toEqual(targetTextRange);
+        // Go to definition from target to itself
+        const defFromSource = await provider.getDefinition(document, {
+            textDocument: { uri: document.uri.toString() },
+            position: sourceTextRange.start,
+        });
+        expect(defFromSource).toBeDefined();
+        expect(defFromSource).toHaveLength(1);
+        const sourceRange = defFromSource![0].originSelectionRange!;
+        expect(sourceRange).toBeDefined();
+        expect(sourceRange).toEqual(sourceTextRange);
     });
 });
 
