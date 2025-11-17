@@ -11,6 +11,34 @@ import type { DocumentSegment } from '../workspace/documents.js';
 import type { Stream, TreeStream } from './stream.js';
 import { isCompositeCstNode, isLeafCstNode, isRootCstNode } from '../syntax-tree.js';
 import { TreeStreamImpl } from './stream.js';
+import { getContainerOfType } from './ast-utils.js';
+import { isParserRule } from '../languages/generated/ast.js';
+
+/**
+ * Attempts to find the CST node that belongs to the datatype element that contains the given CST node.
+ *
+ * @param cstNode The CST node for which to find the datatype node.
+ * @returns The CST node corresponding to the datatype element, or the undefined if no such element exists.
+ */
+export function getDatatypeNode(cstNode: CstNode): CstNode | undefined {
+    let current: CstNode | undefined = cstNode;
+    let found = false;
+    while (current) {
+        const definingRule = getContainerOfType(current.grammarSource, isParserRule);
+        if (definingRule && definingRule.dataType) {
+            // Go up the chain. This element might be part of a larger datatype rule
+            current = current.container;
+            found = true;
+        } else if (found) {
+            // The last datatype node is the one we are looking for
+            return current;
+        } else {
+            // We haven't found any datatype node yet and we've reached a non-datatype rule
+            return undefined;
+        }
+    }
+    return undefined;
+}
 
 /**
  * Create a stream of all CST nodes that are directly and indirectly contained in the given root node,
