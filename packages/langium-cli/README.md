@@ -76,6 +76,11 @@ Schema:
     out: string
     // Set the file extension for generated local imports (e.g. ".js")
     importExtension: string
+    // Options to change grammar validation
+    validation: {
+        //  Normal to allow inferrred & declared types, or strict to only allow declared types
+        types: 'normal' | 'strict'
+    }
     // Configure the chevrotain parser for all languages
     chevrotainParserConfig: IParserConfig
 }
