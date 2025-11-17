@@ -63,7 +63,12 @@ Schema:
             out: string
             // Whether to print diagrams all into a single html file or in separate svg files (optional)
             mode: 'html' | 'svg'
-        }
+        },
+        // Enable generating a BNF-style grammar file
+        bnf: {
+            // Output path to BNF grammar file
+            out: string
+        },
         // Configure the chevrotain parser for a single language
         chevrotainParserConfig: IParserConfig
     }[]
@@ -71,6 +76,11 @@ Schema:
     out: string
     // Set the file extension for generated local imports (e.g. ".js")
     importExtension: string
+    // Options to change grammar validation
+    validation: {
+        //  Normal to allow inferrred & declared types, or strict to only allow declared types
+        types: 'normal' | 'strict'
+    }
     // Configure the chevrotain parser for all languages
     chevrotainParserConfig: IParserConfig
 }
