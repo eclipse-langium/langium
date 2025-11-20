@@ -349,6 +349,12 @@ export interface LangiumDocuments {
     getDocument(uri: URI): LangiumDocument | undefined;
 
     /**
+     * If the given URI is a directory, all documents within this directory are retrieved.
+     * If it is a file, just that single document is retrieved.
+     */
+    getDocuments(folder: URI): LangiumDocument[];
+
+    /**
      * Retrieve the document with the given URI. If not present, a new one will be created using the file system access.
      * The new document will be added to the list of documents managed under this service.
      */
@@ -377,15 +383,6 @@ export interface LangiumDocuments {
     hasDocument(uri: URI): boolean;
 
     /**
-     * Flag the document with the given URI as `Changed`, if present, meaning that its content
-     * is no longer valid. The content (parseResult) stays untouched, while internal data may
-     * be dropped to reduce memory footprint.
-     *
-     * @returns the affected {@link LangiumDocument} if existing for convenience
-     */
-    invalidateDocument(uri: URI): LangiumDocument | undefined;
-
-    /**
      * Remove the document with the given URI, if present, and mark it as `Changed`, meaning
      * that its content is no longer valid. The next call to `getOrCreateDocument` with the same
      * URI will create a new document instance.
@@ -405,13 +402,11 @@ export interface LangiumDocuments {
 export class DefaultLangiumDocuments implements LangiumDocuments {
 
     protected readonly langiumDocumentFactory: LangiumDocumentFactory;
-    protected readonly serviceRegistry: ServiceRegistry;
 
     protected readonly documentTrie = new UriTrie<LangiumDocument>();
 
     constructor(services: LangiumSharedCoreServices) {
         this.langiumDocumentFactory = services.workspace.LangiumDocumentFactory;
-        this.serviceRegistry = services.ServiceRegistry;
     }
 
     get all(): Stream<LangiumDocument> {
@@ -463,19 +458,6 @@ export class DefaultLangiumDocuments implements LangiumDocuments {
 
     hasDocument(uri: URI): boolean {
         return this.documentTrie.has(uri.toString());
-    }
-
-    invalidateDocument(uri: URI): LangiumDocument | undefined {
-        const uriString = uri.toString();
-        const langiumDoc = this.documentTrie.find(uriString);
-        if (langiumDoc) {
-            const linker = this.serviceRegistry.getServices(uri).references.Linker;
-            linker.unlink(langiumDoc);
-            langiumDoc.state = DocumentState.Changed;
-            langiumDoc.localSymbols = undefined;
-            langiumDoc.diagnostics = undefined;
-        }
-        return langiumDoc;
     }
 
     deleteDocument(uri: URI): LangiumDocument | undefined {
