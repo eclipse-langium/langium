@@ -109,38 +109,42 @@ export interface UriTrieNode<T> {
  */
 export class UriTrie<T> {
 
-    private readonly root: InternalUriTrieNode<T> = { name: '', children: new Map() };
+    protected readonly root: InternalUriTrieNode<T> = { name: '', children: new Map() };
+
+    protected normalizeUri(uri: URI | string): string {
+        return UriUtils.normalize(uri);
+    }
 
     clear(): void {
         this.root.children.clear();
     }
 
     insert(uri: URI | string, element: T): void {
-        const node = this.getNode(UriUtils.normalize(uri), true);
+        const node = this.getNode(this.normalizeUri(uri), true);
         node.element = element;
     }
 
     delete(uri: URI | string): void {
-        const nodeToDelete = this.getNode(UriUtils.normalize(uri), false);
+        const nodeToDelete = this.getNode(this.normalizeUri(uri), false);
         if (nodeToDelete?.parent) {
             nodeToDelete.parent.children.delete(nodeToDelete.name);
         }
     }
 
     has(uri: URI | string): boolean {
-        return this.getNode(UriUtils.normalize(uri), false)?.element !== undefined;
+        return this.getNode(this.normalizeUri(uri), false)?.element !== undefined;
     }
 
     hasNode(uri: URI | string): boolean {
-        return this.getNode(UriUtils.normalize(uri), false) !== undefined;
+        return this.getNode(this.normalizeUri(uri), false) !== undefined;
     }
 
     find(uri: URI | string): T | undefined {
-        return this.getNode(UriUtils.normalize(uri), false)?.element;
+        return this.getNode(this.normalizeUri(uri), false)?.element;
     }
 
     findNode(uri: URI | string): UriTrieNode<T> | undefined {
-        const uriString = UriUtils.normalize(uri);
+        const uriString = this.normalizeUri(uri);
         const node = this.getNode(uriString, false);
         if (!node) {
             return undefined;
@@ -153,7 +157,7 @@ export class UriTrie<T> {
     }
 
     findChildren(uri: URI | string): Array<UriTrieNode<T>> {
-        const uriString = UriUtils.normalize(uri);
+        const uriString = this.normalizeUri(uri);
         const node = this.getNode(uriString, false);
         if (!node) {
             return [];
@@ -177,9 +181,9 @@ export class UriTrie<T> {
         return this.collectValues(node);
     }
 
-    private getNode(uri: string, create: true): InternalUriTrieNode<T>;
-    private getNode(uri: string, create: false): InternalUriTrieNode<T> | undefined;
-    private getNode(uri: string, create: boolean): InternalUriTrieNode<T> | undefined {
+    protected getNode(uri: string, create: true): InternalUriTrieNode<T>;
+    protected getNode(uri: string, create: false): InternalUriTrieNode<T> | undefined;
+    protected getNode(uri: string, create: boolean): InternalUriTrieNode<T> | undefined {
         const parts = uri.split('/');
         if (uri.charAt(uri.length - 1) === '/') {
             // Remove the last part if the URI ends with a slash
@@ -205,7 +209,7 @@ export class UriTrie<T> {
         return current;
     }
 
-    private collectValues(node: InternalUriTrieNode<T>): T[] {
+    protected collectValues(node: InternalUriTrieNode<T>): T[] {
         const result: T[] = [];
         if (node.element) {
             result.push(node.element);
