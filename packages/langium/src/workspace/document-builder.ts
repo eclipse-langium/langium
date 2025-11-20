@@ -220,23 +220,24 @@ export class DefaultDocumentBuilder implements DocumentBuilder {
             const deletedDocs = this.langiumDocuments.deleteDocuments(deletedUri);
             for (const doc of deletedDocs) {
                 deletedUris.push(doc.uri);
+                this.resetToDeleted(doc);
                 this.buildState.delete(doc.uri.toString());
-                this.indexManager.remove(doc.uri);
             }
         }
         // Since the changed URI might point to a directory, we need to check all (nested) documents in that directory
         const changedUris = (await Promise.all(changed.map(uri => this.findChangedUris(uri)))).flat();
         // Set the state of all changed documents to `Changed` so they are completely rebuilt
         for (const changedUri of changedUris) {
-            const invalidated = this.langiumDocuments.invalidateDocument(changedUri);
-            if (!invalidated) {
+            let changedDocument = this.langiumDocuments.getDocument(changedUri);
+            if (changedDocument === undefined) {
                 // We create an unparsed, invalid document.
                 // This will be parsed as soon as we reach the first document builder phase.
                 // This allows to cancel the parsing process later in case we need it.
-                const newDocument = this.langiumDocumentFactory.fromModel({ $type: 'INVALID' }, changedUri);
-                newDocument.state = DocumentState.Changed;
-                this.langiumDocuments.addDocument(newDocument);
+                changedDocument = this.langiumDocumentFactory.fromModel({ $type: 'INVALID' }, changedUri);
+                changedDocument.state = DocumentState.Changed; // required, since `langiumDocumentFactory.fromModel` marks the new document as `DocumentState.Parsed`
+                this.langiumDocuments.addDocument(changedDocument);
             }
+            this.resetToState(changedDocument, DocumentState.Changed);
             this.buildState.delete(changedUri.toString());
         }
         // Set the state of all documents that should be relinked to `ComputedScopes` (if not already lower)
@@ -254,7 +255,7 @@ export class DefaultDocumentBuilder implements DocumentBuilder {
             this.langiumDocuments.all
                 .filter(doc =>
                     // This includes those that were reported as changed and those that we selected for relinking
-                    doc.state < DocumentState.Linked
+                    doc.state < DocumentState.Validated
                     // This includes those for which a previous build has been cancelled
                     || !this.buildState.get(doc.uri.toString())?.completed
                 )
@@ -347,11 +348,7 @@ export class DefaultDocumentBuilder implements DocumentBuilder {
     resetToState<T extends AstNode>(document: LangiumDocument<T>, state: DocumentState): void {
         switch (state) {
             case DocumentState.Changed: {
-                const invalidated = this.langiumDocuments.invalidateDocument(document.uri);
-                if (invalidated) {
-                    break;
-                }
-                // Else fall through
+                // Fall through
             }
             case DocumentState.Parsed:
                 this.indexManager.removeContent(document.uri);
@@ -373,6 +370,11 @@ export class DefaultDocumentBuilder implements DocumentBuilder {
         if (document.state > state) {
             document.state = state;
         }
+    }
+
+    resetToDeleted<T extends AstNode>(document: LangiumDocument<T>): void {
+        this.indexManager.remove(document.uri);
+        // document.state = DocumentState.Changed; // since the state is already set before
     }
 
     /**
