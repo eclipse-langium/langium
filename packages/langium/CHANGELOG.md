@@ -1,5 +1,11 @@
 # Change Log of `langium`
 
+## v4.1.1 (Nov. 2025)
+
+* Improved error handling in the `DefaultWorkspaceManager` ([#2047](https://github.com/eclipse-langium/langium/pull/2047)).
+* Fixed a rendering issue in the hover provider ([#2067](https://github.com/eclipse-langium/langium/pull/2067)).
+* Improve range display for definition requests ([#2063](https://github.com/eclipse-langium/langium/pull/2067)).
+
 ## v4.1.0 (Sep. 2025)
 
 * Add a profiler service for parsing, linking and validation ([#1993](https://github.com/eclipse-langium/langium/pull/1993)).
