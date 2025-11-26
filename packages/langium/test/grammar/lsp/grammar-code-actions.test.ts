@@ -95,3 +95,49 @@ describe('Langium grammar actions for validations: Parser rules used only as typ
         expect(action!.title).toBe('Replace with type declaration');
     }
 });
+
+describe('Replace = by += for multiple assignments to the same feature', () => {
+    function composeGrammatik(assignment: string): string {
+        return `
+            grammar HelloWorld
+            entry Model:
+                ${assignment}
+            Person: 'person' name=ID ;
+            hidden terminal WS: /\\s+/;
+            terminal ID: /[_a-zA-Z][\\w_]*/;
+        `;
+    }
+
+    test('no whitespace', async () => testReplaceAction(
+        composeGrammatik('persons=Person* ;'),
+        composeGrammatik('persons+=Person* ;')
+    ));
+
+    test('some spaces', async () => testReplaceAction(
+        composeGrammatik('persons =  Person* ;'),
+        composeGrammatik('persons +=  Person* ;')
+    ));
+
+    test('some inline comments', async () => testReplaceAction(
+        composeGrammatik('persons/*before*/= /*after*/ Person* ;'),
+        composeGrammatik('persons/*before*/+= /*after*/ Person* ;')
+    ));
+
+    test('some line comments', async () => testReplaceAction(
+        composeGrammatik(`persons//
+            = // more
+
+            Person* ;`),
+        composeGrammatik(`persons//
+            += // more
+
+            Person* ;`)
+    ));
+
+    async function testReplaceAction(textBefore: string, textAfter: string) {
+        const result = await testCodeActions(textBefore, IssueCodes.ReplaceOperatorMultiAssignment, textAfter);
+        const action = result.action;
+        expect(action).toBeTruthy();
+        expect(action!.title).toBe("Replace '=' with '+='");
+    }
+});
