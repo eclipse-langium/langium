@@ -17,7 +17,7 @@ import type { ValueConverter } from './value-converter.js';
 import { defaultParserErrorProvider, EmbeddedActionsParser, LLkLookaheadStrategy } from 'chevrotain';
 import { LLStarLookaheadStrategy } from 'chevrotain-allstar';
 import { isAssignment, isCrossReference, isKeyword, isParserRule } from '../languages/generated/ast.js';
-import { getExplicitRuleType, isDataTypeRule } from '../utils/grammar-utils.js';
+import { getTypeName, isDataTypeRule } from '../utils/grammar-utils.js';
 import { assignMandatoryProperties, getContainerOfType, linkContentToContainer } from '../utils/ast-utils.js';
 import { CstNodeBuilder } from './cst-node-builder.js';
 import type { LexingReport } from './token-builder.js';
@@ -244,7 +244,7 @@ export class LangiumParser extends AbstractLangiumParser {
     }
 
     private registerPrecedenceMap(rule: InfixRule): void {
-        const name = rule.name;
+        const name = getTypeName(rule);
         const map = new Map<string, OperatorPrecedence>();
         for (let i = 0; i < rule.operators.precedences.length; i++) {
             const precedence = rule.operators.precedences[i];
@@ -260,14 +260,13 @@ export class LangiumParser extends AbstractLangiumParser {
 
     private computeRuleType(rule: ParserRule | InfixRule): string | symbol | undefined {
         if (isInfixRule(rule)) {
-            return rule.name;
+            return getTypeName(rule);
         } else if (rule.fragment) {
             return undefined;
         } else if (isDataTypeRule(rule)) {
             return DatatypeSymbol;
         } else {
-            const explicit = getExplicitRuleType(rule);
-            return explicit ?? rule.name;
+            return getTypeName(rule);
         }
     }
 

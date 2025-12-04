@@ -170,6 +170,40 @@ describe('Infix operator parsing', async () => {
         await expectExpr('1 + 2 -', '((1 + 2) - undefined)', 1);
     });
 
+    test('Should parse using return type', async () => {
+        const grammar = `
+            grammar Test
+            entry Model: expr=Expr;
+            Expr: BinaryExpr;
+
+            interface BinaryExpression {
+                left: Expr;
+                operator: string;
+                right: Expr;
+            }
+
+            infix BinaryExpr on PrimaryExpr returns BinaryExpression:
+                '*' | '/'
+                > '+' | '-'
+                > right assoc '=' | '*=' | '/=' | '+=' | '-=';
+
+            PrimaryExpr: '(' expr=Expr ')' | value=Number;
+
+            terminal Number: /[0-9]+/;
+            hidden terminal WS: /\\s+/;
+        `;
+
+        const services = await createServicesForGrammar({ grammar });
+        const parse = parseHelper(services);
+        const document = await parse('1 + 2');
+        const node = (document.parseResult.value as ExprModel).expr;
+        expect(node.$type).toBe('BinaryExpression');
+        const binExpr = node as BinaryExpr;
+        expect(binExpr.operator).toBe('+');
+        expect((binExpr.left as PrimaryExpr).value).toBe('1');
+        expect((binExpr.right as PrimaryExpr).value).toBe('2');
+    });
+
     async function expectExpr(text: string, expected: string, errors: number = 0): Promise<void> {
         const document = await parse(text);
         expect(document.parseResult.parserErrors.length).toBe(errors);
@@ -189,21 +223,21 @@ describe('Infix operator parsing', async () => {
         }
         return '';
     }
+
+    interface ExprModel extends AstNode {
+        expr: Expr;
+    }
+
+    type Expr = BinaryExpr | PrimaryExpr;
+
+    interface BinaryExpr extends AstNode {
+        operator: string;
+        left: Expr;
+        right: Expr;
+    }
+
+    interface PrimaryExpr extends AstNode {
+        expr?: Expr;
+        value?: string;
+    }
 });
-
-interface ExprModel extends AstNode {
-    expr: Expr;
-}
-
-type Expr = BinaryExpr | PrimaryExpr;
-
-interface BinaryExpr extends AstNode {
-    operator: string;
-    left: Expr;
-    right: Expr;
-}
-
-interface PrimaryExpr extends AstNode {
-    expr?: Expr;
-    value?: string;
-}
