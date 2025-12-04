@@ -41,7 +41,7 @@ interface DataTypeNode {
 }
 
 interface InfixElement {
-    $infix: true;
+    $infixName: string;
     $type: string;
     $cstNode: CompositeCstNode;
     parts?: AstNode[];
@@ -231,11 +231,12 @@ export class LangiumParser extends AbstractLangiumParser {
 
     rule(rule: ParserRule | InfixRule, impl: RuleImpl): RuleResult {
         const type = this.computeRuleType(rule);
-        const isInfix = isInfixRule(rule);
-        if (isInfix) {
+        let infixName: string | undefined = undefined;
+        if (isInfixRule(rule)) {
+            infixName = rule.name;
             this.registerPrecedenceMap(rule);
         }
-        const ruleMethod = this.wrapper.DEFINE_RULE(withRuleSuffix(rule.name), this.startImplementation(type, isInfix, impl).bind(this));
+        const ruleMethod = this.wrapper.DEFINE_RULE(withRuleSuffix(rule.name), this.startImplementation(type, infixName, impl).bind(this));
         this.allRules.set(rule.name, ruleMethod);
         if (isParserRule(rule) && rule.entry) {
             this.mainRule = ruleMethod;
@@ -244,7 +245,7 @@ export class LangiumParser extends AbstractLangiumParser {
     }
 
     private registerPrecedenceMap(rule: InfixRule): void {
-        const name = getTypeName(rule);
+        const name = rule.name;
         const map = new Map<string, OperatorPrecedence>();
         for (let i = 0; i < rule.operators.precedences.length; i++) {
             const precedence = rule.operators.precedences[i];
@@ -307,7 +308,7 @@ export class LangiumParser extends AbstractLangiumParser {
         return result;
     }
 
-    private startImplementation($type: string | symbol | undefined, infix: boolean, implementation: RuleImpl): RuleImpl {
+    private startImplementation($type: string | symbol | undefined, infixName: string | undefined, implementation: RuleImpl): RuleImpl {
         return (args) => {
             // Only create a new AST node in case the calling rule is not a fragment rule
             const createNode = !this.isRecording() && $type !== undefined;
@@ -316,8 +317,8 @@ export class LangiumParser extends AbstractLangiumParser {
                 this.stack.push(node);
                 if ($type === DatatypeSymbol) {
                     node.value = '';
-                } else if (infix) {
-                    node.$infix = true;
+                } else if (infixName !== undefined) {
+                    node.$infixName = infixName;
                 }
             }
             // Execute the actual rule implementation
@@ -455,8 +456,8 @@ export class LangiumParser extends AbstractLangiumParser {
         }
         const obj = this.stack.pop();
         this.nodeBuilder.construct(obj);
-        if ('$infix' in obj) {
-            return this.constructInfix(obj, this.operatorPrecedence.get(obj.$type)!);
+        if ('$infixName' in obj) {
+            return this.constructInfix(obj, this.operatorPrecedence.get(obj.$infixName)!);
         } else if (isDataTypeNode(obj)) {
             return this.converter.convert(obj.value, obj.$cstNode);
         } else {
@@ -514,14 +515,14 @@ export class LangiumParser extends AbstractLangiumParser {
 
         // Create sub-expressions
         const leftInfix: InfixElement = {
-            $infix: true,
+            $infixName: obj.$infixName,
             $type: obj.$type,
             $cstNode: obj.$cstNode,
             parts: leftParts,
             operators: leftOperators
         };
         const rightInfix: InfixElement = {
-            $infix: true,
+            $infixName: obj.$infixName,
             $type: obj.$type,
             $cstNode: obj.$cstNode,
             parts: rightParts,
