@@ -204,7 +204,7 @@ describe('Infix operator parsing', async () => {
         expect((binExpr.right as PrimaryExpr).value).toBe('2');
     });
 
-    test('Should work with different infix rules that return the same type', async () => {
+    test('Should work with different infix rules that return the same type #1', async () => {
         const grammar = `
             grammar Test
             entry Model: expr=Expr;
@@ -234,6 +234,53 @@ describe('Infix operator parsing', async () => {
         expect(document.parseResult.parserErrors).toHaveLength(0);
         const node = (document.parseResult.value as ExprModel).expr;
         expect(node.$type).toBe('BinaryExpression');
+        const parser = services.parser.LangiumParser;
+        // Directly accessing the operatorPrecedence map for testing purposes
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        const precedence = (parser as any).operatorPrecedence as Map<string, unknown>;
+        expect(precedence).toBeDefined();
+        expect(precedence.size).toBe(2);
+        expect(precedence.get('BinaryExpr2')).toBeDefined();
+        expect(precedence.get('BinaryExpr')).toBeDefined();
+    });
+
+    test('Should work with different infix rules that return the same type #2', async () => {
+        const grammar = `
+            grammar Test
+            entry Model: expr=(A | B);
+            A infers Expr: 'A' BinaryExpr;
+            B infers Expr: 'B' BinaryExpr2;
+
+            interface BinaryExpression {
+                left: Expr;
+                operator: string;
+                right: Expr;
+            }
+
+            infix BinaryExpr on PrimaryExpr returns BinaryExpression:
+                '*' | '/';
+
+            infix BinaryExpr2 on PrimaryExpr returns BinaryExpression:
+                '+' | '-';
+
+            PrimaryExpr: value=Number;
+
+            terminal Number: /[0-9]+/;
+            hidden terminal WS: /\\s+/;
+        `;
+
+        const services = await createServicesForGrammar({ grammar });
+        const parse = parseHelper(services);
+        const document1 = await parse('A 1 * 2');
+        expect(document1.parseResult.parserErrors).toHaveLength(0);
+        const node1 = (document1.parseResult.value as ExprModel).expr;
+        expect(node1.$type).toBe('BinaryExpression');
+
+        const document2 = await parse('B 1 + 2');
+        expect(document2.parseResult.parserErrors).toHaveLength(0);
+        const node2 = (document2.parseResult.value as ExprModel).expr;
+        expect(node2.$type).toBe('BinaryExpression');
+
         const parser = services.parser.LangiumParser;
         // Directly accessing the operatorPrecedence map for testing purposes
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
