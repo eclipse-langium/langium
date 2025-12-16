@@ -15,8 +15,7 @@ import type { BuildOptions, DocumentBuilder } from './document-builder.js';
 import type { LangiumDocument, LangiumDocuments } from './documents.js';
 import type { FileSystemNode, FileSystemProvider } from './file-system-provider.js';
 import type { WorkspaceLock } from './workspace-lock.js';
-import { stream } from '../utils/stream.js';
-
+import { stream, type Stream } from '../utils/stream.js';
 // export type WorkspaceFolder from 'vscode-languageserver-types' for convenience,
 //  is supposed to avoid confusion as 'WorkspaceFolder' might accidentally be imported via 'vscode-languageclient'
 export type { WorkspaceFolder };
@@ -164,12 +163,16 @@ export class DefaultWorkspaceManager implements WorkspaceManager {
             .distinct(uri => uri.toString())
             // Also ensure that the documents don't already exist
             .filter(uri => !this.langiumDocuments.hasDocument(uri));
-        await Promise.all(uniqueUris.map(async uri => {
+        await this.loadDocuments(uniqueUris, collector);
+        this._ready.resolve();
+        return documents;
+    }
+
+    protected async loadDocuments(uris: Stream<URI>, collector: (document: LangiumDocument) => void): Promise<void> {
+        await Promise.all(uris.map(async uri => {
             const document = await this.langiumDocuments.getOrCreateDocument(uri);
             collector(document);
         }));
-        this._ready.resolve();
-        return documents;
     }
 
     /**
