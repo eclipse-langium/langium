@@ -302,12 +302,6 @@ function isTypeAssignableInternal(from: PropertyType | undefined, to: PropertyTy
         result = from.types.every(fromType => isTypeAssignableInternal(fromType, to, visited));
     } else if (isPropertyUnion(to)) {
         result = to.types.some(toType => isTypeAssignableInternal(from, toType, visited));
-    } else if (isValueType(to) && isUnionType(to.value)) {
-        if (isValueType(from) && isUnionType(from.value) && to.value.name === from.value.name) {
-            result = true;
-        } else {
-            result = isTypeAssignableInternal(from, to.value.type, visited);
-        }
     } else if (isReferenceType(from)) {
         result = isReferenceType(to)
             && from.isMulti === to.isMulti
@@ -335,6 +329,12 @@ function isTypeAssignableInternal(from: PropertyType | undefined, to: PropertyTy
             result = isTypeAssignableInternal(from, to.value.type, visited);
         } else {
             result = isInterfaceAssignable(from.value, to.value, new Set());
+        }
+    } else if (isValueType(to) && isUnionType(to.value)) {
+        if (isValueType(from) && isUnionType(from.value) && to.value.name === from.value.name) {
+            result = true;
+        } else {
+            result = isTypeAssignableInternal(from, to.value.type, visited);
         }
     } else if (isPrimitiveType(from)) {
         result = isPrimitiveType(to) && from.primitive === to.primitive;

@@ -319,6 +319,22 @@ describe('Validate declared types', () => {
         `);
         expectNoIssues(validationResult);
     });
+
+    test('Can assign a union type value returned by a differently named rule', async () => {
+        const validationResult = await validate(`
+            interface ColorContainer {
+                color: Color
+            }
+            type Color = 'red' | 'blue' | 'green';
+            ColorContainer returns ColorContainer:
+                'color' color=ColorValue
+            ;
+            ColorValue returns Color:
+                'red' | 'blue' | 'green'
+            ;
+        `);
+        expectNoIssues(validationResult);
+    });
 });
 
 describe('Validate declared default value properties', () => {
