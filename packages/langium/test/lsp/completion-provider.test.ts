@@ -6,12 +6,12 @@
 
 import { describe, test, beforeEach } from 'vitest';
 import type { AstNode, AstNodeDescription, LangiumDocument, Module, ReferenceInfo } from 'langium';
-import { DefaultAstNodeDescriptionProvider, EmptyFileSystem } from 'langium';
+import { type GrammarAST, DefaultAstNodeDescriptionProvider, EmptyFileSystem } from 'langium';
 import { createLangiumGrammarServices, createServicesForGrammar } from 'langium/grammar';
 import { DefaultCompletionProvider } from 'langium/lsp';
 import type { CompletionContext, LangiumServices, PartialLangiumServices } from 'langium/lsp';
 import { clearDocuments, expectCompletion, parseHelper } from 'langium/test';
-import { MarkupContent } from 'vscode-languageserver';
+import { type CompletionItem, MarkupContent } from 'vscode-languageserver';
 import * as assert from 'assert';
 
 describe('Langium completion provider', () => {
@@ -423,4 +423,69 @@ describe('Completion in data type rules', () => {
         });
     });
 
+});
+
+describe('langium common prefix completion tests', () => {
+    test('common prefix testcase 1', async () => {
+        const grammar = `
+grammar HelloWorld
+
+entry Model:
+    'model' name=ID '{' (content+=Content)* '}';
+
+Content:
+    A | B;
+
+A infers A:
+    Annotations? public?='public'? 'a' name=ID '{'  '}';
+
+fragment BKind:
+    bKind=('read' | 'write');
+
+B infers B:
+    Annotations? public?='public'? BKind 'b' name=ID '{'  '}';
+fragment Annotations:
+    annotations+=Annotation*;
+
+Annotation infers Annotation:
+    '@' name=ID;
+
+hidden terminal WS: /\\s+/;
+terminal ID: /[_a-zA-Z][\\w_]*/;
+terminal INT returns number: /[0-9]+/;
+terminal STRING: /"(\\\\.|[^"\\\\])*"|'(\\\\.|[^'\\\\])*'/;
+        `;
+
+        const services = await createServicesForGrammar({
+            grammar,
+            module: {
+                lsp: {
+                    CompletionProvider: (services: LangiumServices) =>
+                        new (class extends DefaultCompletionProvider {
+                            protected override filterKeyword(
+                                _context: CompletionContext,
+                                _keyword: GrammarAST.Keyword
+                            ): boolean {
+                                // Filter out keywords that do not contain any word character
+                                return true;
+                            }
+
+                            protected override continueCompletion(_items: CompletionItem[]): boolean {
+                                return true;
+                            }
+                        })(services),
+                },
+            },
+        });
+        const completion = expectCompletion(services);
+        const text = `model Orders { 
+        @description
+        <|> public write b demo {}}`;
+
+        await completion({
+            text,
+            index: 0,
+            expectedItems: ['@', 'public', 'a', 'read', 'write', '}'],
+        });
+    });
 });
