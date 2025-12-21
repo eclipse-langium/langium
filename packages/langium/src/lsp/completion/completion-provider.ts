@@ -305,7 +305,7 @@ export class DefaultCompletionProvider implements CompletionProvider {
                 ...partialContext,
                 tokenOffset: nextTokenStart,
                 tokenEndOffset: nextTokenEnd,
-                features: findFirstFeatures(parserRule.definition)
+                features: this.findFeaturesAt(textDocument, nextTokenStart)
             };
         } else if (performNextCompletion) {
             // This context aims to complete the next feature, using the next cst start/end

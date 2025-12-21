@@ -488,4 +488,44 @@ terminal STRING: /"(\\\\.|[^"\\\\])*"|'(\\\\.|[^'\\\\])*'/;
             expectedItems: ['@', 'public', 'a', 'read', 'write', '}'],
         });
     });
+    test('common prefix testcase 2', async () => {
+        const grammar = `
+    entry Model: A | B;
+    
+    A: {infer A} "a" "b" "c";
+    B: {infer B} "a" "b" "d";
+    
+    hidden terminal WS: /\\s+/;
+            `;
+
+        const services = await createServicesForGrammar({
+            grammar,
+            module: {
+                lsp: {
+                    CompletionProvider: (services: LangiumServices) =>
+                        new (class extends DefaultCompletionProvider {
+                            protected override filterKeyword(
+                                _context: CompletionContext,
+                                _keyword: GrammarAST.Keyword
+                            ): boolean {
+                                // Filter out keywords that do not contain any word character
+                                return true;
+                            }
+
+                            protected override continueCompletion(_items: CompletionItem[]): boolean {
+                                return true;
+                            }
+                        })(services),
+                },
+            },
+        });
+        const completion = expectCompletion(services);
+        const text = 'a b <|> ';
+
+        await completion({
+            text,
+            index: 0,
+            expectedItems: ['c', 'd'],
+        });
+    });
 });
