@@ -222,7 +222,9 @@ export class DefaultCompletionProvider implements CompletionProvider {
             }
         }
         const leftoverTokens = [...tokens].splice(parserResult.tokenIndex);
-        const features = findNextFeatures([parserResult.elementStack.map(feature => ({ feature }))], leftoverTokens);
+        // Only pass tokens that are after the cursor offset
+        const tokensAfterCursor = leftoverTokens.filter(token => token.startOffset >= offset);
+        const features = findNextFeatures([parserResult.elementStack.map(feature => ({ feature }))], tokensAfterCursor);
         return features;
     }
 
