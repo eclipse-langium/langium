@@ -528,4 +528,37 @@ terminal STRING: /"(\\\\.|[^"\\\\])*"|'(\\\\.|[^'\\\\])*'/;
             expectedItems: ['c', 'd'],
         });
     });
+
+    test('common prefix testcase 3', async () => {
+        const grammar = `
+        grammar Test
+
+        entry Model: (item+=A | item+=B)*;
+
+        A: "a" "b" c="c";
+        B: "a" "b" d="d";
+
+        hidden terminal WS: /\\s+/;
+        hidden terminal ML_COMMENT: /\\/\\*[\\s\\S]*?\\*\\//;
+        `;
+
+        const services = await createServicesForGrammar({ grammar });
+        const completion = expectCompletion(services);
+        const text = 'a b d <|>a <|>b <|>c';
+        await completion({
+            text,
+            index: 0,
+            expectedItems: ['a']
+        });
+        await completion({
+            text,
+            index: 1,
+            expectedItems: ['b']
+        });
+        await completion({
+            text,
+            index: 2,
+            expectedItems: ['c', 'd']
+        });
+    });
 });
