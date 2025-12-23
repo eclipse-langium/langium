@@ -217,18 +217,18 @@ export class DefaultCompletionProvider implements CompletionProvider {
                 // The interpreter will only look at the next features, which requires every token after the first
                 tokens.shift();
                 return findNextFeatures(firstFeatures.map(e => [e]), tokens);
-        } else {
-            return firstFeatures;
+            } else {
+                return firstFeatures;
+            }
         }
+        const leftoverTokens = [...tokens].splice(parserResult.tokenIndex);
+        const createFeatureStacks = () => [parserResult.elementStack.map(feature => ({ feature }))];
+        const features = findNextFeatures(createFeatureStacks(), leftoverTokens);
+        if (features.length === 0 && leftoverTokens.length > 0) {
+            return findNextFeatures(createFeatureStacks(), []);
+        }
+        return features;
     }
-    const leftoverTokens = [...tokens].splice(parserResult.tokenIndex);
-    const createFeatureStacks = () => [parserResult.elementStack.map(feature => ({ feature }))];
-    const features = findNextFeatures(createFeatureStacks(), leftoverTokens);
-    if (features.length === 0 && leftoverTokens.length > 0) {
-        return findNextFeatures(createFeatureStacks(), []);
-    }
-    return features;
-}
 
     protected *buildContexts(document: LangiumDocument, position: Position): IterableIterator<CompletionContext> {
         const cst = document.parseResult.value.$cstNode;
