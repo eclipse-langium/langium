@@ -163,12 +163,12 @@ export class DefaultWorkspaceManager implements WorkspaceManager {
             .distinct(uri => uri.toString())
             // Also ensure that the documents don't already exist
             .filter(uri => !this.langiumDocuments.hasDocument(uri));
-        await this.loadDocuments(uniqueUris, collector);
+        await this.loadWorkspaceDocuments(uniqueUris, collector);
         this._ready.resolve();
         return documents;
     }
 
-    protected async loadDocuments(uris: Stream<URI>, collector: (document: LangiumDocument) => void): Promise<void> {
+    protected async loadWorkspaceDocuments(uris: Stream<URI>, collector: (document: LangiumDocument) => void): Promise<void> {
         await Promise.all(uris.map(async uri => {
             const document = await this.langiumDocuments.getOrCreateDocument(uri);
             collector(document);
