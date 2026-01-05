@@ -526,7 +526,7 @@ function composeFinalGeneratorNode(splitAndMerged: GeneratedOrMarker[]): Composi
                     //   }
                     // assuming that ${foo(bar)} yields a multiline result;
                     // the whitespace between 'return' and '${foo(bar)}' shall not add to the indentation of '${foo(bar)}'s result!
-                    const indent: string = (i === 0 || isNewLineMarker(splitAndMerged[i - 1])) && typeof segment === 'string' && segment.length !== 0 ? ''.padStart(segment.length - segment.trimStart().length) : '';
+                    const indent: string = (i === 0 || isNewLineMarker(splitAndMerged[i - 1])) && typeof segment === 'string' && segment.length !== 0 ? segment.substring(0, segment.length - segment.trimStart().length) : '';
                     const content = isSubstitutionWrapper(segment)? segment.content : segment;
                     let indented: IndentNode | undefined;
                     return {
