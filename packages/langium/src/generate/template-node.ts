@@ -25,43 +25,55 @@ import { findIndentation } from './template-string.js';
  *
  * ```ts
  *  expandToNode`
- *   This is the beginning of something
+ *    This is the beginning of something
  *
- *   ${foo.bar ? expandToNode`
- *     bla bla bla ${foo.bar}
+ *    ${foo.bar ? expandToNode`
+ *      bla bla bla ${foo.bar}
  *
- *   `: undefined
- *   }
- *   end of template
+ *    `: undefined}
+ *    end of something
  *  `
  * ```
  *
  * Rule:
- * In case of a multiline template the content of the first line including its terminating
- * line break is ignored, if and only if it is empty of contains whitespace only. Futhermore,
- * in case of a multiline template the content of the last line including its preceding line break
- * (last one within the template) is ignored, if and only if it is empty of contains whitespace only.
- * Thus, the result of all of the following invocations is identical and equal to `generatedContent`.
+ * In case of a multiline template
+ *  1. the content of the first line including its terminating line break is ignored,
+ *     if and only if it is empty or contains whitespace only.
+ *  2. the content of the last line including its preceding line break (last line within the template excluding the trailing backtick) is ignored,
+ *     if and only if it is empty or contains whitespace only, and the whitespace in-between the last line break and the trailing backtick
+ *     is a real prefix of the common indentation among all none-empty lines of the template, i.e.,
+ *     it is shorter than the common indentation that is trimmed during processing the template provided that common indentation is identifiable.
+ *
+ * Thus, the results of all of the following invocations are identical and equal to `generatedContent`.
  * ```ts
  *  expandToNode`generatedContent`
- *  expandToNode`generatedContent
- *  `
  *  expandToNode`
  *    generatedContent`
  *  expandToNode`
  *    generatedContent
  *  `
+ *  expandToNode`
+ *    generatedContent
+ *   `
+ * ```
+ * In contrast, the results of the following invocations are equal to `generatedContent\n` (or `generatedContent\r\n` on MS Windows)
+ * ```ts
+ *  expandToNode`generatedContent
+ *  `
+ *  expandToNode`
+ *    generatedContent
+ *    `
  * ```
  *
- * In addition, a second rule is applied in the handling of line breaks:
+ * In addition, a third rule is applied while processing line breaks:
  * If a line's last substitution contributes `undefined` or an object of type {@link GeneratorNode},
  * the subsequent line break will be appended via {@link CompositeGeneratorNode.appendNewLineIfNotEmpty}.
  * Hence, if all other segments of that line contribute whitespace characters only,
  * the entire line will be omitted while rendering the desired output.
  * Otherwise, linebreaks will be added via {@link CompositeGeneratorNode.appendNewLine}.
  * That holds in particular, if the last substitution contributes an empty string. In consequence,
- * adding `${''}` to the end of a line consisting of whitespace and substitions only
- * enforces the line break to be rendered, no matter what the substitions actually contribute.
+ * adding `${''}` to the end of a line consisting of whitespace and substitutions only
+ * enforces the line break to be rendered, no matter what the substitutions actually contribute.
  *
  * @param staticParts the static parts of a tagged template literal
  * @param substitutions the variable parts of a tagged template literal
