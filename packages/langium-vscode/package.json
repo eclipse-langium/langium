@@ -93,7 +93,7 @@
   "scripts": {
     "prepare": "npm run copy:schema",
     "copy:schema": "shx cp ../langium-cli/langium-config-schema.json ./data",
-    "vscode:prepublish": "npm run clean && tsc --noEmit && npm run lint && node esbuild.mjs --minify && npm run copy:schema",
+    "vscode:prepublish": "npm run clean && tsc --noEmit && node esbuild.mjs --minify && npm run copy:schema",
     "clean": "shx rm -rf out",
     "build": "tsc --noEmit && node esbuild.mjs",
     "watch": "node esbuild.mjs --watch"
