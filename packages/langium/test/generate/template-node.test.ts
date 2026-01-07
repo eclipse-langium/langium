@@ -1124,10 +1124,10 @@ describe('Joining lists', () => {
               b
         `);
     });
-    test('Joining with omitted `undefined`, separator, line breaks and Stream input', () => {
+    test('Joining with inner omitted `undefined`, separator, line breaks and Stream input', () => {
         const node = n`
             Data:
-              ${joinToNode(stream(['a', undefined, 'b']), e => e && String(e), { separator: ',', appendNewLineIfNotEmpty: true})}
+              ${joinToNode(stream(['a', undefined, 'b']), { separator: ',', appendNewLineIfNotEmpty: true})}
         `;
         const text = toString(node);
         expect(text).toBe(s`
@@ -1137,10 +1137,85 @@ describe('Joining lists', () => {
             
         `);
     });
-    test('Joining with omitted `undefined`, separator, line breaks and skip line break after last line, and Stream input', () => {
+    test('Joining with leading omitted `undefined`, separator, line breaks and Stream input', () => {
         const node = n`
             Data:
-              ${joinToNode(stream(['a', undefined, 'b']), e => e && String(e), { separator: ',', appendNewLineIfNotEmpty: true, skipNewLineAfterLastItem: true})}
+              ${joinToNode(stream([undefined, 'a', 'b']), { separator: ',', appendNewLineIfNotEmpty: true})}
+        `;
+        const text = toString(node);
+        expect(text).toBe(s`
+            Data:
+              a,
+              b
+            
+        `);
+    });
+    test('Joining with trailing omitted `undefined`, separator, line breaks and Stream input', () => {
+        const node = n`
+            Data:
+              ${joinToNode(stream(['a', 'b', undefined]), { separator: ',', appendNewLineIfNotEmpty: true})}
+        `;
+        const text = toString(node);
+        expect(text).toBe(s`
+            Data:
+              a,
+              b
+            
+        `);
+    });
+    test('Joining with 2 trailing omitted `undefined`, separator, line breaks and Stream input', () => {
+        const node = n`
+            Data:
+              ${joinToNode(stream(['a', 'b', undefined, undefined]), { separator: ',', appendNewLineIfNotEmpty: true})}
+        `;
+        const text = toString(node);
+        expect(text).toBe(s`
+            Data:
+              a,
+              b
+            
+        `);
+    });
+    test('Joining with inner omitted `undefined`, separator, line breaks and skip line break after last line, and Stream input', () => {
+        const node = n`
+            Data:
+              ${joinToNode(stream(['a', undefined, 'b']), { separator: ',', appendNewLineIfNotEmpty: true, skipNewLineAfterLastItem: true})}
+        `;
+        const text = toString(node);
+        expect(text).toBe(s`
+            Data:
+              a,
+              b
+        `);
+    });
+    test('Joining with leading omitted `undefined`, separator, line breaks and skip line break after last line, and Stream input', () => {
+        const node = n`
+            Data:
+              ${joinToNode(stream([undefined, 'a', 'b']), { separator: ',', appendNewLineIfNotEmpty: true, skipNewLineAfterLastItem: true})}
+        `;
+        const text = toString(node);
+        expect(text).toBe(s`
+            Data:
+              a,
+              b
+        `);
+    });
+    test('Joining with trailing omitted `undefined`, separator, line breaks and skip line break after last line, and Stream input', () => {
+        const node = n`
+            Data:
+              ${joinToNode(stream(['a', 'b', undefined]), { separator: ',', appendNewLineIfNotEmpty: true, skipNewLineAfterLastItem: true})}
+        `;
+        const text = toString(node);
+        expect(text).toBe(s`
+            Data:
+              a,
+              b
+        `);
+    });
+    test('Joining with 2 trailing omitted `undefined`, separator, line breaks and skip line break after last line, and Stream input', () => {
+        const node = n`
+            Data:
+              ${joinToNode(stream(['a', 'b', undefined, undefined]), { separator: ',', appendNewLineIfNotEmpty: true, skipNewLineAfterLastItem: true})}
         `;
         const text = toString(node);
         expect(text).toBe(s`

@@ -169,28 +169,38 @@ export function joinToNode<T>(
     const prefixFunc = typeof prefix === 'function' ? prefix : (() => prefix);
     const suffixFunc = typeof suffix === 'function' ? suffix : (() => suffix);
 
-    return reduceWithIsLast(iterable, (node, it, i, isLast) => {
+    const doAppendNewLines = (node: CompositeGeneratorNode) => {
+        if (node.isEmpty()) {
+            // do nothing
+            return;
+        } else if (appendNewLineIfNotEmpty === true || appendNewLineIfNotEmpty === 1) {
+            node.appendNewLineIfNotEmpty();
+        } else {
+            node.append(new NewLineNode(undefined, true, appendNewLineIfNotEmpty));
+        }
+    };
+
+    return reduceWithIsLast<T, CompositeGeneratorNode>(iterable, (node, it, i, isLast) => {
         if (filter && !filter(it, i, isLast)) {
             return node;
         }
         const content = toGenerated(it, i, isLast);
         return content === undefined ? /* in this case don't append anything to */ node : /* otherwise: */ (node ??= new CompositeGeneratorNode())
-            .append(prefixFunc(it, i, isLast))
-            .append(content)
-            .append(suffixFunc(it, i, isLast))
-            .appendIf(!isLast, separator)
+            .appendIf(!node.isEmpty(), separator)
             .appendIf(
                 // append 'newLineIfNotEmpty' elements only if 'node' has some content already,
                 //  as if the parent is an IndentNode with 'indentImmediately' set to 'false'
                 //  the indentation is not properly applied to the first non-empty line of the (this) child node
-                // besides, append the newLine(s) only if more lines are following, or if appending a newline
-                //  is not suppressed for the final item
-                !node.isEmpty() && !!appendNewLineIfNotEmpty && (!isLast || !skipNewLineAfterLastItem),
-                n => (appendNewLineIfNotEmpty === true || appendNewLineIfNotEmpty === 1)
-                    ? n.appendNewLineIfNotEmpty()
-                    : n.append(new NewLineNode(undefined, true, appendNewLineIfNotEmpty))
-            );
-    });
+                appendNewLineIfNotEmpty !== undefined,
+                doAppendNewLines
+            )
+            .append(prefixFunc(it, i, isLast))
+            .append(content)
+            .append(suffixFunc(it, i, isLast));
+    })?.appendIf(
+        !skipNewLineAfterLastItem && appendNewLineIfNotEmpty !== undefined,
+        doAppendNewLines
+    );
 }
 
 /**
@@ -401,7 +411,7 @@ function reduceWithIsLast<T, R>(
     iterable: Iterable<T> | T[],
     callbackfn: (previous: R | undefined, current: T, currentIndex: number, isLast: boolean) => R | undefined,
     initial?: R
-) {
+): R | undefined {
     const iterator = iterable[Symbol.iterator]();
     let next = iterator.next();
     let index = 0;
