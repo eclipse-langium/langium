@@ -99,9 +99,6 @@ export class DefaultTokenBuilder implements TokenBuilder {
         if (regex.flags.includes('u') || regex.flags.includes('s')) {
             // Unicode and dotall regexes are not supported by Chevrotain.
             return true;
-        } else if (regex.source.includes('?<=') || regex.source.includes('?<!')) {
-            // Negative and positive lookbehind are not supported by Chevrotain yet.
-            return true;
         } else {
             return false;
         }

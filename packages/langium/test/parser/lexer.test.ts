@@ -38,7 +38,7 @@ describe('DefaultLexer', () => {
         const lexer = await getLexer(`
         grammar X
         entry Y: name=ID;
-        terminal ID: /\\^?[_a-zA-Z][\\w_]*/;
+        terminal ID: /[_a-zA-Z][\\w_]*/;
         hidden terminal WS: /\\s+/;
         `);
         const result = lexer.tokenize('4');
@@ -51,7 +51,7 @@ describe('DefaultLexer', () => {
         const lexer = await getLexer(`
         grammar X
         entry Y: name=ID;
-        terminal ID: /\\^?[_a-zA-Z][\\w_]*/;
+        terminal ID: /[_a-zA-Z][\\w_]*/;
         hidden terminal WS: /\\s+/;
         hidden terminal ML_COMMENT: /\\/\\*[\\s\\S]*?\\*\\//;
         `);
@@ -61,6 +61,24 @@ describe('DefaultLexer', () => {
         expect(result.errors).toHaveLength(0);
         expect(result.hidden).toHaveLength(1);
         expect(result.hidden[0].image).toBe('/* Test */');
+    });
+
+    test('should support lookbehind in regexes', async () => {
+        // This test ensures that Langium's token builder can handle lookbehind regexes.
+        // This previously wasn't supported by Chevrotain, but as of version 11.1.0 it is supported.
+        const lexer = await getLexer(`
+        grammar Test
+        entry Y: "a" name=ID;
+        terminal ID: /(?<=a\\s*)(?<!b\\s*)[_a-zA-Z][\\w_]*/;
+        hidden terminal WS: /\\s+/;
+        hidden terminal ML_COMMENT: /\\/\\*[\\s\\S]*?\\*\\//;
+        `);
+        const result = lexer.tokenize('a myIdentifier');
+        expect(result.tokens).toHaveLength(2);
+        expect(result.tokens[0].image).toBe('a');
+        expect(result.tokens[1].image).toBe('myIdentifier');
+        expect(result.errors).toHaveLength(0);
+        expect(result.hidden).toHaveLength(0);
     });
 
 });
