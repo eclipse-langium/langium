@@ -5,12 +5,13 @@
  ******************************************************************************/
 
 import { describe, test, beforeEach } from 'vitest';
-import type { AstNode, AstNodeDescription, LangiumDocument, Module, ReferenceInfo } from 'langium';
+import type { AstNode, AstNodeDescription, GrammarAST, LangiumDocument, Module, ReferenceInfo } from 'langium';
 import { DefaultAstNodeDescriptionProvider, EmptyFileSystem } from 'langium';
 import { createLangiumGrammarServices, createServicesForGrammar } from 'langium/grammar';
 import { DefaultCompletionProvider } from 'langium/lsp';
 import type { CompletionContext, LangiumServices, PartialLangiumServices } from 'langium/lsp';
 import { clearDocuments, expectCompletion, parseHelper } from 'langium/test';
+import type { CompletionItem } from 'vscode-languageserver';
 import { MarkupContent } from 'vscode-languageserver';
 import * as assert from 'assert';
 
@@ -420,6 +421,251 @@ describe('Completion in data type rules', () => {
             text: text,
             index: 5,
             expectedItems: []
+        });
+    });
+
+});
+
+describe('Common prefixes', async () => {
+
+    test('Can complete common prefixes in alternatives', async () => {
+        const grammar = `
+        grammar Test
+
+        entry Model: (item+=A | item+=B)*;
+
+        A: "a" "b" c="c";
+        B: "a" "b" d="d";
+
+        hidden terminal WS: /\\s+/;
+        hidden terminal ML_COMMENT: /\\/\\*[\\s\\S]*?\\*\\//;
+        `;
+
+        const services = await createServicesForGrammar({ grammar });
+        const completion = expectCompletion(services);
+        const text = 'a b d <|>a <|>b <|>c';
+        await completion({
+            text,
+            index: 0,
+            expectedItems: ['a']
+        });
+        await completion({
+            text,
+            index: 1,
+            expectedItems: ['b']
+        });
+        await completion({
+            text,
+            index: 2,
+            expectedItems: ['c', 'd']
+        });
+    });
+
+    test('Can enter and leave a rule in common prefixes', async () => {
+        const grammar = `
+        grammar Test
+
+        entry Model: (item+=A | item+=B)*;
+
+        A: "a" x=X c="c";
+        B: "a" x=X d="d";
+
+        X: var="b";
+
+        hidden terminal WS: /\\s+/;
+        hidden terminal ML_COMMENT: /\\/\\*[\\s\\S]*?\\*\\//;
+        `;
+
+        const services = await createServicesForGrammar({ grammar });
+        const completion = expectCompletion(services);
+        const text = 'a b d <|>a <|>b <|>c';
+        await completion({
+            text,
+            index: 0,
+            expectedItems: ['a']
+        });
+        // Ensures that we can enter the X rule within the common prefix
+        await completion({
+            text,
+            index: 1,
+            expectedItems: ['b']
+        });
+        // Ensures that we can leave the X rule to return to A/B
+        await completion({
+            text,
+            index: 2,
+            expectedItems: ['c', 'd']
+        });
+    });
+
+    test('Can enter and leave annotation in a Java-like grammar', async () => {
+        const grammar = `
+        grammar Test
+
+        entry Model: content+=Content*;
+
+        Content:
+            Interface | Class;
+
+        Interface:
+            Annotations? visility=Visibility? 'interface' name=ID ';';
+        Class:
+            Annotations? visility=Visibility? 'class' name=ID ';';
+        fragment Annotations:
+            annotations+=Annotation*;
+
+        Visibility returns string: 'public' | 'internal';
+
+        Annotation:
+            '@' name=ID ('(' parameters+=AnnotationParameter (',' parameters+=AnnotationParameter)* ')')?;
+
+        AnnotationParameter returns string: 'a' | 'b' | 'c';
+
+        hidden terminal WS: /\\s+/;
+        terminal ID: /[_a-zA-Z][\\w_]*/;
+        `;
+
+        const services = await createServicesForGrammar({ grammar,
+            module: {
+                lsp: {
+                    // CompletionProvider that shows ALL completions for testing purposes
+                    CompletionProvider: (services: LangiumServices) =>
+                        new (class extends DefaultCompletionProvider {
+                            protected override filterKeyword(
+                                _context: CompletionContext,
+                                _keyword: GrammarAST.Keyword
+                            ): boolean {
+                                return true;
+                            }
+
+                            protected override continueCompletion(_items: CompletionItem[]): boolean {
+                                return true;
+                            }
+                        })(services),
+                },
+            },
+        });
+        const completion = expectCompletion(services);
+        const text1 = `
+        @description
+        public interface Demo1;
+
+        @description
+        <|>public interface Demo2;
+        `;
+
+        await completion({
+            text: text1,
+            index: 0,
+            expectedItems: [
+                // Annotation arguments
+                '(',
+                // Another new annotation
+                '@',
+                // Visibility keywords
+                'public', 'internal',
+                // class or interface keyword
+                'interface', 'class'
+            ]
+        });
+        // Add space after "(" to ensure that the completion doesn't attempt to finish the "(" token
+        const text2 = `
+        @description( <|>a)
+        @description( <|>b)
+        public interface Demo3;
+        `;
+        await completion({
+            text: text2,
+            index: 0,
+            expectedItems: ['a', 'b', 'c']
+        });
+        await completion({
+            text: text2,
+            index: 1,
+            expectedItems: ['a', 'b', 'c']
+        });
+    });
+
+});
+
+describe('Infix rule completion', async () => {
+
+    const grammar = `
+        grammar Test
+        entry Model: expr=Expr;
+        Expr: BinaryExpr;
+        infix BinaryExpr on PrimaryExpr:
+            'a' | 'b' > 'c' | 'd';
+
+        PrimaryExpr: value=('x' | 'y' | 'z');
+
+        hidden terminal WS: /\\s+/;
+    `;
+
+    const services = await createServicesForGrammar({ grammar });
+    const completion = expectCompletion(services);
+
+    test('Should complete infix operators', async () => {
+        const text = 'x <|>a y <|>b z';
+        const items = ['a', 'b', 'c', 'd'];
+        await completion({
+            text,
+            index: 0,
+            expectedItems: items
+        });
+        await completion({
+            text,
+            index: 1,
+            expectedItems: items
+        });
+    });
+
+    test('Should complete primary expressions', async () => {
+        const text = '<|>x a <|>y b <|>z';
+        const items = ['x', 'y', 'z'];
+        await completion({
+            text,
+            index: 0,
+            expectedItems: items
+        });
+        await completion({
+            text,
+            index: 1,
+            expectedItems: items
+        });
+        await completion({
+            text,
+            index: 2,
+            expectedItems: items
+        });
+    });
+
+});
+
+describe('Completion for optional elements', async () => {
+
+    test('Should complete correctly if whole rule content is optional', async () => {
+        const grammar = `
+            grammar Test
+
+            entry Document:
+                Annotation
+                'document' name=ID;
+
+            fragment Annotation:
+                ('@annotation' annotation=ID)?;
+
+            terminal ID: /[a-zA-Z]+/;
+
+            hidden terminal WS: /\\s+/;
+        `;
+        const services = await createServicesForGrammar({ grammar });
+        const completion = expectCompletion(services);
+        const text = '';
+        await completion({
+            text,
+            index: 0,
+            expectedItems: ['@annotation', 'document']
         });
     });
 

@@ -9,7 +9,7 @@ import type { LangiumCompletionParser } from '../../parser/langium-parser.js';
 import type { NameProvider } from '../../references/name-provider.js';
 import type { ScopeProvider } from '../../references/scope-provider.js';
 import type { LangiumServices } from '../lsp-services.js';
-import type { AstNode, AstNodeDescription, AstReflection, CstNode, MultiReference, Reference, ReferenceInfo } from '../../syntax-tree.js';
+import type { AstNode, AstNodeDescription, AstReflection, CstNode, MultiReference, Mutable, Reference, ReferenceInfo } from '../../syntax-tree.js';
 import type { CancellationToken } from '../../utils/cancellation.js';
 import type { MaybePromise } from '../../utils/promise-utils.js';
 import type { LangiumDocument, TextDocument } from '../../workspace/documents.js';
@@ -25,7 +25,7 @@ import { CompletionItemKind, CompletionList, Position } from 'vscode-languageser
 import * as ast from '../../languages/generated/ast.js';
 import { assignMandatoryProperties, getContainerOfType } from '../../utils/ast-utils.js';
 import { findDeclarationNodeAtOffset, findLeafNodeBeforeOffset, getDatatypeNode } from '../../utils/cst-utils.js';
-import { getEntryRule, getExplicitRuleType } from '../../utils/grammar-utils.js';
+import { getEntryRule } from '../../utils/grammar-utils.js';
 import { stream, type Stream } from '../../utils/stream.js';
 import { findFirstFeatures, findNextFeatures } from './follow-element-computation.js';
 
@@ -208,22 +208,46 @@ export class DefaultCompletionProvider implements CompletionProvider {
         // If the parser didn't parse any tokens, return the next features of the entry rule
         if (parserResult.tokenIndex === 0) {
             const parserRule = getEntryRule(this.grammar)!;
-            const firstFeatures = findFirstFeatures({
-                feature: parserRule.definition,
-                type: getExplicitRuleType(parserRule)
-            });
-            if (tokens.length > 0) {
-                // We have to skip the first token
-                // The interpreter will only look at the next features, which requires every token after the first
-                tokens.shift();
-                return findNextFeatures(firstFeatures.map(e => [e]), tokens);
-            } else {
-                return firstFeatures;
-            }
+            // Generate a synthetic RuleCall to the entry rule
+            const syntheticEntryRuleCall = this.buildSyntheticEntryRuleCall(parserRule);
+            return findNextFeatures([[syntheticEntryRuleCall]], tokens);
         }
         const leftoverTokens = [...tokens].splice(parserResult.tokenIndex);
         const features = findNextFeatures([parserResult.elementStack.map(feature => ({ feature }))], leftoverTokens);
         return features;
+    }
+
+    protected buildSyntheticEntryRuleCall(rule: ast.ParserRule): NextFeature {
+        // The "start" node is simply an empty group that is followed by the rule call
+        const start: ast.Group = {
+            $type: 'Group',
+            $container: undefined!,
+            elements: []
+        };
+        const startNext: NextFeature<ast.Group> = {
+            feature: start
+        };
+        // This is the element that we want to complete
+        const ruleCall: ast.RuleCall = {
+            $type: 'RuleCall',
+            $container: undefined!,
+            rule: {
+                ref: rule,
+                $refText: rule.name
+            },
+            arguments: []
+        };
+        const group: ast.Group = {
+            $type: 'Group',
+            $container: undefined!,
+            elements: [
+                start,
+                ruleCall
+            ]
+        };
+        (start as Mutable<AstNode>).$container = group;
+        (ruleCall as Mutable<AstNode>).$container = group;
+        return startNext;
     }
 
     protected *buildContexts(document: LangiumDocument, position: Position): IterableIterator<CompletionContext> {
@@ -303,7 +327,7 @@ export class DefaultCompletionProvider implements CompletionProvider {
                 ...partialContext,
                 tokenOffset: nextTokenStart,
                 tokenEndOffset: nextTokenEnd,
-                features: findFirstFeatures(parserRule.definition)
+                features: findFirstFeatures(parserRule.definition).map(f => f[f.length - 1]),
             };
         } else if (performNextCompletion) {
             // This context aims to complete the next feature, using the next cst start/end
