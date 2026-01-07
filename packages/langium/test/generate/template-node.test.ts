@@ -741,6 +741,20 @@ describe('Single multiline substitution templates', () => {
         const text = toString(node);
         expect(text).toBe('  ' + ML_TEXT_TEMPLATE + EOL);
     });
+    test('With tab indentation', () => {
+        const node = n`
+        	header (
+        		${new CompositeGeneratorNode('More', NL, 'generated text!')}
+        	) footer
+        `;
+        const text = toString(node);
+        expect(text).toBe(
+            `header (${EOL
+            }	More${EOL
+            }	generated text!${EOL
+            }) footer`
+        );
+    });
 });
 
 describe('Nested multiline substitution templates', () => {
