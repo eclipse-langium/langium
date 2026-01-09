@@ -220,7 +220,7 @@ export class DefaultDocumentBuilder implements DocumentBuilder {
             const deletedDocs = this.langiumDocuments.deleteDocuments(deletedUri);
             for (const doc of deletedDocs) {
                 deletedUris.push(doc.uri);
-                this.resetToDeleted(doc);
+                this.cleanUpDeleted(doc);
                 this.buildState.delete(doc.uri.toString());
             }
         }
@@ -372,9 +372,13 @@ export class DefaultDocumentBuilder implements DocumentBuilder {
         }
     }
 
-    resetToDeleted<T extends AstNode>(document: LangiumDocument<T>): void {
+    // TODO open question, to be discussed during the review: Shall we expose this method in the Interface, as done for `resetToState`?
+    cleanUpDeleted<T extends AstNode>(document: LangiumDocument<T>): void {
         this.indexManager.remove(document.uri);
-        // document.state = DocumentState.Changed; // since the state is already set before
+        // In the current implementation, this line is not necessary, since the state is already set before.
+        //  This line does not hurt and makes the code to be in sync with `resetToState`.
+        //  If `cleanUpDeleted` is made available outside (see TODO above), this line becomes necessary.
+        document.state = DocumentState.Changed;
     }
 
     /**
