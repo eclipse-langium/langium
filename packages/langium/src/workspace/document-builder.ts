@@ -177,7 +177,6 @@ export class DefaultDocumentBuilder implements DocumentBuilder {
                 if (typeof options.validation === 'boolean' && options.validation) {
                     // Force re-running all validation checks
                     this.resetToState(document, DocumentState.IndexedReferences);
-                    this.buildState.delete(key);
                 } else if (typeof options.validation === 'object') {
                     // Validation with explicit options was requested for a document that has already been partly validated.
                     // In this case, we need to execute only the missing validation categories.
@@ -218,7 +217,6 @@ export class DefaultDocumentBuilder implements DocumentBuilder {
             for (const doc of deletedDocs) {
                 deletedUris.push(doc.uri);
                 this.cleanUpDeleted(doc);
-                this.buildState.delete(doc.uri.toString());
             }
         }
         // Since the changed URI might point to a directory, we need to check all (nested) documents in that directory
@@ -235,7 +233,6 @@ export class DefaultDocumentBuilder implements DocumentBuilder {
                 this.langiumDocuments.addDocument(changedDocument);
             }
             this.resetToState(changedDocument, DocumentState.Changed);
-            this.buildState.delete(changedUri.toString());
         }
         // Set the state of all documents that should be relinked to `ComputedScopes` (if not already lower)
         const allChangedUris = stream(changedUris).concat(deletedUris).map(uri => uri.toString()).toSet();
@@ -378,6 +375,10 @@ export class DefaultDocumentBuilder implements DocumentBuilder {
                 // Fall through
             case DocumentState.IndexedReferences:
                 document.diagnostics = undefined;
+                this.buildState.delete(document.uri.toString());
+                // Fall through
+            case DocumentState.Validated:
+                // do nothing and keep the buildState
         }
         if (document.state > state) {
             document.state = state;
@@ -386,6 +387,7 @@ export class DefaultDocumentBuilder implements DocumentBuilder {
 
     // TODO open question, to be discussed during the review: Shall we expose this method in the Interface, as done for `resetToState`?
     cleanUpDeleted<T extends AstNode>(document: LangiumDocument<T>): void {
+        this.buildState.delete(document.uri.toString());
         this.indexManager.remove(document.uri);
         // In the current implementation, this line is not necessary, since the state is already set before.
         //  This line does not hurt and makes the code to be in sync with `resetToState`.
