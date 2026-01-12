@@ -428,17 +428,24 @@ export class DefaultDocumentBuilder implements DocumentBuilder {
             this.indexManager.updateReferences(doc, cancelToken)
         );
         // 5. Validation
-        const toBeValidated = documents.filter(doc => this.shouldValidate(doc));
-        await this.runCancelable(toBeValidated, DocumentState.Validated, cancelToken, doc =>
-            this.validate(doc, cancelToken)
-        );
-
-        // If we've made it to this point without being cancelled, we can mark the build state as completed.
-        for (const doc of documents) {
-            const state = this.buildState.get(doc.uri.toString());
-            if (state) {
-                state.completed = true;
+        const toBeValidated = documents.filter(doc => {
+            if (this.shouldValidate(doc)) {
+                return true; // the build state is marked as completed after finishing the validation for the current document
+            } else {
+                this.markAsCompleted(doc); // since the validation is skipped for this document, it is already completed now
+                return false;
             }
+        });
+        await this.runCancelable(toBeValidated, DocumentState.Validated, cancelToken, async doc => {
+            await this.validate(doc, cancelToken);
+            this.markAsCompleted(doc);
+        });
+    }
+
+    protected markAsCompleted(document: LangiumDocument): void {
+        const state = this.buildState.get(document.uri.toString());
+        if (state) {
+            state.completed = true;
         }
     }
 

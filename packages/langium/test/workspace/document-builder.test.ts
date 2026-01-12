@@ -6,7 +6,7 @@
 
 import { fail } from 'assert';
 import type { AstNode, BuildOptions, DocumentBuilder, FileSystemNode, FileSystemProvider, LangiumDocument, LangiumDocumentFactory, LangiumDocuments, Module, Reference, ValidationChecks } from 'langium';
-import { AstUtils, DefaultDocumentBuilder, DocumentState, TextDocument, URI, UriUtils, isOperationCancelled, startCancelableOperation } from 'langium';
+import { AstUtils, DefaultDocumentBuilder, DocumentState, isOperationCancelled, startCancelableOperation, TextDocument, URI, UriUtils } from 'langium';
 import { createServicesForGrammar } from 'langium/grammar';
 import type { LangiumServices, LangiumSharedServices, PartialLangiumSharedServices, TextDocuments } from 'langium/lsp';
 import { VirtualFileSystemProvider } from 'langium/test';
@@ -317,6 +317,78 @@ describe('DefaultDocumentBuilder', () => {
         expect(document1.diagnostics?.map(d => d.message)).toEqual([
             'Bar is too long: AnotherStrangeBar',
             'Value is too large: 11',
+        ]);
+    });
+
+    test('Dont validate completed documents again, if the validation phase is cancelled', async () => {
+        class TestDocumentBuilder extends DefaultDocumentBuilder {
+            isCompleted(doc: LangiumDocument): boolean {
+                return this.buildState.get(doc.uri.toString())?.completed ?? false;
+            }
+        }
+        const services = await createServices({
+            workspace: {
+                DocumentBuilder: services => new TestDocumentBuilder(services),
+            },
+        });
+        const workspace = services.shared.workspace;
+        const documentFactory = workspace.LangiumDocumentFactory;
+        const documents = workspace.LangiumDocuments;
+        const document1 = documentFactory.fromString<Model>(`
+            foo 1 A
+            foo 11 B
+            bar A
+            bar B
+        `, URI.parse('file:///test1.txt'));
+        documents.addDocument(document1);
+        const document2 = documentFactory.fromString<Model>(`
+            foo 1 C
+            foo 11 D
+            bar C
+            bar D
+        `, URI.parse('file:///test2.txt'));
+        documents.addDocument(document2);
+        const builder = workspace.DocumentBuilder as TestDocumentBuilder;
+
+        // While the first document is completed, the second one misses the validation phase.
+        const token = startCancelableOperation();
+        builder.onDocumentPhase(DocumentState.Validated, doc => {
+            if (doc === document1) {
+                token.cancel(); // cancel the build after validating the 1st and before the 2nd document
+            }
+        });
+        try {
+            await builder.build([document1, document2], { validation: true }, token.token);
+        } catch (err) {
+            expect(isOperationCancelled(err)).toBe(true);
+        }
+        expect(builder.isCompleted(document1)).toBe(true);
+        expect(document1.state).toBe(DocumentState.Validated);
+        expect(document1.diagnostics?.map(d => d.message)).toEqual([
+            'Value is too large: 11'
+        ]);
+        expect(builder.isCompleted(document2)).toBe(false);
+        expect(document2.state).toBe(DocumentState.IndexedReferences);
+        expect(document2.diagnostics).toBeUndefined();
+
+        // Check that only the validation of the second document is executed when continuing the build.
+        workspace.TextDocuments.set(document1.textDocument);
+        workspace.TextDocuments.set(document2.textDocument);
+        builder.onDocumentPhase(DocumentState.Validated, doc => {
+            if (doc === document1) {
+                expect.fail(`Don't validate the completed document ${doc.uri.toString()} again!`);
+            }
+        });
+        await builder.update([], []);
+        expect(builder.isCompleted(document1)).toBe(true);
+        expect(document1.state).toBe(DocumentState.Validated);
+        expect(document1.diagnostics?.map(d => d.message)).toEqual([
+            'Value is too large: 11'
+        ]);
+        expect(builder.isCompleted(document2)).toBe(true);
+        expect(document2.state).toBe(DocumentState.Validated);
+        expect(document2.diagnostics?.map(d => d.message)).toEqual([
+            'Value is too large: 11'
         ]);
     });
 
