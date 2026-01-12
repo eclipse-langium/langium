@@ -1,5 +1,20 @@
 # Change Log of `langium`
 
+## v4.1.3 (Dec. 2025)
+
+* Fix return type of infix rules ([#2077](https://github.com/eclipse-langium/langium/pull/2077)).
+* Fix assignments of union types ([#2076](https://github.com/eclipse-langium/langium/pull/2076)).
+
+## v4.1.2 (Dec. 2025)
+
+* Adjusted `UriTrie` internals ([#2069](https://github.com/eclipse-langium/langium/pull/2069)).
+
+## v4.1.1 (Nov. 2025)
+
+* Improved error handling in the `DefaultWorkspaceManager` ([#2047](https://github.com/eclipse-langium/langium/pull/2047)).
+* Fixed a rendering issue in the hover provider ([#2067](https://github.com/eclipse-langium/langium/pull/2067)).
+* Improve range display for definition requests ([#2063](https://github.com/eclipse-langium/langium/pull/2063)).
+
 ## v4.1.0 (Sep. 2025)
 
 * Add a profiler service for parsing, linking and validation ([#1993](https://github.com/eclipse-langium/langium/pull/1993)).
