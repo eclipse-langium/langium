@@ -179,26 +179,23 @@ export class DefaultDocumentBuilder implements DocumentBuilder {
                     this.resetToState(document, DocumentState.IndexedReferences);
                     this.buildState.delete(key);
                 } else if (typeof options.validation === 'object') {
-                    const buildState = this.buildState.get(key);
-                    const previousCategories = buildState?.result?.validationChecks;
-                    if (previousCategories) {
-                        // Validation with explicit options was requested for a document that has already been partly validated.
-                        // In this case, we need to merge the previous validation categories with the new ones.
-                        const newCategories = options.validation.categories ?? ValidationCategory.all as ValidationCategory[];
-                        const categories = newCategories.filter(c => !previousCategories.includes(c));
-                        if (categories.length > 0) {
-                            this.buildState.set(key, {
-                                completed: false,
-                                options: {
-                                    validation: {
-                                        ...options.validation,
-                                        categories
-                                    }
-                                },
-                                result: buildState.result
-                            });
-                            document.state = DocumentState.IndexedReferences;
-                        }
+                    // Validation with explicit options was requested for a document that has already been partly validated.
+                    // In this case, we need to execute only the missing validation categories.
+                    const categories = this.findMissingValidationCategories(document, options);
+                    if (categories.length > 0) {
+                        // Validate this document, since some of the requested validation categories are not executed yet.
+                        //  In all other cases/else-branches, the document is not build at all.
+                        this.buildState.set(key, {
+                            completed: false,
+                            options: {
+                                validation: {
+                                    categories
+                                }
+                            },
+                            result: this.buildState.get(key)?.result,
+                        });
+                        // Reset the state, but keep the existing validation markers of the already completed validation categories.
+                        document.state = DocumentState.IndexedReferences;
                     }
                 }
             } else {
@@ -258,10 +255,25 @@ export class DefaultDocumentBuilder implements DocumentBuilder {
                     doc.state < DocumentState.Validated
                     // This includes those for which a previous build has been cancelled
                     || !this.buildState.get(doc.uri.toString())?.completed
+                    // `updateBuildOptions` changed between the last build (which is completed) and the current build,
+                    //  leading to incomplete results, e.g. some validation categories are requested, which are not executed during the last build
+                    || this.resultsAreIncomplete(doc, this.updateBuildOptions)
                 )
                 .toArray()
         );
         await this.buildDocuments(rebuildDocuments, this.updateBuildOptions, cancelToken);
+    }
+
+    protected resultsAreIncomplete(document: LangiumDocument, options: BuildOptions | undefined): boolean {
+        return this.findMissingValidationCategories(document, options).length >= 1;
+    }
+
+    protected findMissingValidationCategories(document: LangiumDocument, options: BuildOptions | undefined): ValidationCategory[] {
+        const state = this.buildState.get(document.uri.toString());
+        const executedCategories = new Set(state?.result?.validationChecks ?? (state?.completed ? ValidationCategory.all : []));
+        const requestedCategories = (options === undefined || options.validation === true) ? ValidationCategory.all
+            : typeof options.validation === 'object' ? (options.validation.categories ?? ValidationCategory.all) : [];
+        return stream(requestedCategories).filter(requested => !executedCategories.has(requested)).toArray();
     }
 
     protected async findChangedUris(changed: URI): Promise<URI[]> {
@@ -631,11 +643,12 @@ export class DefaultDocumentBuilder implements DocumentBuilder {
      */
     protected async validate(document: LangiumDocument, cancelToken: CancellationToken): Promise<void> {
         const validator = this.serviceRegistry.getServices(document.uri).validation.DocumentValidator;
-        const validationSetting = this.getBuildOptions(document).validation;
-        const options = typeof validationSetting === 'object' ? validationSetting : undefined;
-        const diagnostics = await validator.validateDocument(document, options, cancelToken);
+        const options = this.getBuildOptions(document);
+        const validationOptions = typeof options.validation === 'object' ? { ...options.validation } : {};
+        validationOptions.categories = this.findMissingValidationCategories(document, options); // execute only not-yet-executed categories
+        const diagnostics = await validator.validateDocument(document, validationOptions, cancelToken);
         if (document.diagnostics) {
-            document.diagnostics.push(...diagnostics);
+            document.diagnostics.push(...diagnostics); // keep diagnostics of previously executed categories
         } else {
             document.diagnostics = diagnostics;
         }
@@ -644,11 +657,10 @@ export class DefaultDocumentBuilder implements DocumentBuilder {
         const state = this.buildState.get(document.uri.toString());
         if (state) {
             state.result ??= {};
-            const newCategories = options?.categories ?? ValidationCategory.all;
             if (state.result.validationChecks) {
-                state.result.validationChecks.push(...newCategories);
+                state.result.validationChecks = stream(state.result.validationChecks).concat(validationOptions.categories).distinct().toArray();
             } else {
-                state.result.validationChecks = [...newCategories];
+                state.result.validationChecks = [...validationOptions.categories];
             }
         }
     }

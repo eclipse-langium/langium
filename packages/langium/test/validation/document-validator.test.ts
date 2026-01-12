@@ -262,7 +262,7 @@ describe('Register Before/AfterDocument logic for validations with state', () =>
     describe('Custom validation categories', () => {
 
         const grammar = `grammar Test
-    
+
         entry Model:
             'model' name=ID;
 
@@ -328,11 +328,11 @@ describe('Register Before/AfterDocument logic for validations with state', () =>
             expect(diagnostics.filter(d => d.severity === 2)).toHaveLength(1); // 1 warning
         });
 
-        test('default categories', async () => {
+        test('default categories dont include user-defined categories', async () => {
             const validationResult = await validate('model test');
             const diagnostics = validationResult.diagnostics;
-            expect(diagnostics).toHaveLength(2);
-            expect(diagnostics.filter(d => d.severity === 1)).toHaveLength(1); // 1 error
+            expect(diagnostics).toHaveLength(1); // only 'fast' issues
+            expect(diagnostics.filter(d => d.severity === 1)).toHaveLength(0); // 0 error
             expect(diagnostics.filter(d => d.severity === 2)).toHaveLength(1); // 1 warning
         });
     });

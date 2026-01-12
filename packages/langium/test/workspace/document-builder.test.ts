@@ -822,7 +822,7 @@ describe('DefaultDocumentBuilder', () => {
             expect(builder.resetted).toHaveLength(0);
 
             // initial build of all documents
-            await builder.build([documentA, documentB], { eagerLinking: true, validation: true });
+            await builder.build([documentA, documentB], { eagerLinking: true, validation: { categories: ['built-in', 'fast'] } });
             checkDocumentStateAfterBuild();
             // resetToState is not called during the initial build
             expect(builder.resetted).toHaveLength(0);
@@ -931,6 +931,28 @@ describe('DefaultDocumentBuilder', () => {
 
             expect(builder.resetted).toHaveLength(1);
             expect(builder.resetted[0]).toBe('/testA.txt: Changed');
+            expect(builder.actuallyBuilt).toHaveLength(2);
+            expect(builder.actuallyBuilt[0]).toBe('/testA.txt');
+            expect(builder.actuallyBuilt[1]).toBe('/testB.txt');
+        });
+
+        test('During updates, validate only some categories: dont validate already executed category', async () => {
+            // validate only 'built-in' checks now
+            builder.updateBuildOptions = { validation: { categories: ['built-in'] } };
+            await builder.update([], []);
+            checkDocumentStateAfterBuild();
+            // => no documents are validated again with 'built-in' checks, since 'built-in' (and 'fast') checks are already executed during the initial build
+            expect(builder.resetted).toHaveLength(0);
+            expect(builder.actuallyBuilt).toHaveLength(0);
+        });
+
+        test('During updates, validate only some categories: validate not yet executed category', async () => {
+            // validate only 'slow' checks now
+            builder.updateBuildOptions = { validation: { categories: ['slow'] } };
+            await builder.update([], []);
+            checkDocumentStateAfterBuild();
+            // => all documents are validated again with 'slow' checks, since only 'built-in' and 'fast' checks are executed during the initial build
+            expect(builder.resetted).toHaveLength(0);
             expect(builder.actuallyBuilt).toHaveLength(2);
             expect(builder.actuallyBuilt[0]).toBe('/testA.txt');
             expect(builder.actuallyBuilt[1]).toBe('/testB.txt');
