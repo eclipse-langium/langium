@@ -955,6 +955,7 @@ describe('DefaultDocumentBuilder', () => {
             expect(builder.resetted).toHaveLength(0);
 
             // resetToState for B => build B again
+            //  (Motivation for `resetToState`: Explicitly test `resetToState`, which enables to control the desired starting phase for updates in fine-grain way)
             builder.resetToState(documentB, DocumentState.ComputedScopes);
 
             expect(documentB.state).toBe(DocumentState.ComputedScopes);
@@ -984,6 +985,7 @@ describe('DefaultDocumentBuilder', () => {
             expect(builder.resetted).toHaveLength(0);
 
             // resetToState for B => build B again
+            //  (Motivation for `resetToState`: Explicitly test `resetToState`, which enables to control the desired starting phase for updates in fine-grain way)
             builder.resetToState(documentB, DocumentState.IndexedReferences);
 
             expect(documentB.state).toBe(DocumentState.IndexedReferences);

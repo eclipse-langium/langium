@@ -461,15 +461,18 @@ export class DefaultDocumentBuilder implements DocumentBuilder {
         for (const doc of documents) {
             const key = doc.uri.toString();
             const state = this.buildState.get(key);
-            // If the document has no previous build state, we set it. If it has one, but it's already marked
-            // as completed, we overwrite it. If the previous build was not completed, we keep its state
-            // and continue where it was cancelled.
-            if (!state || state.completed) {
+            if (
+                !state             // If the document has no previous build state, we set it.
+                || state.completed // If it has one, but it's already marked as completed, we overwrite it.
+            ) {
                 this.buildState.set(key, {
                     completed: false,
                     options,
                     result: state?.result
                 });
+            } else {
+                // If the previous build was not completed, we keep its DocumentState and continue from the DocumentState where it was cancelled,
+                //  e.g. the previous build options are used, including the previously requested validation categories.
             }
         }
     }
@@ -603,6 +606,7 @@ export class DefaultDocumentBuilder implements DocumentBuilder {
         const listenersCopy = listeners.slice();
         for (const listener of listenersCopy) {
             try {
+                await interruptAndCheck(cancelToken);
                 await listener(document, cancelToken);
             } catch (err) {
                 // Ignore cancellation errors

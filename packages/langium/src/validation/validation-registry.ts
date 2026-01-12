@@ -143,8 +143,8 @@ export class ValidationRegistry {
      * or an array of validation checks.
      *
      * @param checksRecord Set of validation checks to register.
-     * @param category Optional category for the validation checks (defaults to `'fast'`).
      * @param thisObj Optional object to be used as `this` when calling the validation check functions.
+     * @param category Optional category for the validation checks (defaults to `'fast'`).
      */
     register<T>(checksRecord: ValidationChecks<T>, thisObj: ThisParameterType<unknown> = this, category: ValidationCategory = 'fast'): void {
         if (category === 'built-in') {
