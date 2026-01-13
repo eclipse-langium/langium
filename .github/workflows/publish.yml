@@ -47,5 +47,4 @@ jobs:
         GH_TOKEN: ${{ github.token }}
         RUN_ID: ${{ github.run_id }}
       run: |
-        npm install -g @vscode/vsce ovsx
         npm run publish:updated
