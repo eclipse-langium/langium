@@ -40,10 +40,6 @@ async function updateAndPublish() {
     const ext = await tryPublishExtension();
     if (!ext && packagesToPublish.length === 0) {
         console.log('All packages are up to date. Nothing to publish.');
-        if (process.env.RUN_ID) {
-            console.log(`Marking GitHub Action run ${process.env.RUN_ID} as cancelled.`);
-            execSync(`gh run cancel ${process.env.RUN_ID}`);
-        }
     }
 }
 
