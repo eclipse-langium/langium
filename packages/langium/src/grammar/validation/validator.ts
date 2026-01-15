@@ -400,7 +400,10 @@ export class LangiumGrammarValidator {
         }
 
         for (const rule of grammar.rules.filter(ast.isAbstractParserRule)) {
-            if (isEmptyRule(rule)) {
+            // Skip empty rules and fragment rules
+            // Fragment rules do not define types (they are inlined)
+            // And empty rules will show an error elsewhere
+            if (isEmptyRule(rule) || (ast.isParserRule(rule) && rule.fragment)) {
                 continue;
             }
 
