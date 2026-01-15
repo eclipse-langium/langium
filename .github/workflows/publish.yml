@@ -2,10 +2,17 @@ name: Publish
 
 permissions:
   id-token: write
+  # Required to mark the action as cancelled
+  actions: write
 
 on:
-  release:
-    types: [published]
+  push:
+    # Only trigger on changes to package.json files in the main and maintenance branches
+    branches:
+      - 'main'
+      - 'maintenance/**'
+    paths:
+      - '**/package.json'
 
 jobs:
   publish:
@@ -32,27 +39,12 @@ jobs:
       shell: bash
       run: |
         npm run test
-    - name: Publish NPM Packages
+    - name: Publish
       shell: bash
       env:
-        NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
-      # Update the following list when a new npm package is added
+        OVSX_TOKEN: ${{ secrets.OVSX_TOKEN }}
+        VSCE_TOKEN: ${{ secrets.VSCE_TOKEN }}
+        GH_TOKEN: ${{ github.token }}
+        RUN_ID: ${{ github.run_id }}
       run: |
-        npm run publish:latest --provenance --workspace=langium
-        npm run publish:latest --provenance --workspace=langium-railroad
-        npm run publish:latest --provenance --workspace=langium-cli
-        npm run publish:latest --provenance --workspace=langium-sprotty
-        npm run publish:latest --provenance --workspace=generator-langium
-        npm run publish:latest --provenance --workspace=langium-arithmetics-dsl
-        npm run publish:latest --provenance --workspace=langium-domainmodel-dsl
-        npm run publish:latest --provenance --workspace=langium-statemachine-dsl
-    - name: Publish VSCode Extension
-      shell: bash
-      # Add this line to the publishing once we have a valid VSCE token available again
-      # vsce publish -i langium-vscode-$PACKAGE_VERSION.vsix -p ${{ secrets.VSCE_TOKEN }}
-      run: |
-        npm install -g @vscode/vsce ovsx
-        cd packages/langium-vscode
-        PACKAGE_VERSION=`npm pkg get version --workspaces=false | tr -d \"`
-        vsce package
-        ovsx publish langium-vscode-$PACKAGE_VERSION.vsix -p ${{ secrets.OVSX_TOKEN }}
+        npm run publish:updated

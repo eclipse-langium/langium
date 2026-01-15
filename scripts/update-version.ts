@@ -1,5 +1,5 @@
-const fs = require('fs-extra');
-const path = require('path');
+import fs from 'fs-extra';
+import path from 'path';
 
 async function runUpdate() {
     const langiumPath = getPath('langium', true);
@@ -20,8 +20,8 @@ async function runUpdate() {
     ]);
 }
 
-async function replaceAll(project, package, version) {
-    const path = getPath(project, package);
+async function replaceAll(project: string, isPackage: boolean, version: string) {
+    const path = getPath(project, isPackage);
     let content = await fs.readFile(path, 'utf-8');
     content = content
         .replace(/(?<="langium": "[~\^]?)\d+\.\d+\.\d+/g, version)
@@ -31,8 +31,8 @@ async function replaceAll(project, package, version) {
     await fs.writeFile(path, content);
 }
 
-function getPath(project, package) {
-    return path.join(package ? 'packages' : 'examples', project, 'package.json');
+function getPath(project: string, isPackage: boolean) {
+    return path.join(isPackage ? 'packages' : 'examples', project, 'package.json');
 }
 
 runUpdate();
