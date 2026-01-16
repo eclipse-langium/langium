@@ -483,7 +483,7 @@ describe('Common prefixes', async () => {
 
         const services = await createServicesForGrammar({ grammar, languageMetaData });
         const completion = expectCompletion(services);
-        const text = 'A b D <|>A <|>B <|>C';
+        const text = 'A b d <|>A <|>b <|>C';
         await completion({
             text,
             index: 0,
