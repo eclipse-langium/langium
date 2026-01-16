@@ -317,7 +317,7 @@ function getAbstractElementParent(element: ast.AbstractElement): ast.AbstractEle
 function featureMatches(feature: ast.AbstractElement, token: IToken): boolean {
     if (ast.isKeyword(feature)) {
         const content = feature.value;
-        return content === token.image;
+        return content === token.tokenType.name;
     } else if (ast.isRuleCall(feature)) {
         return ruleMatches(feature.rule.ref, token);
     } else if (ast.isCrossReference(feature)) {
