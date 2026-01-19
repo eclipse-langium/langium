@@ -461,6 +461,46 @@ describe('Common prefixes', async () => {
         });
     });
 
+    test('Can complete common prefixes in alternatives for case insensitive language', async () => {
+        const grammar = `
+        grammar Test
+
+        entry Model: (item+=A | item+=B)*;
+
+        A: "a" "b" c="c";
+        B: "a" "b" d="d";
+
+        hidden terminal WS: /\\s+/;
+        hidden terminal ML_COMMENT: /\\/\\*[\\s\\S]*?\\*\\//;
+        `;
+
+        const languageMetaData = {
+            caseInsensitive: true,
+            fileExtensions: ['.txt'],
+            languageId: 'UNKNOWN',
+            mode: 'development' as const
+        };
+
+        const services = await createServicesForGrammar({ grammar, languageMetaData });
+        const completion = expectCompletion(services);
+        const text = 'A b d <|>A <|>b <|>C';
+        await completion({
+            text,
+            index: 0,
+            expectedItems: ['a']
+        });
+        await completion({
+            text,
+            index: 1,
+            expectedItems: ['b']
+        });
+        await completion({
+            text,
+            index: 2,
+            expectedItems: ['c', 'd']
+        });
+    });
+
     test('Can enter and leave a rule in common prefixes', async () => {
         const grammar = `
         grammar Test
