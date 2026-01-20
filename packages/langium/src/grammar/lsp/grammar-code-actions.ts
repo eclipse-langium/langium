@@ -13,7 +13,7 @@ import type { CodeActionProvider } from '../../lsp/code-action.js';
 import type { LangiumServices } from '../../lsp/lsp-services.js';
 import type { AstReflection, Reference, ReferenceInfo } from '../../syntax-tree.js';
 import { getContainerOfType } from '../../utils/ast-utils.js';
-import { findLeafNodeAtOffset } from '../../utils/cst-utils.js';
+import { findLeafNodeAtOffset, getNextNode } from '../../utils/cst-utils.js';
 import type { MaybePromise } from '../../utils/promise-utils.js';
 import { escapeRegExp } from '../../utils/regexp-utils.js';
 import type { URI } from '../../utils/uri-utils.js';
@@ -80,6 +80,9 @@ export class LangiumGrammarCodeActionProvider implements CodeActionProvider {
                 break;
             case IssueCodes.SuperfluousInfer:
                 accept(this.fixSuperfluousInfer(diagnostic, document));
+                break;
+            case IssueCodes.ReplaceOperatorMultiAssignment:
+                accept(this.replaceOperator(diagnostic, document));
                 break;
             case DocumentValidator.LinkingError: {
                 const data = diagnostic.data as LinkingErrorData;
@@ -477,6 +480,34 @@ export class LangiumGrammarCodeActionProvider implements CodeActionProvider {
             result[shortestPathIndex].isPreferred = true;
         }
         return result;
+    }
+
+    private replaceOperator(diagnostic: Diagnostic, document: LangiumDocument<ast.Grammar>): CodeAction | undefined {
+        const rootCst = document.parseResult.value.$cstNode;
+        if (rootCst) {
+            const offset = document.textDocument.offsetAt(diagnostic.range.start);
+            const cstNodeFeature = findLeafNodeAtOffset(rootCst, offset);
+            const assignment = getContainerOfType(cstNodeFeature?.astNode, node => ast.isAssignment(node) || ast.isAction(node));
+            // the validation check marks the 'feature' (for better visibility), but we need to replace the 'operator':
+            const cstNodeOperator = cstNodeFeature ? getNextNode(cstNodeFeature, false) : undefined;
+            if (cstNodeOperator && assignment?.$cstNode && assignment.feature && assignment.operator === '=') { // replacing '?=' by '+=' is usually not very helpful, e.g. in cases like "(marked?='marked')+"
+                return {
+                    title: `Replace '${assignment.operator}' with '+='`,
+                    kind: CodeActionKind.QuickFix,
+                    diagnostics: [diagnostic],
+                    isPreferred: true,
+                    edit: {
+                        changes: {
+                            [document.textDocument.uri]: [{
+                                range: cstNodeOperator.range,
+                                newText: '+='
+                            }]
+                        }
+                    }
+                };
+            }
+        }
+        return undefined;
     }
 
 }
