@@ -44,7 +44,5 @@ jobs:
       env:
         OVSX_TOKEN: ${{ secrets.OVSX_TOKEN }}
         VSCE_TOKEN: ${{ secrets.VSCE_TOKEN }}
-        GH_TOKEN: ${{ github.token }}
-        RUN_ID: ${{ github.run_id }}
       run: |
         npm run publish:updated
