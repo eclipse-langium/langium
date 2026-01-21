@@ -2240,4 +2240,19 @@ describe('Strict type validation', () => {
         const validationResult = await validateStrict(grammar);
         expectNoIssues(validationResult);
     });
+
+    test('Fragment rules are skipped in strict mode', async () => {
+        const grammar = `
+        grammar Test
+        interface DeclaredType {
+            name: string
+        }
+        entry Rule returns DeclaredType: FragmentRule;
+        fragment FragmentRule: name=ID;
+        terminal ID: /[a-zA-Z]+/;
+        `;
+
+        const validationResult = await validateStrict(grammar);
+        expectNoIssues(validationResult);
+    });
 });
