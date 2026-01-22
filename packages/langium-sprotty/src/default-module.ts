@@ -30,23 +30,23 @@ export const SprottyDefaultModule: Module<LangiumSprottyServices, SprottyDefault
 };
 
 export const defaultDiagramServerFactory =
-(services: LangiumSprottySharedServices): ((clientId: string, options?: DiagramOptions) => DiagramServer) => {
-    const connection = services.lsp.Connection;
-    const serviceRegistry = services.ServiceRegistry;
-    return (clientId, options) => {
-        const sourceUri = options?.sourceUri;
-        if (!sourceUri) {
-            throw new Error("Missing 'sourceUri' option in request.");
-        }
-        const language = serviceRegistry.getServices(URI.parse(sourceUri as string)) as LangiumSprottyServices;
-        if (!language.diagram) {
-            throw new Error(`The '${language.LanguageMetaData.languageId}' language does not support diagrams.`);
-        }
-        return new DiagramServer(async action => {
-            connection?.sendNotification(DiagramActionNotification.type, { clientId, action });
-        }, language.diagram);
+    (services: LangiumSprottySharedServices): ((clientId: string, options?: DiagramOptions) => DiagramServer) => {
+        const connection = services.lsp.Connection;
+        const serviceRegistry = services.ServiceRegistry;
+        return (clientId, options) => {
+            const sourceUri = options?.sourceUri;
+            if (!sourceUri) {
+                throw new Error("Missing 'sourceUri' option in request.");
+            }
+            const language = serviceRegistry.getServices(URI.parse(sourceUri as string)) as LangiumSprottyServices;
+            if (!language.diagram) {
+                throw new Error(`The '${language.LanguageMetaData.languageId}' language does not support diagrams.`);
+            }
+            return new DiagramServer(async action => {
+                connection?.sendNotification(DiagramActionNotification.type, { clientId, action });
+            }, language.diagram);
+        };
     };
-};
 
 /**
  * Default implementations of shared services for the integration of Langium and Sprotty.

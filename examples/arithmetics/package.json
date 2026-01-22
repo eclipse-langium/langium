@@ -66,7 +66,7 @@
     "publish:latest": "npm publish --tag latest --access public"
   },
   "dependencies": {
-    "chalk": "~5.4.1",
+    "chalk": "~5.6.0",
     "commander": "~14.0.0",
     "langium": "~4.1.0",
     "vscode-languageclient": "~9.0.1",

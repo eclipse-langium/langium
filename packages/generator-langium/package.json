@@ -33,22 +33,22 @@
     "publish:latest": "npm publish --tag latest --access public"
   },
   "dependencies": {
-    "chalk": "~5.4.1",
+    "chalk": "~5.6.0",
     "lodash": "~4.17.21",
     "which": "~5.0.0",
-    "yeoman-environment": "~4.4.3",
+    "yeoman-environment": "~5.1.2",
     "yeoman-generator": "~7.5.1"
   },
   "devDependencies": {
     "@types/lodash": "~4.17.16",
     "@types/which": "~3.0.4",
-    "@yeoman/types": "~1.6.0",
-    "yeoman-test": "~10.1.1"
+    "@yeoman/types": "~1.9.1",
+    "yeoman-test": "~11.2.0"
   },
   "volta": {
     "node": "20.19.2",
     "npm": "10.8.2",
-    "yo": "5.1.0"
+    "yo": "6.0.0"
   },
   "repository": {
     "type": "git",
