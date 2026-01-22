@@ -415,16 +415,14 @@ export class DefaultLangiumDocuments implements LangiumDocuments {
 
     protected readonly services: LangiumSharedCoreServices;
     protected readonly langiumDocumentFactory: LangiumDocumentFactory;
-    protected _documentBuilder: DocumentBuilder;
-    protected get documentBuilder(): DocumentBuilder {
-        return this._documentBuilder ??= this.services.workspace.DocumentBuilder;
-    }
+    private documentBuilder: () => DocumentBuilder;
 
     protected readonly documentTrie = new UriTrie<LangiumDocument>();
 
     constructor(services: LangiumSharedCoreServices) {
         this.services = services;
         this.langiumDocumentFactory = services.workspace.LangiumDocumentFactory;
+        this.documentBuilder = () => services.workspace.DocumentBuilder;
     }
 
     get all(): Stream<LangiumDocument> {
@@ -486,7 +484,7 @@ export class DefaultLangiumDocuments implements LangiumDocuments {
         const uriString = uri.toString();
         const langiumDoc = this.documentTrie.find(uriString);
         if (langiumDoc) {
-            this.documentBuilder.resetToState(langiumDoc, DocumentState.Changed);
+            this.documentBuilder().resetToState(langiumDoc, DocumentState.Changed);
         }
         return langiumDoc;
     }

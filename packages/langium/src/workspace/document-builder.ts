@@ -36,8 +36,9 @@ export interface BuildOptions {
     /**
      * Control the validation phase with this option:
      *  - `true` enables all validation checks and forces revalidating the documents
+     *    In order to include additional, custom validation categories, override `DefaultDocumentBuilder.getAllValidationCategories(...)`.
      *  - `false` or `undefined` disables all validation checks
-     *  - An object runs only the necessary validation checks; the `categories` property restricts this to a specific subset
+     *  - An object runs only the necessary validation checks; the `categories` property restricts this to a specific subset (which might include custom categories as well).
      */
     validation?: boolean | ValidationOptions
 }
@@ -267,10 +268,15 @@ export class DefaultDocumentBuilder implements DocumentBuilder {
 
     protected findMissingValidationCategories(document: LangiumDocument, options: BuildOptions | undefined): ValidationCategory[] {
         const state = this.buildState.get(document.uri.toString());
-        const executedCategories = new Set(state?.result?.validationChecks ?? (state?.completed ? ValidationCategory.all : []));
-        const requestedCategories = (options === undefined || options.validation === true) ? ValidationCategory.all
-            : typeof options.validation === 'object' ? (options.validation.categories ?? ValidationCategory.all) : [];
-        return stream(requestedCategories).filter(requested => !executedCategories.has(requested)).toArray();
+        const allCategories = this.getAllValidationCategories(document);
+        const executedCategories = new Set(state?.result?.validationChecks ?? (state?.completed ? allCategories : []));
+        const requestedCategories = (options === undefined || options.validation === true) ? allCategories
+            : typeof options.validation === 'object' ? (options.validation.categories ?? allCategories) : [];
+        return requestedCategories.filter(requested => !executedCategories.has(requested));
+    }
+
+    protected getAllValidationCategories(_document: LangiumDocument): readonly ValidationCategory[] {
+        return ValidationCategory.defaults;
     }
 
     protected async findChangedUris(changed: URI): Promise<URI[]> {
@@ -385,13 +391,12 @@ export class DefaultDocumentBuilder implements DocumentBuilder {
         }
     }
 
-    // TODO open question, to be discussed during the review: Shall we expose this method in the Interface, as done for `resetToState`?
-    cleanUpDeleted<T extends AstNode>(document: LangiumDocument<T>): void {
+    protected cleanUpDeleted<T extends AstNode>(document: LangiumDocument<T>): void {
         this.buildState.delete(document.uri.toString());
         this.indexManager.remove(document.uri);
-        // In the current implementation, this line is not necessary, since the state is already set before.
+        // Since this method `cleanUpDeleted` is not available from outside, the following line is not necessary, since the state is already set before.
         //  This line does not hurt and makes the code to be in sync with `resetToState`.
-        //  If `cleanUpDeleted` is made available outside (see TODO above), this line becomes necessary.
+        //  If `cleanUpDeleted` is called in custom document builders at some more places, this line becomes necessary.
         document.state = DocumentState.Changed;
     }
 

@@ -116,7 +116,12 @@ export type ValidationChecks<T> = {
 export type ValidationCategory = 'fast' | 'slow' | 'built-in' | (string & {});
 
 export namespace ValidationCategory {
-    export const all: readonly ValidationCategory[] = ['fast', 'slow', 'built-in'];
+    export const defaults: readonly ValidationCategory[] = ['fast', 'slow', 'built-in'];
+    /**
+     * @deprecated since 4.2 Use `ValidationCategory.defaults` instead,
+     * since "all" does not include user-defined, custom validation categories.
+     */
+    export const all: readonly ValidationCategory[] = defaults;
 }
 
 type ValidationCheckEntry = {
