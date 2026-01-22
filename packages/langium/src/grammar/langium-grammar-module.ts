@@ -73,9 +73,9 @@ export const LangiumGrammarModule: Module<LangiumGrammarServices, PartialLangium
 export function createLangiumGrammarServices(context: DefaultSharedModuleContext,
     sharedModule?: Module<LangiumSharedServices, PartialLangiumSharedServices>,
     module?: Module<LangiumGrammarServices, DeepPartial<LangiumServices & LangiumGrammarAddedServices>>): {
-        shared: LangiumSharedServices,
-        grammar: LangiumGrammarServices
-    } {
+    shared: LangiumSharedServices,
+    grammar: LangiumGrammarServices
+} {
     const shared = inject(
         createDefaultSharedModule(context),
         LangiumGrammarGeneratedSharedModule,

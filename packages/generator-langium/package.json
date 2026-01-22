@@ -33,7 +33,7 @@
     "publish:latest": "npm publish --tag latest --access public"
   },
   "dependencies": {
-    "chalk": "~5.4.1",
+    "chalk": "~5.6.0",
     "lodash": "~4.17.21",
     "which": "~5.0.0",
     "yeoman-environment": "~4.4.3",
