@@ -19,7 +19,7 @@ import { MultiMap } from '../utils/collections.js';
 import { OperationCancelled, interruptAndCheck, isOperationCancelled } from '../utils/promise-utils.js';
 import { stream } from '../utils/stream.js';
 import { UriUtils, type URI } from '../utils/uri-utils.js';
-import { ValidationCategory } from '../validation/validation-registry.js';
+import type { ValidationCategory } from '../validation/validation-registry.js';
 import { DocumentState } from './documents.js';
 import type { FileSystemProvider } from './file-system-provider.js';
 import type { WorkspaceManager } from './workspace-manager.js';
@@ -151,9 +151,10 @@ export class DefaultDocumentBuilder implements DocumentBuilder {
     protected readonly langiumDocumentFactory: LangiumDocumentFactory;
     protected readonly textDocuments: TextDocumentProvider | undefined;
     protected readonly indexManager: IndexManager;
-    protected readonly serviceRegistry: ServiceRegistry;
     protected readonly fileSystemProvider: FileSystemProvider;
     protected readonly workspaceManager: () => WorkspaceManager;
+    protected readonly serviceRegistry: ServiceRegistry;
+
     protected readonly updateListeners: DocumentUpdateListener[] = [];
     protected readonly buildPhaseListeners = new MultiMap<DocumentState, DocumentBuildListener>();
     protected readonly documentPhaseListeners = new MultiMap<DocumentState, DocumentPhaseListener>();
@@ -268,15 +269,11 @@ export class DefaultDocumentBuilder implements DocumentBuilder {
 
     protected findMissingValidationCategories(document: LangiumDocument, options: BuildOptions | undefined): ValidationCategory[] {
         const state = this.buildState.get(document.uri.toString());
-        const allCategories = this.getAllValidationCategories(document);
-        const executedCategories = new Set(state?.result?.validationChecks ?? (state?.completed ? allCategories : []));
+        const allCategories = this.serviceRegistry.getServices(document.uri).validation.ValidationRegistry.getAllValidationCategories(document);
+        const executedCategories = state?.result?.validationChecks ? new Set(state?.result?.validationChecks) : state?.completed ? allCategories : new Set();
         const requestedCategories = (options === undefined || options.validation === true) ? allCategories
             : typeof options.validation === 'object' ? (options.validation.categories ?? allCategories) : [];
-        return requestedCategories.filter(requested => !executedCategories.has(requested));
-    }
-
-    protected getAllValidationCategories(_document: LangiumDocument): readonly ValidationCategory[] {
-        return ValidationCategory.defaults;
+        return stream(requestedCategories).filter(requested => !executedCategories.has(requested)).toArray();
     }
 
     protected async findChangedUris(changed: URI): Promise<URI[]> {

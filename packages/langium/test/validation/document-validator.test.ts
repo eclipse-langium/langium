@@ -4,9 +4,9 @@
  * terms of the MIT License, which is available in the project root.
  ******************************************************************************/
 
-import { AstUtils, DefaultDocumentBuilder, type AstNode, type LangiumDocument, type Module, type ValidationAcceptor, type ValidationCategory, type ValidationChecks } from 'langium';
+import { AstUtils, type AstNode, type ValidationAcceptor, type ValidationChecks } from 'langium';
 import { createServicesForGrammar } from 'langium/grammar';
-import type { LangiumServices, LangiumSharedServices, PartialLangiumSharedServices } from 'langium/lsp';
+import type { LangiumServices } from 'langium/lsp';
 import type { ValidationHelperOptions, ValidationResult } from 'langium/test';
 import { validationHelper } from 'langium/test';
 import { beforeAll, describe, expect, test } from 'vitest';
@@ -272,20 +272,8 @@ describe('Register Before/AfterDocument logic for validations with state', () =>
         let validate: (input: string, options?: ValidationHelperOptions) => Promise<ValidationResult<AstNode>>;
 
         beforeAll(async () => {
-            class DocumentBuilderWithAdditionalValidationCategory extends DefaultDocumentBuilder {
-                // The `validationHelper` below uses "BuildOptions.validation = true" to execute all validation categories (see API documentation for the value `true`).
-                //  Therefore we need to register the custom validation category to be included in all these validation categories.
-                protected override getAllValidationCategories(document: LangiumDocument): readonly ValidationCategory[] {
-                    return [ ...super.getAllValidationCategories(document), 'user' ];
-                }
-            }
             const services = await createServicesForGrammar({
-                grammar,
-                sharedModule: <Module<LangiumSharedServices, PartialLangiumSharedServices>>{
-                    workspace: {
-                        DocumentBuilder: services => new DocumentBuilderWithAdditionalValidationCategory(services),
-                    },
-                },
+                grammar
             });
             const validationChecksUser: ValidationChecks<object> = {
                 AstNode: [

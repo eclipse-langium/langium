@@ -14,7 +14,7 @@ import type { MaybePromise } from '../utils/promise-utils.js';
 import { isOperationCancelled } from '../utils/promise-utils.js';
 import type { Stream } from '../utils/stream.js';
 import { stream } from '../utils/stream.js';
-import type { DocumentSegment } from '../workspace/documents.js';
+import type { DocumentSegment, LangiumDocument } from '../workspace/documents.js';
 
 export type DiagnosticInfo<N extends AstNode, P extends string = Properties<N>> = {
     /** The AST node to which the diagnostic is attached. */
@@ -133,11 +133,13 @@ type ValidationCheckEntry = {
  * Manages a set of `ValidationCheck`s to be applied when documents are validated.
  */
 export class ValidationRegistry {
-    private readonly entries = new MultiMap<string, ValidationCheckEntry>();
-    private readonly reflection: AstReflection;
+    protected readonly entries = new MultiMap<string, ValidationCheckEntry>();
+    protected readonly knownCategories = new Set(ValidationCategory.defaults);
 
-    private entriesBefore: ValidationPreparation[] = [];
-    private entriesAfter: ValidationPreparation[] = [];
+    protected readonly reflection: AstReflection;
+
+    protected entriesBefore: ValidationPreparation[] = [];
+    protected entriesAfter: ValidationPreparation[] = [];
 
     constructor(services: LangiumCoreServices) {
         this.reflection = services.shared.AstReflection;
@@ -155,6 +157,7 @@ export class ValidationRegistry {
         if (category === 'built-in') {
             throw new Error("The 'built-in' category is reserved for lexer, parser, and linker errors.");
         }
+        this.knownCategories.add(category); // remember custom/user-defined categories
         for (const [type, ch] of Object.entries(checksRecord)) {
             const callbacks = ch as ValidationCheck | ValidationCheck[];
             if (Array.isArray(callbacks)) {
@@ -272,4 +275,7 @@ export class ValidationRegistry {
         return this.entriesAfter;
     }
 
+    getAllValidationCategories(_document: LangiumDocument): ReadonlySet<ValidationCategory> {
+        return this.knownCategories;
+    }
 }
