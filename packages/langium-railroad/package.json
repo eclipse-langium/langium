@@ -1,6 +1,6 @@
 {
   "name": "langium-railroad",
-  "version": "4.1.0",
+  "version": "4.2.0",
   "description": "Use Langium as source for railroad syntax diagrams",
   "homepage": "https://langium.org",
   "keywords": [
@@ -34,7 +34,7 @@
     "publish:latest": "npm publish --tag latest --access public"
   },
   "dependencies": {
-    "langium": "~4.1.0",
+    "langium": "~4.2.0",
     "railroad-diagrams": "~1.0.0"
   },
   "volta": {

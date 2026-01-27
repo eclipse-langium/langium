@@ -34,10 +34,10 @@
         "langium:watch": "langium generate --watch"
     },
     "dependencies": {
-        "langium": "~4.1.0"
+        "langium": "~4.2.0"
     },
     "devDependencies": {
-        "langium-cli": "~4.1.0"
+        "langium-cli": "~4.2.0"
     },
     "volta": {
         "node": "20.19.2",

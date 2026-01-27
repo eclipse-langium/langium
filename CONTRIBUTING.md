@@ -137,17 +137,17 @@ const debugOptions = { execArgv: ['--nolazy', '--inspect-brk=6009'] };
 The release process is mostly automated and requires running only a few commands.
 After commiting, pushing, tagging and releasing the changes, a GitHub Action will publish all artifacts (npm packages and vscode extensions).
 
-1. Pull the latest changes
-2. Uplift the package versions
+1. Pull the latest changes.
+2. Uplift the package versions.
     * Run `npm version major|minor|patch --no-git-tag-version --workspaces`
-3. Update the dependency versions
+3. Update the dependency versions.
     * Run `npm run version:dependencies`
-4. Update the generated files
+4. Update the generated files.
     * Run `npm run langium:generate`
-5. Create a PR with your updated changes, get a review and merge it
-6. Create a version tag on the latest commit on `main` and push it
-7. Create a GitHub release from the new tag (this will automatically publish all artifacts)
-8. Close the corresponding GitHub milestone
+5. Create a PR with your updated changes, get a review and merge it. Note that this will automatically publish the updated packages.
+6. Create a version tag on the latest commit on `main` and push it.
+7. Create a GitHub release from the new tag.
+8. Close the corresponding GitHub milestone.
 
 In order to publish `next` versions from the current state of the `main` branch, use `npm run publish:next`, and don't update the `version` numbers manually as this is done by the npm script.
 The changes must not be committed to the repository after publishing a `next` version.

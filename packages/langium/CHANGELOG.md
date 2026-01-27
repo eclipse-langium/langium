@@ -1,5 +1,14 @@
 # Change Log of `langium`
 
+## v4.2.0 (Jan. 2026)
+
+* Improve code completion for common prefixes ([#2087](https://github.com/eclipse-langium/langium/pull/2087)).
+* Improve code completion for case insensitive languages ([#2102](https://github.com/eclipse-langium/langium/pull/2102)).
+* Move initial document loading into an overridable method ([#2083](https://github.com/eclipse-langium/langium/pull/2083)).
+* Update Chevrotain to `11.1.0` ([#2089](https://github.com/eclipse-langium/langium/pull/2089)).
+* Fix minor issues in the generator API ([#2091](https://github.com/eclipse-langium/langium/pull/2091), [#2090](https://github.com/eclipse-langium/langium/pull/2090)).
+* Move more document reset logic into the `DocumentBuilder`, deprecate `LangiumDocuments#invalidateDocument` ([#2071](https://github.com/eclipse-langium/langium/pull/2071)).
+
 ## v4.1.3 (Dec. 2025)
 
 * Fix return type of infix rules ([#2077](https://github.com/eclipse-langium/langium/pull/2077)).

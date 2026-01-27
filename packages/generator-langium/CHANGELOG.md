@@ -1,5 +1,13 @@
 # Change Log of `generator-langium`
 
+## v4.2.0 (Jan. 2026)
+
+* Update the generated code for the 4.2.0 release.
+
+## v4.1.0 (Sep. 2025)
+
+* Update the generated code for the 4.1.0 release.
+
 ## v4.0.0 (Jul. 2025)
 
 * Now generates an npm workspaces project ([#1810](https://github.com/eclipse-langium/langium/pull/1810)).
