@@ -38,9 +38,5 @@
     },
     "devDependencies": {
         "langium-cli": "~4.2.0"
-    },
-    "volta": {
-        "node": "20.19.2",
-        "npm": "10.8.2"
     }
 }

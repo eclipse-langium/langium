@@ -55,10 +55,6 @@
   "optionalDependencies": {
     "@rollup/rollup-linux-x64-gnu": "^4"
   },
-  "volta": {
-    "node": "20.19.2",
-    "npm": "10.8.2"
-  },
   "workspaces": [
     "packages/langium",
     "packages/langium-railroad",

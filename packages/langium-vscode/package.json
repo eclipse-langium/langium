@@ -104,10 +104,6 @@
     "vscode-languageserver": "~9.0.1",
     "ignore": "~7.0.3"
   },
-  "volta": {
-    "node": "20.19.2",
-    "npm": "10.8.2"
-  },
   "repository": {
     "type": "git",
     "url": "git+https://github.com/eclipse-langium/langium.git",

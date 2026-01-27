@@ -2,8 +2,6 @@ name: Publish
 
 permissions:
   id-token: write
-  # Required to mark the action as cancelled
-  actions: write
 
 on:
   push:
@@ -13,6 +11,8 @@ on:
       - 'maintenance/**'
     paths:
       - '**/package.json'
+      # Also trigger if the publish workflow itself is changed
+      - '.github/workflows/publish.yml'
 
 jobs:
   publish:
@@ -29,7 +29,9 @@ jobs:
         registry-url: 'https://registry.npmjs.org'
     - name: Build
       shell: bash
+      # Ensure latest npm version
       run: |
+        npm i -g npm
         npm ci
         npm run build:clean
         npm run langium:generate:production --workspace=langium
