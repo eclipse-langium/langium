@@ -65,10 +65,6 @@
   "devDependencies": {
     "langium-cli": "~4.2.0"
   },
-  "volta": {
-    "node": "20.19.2",
-    "npm": "10.8.2"
-  },
   "repository": {
     "type": "git",
     "url": "git+https://github.com/eclipse-langium/langium.git",
