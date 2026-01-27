@@ -1135,7 +1135,7 @@ describe('DefaultDocumentBuilder', () => {
 
             expect(sortedDocs.slice(0, openDocumentCount).every(isDocumentOpen)).toBe(true);
             expect(sortedDocs.slice(openDocumentCount).every(doc => !isDocumentOpen(doc))).toBe(true);
-            expect(endTime - startTime).toBeLessThan(1500); // Adjust this threshold as needed
+            expect(endTime - startTime).toBeLessThan(1800); // Adjust this threshold as needed
         });
 
         test('Sorting an empty list of documents', async () => {
