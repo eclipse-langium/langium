@@ -4,8 +4,7 @@
  * terms of the MIT License, which is available in the project root.
  ******************************************************************************/
 
-import { AstUtils } from 'langium';
-import type { AstNode, ValidationAcceptor, ValidationChecks } from 'langium';
+import { AstUtils, type AstNode, type ValidationAcceptor, type ValidationChecks } from 'langium';
 import { createServicesForGrammar } from 'langium/grammar';
 import type { LangiumServices } from 'langium/lsp';
 import type { ValidationHelperOptions, ValidationResult } from 'langium/test';
@@ -262,7 +261,7 @@ describe('Register Before/AfterDocument logic for validations with state', () =>
     describe('Custom validation categories', () => {
 
         const grammar = `grammar Test
-    
+
         entry Model:
             'model' name=ID;
 
@@ -328,7 +327,7 @@ describe('Register Before/AfterDocument logic for validations with state', () =>
             expect(diagnostics.filter(d => d.severity === 2)).toHaveLength(1); // 1 warning
         });
 
-        test('default categories', async () => {
+        test('default categories include user-defined categories', async () => {
             const validationResult = await validate('model test');
             const diagnostics = validationResult.diagnostics;
             expect(diagnostics).toHaveLength(2);

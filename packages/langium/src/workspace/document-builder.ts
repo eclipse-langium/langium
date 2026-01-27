@@ -19,7 +19,7 @@ import { MultiMap } from '../utils/collections.js';
 import { OperationCancelled, interruptAndCheck, isOperationCancelled } from '../utils/promise-utils.js';
 import { stream } from '../utils/stream.js';
 import { UriUtils, type URI } from '../utils/uri-utils.js';
-import { ValidationCategory } from '../validation/validation-registry.js';
+import type { ValidationCategory } from '../validation/validation-registry.js';
 import { DocumentState } from './documents.js';
 import type { FileSystemProvider } from './file-system-provider.js';
 import type { WorkspaceManager } from './workspace-manager.js';
@@ -36,8 +36,9 @@ export interface BuildOptions {
     /**
      * Control the validation phase with this option:
      *  - `true` enables all validation checks and forces revalidating the documents
+     *    In order to include additional, custom validation categories, override `DefaultDocumentBuilder.getAllValidationCategories(...)`.
      *  - `false` or `undefined` disables all validation checks
-     *  - An object runs only the necessary validation checks; the `categories` property restricts this to a specific subset
+     *  - An object runs only the necessary validation checks; the `categories` property restricts this to a specific subset (which might include custom categories as well).
      */
     validation?: boolean | ValidationOptions
 }
@@ -150,9 +151,10 @@ export class DefaultDocumentBuilder implements DocumentBuilder {
     protected readonly langiumDocumentFactory: LangiumDocumentFactory;
     protected readonly textDocuments: TextDocumentProvider | undefined;
     protected readonly indexManager: IndexManager;
-    protected readonly serviceRegistry: ServiceRegistry;
     protected readonly fileSystemProvider: FileSystemProvider;
     protected readonly workspaceManager: () => WorkspaceManager;
+    protected readonly serviceRegistry: ServiceRegistry;
+
     protected readonly updateListeners: DocumentUpdateListener[] = [];
     protected readonly buildPhaseListeners = new MultiMap<DocumentState, DocumentBuildListener>();
     protected readonly documentPhaseListeners = new MultiMap<DocumentState, DocumentPhaseListener>();
@@ -177,28 +179,24 @@ export class DefaultDocumentBuilder implements DocumentBuilder {
                 if (typeof options.validation === 'boolean' && options.validation) {
                     // Force re-running all validation checks
                     this.resetToState(document, DocumentState.IndexedReferences);
-                    this.buildState.delete(key);
                 } else if (typeof options.validation === 'object') {
-                    const buildState = this.buildState.get(key);
-                    const previousCategories = buildState?.result?.validationChecks;
-                    if (previousCategories) {
-                        // Validation with explicit options was requested for a document that has already been partly validated.
-                        // In this case, we need to merge the previous validation categories with the new ones.
-                        const newCategories = options.validation.categories ?? ValidationCategory.all as ValidationCategory[];
-                        const categories = newCategories.filter(c => !previousCategories.includes(c));
-                        if (categories.length > 0) {
-                            this.buildState.set(key, {
-                                completed: false,
-                                options: {
-                                    validation: {
-                                        ...options.validation,
-                                        categories
-                                    }
-                                },
-                                result: buildState.result
-                            });
-                            document.state = DocumentState.IndexedReferences;
-                        }
+                    // Validation with explicit options was requested for a document that has already been partly validated.
+                    // In this case, we need to execute only the missing validation categories.
+                    const categories = this.findMissingValidationCategories(document, options);
+                    if (categories.length > 0) {
+                        // Validate this document, since some of the requested validation categories are not executed yet.
+                        //  In all other cases/else-branches, the document is not build at all.
+                        this.buildState.set(key, {
+                            completed: false,
+                            options: {
+                                validation: {
+                                    categories
+                                }
+                            },
+                            result: this.buildState.get(key)?.result,
+                        });
+                        // Reset the state, but keep the existing validation markers of the already completed validation categories.
+                        document.state = DocumentState.IndexedReferences;
                     }
                 }
             } else {
@@ -220,24 +218,23 @@ export class DefaultDocumentBuilder implements DocumentBuilder {
             const deletedDocs = this.langiumDocuments.deleteDocuments(deletedUri);
             for (const doc of deletedDocs) {
                 deletedUris.push(doc.uri);
-                this.buildState.delete(doc.uri.toString());
-                this.indexManager.remove(doc.uri);
+                this.cleanUpDeleted(doc);
             }
         }
         // Since the changed URI might point to a directory, we need to check all (nested) documents in that directory
         const changedUris = (await Promise.all(changed.map(uri => this.findChangedUris(uri)))).flat();
         // Set the state of all changed documents to `Changed` so they are completely rebuilt
         for (const changedUri of changedUris) {
-            const invalidated = this.langiumDocuments.invalidateDocument(changedUri);
-            if (!invalidated) {
+            let changedDocument = this.langiumDocuments.getDocument(changedUri);
+            if (changedDocument === undefined) {
                 // We create an unparsed, invalid document.
                 // This will be parsed as soon as we reach the first document builder phase.
                 // This allows to cancel the parsing process later in case we need it.
-                const newDocument = this.langiumDocumentFactory.fromModel({ $type: 'INVALID' }, changedUri);
-                newDocument.state = DocumentState.Changed;
-                this.langiumDocuments.addDocument(newDocument);
+                changedDocument = this.langiumDocumentFactory.fromModel({ $type: 'INVALID' }, changedUri);
+                changedDocument.state = DocumentState.Changed; // required, since `langiumDocumentFactory.fromModel` marks the new document as `DocumentState.Parsed`
+                this.langiumDocuments.addDocument(changedDocument);
             }
-            this.buildState.delete(changedUri.toString());
+            this.resetToState(changedDocument, DocumentState.Changed);
         }
         // Set the state of all documents that should be relinked to `ComputedScopes` (if not already lower)
         const allChangedUris = stream(changedUris).concat(deletedUris).map(uri => uri.toString()).toSet();
@@ -254,13 +251,29 @@ export class DefaultDocumentBuilder implements DocumentBuilder {
             this.langiumDocuments.all
                 .filter(doc =>
                     // This includes those that were reported as changed and those that we selected for relinking
-                    doc.state < DocumentState.Linked
+                    doc.state < DocumentState.Validated
                     // This includes those for which a previous build has been cancelled
                     || !this.buildState.get(doc.uri.toString())?.completed
+                    // `updateBuildOptions` changed between the last build (which is completed) and the current build,
+                    //  leading to incomplete results, e.g. some validation categories are requested, which are not executed during the last build
+                    || this.resultsAreIncomplete(doc, this.updateBuildOptions)
                 )
                 .toArray()
         );
         await this.buildDocuments(rebuildDocuments, this.updateBuildOptions, cancelToken);
+    }
+
+    protected resultsAreIncomplete(document: LangiumDocument, options: BuildOptions | undefined): boolean {
+        return this.findMissingValidationCategories(document, options).length >= 1;
+    }
+
+    protected findMissingValidationCategories(document: LangiumDocument, options: BuildOptions | undefined): ValidationCategory[] {
+        const state = this.buildState.get(document.uri.toString());
+        const allCategories = this.serviceRegistry.getServices(document.uri).validation.ValidationRegistry.getAllValidationCategories(document);
+        const executedCategories = state?.result?.validationChecks ? new Set(state?.result?.validationChecks) : state?.completed ? allCategories : new Set();
+        const requestedCategories = (options === undefined || options.validation === true) ? allCategories
+            : typeof options.validation === 'object' ? (options.validation.categories ?? allCategories) : [];
+        return stream(requestedCategories).filter(requested => !executedCategories.has(requested)).toArray();
     }
 
     protected async findChangedUris(changed: URI): Promise<URI[]> {
@@ -347,11 +360,7 @@ export class DefaultDocumentBuilder implements DocumentBuilder {
     resetToState<T extends AstNode>(document: LangiumDocument<T>, state: DocumentState): void {
         switch (state) {
             case DocumentState.Changed: {
-                const invalidated = this.langiumDocuments.invalidateDocument(document.uri);
-                if (invalidated) {
-                    break;
-                }
-                // Else fall through
+                // Fall through
             }
             case DocumentState.Parsed:
                 this.indexManager.removeContent(document.uri);
@@ -369,10 +378,23 @@ export class DefaultDocumentBuilder implements DocumentBuilder {
                 // Fall through
             case DocumentState.IndexedReferences:
                 document.diagnostics = undefined;
+                this.buildState.delete(document.uri.toString());
+                // Fall through
+            case DocumentState.Validated:
+                // do nothing and keep the buildState
         }
         if (document.state > state) {
             document.state = state;
         }
+    }
+
+    protected cleanUpDeleted<T extends AstNode>(document: LangiumDocument<T>): void {
+        this.buildState.delete(document.uri.toString());
+        this.indexManager.remove(document.uri);
+        // Since this method `cleanUpDeleted` is not available from outside, the following line is not necessary, since the state is already set before.
+        //  This line does not hurt and makes the code to be in sync with `resetToState`.
+        //  If `cleanUpDeleted` is called in custom document builders at some more places, this line becomes necessary.
+        document.state = DocumentState.Changed;
     }
 
     /**
@@ -410,17 +432,24 @@ export class DefaultDocumentBuilder implements DocumentBuilder {
             this.indexManager.updateReferences(doc, cancelToken)
         );
         // 5. Validation
-        const toBeValidated = documents.filter(doc => this.shouldValidate(doc));
-        await this.runCancelable(toBeValidated, DocumentState.Validated, cancelToken, doc =>
-            this.validate(doc, cancelToken)
-        );
-
-        // If we've made it to this point without being cancelled, we can mark the build state as completed.
-        for (const doc of documents) {
-            const state = this.buildState.get(doc.uri.toString());
-            if (state) {
-                state.completed = true;
+        const toBeValidated = documents.filter(doc => {
+            if (this.shouldValidate(doc)) {
+                return true; // the build state is marked as completed after finishing the validation for the current document
+            } else {
+                this.markAsCompleted(doc); // since the validation is skipped for this document, it is already completed now
+                return false;
             }
+        });
+        await this.runCancelable(toBeValidated, DocumentState.Validated, cancelToken, async doc => {
+            await this.validate(doc, cancelToken);
+            this.markAsCompleted(doc);
+        });
+    }
+
+    protected markAsCompleted(document: LangiumDocument): void {
+        const state = this.buildState.get(document.uri.toString());
+        if (state) {
+            state.completed = true;
         }
     }
 
@@ -434,15 +463,18 @@ export class DefaultDocumentBuilder implements DocumentBuilder {
         for (const doc of documents) {
             const key = doc.uri.toString();
             const state = this.buildState.get(key);
-            // If the document has no previous build state, we set it. If it has one, but it's already marked
-            // as completed, we overwrite it. If the previous build was not completed, we keep its state
-            // and continue where it was cancelled.
-            if (!state || state.completed) {
+            if (
+                !state             // If the document has no previous build state, we set it.
+                || state.completed // If it has one, but it's already marked as completed, we overwrite it.
+            ) {
                 this.buildState.set(key, {
                     completed: false,
                     options,
                     result: state?.result
                 });
+            } else {
+                // If the previous build was not completed, we keep its DocumentState and continue from the DocumentState where it was cancelled,
+                //  e.g. the previous build options are used, including the previously requested validation categories.
             }
         }
     }
@@ -576,6 +608,7 @@ export class DefaultDocumentBuilder implements DocumentBuilder {
         const listenersCopy = listeners.slice();
         for (const listener of listenersCopy) {
             try {
+                await interruptAndCheck(cancelToken);
                 await listener(document, cancelToken);
             } catch (err) {
                 // Ignore cancellation errors
@@ -625,11 +658,12 @@ export class DefaultDocumentBuilder implements DocumentBuilder {
      */
     protected async validate(document: LangiumDocument, cancelToken: CancellationToken): Promise<void> {
         const validator = this.serviceRegistry.getServices(document.uri).validation.DocumentValidator;
-        const validationSetting = this.getBuildOptions(document).validation;
-        const options = typeof validationSetting === 'object' ? validationSetting : undefined;
-        const diagnostics = await validator.validateDocument(document, options, cancelToken);
+        const options = this.getBuildOptions(document);
+        const validationOptions = typeof options.validation === 'object' ? { ...options.validation } : {};
+        validationOptions.categories = this.findMissingValidationCategories(document, options); // execute only not-yet-executed categories
+        const diagnostics = await validator.validateDocument(document, validationOptions, cancelToken);
         if (document.diagnostics) {
-            document.diagnostics.push(...diagnostics);
+            document.diagnostics.push(...diagnostics); // keep diagnostics of previously executed categories
         } else {
             document.diagnostics = diagnostics;
         }
@@ -638,11 +672,10 @@ export class DefaultDocumentBuilder implements DocumentBuilder {
         const state = this.buildState.get(document.uri.toString());
         if (state) {
             state.result ??= {};
-            const newCategories = options?.categories ?? ValidationCategory.all;
             if (state.result.validationChecks) {
-                state.result.validationChecks.push(...newCategories);
+                state.result.validationChecks = stream(state.result.validationChecks).concat(validationOptions.categories).distinct().toArray();
             } else {
-                state.result.validationChecks = [...newCategories];
+                state.result.validationChecks = [...validationOptions.categories];
             }
         }
     }

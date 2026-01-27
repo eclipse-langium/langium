@@ -24,6 +24,7 @@ import { TextDocument } from './documents.js';
 import { CancellationToken } from '../utils/cancellation.js';
 import { stream } from '../utils/stream.js';
 import { URI, UriTrie } from '../utils/uri-utils.js';
+import type { DocumentBuilder } from './document-builder.js';
 
 /**
  * A Langium document holds the parse result (AST and CST) and any additional state that is derived
@@ -349,6 +350,12 @@ export interface LangiumDocuments {
     getDocument(uri: URI): LangiumDocument | undefined;
 
     /**
+     * If the given URI is a directory, all documents within this directory are retrieved.
+     * If it is a file, just that single document is retrieved.
+     */
+    getDocuments(folder: URI): LangiumDocument[];
+
+    /**
      * Retrieve the document with the given URI. If not present, a new one will be created using the file system access.
      * The new document will be added to the list of documents managed under this service.
      */
@@ -372,18 +379,20 @@ export interface LangiumDocuments {
     createDocument(uri: URI, text: string, cancellationToken: CancellationToken): Promise<LangiumDocument>;
 
     /**
-     * Returns `true` if a document with the given URI is managed under this service.
-     */
-    hasDocument(uri: URI): boolean;
-
-    /**
      * Flag the document with the given URI as `Changed`, if present, meaning that its content
      * is no longer valid. The content (parseResult) stays untouched, while internal data may
      * be dropped to reduce memory footprint.
      *
      * @returns the affected {@link LangiumDocument} if existing for convenience
+     *
+     * @deprecated Since 4.2 use `DocumentBuilder.resetToState(DocumentState.Changed)` instead
      */
     invalidateDocument(uri: URI): LangiumDocument | undefined;
+
+    /**
+     * Returns `true` if a document with the given URI is managed under this service.
+     */
+    hasDocument(uri: URI): boolean;
 
     /**
      * Remove the document with the given URI, if present, and mark it as `Changed`, meaning
@@ -404,14 +413,16 @@ export interface LangiumDocuments {
 
 export class DefaultLangiumDocuments implements LangiumDocuments {
 
+    protected readonly services: LangiumSharedCoreServices;
     protected readonly langiumDocumentFactory: LangiumDocumentFactory;
-    protected readonly serviceRegistry: ServiceRegistry;
+    private documentBuilder: () => DocumentBuilder;
 
     protected readonly documentTrie = new UriTrie<LangiumDocument>();
 
     constructor(services: LangiumSharedCoreServices) {
+        this.services = services;
         this.langiumDocumentFactory = services.workspace.LangiumDocumentFactory;
-        this.serviceRegistry = services.ServiceRegistry;
+        this.documentBuilder = () => services.workspace.DocumentBuilder;
     }
 
     get all(): Stream<LangiumDocument> {
@@ -465,15 +476,15 @@ export class DefaultLangiumDocuments implements LangiumDocuments {
         return this.documentTrie.has(uri.toString());
     }
 
+    /**
+     * @deprecated Since 4.2 use `DocumentBuilder.resetToState(DocumentState.Changed)` instead
+     * TODO remove this for the next major release
+     */
     invalidateDocument(uri: URI): LangiumDocument | undefined {
         const uriString = uri.toString();
         const langiumDoc = this.documentTrie.find(uriString);
         if (langiumDoc) {
-            const linker = this.serviceRegistry.getServices(uri).references.Linker;
-            linker.unlink(langiumDoc);
-            langiumDoc.state = DocumentState.Changed;
-            langiumDoc.localSymbols = undefined;
-            langiumDoc.diagnostics = undefined;
+            this.documentBuilder().resetToState(langiumDoc, DocumentState.Changed);
         }
         return langiumDoc;
     }

@@ -14,7 +14,7 @@ import type { MaybePromise } from '../utils/promise-utils.js';
 import { isOperationCancelled } from '../utils/promise-utils.js';
 import type { Stream } from '../utils/stream.js';
 import { stream } from '../utils/stream.js';
-import type { DocumentSegment } from '../workspace/documents.js';
+import type { DocumentSegment, LangiumDocument } from '../workspace/documents.js';
 
 export type DiagnosticInfo<N extends AstNode, P extends string = Properties<N>> = {
     /** The AST node to which the diagnostic is attached. */
@@ -116,7 +116,12 @@ export type ValidationChecks<T> = {
 export type ValidationCategory = 'fast' | 'slow' | 'built-in' | (string & {});
 
 export namespace ValidationCategory {
-    export const all: readonly ValidationCategory[] = ['fast', 'slow', 'built-in'];
+    export const defaults: readonly ValidationCategory[] = ['fast', 'slow', 'built-in'];
+    /**
+     * @deprecated since 4.2 Use `ValidationCategory.defaults` instead,
+     * since "all" does not include user-defined, custom validation categories.
+     */
+    export const all: readonly ValidationCategory[] = defaults;
 }
 
 type ValidationCheckEntry = {
@@ -128,11 +133,13 @@ type ValidationCheckEntry = {
  * Manages a set of `ValidationCheck`s to be applied when documents are validated.
  */
 export class ValidationRegistry {
-    private readonly entries = new MultiMap<string, ValidationCheckEntry>();
-    private readonly reflection: AstReflection;
+    protected readonly entries = new MultiMap<string, ValidationCheckEntry>();
+    protected readonly knownCategories = new Set(ValidationCategory.defaults);
 
-    private entriesBefore: ValidationPreparation[] = [];
-    private entriesAfter: ValidationPreparation[] = [];
+    protected readonly reflection: AstReflection;
+
+    protected entriesBefore: ValidationPreparation[] = [];
+    protected entriesAfter: ValidationPreparation[] = [];
 
     constructor(services: LangiumCoreServices) {
         this.reflection = services.shared.AstReflection;
@@ -143,13 +150,14 @@ export class ValidationRegistry {
      * or an array of validation checks.
      *
      * @param checksRecord Set of validation checks to register.
-     * @param category Optional category for the validation checks (defaults to `'fast'`).
      * @param thisObj Optional object to be used as `this` when calling the validation check functions.
+     * @param category Optional category for the validation checks (defaults to `'fast'`).
      */
     register<T>(checksRecord: ValidationChecks<T>, thisObj: ThisParameterType<unknown> = this, category: ValidationCategory = 'fast'): void {
         if (category === 'built-in') {
             throw new Error("The 'built-in' category is reserved for lexer, parser, and linker errors.");
         }
+        this.knownCategories.add(category); // remember custom/user-defined categories
         for (const [type, ch] of Object.entries(checksRecord)) {
             const callbacks = ch as ValidationCheck | ValidationCheck[];
             if (Array.isArray(callbacks)) {
@@ -267,4 +275,7 @@ export class ValidationRegistry {
         return this.entriesAfter;
     }
 
+    getAllValidationCategories(_document: LangiumDocument): ReadonlySet<ValidationCategory> {
+        return this.knownCategories;
+    }
 }

@@ -4,17 +4,17 @@
  * terms of the MIT License, which is available in the project root.
  ******************************************************************************/
 
-import type { AstNode, DocumentBuilder, FileSystemNode, FileSystemProvider, LangiumDocument, LangiumDocumentFactory, LangiumDocuments, Module, Reference, ValidationChecks } from 'langium';
-import { AstUtils, DocumentState, TextDocument, URI, UriUtils, isOperationCancelled, startCancelableOperation } from 'langium';
-import { createServicesForGrammar } from 'langium/grammar';
-import { describe, expect, test, vi, beforeEach, afterEach } from 'vitest';
-import { CancellationToken } from 'vscode-languageserver';
 import { fail } from 'assert';
-import type { LangiumServices, LangiumSharedServices, TextDocuments } from 'langium/lsp';
+import type { AstNode, BuildOptions, DocumentBuilder, FileSystemNode, FileSystemProvider, LangiumDocument, LangiumDocumentFactory, LangiumDocuments, Module, Reference, ValidationChecks } from 'langium';
+import { AstUtils, DefaultDocumentBuilder, DocumentState, isOperationCancelled, startCancelableOperation, TextDocument, URI, UriUtils } from 'langium';
+import { createServicesForGrammar } from 'langium/grammar';
+import type { LangiumServices, LangiumSharedServices, PartialLangiumSharedServices, TextDocuments } from 'langium/lsp';
 import { VirtualFileSystemProvider } from 'langium/test';
+import { afterEach, beforeEach, describe, expect, test, vi } from 'vitest';
+import { CancellationToken } from 'vscode-languageserver';
 
 describe('DefaultDocumentBuilder', () => {
-    async function createServices(shared?: Module<LangiumSharedServices, object>) {
+    async function createServices(shared?: Module<LangiumSharedServices, PartialLangiumSharedServices>) {
         const grammar = `
             grammar Test
             entry Model:
@@ -317,6 +317,78 @@ describe('DefaultDocumentBuilder', () => {
         expect(document1.diagnostics?.map(d => d.message)).toEqual([
             'Bar is too long: AnotherStrangeBar',
             'Value is too large: 11',
+        ]);
+    });
+
+    test('Dont validate completed documents again, if the validation phase is cancelled', async () => {
+        class TestDocumentBuilder extends DefaultDocumentBuilder {
+            isCompleted(doc: LangiumDocument): boolean {
+                return this.buildState.get(doc.uri.toString())?.completed ?? false;
+            }
+        }
+        const services = await createServices({
+            workspace: {
+                DocumentBuilder: services => new TestDocumentBuilder(services),
+            },
+        });
+        const workspace = services.shared.workspace;
+        const documentFactory = workspace.LangiumDocumentFactory;
+        const documents = workspace.LangiumDocuments;
+        const document1 = documentFactory.fromString<Model>(`
+            foo 1 A
+            foo 11 B
+            bar A
+            bar B
+        `, URI.parse('file:///test1.txt'));
+        documents.addDocument(document1);
+        const document2 = documentFactory.fromString<Model>(`
+            foo 1 C
+            foo 11 D
+            bar C
+            bar D
+        `, URI.parse('file:///test2.txt'));
+        documents.addDocument(document2);
+        const builder = workspace.DocumentBuilder as TestDocumentBuilder;
+
+        // While the first document is completed, the second one misses the validation phase.
+        const token = startCancelableOperation();
+        builder.onDocumentPhase(DocumentState.Validated, doc => {
+            if (doc === document1) {
+                token.cancel(); // cancel the build after validating the 1st and before the 2nd document
+            }
+        });
+        try {
+            await builder.build([document1, document2], { validation: true }, token.token);
+        } catch (err) {
+            expect(isOperationCancelled(err)).toBe(true);
+        }
+        expect(builder.isCompleted(document1)).toBe(true);
+        expect(document1.state).toBe(DocumentState.Validated);
+        expect(document1.diagnostics?.map(d => d.message)).toEqual([
+            'Value is too large: 11'
+        ]);
+        expect(builder.isCompleted(document2)).toBe(false);
+        expect(document2.state).toBe(DocumentState.IndexedReferences);
+        expect(document2.diagnostics).toBeUndefined();
+
+        // Check that only the validation of the second document is executed when continuing the build.
+        workspace.TextDocuments.set(document1.textDocument);
+        workspace.TextDocuments.set(document2.textDocument);
+        builder.onDocumentPhase(DocumentState.Validated, doc => {
+            if (doc === document1) {
+                expect.fail(`Don't validate the completed document ${doc.uri.toString()} again!`);
+            }
+        });
+        await builder.update([], []);
+        expect(builder.isCompleted(document1)).toBe(true);
+        expect(document1.state).toBe(DocumentState.Validated);
+        expect(document1.diagnostics?.map(d => d.message)).toEqual([
+            'Value is too large: 11'
+        ]);
+        expect(builder.isCompleted(document2)).toBe(true);
+        expect(document2.state).toBe(DocumentState.Validated);
+        expect(document2.diagnostics?.map(d => d.message)).toEqual([
+            'Value is too large: 11'
         ]);
     });
 
@@ -755,6 +827,211 @@ describe('DefaultDocumentBuilder', () => {
             const defaultRef = ref.reference as any;
             expect(defaultRef._ref).toBeUndefined();
         }
+    });
+
+    describe('Updates', () => {
+        let services: LangiumServices;
+        let documentFactory: LangiumDocumentFactory;
+        let documents: LangiumDocuments;
+        let builder: TestDocumentBuilder;
+        let textDocuments: TextDocuments<TextDocument>;
+
+        let documentA: LangiumDocument<Model>;
+        let documentB: LangiumDocument<Model>;
+
+        class TestDocumentBuilder extends DefaultDocumentBuilder {
+            resetted: string[] = [];
+            actuallyBuilt: string[] = [];
+            checkBeforeBuild?: () => void;
+
+            override build<T extends AstNode>(documents: Array<LangiumDocument<T>>, options?: BuildOptions, cancelToken?: CancellationToken): Promise<void> {
+                this.resetted.splice(0, this.resetted.length);
+                this.actuallyBuilt.splice(0, this.actuallyBuilt.length);
+                return super.build(documents, options, cancelToken);
+            }
+            override update(changed: URI[], deleted: URI[], cancelToken?: CancellationToken): Promise<void> {
+                this.resetted.splice(0, this.resetted.length);
+                this.actuallyBuilt.splice(0, this.actuallyBuilt.length);
+                return super.update(changed, deleted, cancelToken);
+            }
+
+            protected override buildDocuments(documents: LangiumDocument[], options: BuildOptions, cancelToken: CancellationToken): Promise<void> {
+                this.actuallyBuilt.push(...documents.map(d => d.uri.path));
+                if (this.checkBeforeBuild) {
+                    this.checkBeforeBuild();
+                }
+                return super.buildDocuments(documents, options, cancelToken);
+            }
+            override resetToState<T extends AstNode>(document: LangiumDocument<T>, state: DocumentState): void {
+                this.resetted.push(`${document.uri.path}: ${DocumentState[state]}`);
+                return super.resetToState(document, state);
+            }
+        }
+
+        beforeEach(async () => {
+            services = await createServices({
+                workspace: {
+                    DocumentBuilder: services => new TestDocumentBuilder(services),
+                },
+            });
+            documentFactory = services.shared.workspace.LangiumDocumentFactory;
+            documents = services.shared.workspace.LangiumDocuments;
+            builder = services.shared.workspace.DocumentBuilder as TestDocumentBuilder;
+            textDocuments = services.shared.workspace.TextDocuments;
+
+            // set-up for the documents
+            documentA = documentFactory.fromString<Model>(`
+                foo 1 A
+                foo 11 B
+            `, URI.parse('file:///testA.txt'));
+            documentB = documentFactory.fromString<Model>(`
+                bar A
+                bar B
+            `, URI.parse('file:///testB.txt'));
+            documents.addDocument(documentA);
+            documents.addDocument(documentB);
+
+            expect(builder.resetted).toHaveLength(0);
+
+            // initial build of all documents
+            await builder.build([documentA, documentB], { eagerLinking: true, validation: { categories: ['built-in', 'fast'] } });
+            checkDocumentStateAfterBuild();
+            // resetToState is not called during the initial build
+            expect(builder.resetted).toHaveLength(0);
+            expect(builder.actuallyBuilt).toHaveLength(2);
+            expect(builder.actuallyBuilt[0]).toBe('/testA.txt');
+            expect(builder.actuallyBuilt[1]).toBe('/testB.txt');
+
+            // preparation for following update scenarios
+            textDocuments.set(documentA.textDocument);
+            textDocuments.set(documentB.textDocument);
+        });
+
+        function checkDocumentStateAfterBuild(): void {
+            expect(documentA.state).toBe(DocumentState.Validated);
+            expect(documentB.state).toBe(DocumentState.Validated);
+            expect(documentA.references).toHaveLength(2);
+            expect(documentB.references).toHaveLength(0);
+        }
+
+        test('Update A => resetToState is called for A', async () => {
+            builder.checkBeforeBuild = () => {
+                expect(documentA.references).toHaveLength(0);
+                expect(documentA.localSymbols).toBe(undefined);
+                expect(documentA.diagnostics).toBe(undefined);
+                expect(documentB.localSymbols).not.toBe(undefined);
+                expect(documentB.diagnostics).not.toBe(undefined);
+            };
+            await builder.update([documentA.uri], []);
+            checkDocumentStateAfterBuild();
+
+            expect(builder.resetted).toHaveLength(1);
+            expect(builder.resetted[0]).toBe('/testA.txt: Changed');
+            expect(builder.actuallyBuilt).toHaveLength(1);
+            expect(builder.actuallyBuilt[0]).toBe('/testA.txt');
+        });
+
+        test('Update B => resetToState is called for A and B (since A links to B)', async () => {
+            builder.checkBeforeBuild = () => {
+                expect(documentA.references).toHaveLength(0);
+                expect(documentA.localSymbols).not.toBe(undefined);
+                expect(documentA.diagnostics).toBe(undefined);
+                expect(documentB.localSymbols).toBe(undefined);
+                expect(documentB.diagnostics).toBe(undefined);
+            };
+            await builder.update([documentB.uri], []);
+            checkDocumentStateAfterBuild();
+
+            expect(builder.resetted).toHaveLength(2);
+            expect(builder.resetted[0]).toBe('/testB.txt: Changed');
+            expect(builder.resetted[1]).toBe('/testA.txt: ComputedScopes');
+            expect(builder.actuallyBuilt).toHaveLength(2);
+            expect(builder.actuallyBuilt[0]).toBe('/testA.txt');
+            expect(builder.actuallyBuilt[1]).toBe('/testB.txt');
+        });
+
+        test('Call resetToState(ComputedScopes) explicitly for B, update A => resetToState is called for A, now A and B should be built', async () => {
+            expect(documentB.state).toBe(DocumentState.Validated);
+            expect(builder.resetted).toHaveLength(0);
+
+            // resetToState for B => build B again
+            //  (Motivation for `resetToState`: Explicitly test `resetToState`, which enables to control the desired starting phase for updates in fine-grain way)
+            builder.resetToState(documentB, DocumentState.ComputedScopes);
+
+            expect(documentB.state).toBe(DocumentState.ComputedScopes);
+            expect(builder.resetted).toHaveLength(1);
+            expect(builder.resetted[0]).toBe('/testB.txt: ComputedScopes');
+
+            // update A
+            builder.checkBeforeBuild = () => {
+                expect(documentA.references).toHaveLength(0);
+                expect(documentA.localSymbols).toBe(undefined);
+                expect(documentA.diagnostics).toBe(undefined);
+                expect(documentB.localSymbols).not.toBe(undefined);
+                expect(documentB.diagnostics).toBe(undefined);
+            };
+            await builder.update([documentA.uri], []);
+            checkDocumentStateAfterBuild();
+
+            expect(builder.resetted).toHaveLength(1);
+            expect(builder.resetted[0]).toBe('/testA.txt: Changed');
+            expect(builder.actuallyBuilt).toHaveLength(2);
+            expect(builder.actuallyBuilt[0]).toBe('/testA.txt');
+            expect(builder.actuallyBuilt[1]).toBe('/testB.txt');
+        });
+
+        test('Call resetToState(IndexedReferences) explicitly for B, update A => resetToState is called for A, now A and B should be built', async () => {
+            expect(documentB.state).toBe(DocumentState.Validated);
+            expect(builder.resetted).toHaveLength(0);
+
+            // resetToState for B => build B again
+            //  (Motivation for `resetToState`: Explicitly test `resetToState`, which enables to control the desired starting phase for updates in fine-grain way)
+            builder.resetToState(documentB, DocumentState.IndexedReferences);
+
+            expect(documentB.state).toBe(DocumentState.IndexedReferences);
+            expect(builder.resetted).toHaveLength(1);
+            expect(builder.resetted[0]).toBe('/testB.txt: IndexedReferences');
+
+            // update A
+            builder.checkBeforeBuild = () => {
+                expect(documentA.references).toHaveLength(0);
+                expect(documentA.localSymbols).toBe(undefined);
+                expect(documentA.diagnostics).toBe(undefined);
+                expect(documentB.localSymbols).not.toBe(undefined);
+                expect(documentB.diagnostics).toBe(undefined);
+            };
+            await builder.update([documentA.uri], []);
+            checkDocumentStateAfterBuild();
+
+            expect(builder.resetted).toHaveLength(1);
+            expect(builder.resetted[0]).toBe('/testA.txt: Changed');
+            expect(builder.actuallyBuilt).toHaveLength(2);
+            expect(builder.actuallyBuilt[0]).toBe('/testA.txt');
+            expect(builder.actuallyBuilt[1]).toBe('/testB.txt');
+        });
+
+        test('During updates, validate only some categories: dont validate already executed category', async () => {
+            // validate only 'built-in' checks now
+            builder.updateBuildOptions = { validation: { categories: ['built-in'] } };
+            await builder.update([], []);
+            checkDocumentStateAfterBuild();
+            // => no documents are validated again with 'built-in' checks, since 'built-in' (and 'fast') checks are already executed during the initial build
+            expect(builder.resetted).toHaveLength(0);
+            expect(builder.actuallyBuilt).toHaveLength(0);
+        });
+
+        test('During updates, validate only some categories: validate not yet executed category', async () => {
+            // validate only 'slow' checks now
+            builder.updateBuildOptions = { validation: { categories: ['slow'] } };
+            await builder.update([], []);
+            checkDocumentStateAfterBuild();
+            // => all documents are validated again with 'slow' checks, since only 'built-in' and 'fast' checks are executed during the initial build
+            expect(builder.resetted).toHaveLength(0);
+            expect(builder.actuallyBuilt).toHaveLength(2);
+            expect(builder.actuallyBuilt[0]).toBe('/testA.txt');
+            expect(builder.actuallyBuilt[1]).toBe('/testB.txt');
+        });
+
     });
 
     describe('DefaultDocumentBuilder document sorting', () => {
