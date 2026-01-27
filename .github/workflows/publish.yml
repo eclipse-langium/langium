@@ -11,8 +11,9 @@ on:
       - 'maintenance/**'
     paths:
       - '**/package.json'
-      # Also trigger if the publish workflow itself is changed
+      # Also trigger if the publish workflow/script itself is changed
       - '.github/workflows/publish.yml'
+      - 'scripts/publish-updated-packages.ts'
 
 jobs:
   publish:
