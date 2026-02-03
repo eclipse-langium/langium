@@ -64,12 +64,22 @@ export function registerLangiumConfigHandler(connection: Connection, shared: Lan
             // No configuration file found, use default validation options
             grammar.validation.LangiumGrammarValidator.options = {};
         }
+        try {
+            // Wait until the workspace is ready
+            await shared.workspace.WorkspaceManager.ready;
+        } catch {
+            // Workspace initialization failed, cannot proceed
+            return;
+        }
         configPath = resolved;
 
         // Revalidate all documents
         const documents = shared.workspace.LangiumDocuments;
         const documentBuilder = shared.workspace.DocumentBuilder;
-        await documentBuilder.build(documents.all.toArray(), { validation: true });
+        const mutex = shared.workspace.WorkspaceLock;
+        await mutex.write(async token => {
+            await documentBuilder.build(documents.all.toArray(), { validation: true }, token);
+        });
     }
 
     // Load validation options from configuration
