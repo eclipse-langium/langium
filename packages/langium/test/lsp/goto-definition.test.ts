@@ -176,7 +176,9 @@ describe('Definition Provider with Infix Operators', async () => {
     Element: Statement | Item;
     Item: 'item' name=ID ';';
 
-    Statement: value=InfixExpr ';';
+    Statement: value=Expression ';';
+
+    Expression: InfixExpr;
 
     infix InfixExpr on Primary:
         '*' | '/' 
