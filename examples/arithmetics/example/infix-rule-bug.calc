@@ -1,0 +1,7 @@
+module Single
+
+def a: 5;
+def b: 99;
+
+def adaduf(x, y, z):
+    x+y+z;

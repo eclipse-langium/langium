@@ -4,7 +4,7 @@
  * terms of the MIT License, which is available in the project root.
  ******************************************************************************/
 import type { AbstractDefinition, Definition, Evaluation, Expression, Module, Statement } from './generated/ast.js';
-import { isBinaryExpression, isDefinition, isEvaluation, isFunctionCall, isNumberLiteral } from './generated/ast.js';
+import { isBinaryExpression, isDefinition, isEvaluation, isFunctionCall, isNestedExpression, isNumberLiteral } from './generated/ast.js';
 import { applyOp } from './arithmetics-util.js';
 
 export function interpretEvaluations(module: Module): Map<Evaluation, number> {
@@ -78,6 +78,9 @@ export function evalExpression(expr: Expression, ctx?: InterpreterContext): numb
             localContext.set(valueOrDef.args[i].name, evalExpression(expr.args[i], ctx));
         }
         return evalExpression(valueOrDef.expr, {module: ctx.module, context: localContext, result: ctx.result});
+    }
+    if (isNestedExpression(expr)) {
+        return evalExpression(expr.value, ctx);
     }
 
     throw new Error('Impossible type of Expression.');

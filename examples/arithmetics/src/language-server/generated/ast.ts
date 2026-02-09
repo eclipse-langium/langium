@@ -44,7 +44,7 @@ export function isAbstractDefinition(item: unknown): item is AbstractDefinition 
 }
 
 export interface BinaryExpression extends langium.AstNode {
-    readonly $container: BinaryExpression | Definition | Evaluation | FunctionCall;
+    readonly $container: BinaryExpression | Definition | Evaluation | FunctionCall | NestedExpression;
     readonly $type: 'BinaryExpression';
     left: Expression;
     operator: '%' | '*' | '+' | '-' | '/' | '^';
@@ -111,7 +111,7 @@ export function isEvaluation(item: unknown): item is Evaluation {
     return reflection.isInstance(item, Evaluation.$type);
 }
 
-export type Expression = BinaryExpression | FunctionCall | NumberLiteral;
+export type Expression = BinaryExpression | FunctionCall | NestedExpression | NumberLiteral;
 
 export const Expression = {
     $type: 'Expression'
@@ -122,7 +122,7 @@ export function isExpression(item: unknown): item is Expression {
 }
 
 export interface FunctionCall extends langium.AstNode {
-    readonly $container: BinaryExpression | Definition | Evaluation | FunctionCall;
+    readonly $container: BinaryExpression | Definition | Evaluation | FunctionCall | NestedExpression;
     readonly $type: 'FunctionCall';
     args: Array<Expression>;
     func: langium.Reference<AbstractDefinition>;
@@ -154,8 +154,23 @@ export function isModule(item: unknown): item is Module {
     return reflection.isInstance(item, Module.$type);
 }
 
+export interface NestedExpression extends langium.AstNode {
+    readonly $container: BinaryExpression | Definition | Evaluation | FunctionCall | NestedExpression;
+    readonly $type: 'NestedExpression';
+    value: Expression;
+}
+
+export const NestedExpression = {
+    $type: 'NestedExpression',
+    value: 'value'
+} as const;
+
+export function isNestedExpression(item: unknown): item is NestedExpression {
+    return reflection.isInstance(item, NestedExpression.$type);
+}
+
 export interface NumberLiteral extends langium.AstNode {
-    readonly $container: BinaryExpression | Definition | Evaluation | FunctionCall;
+    readonly $container: BinaryExpression | Definition | Evaluation | FunctionCall | NestedExpression;
     readonly $type: 'NumberLiteral';
     value: number;
 }
@@ -188,6 +203,7 @@ export type ArithmeticsAstType = {
     Expression: Expression
     FunctionCall: FunctionCall
     Module: Module
+    NestedExpression: NestedExpression
     NumberLiteral: NumberLiteral
     Statement: Statement
 }
@@ -281,6 +297,15 @@ export class ArithmeticsAstReflection extends langium.AbstractAstReflection {
                 }
             },
             superTypes: []
+        },
+        NestedExpression: {
+            name: NestedExpression.$type,
+            properties: {
+                value: {
+                    name: NestedExpression.value
+                }
+            },
+            superTypes: [Expression.$type]
         },
         NumberLiteral: {
             name: NumberLiteral.$type,
