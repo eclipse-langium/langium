@@ -189,42 +189,66 @@ describe('Definition Provider with Infix Operators', async () => {
     hidden terminal COMMENT: /\\/\\/.*/;
     `;
 
-    const infixServices = await createServicesForGrammar({ grammar: infixGrammar });
-    const gotoDefinitionInfix = expectGoToDefinition(infixServices);
+    const infixGrammarIntermediate = `
+    grammar Test
+    entry Model: elements+=Element*;
+    Element: Statement | Item;
+    Item: 'item' name=ID ';';
 
-    test('Simple infix operator expression should find Item from reference', async () => {
-        await gotoDefinitionInfix({
-            text: `
-            item <|a|>;
-            <|>a;
-            `,
-            index: 0,
-            rangeIndex: 0
-        });
-    });
+    Statement: value=Expression ';';
 
-    test('Complex infix operator expression should find Item from reference', async () => {
-        const text = `
-            item <|a|>;
-            item <|b|>;
-            item <|c|>;
-            <|>a + <|>b * <|>c;
-        `;
-        await gotoDefinitionInfix({
-            text,
-            index: 0,
-            rangeIndex: 0
-        });
-        await gotoDefinitionInfix({
-            text,
-            index: 1,
-            rangeIndex: 1
-        });
-        await gotoDefinitionInfix({
-            text,
-            index: 2,
-            rangeIndex: 2
-        });
-    });
+    Expression: InfixExpr;
 
+    infix InfixExpr on Primary:
+        '*' | '/' 
+        > '+' | '-';
+
+    Primary: '(' InfixExpr ')' | {infer ItemRef} ref=[Item];
+
+    terminal ID: /\\w+/;
+    hidden terminal WS: /\\s+/;
+    hidden terminal COMMENT: /\\/\\/.*/;
+    `;
+
+    let i = 1;
+    for (const grammarVariant of [infixGrammar, infixGrammarIntermediate]) {
+        const infixServices = await createServicesForGrammar({ grammar: grammarVariant });
+        const gotoDefinitionInfix = expectGoToDefinition(infixServices);
+
+        test(`Simple infix operator expression should find Item from reference #${i}`, async () => {
+            await gotoDefinitionInfix({
+                text: `
+                item <|a|>;
+                <|>a;
+                `,
+                index: 0,
+                rangeIndex: 0
+            });
+        });
+
+        test(`Complex infix operator expression should find Item from reference #${i}`, async () => {
+            const text = `
+                item <|a|>;
+                item <|b|>;
+                item <|c|>;
+                <|>a + <|>b * <|>c;
+            `;
+            await gotoDefinitionInfix({
+                text,
+                index: 0,
+                rangeIndex: 0
+            });
+            await gotoDefinitionInfix({
+                text,
+                index: 1,
+                rangeIndex: 1
+            });
+            await gotoDefinitionInfix({
+                text,
+                index: 2,
+                rangeIndex: 2
+            });
+        });
+        i++;
+    }
 });
