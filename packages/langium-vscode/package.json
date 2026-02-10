@@ -99,7 +99,7 @@
     "watch": "node esbuild.mjs --watch"
   },
   "dependencies": {
-    "langium": "4.2.0",
+    "langium": "4.2.1",
     "langium-railroad": "4.2.0",
     "vscode-languageserver": "~9.0.1",
     "ignore": "~7.0.3"
