@@ -155,6 +155,9 @@ export interface LangiumDocumentFactory {
 
     /**
      * Create an Langium document from a specified `URI`. The factory will use the `FileSystemAccess` service to read the file.
+     *
+     * If reading the file failed for some reasons (e.g. the URI is invalid or the file does not exist),
+     * a `LangiumDocument` is returned with a corresponding error message as content.
      */
     fromUri<T extends AstNode = AstNode>(uri: URI, cancellationToken?: CancellationToken): Promise<LangiumDocument<T>>;
 
@@ -181,7 +184,22 @@ export class DefaultLangiumDocumentFactory implements LangiumDocumentFactory {
     }
 
     async fromUri<T extends AstNode = AstNode>(uri: URI, cancellationToken = CancellationToken.None): Promise<LangiumDocument<T>> {
-        const content = await this.fileSystemProvider.readFile(uri);
+        const exists = await this.fileSystemProvider.exists(uri);
+        let content: string;
+        if (exists) {
+            const stats = await this.fileSystemProvider.stat(uri);
+            if (stats.isFile) {
+                try {
+                    content = await this.fileSystemProvider.readFile(uri);
+                } catch (err) {
+                    content = `// reading '${uri.toString()}' from file system failed: ${String(err)}`;
+                }
+            } else {
+                content = `// '${uri.toString()}' exists in the file system, but is no file`;
+            }
+        } else {
+            content = `// '${uri.toString()}' does not exist in the file system`;
+        }
         return this.createAsync<T>(uri, content, cancellationToken);
     }
 
