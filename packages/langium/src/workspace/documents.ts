@@ -184,21 +184,21 @@ export class DefaultLangiumDocumentFactory implements LangiumDocumentFactory {
     }
 
     async fromUri<T extends AstNode = AstNode>(uri: URI, cancellationToken = CancellationToken.None): Promise<LangiumDocument<T>> {
-        const exists = await this.fileSystemProvider.exists(uri);
         let content: string;
-        if (exists) {
-            const stats = await this.fileSystemProvider.stat(uri);
-            if (stats.isFile) {
-                try {
-                    content = await this.fileSystemProvider.readFile(uri);
-                } catch (err) {
+        try {
+            content = await this.fileSystemProvider.readFile(uri);
+        } catch (err) {
+            // do the fine-grained checks of the given `uri` only in the error case in order to save performance in the usual case
+            if (await this.fileSystemProvider.exists(uri)) {
+                const stats = await this.fileSystemProvider.stat(uri);
+                if (stats.isFile) {
                     content = `// reading '${uri.toString()}' from file system failed: ${String(err)}`;
+                } else {
+                    content = `// '${uri.toString()}' exists in the file system, but is no file`;
                 }
             } else {
-                content = `// '${uri.toString()}' exists in the file system, but is no file`;
+                content = `// '${uri.toString()}' does not exist in the file system`;
             }
-        } else {
-            content = `// '${uri.toString()}' does not exist in the file system`;
         }
         return this.createAsync<T>(uri, content, cancellationToken);
     }

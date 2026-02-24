@@ -47,37 +47,35 @@ describe('DefaultLangiumDocumentFactory', () => {
         expect(updated.parseResult.value.name).toBe('HELLO');
     });
 
+    const invalidUri = URI.parse('file:///file/does/not/e*xis:t.langium'); // * is illegal on Windows, : is critical on MacOS
+    const invalidUriPrinted = 'file:///file/does/not/e%2Axis%3At.langium';
+
     test('Handle invalid URIs in the EmptyFileSystem', async () => {
-        // const services = createLangiumGrammarServices(NodeFileSystem).grammar;
         const services = createLangiumGrammarServices(EmptyFileSystem).grammar;
         const documentFactory = services.shared.workspace.LangiumDocumentFactory;
-        const uri = URI.parse('file:///file/does/not/exist.langium');
-        const document = await documentFactory.fromUri(uri);
-        expect(document).not.toBe(undefined);
-        expect(document.textDocument.getText().trim()).toBe("// 'file:///file/does/not/exist.langium' does not exist in the file system");
+        const document = await documentFactory.fromUri(invalidUri);
+        expect(document?.textDocument.getText().trim()).toBe(`// '${invalidUriPrinted}' does not exist in the file system`);
     });
 
     test('Handle invalid URIs in the NodeFileSystem', async () => {
         const services = createLangiumGrammarServices(NodeFileSystem).grammar;
         const documentFactory = services.shared.workspace.LangiumDocumentFactory;
-        const uri = URI.parse('file:///file/does/not/exist.langium');
-        const document = await documentFactory.fromUri(uri);
-        expect(document).not.toBe(undefined);
-        expect(document.textDocument.getText().trim()).toBe("// 'file:///file/does/not/exist.langium' does not exist in the file system");
+        const document = await documentFactory.fromUri(invalidUri);
+        expect(document?.textDocument.getText().trim()).toBe(`// '${invalidUriPrinted}' does not exist in the file system`);
     });
 
     test('Dont crash the LS initialization with invalid URIs', async () => {
         class TestWorkspaceManager extends DefaultWorkspaceManager {
             protected override traverseFolder(folderPath: URI, uris: URI[]): Promise<void> {
-                uris.push(URI.parse('file:///file/does/not/exist.langium'));
+                uris.push(invalidUri);
                 return super.traverseFolder(folderPath, uris);
             }
         }
         const services = createLangiumGrammarServices(NodeFileSystem, { workspace: { WorkspaceManager: services => new TestWorkspaceManager(services) }}).grammar;
         await services.shared.workspace.WorkspaceManager.initializeWorkspace([{ name: 'init', uri: 'start-somewhere' }]);
         const documents = services.shared.workspace.LangiumDocuments.all.toArray();
+        expect(documents[0]?.textDocument.getText().trim()).toBe(`// '${invalidUriPrinted}' does not exist in the file system`);
         expect(documents).toHaveLength(1);
-        expect(documents[0].textDocument.getText().trim()).toBe("// 'file:///file/does/not/exist.langium' does not exist in the file system");
     });
 
 });
