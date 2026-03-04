@@ -73,7 +73,7 @@
   },
   "devDependencies": {
     "langium-cli": "~4.2.0",
-    "typedoc": "~0.28.2"
+    "typedoc": "~0.28.17"
   },
   "repository": {
     "type": "git",
