@@ -101,6 +101,7 @@
   "dependencies": {
     "langium": "4.2.0",
     "langium-railroad": "4.2.0",
+    "vscode-languageclient": "~9.0.1",
     "vscode-languageserver": "~9.0.1",
     "ignore": "~7.0.3"
   },
