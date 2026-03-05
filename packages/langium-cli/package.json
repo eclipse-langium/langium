@@ -43,16 +43,16 @@
     "publish:latest": "npm publish --tag latest --access public"
   },
   "dependencies": {
-    "chalk": "~5.6.0",
-    "commander": "~14.0.0",
-    "fs-extra": "~11.3.0",
+    "chalk": "~5.6.2",
+    "commander": "~14.0.3",
+    "fs-extra": "~11.3.4",
     "jsonschema": "~1.5.0",
     "langium": "~4.2.0",
     "langium-railroad": "~4.2.0",
-    "lodash": "~4.17.21"
+    "lodash": "~4.17.23"
   },
   "devDependencies": {
-    "@types/fs-extra": "~11.0.1"
+    "@types/fs-extra": "~11.0.4"
   },
   "repository": {
     "type": "git",
