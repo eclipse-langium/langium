@@ -5,7 +5,7 @@
  ******************************************************************************/
 
 import type { AstNode, Grammar, LangiumDocument, Properties } from 'langium';
-import { AstUtils, EmptyFileSystem, GrammarAST, URI } from 'langium';
+import { AstUtils, EmptyFileSystem, GrammarAST, stream, URI } from 'langium';
 import { expandToString } from 'langium/generate';
 import { IssueCodes, createLangiumGrammarServices } from 'langium/grammar';
 import type { ValidationResult } from 'langium/test';
@@ -1300,9 +1300,9 @@ describe('Property type is not a mix of cross-ref and non-cross-ref types.', () 
 
 });
 
-describe('Assignments with = instead of +=', () => {
-    function getMessage(featureName: string): string {
-        return `Found multiple assignments to '${featureName}' with the '=' assignment operator. Consider using '+=' instead to prevent data loss.`;
+describe('Assignments with = (or ?=) instead of +=', () => {
+    function getMessage(featureName: string, operator: ('=' | '?=') = '='): string {
+        return `Found multiple assignments to '${featureName}' with the '${operator}' assignment operator. Consider using '+=' instead to prevent data loss.`;
     }
     function getGrammar(content: string): string {
         return `
@@ -1475,6 +1475,30 @@ describe('Assignments with = instead of +=', () => {
         expect(validation.diagnostics[0].message).toBe(getMessage('persons'));
     });
 
+    test('fragments called with different cardinalities', async () => {
+        const validation = await validate(getGrammar(`
+            entry Model:
+                Assign (';' Assign)?;
+            fragment Assign:
+                ',' persons=Person;
+            Person: 'person' name=ID ;
+        `));
+        expect(validation.diagnostics.length).toBe(1);
+        expect(validation.diagnostics[0].message).toBe(getMessage('persons'));
+    });
+
+    test('fragments called with different cardinalities and looped', async () => {
+        const validation = await validate(getGrammar(`
+            entry Model:
+                (';' Assign?)*;
+            fragment Assign:
+                ',' persons=Person;
+            Person: 'person' name=ID ;
+        `));
+        expect(validation.diagnostics.length).toBe(1);
+        expect(validation.diagnostics[0].message).toBe(getMessage('persons'));
+    });
+
     test('fragments in alternatives: once in 1st, twice in 2nd alternative', async () => {
         // This suggests the user of Langium to use a list in both cases, which might not be necessary for the 1st alternative.
         // But that is better than loosing a value in the 2nd alternative.
@@ -1487,6 +1511,137 @@ describe('Assignments with = instead of +=', () => {
         `));
         expect(validation.diagnostics.length).toBe(1);
         expect(validation.diagnostics[0].message).toBe(getMessage('persons'));
+    });
+
+    test('fragment calls itself in circular way (assignment before the circular call)', async () => {
+        const validation = await validate(getGrammar(`
+            entry Model:
+                Assign;
+            fragment Assign:
+                ',' persons=Person ('and' Assign)?;
+            Person: 'person' name=ID ;
+        `));
+        expect(validation.diagnostics.length).toBe(1);
+        expect(validation.diagnostics[0].message).toBe(getMessage('persons'));
+    });
+
+    test('fragment calls itself in circular way (assignment after the circular call)', async () => {
+        const validation = await validate(getGrammar(`
+            entry Model:
+                Assign;
+            fragment Assign:
+                ',' ('and' Assign)? persons=Person;
+            Person: 'person' name=ID ;
+        `));
+        expect(validation.diagnostics.length).toBe(1);
+        expect(validation.diagnostics[0].message).toBe(getMessage('persons'));
+    });
+
+    test('two fragments call each other in circular way', async () => {
+        const validation = await validate(getGrammar(`
+            entry Model:
+                Assign1;
+            fragment Assign1:
+                ',' ('and' Assign2)? persons1=Person;
+            fragment Assign2:
+                ',' ('and' Assign1)? persons2=Person;
+            Person: 'person' name=ID ;
+        `));
+        expect(validation.diagnostics.length).toBe(2);
+        expect(validation.diagnostics[0].message).toBe(getMessage('persons2'));
+        expect(validation.diagnostics[1].message).toBe(getMessage('persons1'));
+    });
+
+    test('two fragments call each other in circular way, another fragment not being part of the circle', async () => {
+        const validation = await validate(getGrammar(`
+            entry Model:
+                Assign1;
+            fragment Assign1:
+                ',' Assign2 ('and' Assign3)? persons1=Person;
+            fragment Assign2:
+                ',' persons2=Person;
+            fragment Assign3:
+                ',' ('and' Assign1)? persons3=Person;
+            Person: 'person' name=ID ;
+        `));
+        expect(validation.diagnostics.length).toBe(2);
+        expect(validation.diagnostics[0].message).toBe(getMessage('persons3'));
+        expect(validation.diagnostics[1].message).toBe(getMessage('persons1'));
+    });
+
+    test('circlic calls of three fragments (1 -> 2 -> 3 -> 1)', async () => {
+        const validation = await validate(getGrammar(`
+            entry Model:
+                Assign1;
+            fragment Assign1:
+                ',' ('and' Assign2)? persons1=Person;
+            fragment Assign2:
+                ',' ('and' Assign3)? persons2=Person;
+            fragment Assign3:
+                ',' ('and' Assign1)? persons3=Person;
+            Person: 'person' name=ID ;
+        `));
+        expect(validation.diagnostics.length).toBe(3);
+        expect(validation.diagnostics[0].message).toBe(getMessage('persons3'));
+        expect(validation.diagnostics[1].message).toBe(getMessage('persons2'));
+        expect(validation.diagnostics[2].message).toBe(getMessage('persons1'));
+    });
+
+    test('circlic calls of three fragments (1 -> 2 -> 1 -> 3 -> 1)', async () => {
+        const validation = await validate(getGrammar(`
+            entry Model:
+                Assign1;
+            fragment Assign1:
+                ',' ('and' Assign2)? persons1=Person ('and' Assign3)?;
+            fragment Assign2:
+                ',' ('and' Assign1)? persons2=Person;
+            fragment Assign3:
+                ',' ('and' Assign1)? persons3=Person;
+            Person: 'person' name=ID ;
+        `));
+        expect(validation.diagnostics.length).toBe(3);
+        expect(validation.diagnostics[0].message).toBe(getMessage('persons2'));
+        expect(validation.diagnostics[1].message).toBe(getMessage('persons1'));
+        expect(validation.diagnostics[2].message).toBe(getMessage('persons3'));
+    });
+
+    test('circlic calls of fragments with rewrite action', async () => {
+        const validation = await validate(getGrammar(`
+            entry Model:
+                Assign1;
+            fragment Assign1:
+                ',' ('and' Assign2)? {infer Other.other=current} persons1=Person;
+            fragment Assign2:
+                ',' ('and' Assign1)? persons2=Person;
+            Person: 'person' name=ID ;
+        `));
+        expect(validation.diagnostics.length).toBe(1);
+        expect(validation.diagnostics[0].message).toBe(getMessage('persons2'));
+    });
+
+    test('dont validate fragments as starting point, since they are validated when validating their calling parser rules', async () => {
+        const validation = await validate(getGrammar(`
+            entry Model:
+                Assign;
+            fragment Assign:
+                'persons' (persons=Person)*;
+            Person: 'person' name=ID ;
+        `));
+        expect(validation.diagnostics.length).toBe(1);
+        expect(validation.diagnostics[0].message).toBe(getMessage('persons'));
+    });
+
+    test('dont validate fragments as starting point, since they are validated when validating their calling parser rules: unused fragment', async () => {
+        const validation = await validate(getGrammar(`
+            entry Model:
+                persons=Person;
+            fragment Assign: // this fragment is not used
+                'persons' (persons=Person)*;
+            Person: 'person' name=ID ;
+        `));
+        expect(validation.diagnostics.length).toBe(1);
+        // We are informed about the unused fragment, but not about the assignment issue inside (this will happen, when using the fragment).
+        expect(validation.diagnostics[0].message).toBe('This rule is declared but never referenced.');
     });
 
     test('no problem: fragments in alternatives', async () => {
@@ -1628,6 +1783,21 @@ describe('Assignments with = instead of +=', () => {
         expect(validation.diagnostics[0].message).toBe(getMessage('right'));
     });
 
+    test('rewrite actions inside fragment, which is called by two different parser rules => validate action only once', async () => {
+        const validation = await validate(getGrammar(`
+            entry Model:
+                r1=R1 r2=R2;
+
+            R1: F;
+            R2: F;
+
+            fragment F:
+                a=ID {infer Equals.left=current} (b=ID)+;
+        `));
+        expect(validation.diagnostics.length).toBe(1); // the fragment containing the rewrite action is called twice, but the rewrite action is validated only once
+        expect(validation.diagnostics[0].message).toBe(getMessage('b'));
+    });
+
     test('no problem with rewrite actions on top-level: unassigned action', async () => {
         const validation = await validate(getGrammar(`
             entry Model:
@@ -1648,6 +1818,81 @@ describe('Assignments with = instead of +=', () => {
         expectNoIssues(validation);
     });
 
+    // the test cases for multiple ?= assignments are not complete, since the logic to identify them is the same as for multiple = assignments
+
+    test('Looped ?= assignment', async () => {
+        const validation = await validate(getGrammar(`
+            entry Model:
+                persons=Person;
+            Person: ('person' name+=ID active?='active')+;
+        `));
+        expect(validation.diagnostics.length).toBe(1);
+        expect(validation.diagnostics[0].message).toBe(getMessage('active', '?='));
+    });
+
+    test('Looped ?= assignment via fragment', async () => {
+        const validation = await validate(getGrammar(`
+            entry Model:
+                persons=Person;
+            fragment Assign:
+                'person' name+=ID active?='active';
+            Person: Assign+;
+        `));
+        expect(validation.diagnostics.length).toBe(1);
+        expect(validation.diagnostics[0].message).toBe(getMessage('active', '?='));
+    });
+
+});
+
+describe('Mixed use of "?=", "=" and "+=" for the same feature', () => {
+    function getMessage(featureName: string, ...operators: Array<'?=' | '=' | '+='>): string {
+        return `Don't mix operators (${stream(operators).map(op => `'${op}'`).join(', ')}) when assigning values to the same feature '${featureName}'.`;
+    }
+    function getGrammar(content: string): string {
+        return `
+            grammar HelloWorld
+            ${content}
+            hidden terminal WS: /\\s+/;
+            terminal ID: /[_a-zA-Z][\\w_]*/;
+        `;
+    }
+
+    test('= and +=', async () => {
+        const validation = await validate(getGrammar(`
+            entry Person: 'person' name=ID name+=ID;
+        `));
+        expect(validation.diagnostics.length).toBe(2);
+        expect(validation.diagnostics[0].message).toBe(getMessage('name', '=', '+='));
+        expect(validation.diagnostics[1].message).toBe(getMessage('name', '=', '+='));
+    });
+
+    test('= and ?=', async () => {
+        const validation = await validate(getGrammar(`
+            entry Person: 'person' name=ID name?=ID;
+        `));
+        expect(validation.diagnostics.length).toBe(2);
+        expect(validation.diagnostics[0].message).toBe(getMessage('name', '=', '?='));
+        expect(validation.diagnostics[1].message).toBe(getMessage('name', '=', '?='));
+    });
+
+    test('?= and +=', async () => {
+        const validation = await validate(getGrammar(`
+            entry Person: 'person' name?=ID name+=ID;
+        `));
+        expect(validation.diagnostics.length).toBe(2);
+        expect(validation.diagnostics[0].message).toBe(getMessage('name', '?=', '+='));
+        expect(validation.diagnostics[1].message).toBe(getMessage('name', '?=', '+='));
+    });
+
+    test('?=, = and +=', async () => {
+        const validation = await validate(getGrammar(`
+            entry Person: 'person' name?=ID name=ID name+=ID;
+        `));
+        expect(validation.diagnostics.length).toBe(3);
+        expect(validation.diagnostics[0].message).toBe(getMessage('name', '?=', '=', '+='));
+        expect(validation.diagnostics[1].message).toBe(getMessage('name', '?=', '=', '+='));
+        expect(validation.diagnostics[2].message).toBe(getMessage('name', '?=', '=', '+='));
+    });
 });
 
 describe('Missing required properties are not arrays or booleans', () => {
