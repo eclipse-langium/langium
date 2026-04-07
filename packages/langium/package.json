@@ -65,9 +65,9 @@
     "publish:latest": "npm publish --tag latest --access public"
   },
   "dependencies": {
-    "@chevrotain/regexp-to-ast": "~11.2.0",
-    "chevrotain": "~11.2.0",
-    "chevrotain-allstar": "~0.3.1",
+    "@chevrotain/regexp-to-ast": "~12.0.0",
+    "chevrotain": "~12.0.0",
+    "chevrotain-allstar": "~0.4.1",
     "vscode-languageserver": "~9.0.1",
     "vscode-languageserver-textdocument": "~1.0.11",
     "vscode-uri": "~3.1.0"
