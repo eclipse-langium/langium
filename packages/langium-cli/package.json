@@ -49,7 +49,7 @@
     "jsonschema": "~1.5.0",
     "langium": "~4.2.0",
     "langium-railroad": "~4.2.0",
-    "lodash": "~4.17.23"
+    "lodash": "~4.18.1"
   },
   "devDependencies": {
     "@types/fs-extra": "~11.0.4"
