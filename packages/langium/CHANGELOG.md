@@ -1,5 +1,13 @@
 # Change Log of `langium`
 
+## v4.2.2 (Apr. 2026)
+
+* Bump Chevrotain to v12 ([#2134](https://github.com/eclipse-langium/langium/pull/2134)).
+
+## v4.2.1 (Feb. 2026)
+
+* Fix an infix rule issue ([#2116](https://github.com/eclipse-langium/langium/pull/2116)).
+
 ## v4.2.0 (Jan. 2026)
 
 * Improve code completion for common prefixes ([#2087](https://github.com/eclipse-langium/langium/pull/2087)).
