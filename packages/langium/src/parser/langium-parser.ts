@@ -138,7 +138,7 @@ export abstract class AbstractLangiumParser implements BaseParser {
     protected allRules = new Map<string, RuleResult>();
     protected mainRule!: RuleResult;
 
-    constructor(services: LangiumCoreServices) {
+    constructor(services: LangiumCoreServices, incomplete: boolean) {
         this.lexer = services.parser.Lexer;
         const tokens = this.lexer.definition;
         const production = services.LanguageMetaData.mode === 'production';
@@ -147,13 +147,13 @@ export abstract class AbstractLangiumParser implements BaseParser {
                 ...services.parser.ParserConfig,
                 skipValidations: production,
                 errorMessageProvider: services.parser.ParserErrorMessageProvider
-            }, services.shared.profilers.LangiumProfiler.createTask('parsing', services.LanguageMetaData.languageId));
+            }, incomplete, services.shared.profilers.LangiumProfiler.createTask('parsing', services.LanguageMetaData.languageId));
         } else {
             this.wrapper = new ChevrotainWrapper(tokens, {
                 ...services.parser.ParserConfig,
                 skipValidations: production,
                 errorMessageProvider: services.parser.ParserErrorMessageProvider
-            });
+            }, incomplete);
         }
     }
 
@@ -223,7 +223,7 @@ export class LangiumParser extends AbstractLangiumParser {
     }
 
     constructor(services: LangiumCoreServices) {
-        super(services);
+        super(services, false);
         this.linker = services.references.Linker;
         this.converter = services.parser.ValueConverter;
         this.astReflection = services.shared.AstReflection;
@@ -694,6 +694,10 @@ export class LangiumCompletionParser extends AbstractLangiumParser {
     private nextTokenIndex = 0;
     private stackSize = 0;
 
+    constructor(services: LangiumCoreServices) {
+        super(services, true);
+    }
+
     action(): void {
         // NOOP
     }
@@ -809,7 +813,7 @@ class ChevrotainWrapper extends EmbeddedActionsParser {
     // This array is set in the base implementation of Chevrotain.
     definitionErrors: IParserDefinitionError[];
 
-    constructor(tokens: TokenVocabulary, config: IParserConfig) {
+    constructor(tokens: TokenVocabulary, config: IParserConfig, incomplete: boolean) {
         const useDefaultLookahead = config && 'maxLookahead' in config;
         super(tokens, {
             ...defaultConfig,
@@ -817,7 +821,8 @@ class ChevrotainWrapper extends EmbeddedActionsParser {
                 ? new LLkLookaheadStrategy({ maxLookahead: config.maxLookahead })
                 : new LLStarLookaheadStrategy({
                     // If validations are skipped, don't log the lookahead warnings
-                    logging: config.skipValidations ? () => { } : undefined
+                    logging: config.skipValidations ? () => { } : undefined,
+                    incomplete,
                 }),
             ...config,
         });
@@ -867,8 +872,8 @@ class ChevrotainWrapper extends EmbeddedActionsParser {
 
 class ProfilerWrapper extends ChevrotainWrapper {
     private readonly task: ProfilingTask;
-    constructor(tokens: TokenVocabulary, config: IParserConfig, task: ProfilingTask) {
-        super(tokens, config);
+    constructor(tokens: TokenVocabulary, config: IParserConfig, incomplete: boolean, task: ProfilingTask) {
+        super(tokens, config, incomplete);
         this.task = task;
     }
 
