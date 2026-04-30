@@ -11,6 +11,7 @@
       "ES2020",
       "DOM"
     ],
+    "types": ["node"],
     // Generates corresponding '.d.ts' file.
     "declaration": true,
     // Generates a sourcemap for each corresponding '.d.ts' file.

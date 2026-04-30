@@ -709,4 +709,23 @@ describe('Completion for optional elements', async () => {
         });
     });
 
+    test('Should complete correctly if alternative content is only partially present', async () => {
+        const grammar = `
+            grammar Test
+
+            entry Document: value=(RuleA | RuleB);
+
+            RuleA: 'hello' 'world';
+            RuleB: 'hello' 'world' 'and' 'you';
+
+            hidden terminal WS: /\\s+/;
+        `;
+        const services = await createServicesForGrammar({ grammar });
+        const completion = expectCompletion(services);
+        await completion({
+            text: 'hello world and <|>',
+            index: 0,
+            expectedItems: ['you']
+        });
+    });
 });
