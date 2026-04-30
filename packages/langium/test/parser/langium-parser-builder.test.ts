@@ -924,6 +924,45 @@ describe('ALL(*) parser', () => {
         expect(result.parserErrors).toHaveLength(0);
         expect(result.value.$type).toBe('B');
     });
+
+    test('Can perform partial outer context resolution', async () => {
+        const outerContextGrammar = `
+        entry Model: items+=Stmt*;
+        Stmt: 'ensure' expr=Additive;
+
+        Additive infers Expression:                                                                                                                                                                                                     
+            Multiplicative
+            (({infer Add.left=current} '+' | {infer Sub.left=current} '-') right=Multiplicative)*;                                                                                                                                      
+                                                                    
+        Multiplicative infers Expression:
+            Primary
+            (({infer Mul.left=current} '*' | {infer Div.left=current} '/') right=Primary)*;
+                                                                                                                                                                                                                                        
+        Primary infers Expression:
+            RefExpression | NumberLiteral;                                                                                                                                                                                              
+                                                                    
+        RefExpression:
+            target=PathOrMetadataAccess;
+                                                                                                                                                                                                                                        
+        NumberLiteral:
+            value=NUMBER;                                                                                                                                                                                                               
+                                                                    
+        PathOrMetadataAccess returns string:
+            PATH | MetadataAccess;
+
+        // '/' inside PATH collides with '/' as division operator                                                                                                                                                                       
+        PATH returns string:
+            ID | (ID ('/' ID)* ':' ID);                                                                                                                                                                                                 
+                                                                    
+        terminal MetadataAccess: /@[_a-zA-Z][\\w_-]*/;                                                                                                                                                                                   
+        terminal NUMBER: /[0-9]+(\\.[0-9]+)?/;
+        terminal ID: /[_a-zA-Z][\\w_-]*/;                                                                                                                                                                                                
+        hidden terminal WS: /\\s+/;`;
+        const parser = await parserFromGrammar(outerContextGrammar);
+        const result = parser.parse('ensure someOtherNumber / 10');
+        expect(result.lexerErrors).toHaveLength(0);
+        expect(result.parserErrors).toHaveLength(0);
+    });
 });
 
 describe('Parsing actions', () => {

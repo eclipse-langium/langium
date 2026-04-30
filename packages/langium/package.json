@@ -67,7 +67,7 @@
   "dependencies": {
     "@chevrotain/regexp-to-ast": "~12.0.0",
     "chevrotain": "~12.0.0",
-    "chevrotain-allstar": "~0.4.2",
+    "chevrotain-allstar": "~0.4.3",
     "vscode-languageserver": "~9.0.1",
     "vscode-languageserver-textdocument": "~1.0.12",
     "vscode-uri": "~3.1.0"
