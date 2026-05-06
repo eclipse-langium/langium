@@ -1,5 +1,9 @@
 # Change Log of `langium`
 
+## v4.2.3 (May. 2026)
+
+* Fix a long-standing completion issue for parser rules with common prefixes ([#2146](https://github.com/eclipse-langium/langium/pull/2146), [#2147](https://github.com/eclipse-langium/langium/pull/2147)).
+
 ## v4.2.2 (Apr. 2026)
 
 * Bump Chevrotain to v12 ([#2134](https://github.com/eclipse-langium/langium/pull/2134)).
