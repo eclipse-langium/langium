@@ -8,8 +8,8 @@ import type { GenerateOptions } from './generate.js';
 import { log } from './generator/langium-util.js';
 import chalk from 'chalk';
 import fs from 'fs-extra';
-import { EOL } from 'os';
-import * as path from 'path';
+import { EOL } from 'node:os';
+import * as path from 'node:path';
 import type { LangiumConfig} from './package-types.js';
 import { RelativePath } from './package-types.js';
 
