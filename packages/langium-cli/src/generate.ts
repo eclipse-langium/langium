@@ -11,7 +11,7 @@ import { AstUtils, GrammarAST, URI, type AstNode, type Grammar, type LangiumDocu
 import { createGrammarDiagramHtml, createGrammarDiagramSvg } from 'langium-railroad';
 import { createLangiumGrammarServices, resolveImport, resolveImportUri, resolveTransitiveImports, type LangiumGrammarServices } from 'langium/grammar';
 import { NodeFileSystem } from 'langium/node';
-import * as path from 'path';
+import * as path from 'node:path';
 import { generateAstMultiLanguageProject, generateAstSingleLanguageProject, getLanguageIdentifier, type LanguageInfo } from './generator/ast-generator.js';
 import { generateBnf } from './generator/bnf-generator.js';
 import { serializeGrammar } from './generator/grammar-serializer.js';

@@ -5,9 +5,8 @@
  ******************************************************************************/
 
 /* eslint-disable @stylistic/indent */
-import type { Grammar, LangiumCoreServices } from 'langium';
+import type { Grammar, LangiumCoreServices, URI } from 'langium';
 import { expandToNode, joinToNode, normalizeEOL, toString } from 'langium/generate';
-import type { URI } from 'vscode-uri';
 import type { LangiumConfig } from '../package-types.js';
 import { generatedHeader } from './node-util.js';
 
