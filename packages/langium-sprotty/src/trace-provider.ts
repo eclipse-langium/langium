@@ -7,9 +7,8 @@
 import type { AstNode, AstNodeLocator, LangiumDocuments } from 'langium';
 import type { SModelElement, SModelRoot } from 'sprotty-protocol';
 import type { Range } from 'vscode-languageserver';
-import { URI } from 'vscode-uri';
 import type { LangiumSprottyServices } from './sprotty-services.js';
-import { AstUtils, GrammarUtils, stream, } from 'langium';
+import { AstUtils, GrammarUtils, stream, URI, } from 'langium';
 
 export interface TracedModelElement extends SModelElement {
     trace?: string
