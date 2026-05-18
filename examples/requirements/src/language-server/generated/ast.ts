@@ -230,7 +230,8 @@ export class RequirementsAndTestsAstReflection extends langium.AbstractAstReflec
                 environments: {
                     name: Requirement.environments,
                     defaultValue: [],
-                    referenceType: Environment.$type
+                    referenceType: Environment.$type,
+                    optional: true
                 },
                 name: {
                     name: Requirement.name
@@ -245,15 +246,18 @@ export class RequirementsAndTestsAstReflection extends langium.AbstractAstReflec
             name: RequirementModel.$type,
             properties: {
                 contact: {
-                    name: RequirementModel.contact
+                    name: RequirementModel.contact,
+                    optional: true
                 },
                 environments: {
                     name: RequirementModel.environments,
-                    defaultValue: []
+                    defaultValue: [],
+                    optional: true
                 },
                 requirements: {
                     name: RequirementModel.requirements,
-                    defaultValue: []
+                    defaultValue: [],
+                    optional: true
                 }
             },
             superTypes: []
@@ -264,7 +268,8 @@ export class RequirementsAndTestsAstReflection extends langium.AbstractAstReflec
                 environments: {
                     name: Test.environments,
                     defaultValue: [],
-                    referenceType: Environment.$type
+                    referenceType: Environment.$type,
+                    optional: true
                 },
                 name: {
                     name: Test.name
@@ -275,7 +280,8 @@ export class RequirementsAndTestsAstReflection extends langium.AbstractAstReflec
                     referenceType: Requirement.$type
                 },
                 testFile: {
-                    name: Test.testFile
+                    name: Test.testFile,
+                    optional: true
                 }
             },
             superTypes: []
@@ -284,11 +290,13 @@ export class RequirementsAndTestsAstReflection extends langium.AbstractAstReflec
             name: TestModel.$type,
             properties: {
                 contact: {
-                    name: TestModel.contact
+                    name: TestModel.contact,
+                    optional: true
                 },
                 tests: {
                     name: TestModel.tests,
-                    defaultValue: []
+                    defaultValue: [],
+                    optional: true
                 }
             },
             superTypes: []

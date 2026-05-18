@@ -170,7 +170,8 @@ export class DomainModelAstReflection extends langium.AbstractAstReflection {
             properties: {
                 elements: {
                     name: Domainmodel.elements,
-                    defaultValue: []
+                    defaultValue: [],
+                    optional: true
                 }
             },
             superTypes: []
@@ -180,14 +181,16 @@ export class DomainModelAstReflection extends langium.AbstractAstReflection {
             properties: {
                 features: {
                     name: Entity.features,
-                    defaultValue: []
+                    defaultValue: [],
+                    optional: true
                 },
                 name: {
                     name: Entity.name
                 },
                 superType: {
                     name: Entity.superType,
-                    referenceType: Entity.$type
+                    referenceType: Entity.$type,
+                    optional: true
                 }
             },
             superTypes: [Type.$type]
@@ -197,7 +200,8 @@ export class DomainModelAstReflection extends langium.AbstractAstReflection {
             properties: {
                 many: {
                     name: Feature.many,
-                    defaultValue: false
+                    defaultValue: false,
+                    optional: true
                 },
                 name: {
                     name: Feature.name
@@ -214,7 +218,8 @@ export class DomainModelAstReflection extends langium.AbstractAstReflection {
             properties: {
                 elements: {
                     name: PackageDeclaration.elements,
-                    defaultValue: []
+                    defaultValue: [],
+                    optional: true
                 },
                 name: {
                     name: PackageDeclaration.name
