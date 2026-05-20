@@ -266,7 +266,7 @@ export abstract class AbstractAstReflection implements AstReflection {
                 continue;
             }
 
-            const value = (node as unknown as Record<string, unknown>)[prop.name];
+            const value = (node as GenericAstNode)[prop.name];
             if (value === undefined || value === null) {
                 return false;
             }

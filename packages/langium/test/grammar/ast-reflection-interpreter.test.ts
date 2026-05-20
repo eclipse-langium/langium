@@ -5,10 +5,9 @@
  ******************************************************************************/
 
 import { describe, expect, test } from 'vitest';
-import type { AstNode } from 'langium';
+// import type { AstNode } from 'langium';
 import { InterfaceType, interpretAstReflection } from 'langium/grammar';
-
-type PartialNode = AstNode & Record<string, unknown>;
+import type { GenericAstNode } from '../../lib/syntax-tree.js';
 
 describe('AST reflection interpreter', () => {
 
@@ -159,7 +158,7 @@ describe('AST reflection interpreter', () => {
                 name: 'x',
                 value: 'hello',
                 items: []
-            } as PartialNode)).toBe(true);
+            } as GenericAstNode)).toBe(true);
         });
 
         test('missing required name is incomplete', () => {
@@ -167,14 +166,14 @@ describe('AST reflection interpreter', () => {
                 $type: 'Var',
                 value: 'hello',
                 items: []
-            } as PartialNode)).toBe(false);
+            } as GenericAstNode)).toBe(false);
         });
 
         test('missing multiple required properties is incomplete', () => {
             expect(reflection.isComplete({
                 $type: 'Var',
                 items: []
-            } as PartialNode)).toBe(false);
+            } as GenericAstNode)).toBe(false);
         });
 
         test('empty array is complete', () => {
@@ -183,7 +182,7 @@ describe('AST reflection interpreter', () => {
                 name: 'x',
                 value: 'y',
                 items: []
-            } as PartialNode)).toBe(true);
+            } as GenericAstNode)).toBe(true);
         });
 
         test('missing inherited property is incomplete', () => {
@@ -192,7 +191,7 @@ describe('AST reflection interpreter', () => {
                 value: 'hello',
                 items: [],
                 extra: 'e'
-            } as PartialNode)).toBe(false);
+            } as GenericAstNode)).toBe(false);
         });
 
         test('complete subtype with all props is complete', () => {
@@ -202,7 +201,7 @@ describe('AST reflection interpreter', () => {
                 value: 'hello',
                 items: [],
                 extra: 'e'
-            } as PartialNode)).toBe(true);
+            } as GenericAstNode)).toBe(true);
         });
 
     });
