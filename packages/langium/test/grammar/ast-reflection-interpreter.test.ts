@@ -5,7 +5,9 @@
  ******************************************************************************/
 
 import { describe, expect, test } from 'vitest';
+// import type { AstNode } from 'langium';
 import { InterfaceType, interpretAstReflection } from 'langium/grammar';
+import type { GenericAstNode } from '../../lib/syntax-tree.js';
 
 describe('AST reflection interpreter', () => {
 
@@ -99,6 +101,107 @@ describe('AST reflection interpreter', () => {
             expect(subMetadata.properties.B.defaultValue).toBe('b');
             expect(subMetadata.properties.Ref.name).toBe('Ref');
             expect(subMetadata.properties.Ref.defaultValue).toBeUndefined();
+        });
+
+    });
+
+    describe('isComplete', () => {
+
+        // example of a rule like `Var: 'var' name=ID '=' value=ID;`
+        // where name and value are required strings,
+        // and items is an array w/ a default
+        const varType = new InterfaceType('Var', false, false);
+        varType.properties.push({
+            name: 'name',
+            astNodes: new Set(),
+            optional: false,
+            type: {
+                elementType: { primitive: 'string' }
+            }
+        }, {
+            name: 'value',
+            astNodes: new Set(),
+            optional: true,
+            type: {
+                elementType: { primitive: 'string' }
+            }
+        }, {
+            name: 'items',
+            astNodes: new Set(),
+            optional: false,
+            type: {
+                elementType: { primitive: 'string' }
+            },
+            defaultValue: []
+        });
+
+        // SubVar to extend Var w/ an 'extra' property
+        const subVarType = new InterfaceType('SubVar', false, false);
+        subVarType.properties.push({
+            name: 'extra',
+            astNodes: new Set(),
+            optional: false,
+            type: {
+                elementType: { primitive: 'string' }
+            }
+        });
+        subVarType.superTypes.add(varType);
+
+        const reflection = interpretAstReflection({
+            interfaces: [varType, subVarType],
+            unions: []
+        });
+
+        test('complete node', () => {
+            expect(reflection.isComplete({
+                $type: 'Var',
+                name: 'x',
+                value: 'hello',
+                items: []
+            } as GenericAstNode)).toBe(true);
+        });
+
+        test('missing required name is incomplete', () => {
+            expect(reflection.isComplete({
+                $type: 'Var',
+                value: 'hello',
+                items: []
+            } as GenericAstNode)).toBe(false);
+        });
+
+        test('missing multiple required properties is incomplete', () => {
+            expect(reflection.isComplete({
+                $type: 'Var',
+                items: []
+            } as GenericAstNode)).toBe(false);
+        });
+
+        test('empty array is complete', () => {
+            expect(reflection.isComplete({
+                $type: 'Var',
+                name: 'x',
+                value: 'y',
+                items: []
+            } as GenericAstNode)).toBe(true);
+        });
+
+        test('missing inherited property is incomplete', () => {
+            expect(reflection.isComplete({
+                $type: 'SubVar',
+                value: 'hello',
+                items: [],
+                extra: 'e'
+            } as GenericAstNode)).toBe(false);
+        });
+
+        test('complete subtype with all props is complete', () => {
+            expect(reflection.isComplete({
+                $type: 'SubVar',
+                name: 'x',
+                value: 'hello',
+                items: [],
+                extra: 'e'
+            } as GenericAstNode)).toBe(true);
         });
 
     });

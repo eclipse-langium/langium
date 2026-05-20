@@ -994,7 +994,8 @@ export class LangiumGrammarAstReflection extends langium.AbstractAstReflection {
             name: AbstractElement.$type,
             properties: {
                 cardinality: {
-                    name: AbstractElement.cardinality
+                    name: AbstractElement.cardinality,
+                    optional: true
                 }
             },
             superTypes: []
@@ -1021,20 +1022,25 @@ export class LangiumGrammarAstReflection extends langium.AbstractAstReflection {
             name: Action.$type,
             properties: {
                 cardinality: {
-                    name: Action.cardinality
+                    name: Action.cardinality,
+                    optional: true
                 },
                 feature: {
-                    name: Action.feature
+                    name: Action.feature,
+                    optional: true
                 },
                 inferredType: {
-                    name: Action.inferredType
+                    name: Action.inferredType,
+                    optional: true
                 },
                 operator: {
-                    name: Action.operator
+                    name: Action.operator,
+                    optional: true
                 },
                 type: {
                     name: Action.type,
-                    referenceType: AbstractType.$type
+                    referenceType: AbstractType.$type,
+                    optional: true
                 }
             },
             superTypes: [AbstractElement.$type]
@@ -1043,7 +1049,8 @@ export class LangiumGrammarAstReflection extends langium.AbstractAstReflection {
             name: Alternatives.$type,
             properties: {
                 cardinality: {
-                    name: Alternatives.cardinality
+                    name: Alternatives.cardinality,
+                    optional: true
                 },
                 elements: {
                     name: Alternatives.elements,
@@ -1075,7 +1082,8 @@ export class LangiumGrammarAstReflection extends langium.AbstractAstReflection {
             name: Assignment.$type,
             properties: {
                 cardinality: {
-                    name: Assignment.cardinality
+                    name: Assignment.cardinality,
+                    optional: true
                 },
                 feature: {
                     name: Assignment.feature
@@ -1084,7 +1092,8 @@ export class LangiumGrammarAstReflection extends langium.AbstractAstReflection {
                     name: Assignment.operator
                 },
                 predicate: {
-                    name: Assignment.predicate
+                    name: Assignment.predicate,
+                    optional: true
                 },
                 terminal: {
                     name: Assignment.terminal
@@ -1106,20 +1115,24 @@ export class LangiumGrammarAstReflection extends langium.AbstractAstReflection {
             name: CharacterRange.$type,
             properties: {
                 cardinality: {
-                    name: CharacterRange.cardinality
+                    name: CharacterRange.cardinality,
+                    optional: true
                 },
                 left: {
                     name: CharacterRange.left
                 },
                 lookahead: {
-                    name: CharacterRange.lookahead
+                    name: CharacterRange.lookahead,
+                    optional: true
                 },
                 parenthesized: {
                     name: CharacterRange.parenthesized,
-                    defaultValue: false
+                    defaultValue: false,
+                    optional: true
                 },
                 right: {
-                    name: CharacterRange.right
+                    name: CharacterRange.right,
+                    optional: true
                 }
             },
             superTypes: [TerminalElement.$type]
@@ -1146,7 +1159,8 @@ export class LangiumGrammarAstReflection extends langium.AbstractAstReflection {
             name: CrossReference.$type,
             properties: {
                 cardinality: {
-                    name: CrossReference.cardinality
+                    name: CrossReference.cardinality,
+                    optional: true
                 },
                 deprecatedSyntax: {
                     name: CrossReference.deprecatedSyntax,
@@ -1157,7 +1171,8 @@ export class LangiumGrammarAstReflection extends langium.AbstractAstReflection {
                     defaultValue: false
                 },
                 terminal: {
-                    name: CrossReference.terminal
+                    name: CrossReference.terminal,
+                    optional: true
                 },
                 type: {
                     name: CrossReference.type,
@@ -1182,7 +1197,8 @@ export class LangiumGrammarAstReflection extends langium.AbstractAstReflection {
             name: EndOfFile.$type,
             properties: {
                 cardinality: {
-                    name: EndOfFile.cardinality
+                    name: EndOfFile.cardinality,
+                    optional: true
                 }
             },
             superTypes: [AbstractElement.$type]
@@ -1203,7 +1219,8 @@ export class LangiumGrammarAstReflection extends langium.AbstractAstReflection {
                     defaultValue: false
                 },
                 name: {
-                    name: Grammar.name
+                    name: Grammar.name,
+                    optional: true
                 },
                 rules: {
                     name: Grammar.rules,
@@ -1229,17 +1246,20 @@ export class LangiumGrammarAstReflection extends langium.AbstractAstReflection {
             name: Group.$type,
             properties: {
                 cardinality: {
-                    name: Group.cardinality
+                    name: Group.cardinality,
+                    optional: true
                 },
                 elements: {
                     name: Group.elements,
                     defaultValue: []
                 },
                 guardCondition: {
-                    name: Group.guardCondition
+                    name: Group.guardCondition,
+                    optional: true
                 },
                 predicate: {
-                    name: Group.predicate
+                    name: Group.predicate,
+                    optional: true
                 }
             },
             superTypes: [AbstractElement.$type]
@@ -1260,10 +1280,12 @@ export class LangiumGrammarAstReflection extends langium.AbstractAstReflection {
                     name: InfixRule.call
                 },
                 dataType: {
-                    name: InfixRule.dataType
+                    name: InfixRule.dataType,
+                    optional: true
                 },
                 inferredType: {
-                    name: InfixRule.inferredType
+                    name: InfixRule.inferredType,
+                    optional: true
                 },
                 name: {
                     name: InfixRule.name
@@ -1277,7 +1299,8 @@ export class LangiumGrammarAstReflection extends langium.AbstractAstReflection {
                 },
                 returnType: {
                     name: InfixRule.returnType,
-                    referenceType: AbstractType.$type
+                    referenceType: AbstractType.$type,
+                    optional: true
                 }
             },
             superTypes: [AbstractParserRule.$type]
@@ -1286,7 +1309,8 @@ export class LangiumGrammarAstReflection extends langium.AbstractAstReflection {
             name: InfixRuleOperatorList.$type,
             properties: {
                 associativity: {
-                    name: InfixRuleOperatorList.associativity
+                    name: InfixRuleOperatorList.associativity,
+                    optional: true
                 },
                 operators: {
                     name: InfixRuleOperatorList.operators,
@@ -1327,10 +1351,12 @@ export class LangiumGrammarAstReflection extends langium.AbstractAstReflection {
             name: Keyword.$type,
             properties: {
                 cardinality: {
-                    name: Keyword.cardinality
+                    name: Keyword.cardinality,
+                    optional: true
                 },
                 predicate: {
-                    name: Keyword.predicate
+                    name: Keyword.predicate,
+                    optional: true
                 },
                 value: {
                     name: Keyword.value
@@ -1347,7 +1373,8 @@ export class LangiumGrammarAstReflection extends langium.AbstractAstReflection {
                 },
                 parameter: {
                     name: NamedArgument.parameter,
-                    referenceType: Parameter.$type
+                    referenceType: Parameter.$type,
+                    optional: true
                 },
                 value: {
                     name: NamedArgument.value
@@ -1359,14 +1386,17 @@ export class LangiumGrammarAstReflection extends langium.AbstractAstReflection {
             name: NegatedToken.$type,
             properties: {
                 cardinality: {
-                    name: NegatedToken.cardinality
+                    name: NegatedToken.cardinality,
+                    optional: true
                 },
                 lookahead: {
-                    name: NegatedToken.lookahead
+                    name: NegatedToken.lookahead,
+                    optional: true
                 },
                 parenthesized: {
                     name: NegatedToken.parenthesized,
-                    defaultValue: false
+                    defaultValue: false,
+                    optional: true
                 },
                 terminal: {
                     name: NegatedToken.terminal
@@ -1415,7 +1445,8 @@ export class LangiumGrammarAstReflection extends langium.AbstractAstReflection {
             name: ParserRule.$type,
             properties: {
                 dataType: {
-                    name: ParserRule.dataType
+                    name: ParserRule.dataType,
+                    optional: true
                 },
                 definition: {
                     name: ParserRule.definition
@@ -1429,7 +1460,8 @@ export class LangiumGrammarAstReflection extends langium.AbstractAstReflection {
                     defaultValue: false
                 },
                 inferredType: {
-                    name: ParserRule.inferredType
+                    name: ParserRule.inferredType,
+                    optional: true
                 },
                 name: {
                     name: ParserRule.name
@@ -1440,7 +1472,8 @@ export class LangiumGrammarAstReflection extends langium.AbstractAstReflection {
                 },
                 returnType: {
                     name: ParserRule.returnType,
-                    referenceType: AbstractType.$type
+                    referenceType: AbstractType.$type,
+                    optional: true
                 }
             },
             superTypes: [AbstractParserRule.$type]
@@ -1462,14 +1495,17 @@ export class LangiumGrammarAstReflection extends langium.AbstractAstReflection {
             name: RegexToken.$type,
             properties: {
                 cardinality: {
-                    name: RegexToken.cardinality
+                    name: RegexToken.cardinality,
+                    optional: true
                 },
                 lookahead: {
-                    name: RegexToken.lookahead
+                    name: RegexToken.lookahead,
+                    optional: true
                 },
                 parenthesized: {
                     name: RegexToken.parenthesized,
-                    defaultValue: false
+                    defaultValue: false,
+                    optional: true
                 },
                 regex: {
                     name: RegexToken.regex
@@ -1494,10 +1530,12 @@ export class LangiumGrammarAstReflection extends langium.AbstractAstReflection {
                     defaultValue: []
                 },
                 cardinality: {
-                    name: RuleCall.cardinality
+                    name: RuleCall.cardinality,
+                    optional: true
                 },
                 predicate: {
-                    name: RuleCall.predicate
+                    name: RuleCall.predicate,
+                    optional: true
                 },
                 rule: {
                     name: RuleCall.rule,
@@ -1510,14 +1548,17 @@ export class LangiumGrammarAstReflection extends langium.AbstractAstReflection {
             name: SimpleType.$type,
             properties: {
                 primitiveType: {
-                    name: SimpleType.primitiveType
+                    name: SimpleType.primitiveType,
+                    optional: true
                 },
                 stringType: {
-                    name: SimpleType.stringType
+                    name: SimpleType.stringType,
+                    optional: true
                 },
                 typeRef: {
                     name: SimpleType.typeRef,
-                    referenceType: AbstractType.$type
+                    referenceType: AbstractType.$type,
+                    optional: true
                 }
             },
             superTypes: [TypeDefinition.$type]
@@ -1535,18 +1576,21 @@ export class LangiumGrammarAstReflection extends langium.AbstractAstReflection {
             name: TerminalAlternatives.$type,
             properties: {
                 cardinality: {
-                    name: TerminalAlternatives.cardinality
+                    name: TerminalAlternatives.cardinality,
+                    optional: true
                 },
                 elements: {
                     name: TerminalAlternatives.elements,
                     defaultValue: []
                 },
                 lookahead: {
-                    name: TerminalAlternatives.lookahead
+                    name: TerminalAlternatives.lookahead,
+                    optional: true
                 },
                 parenthesized: {
                     name: TerminalAlternatives.parenthesized,
-                    defaultValue: false
+                    defaultValue: false,
+                    optional: true
                 }
             },
             superTypes: [TerminalElement.$type]
@@ -1555,14 +1599,17 @@ export class LangiumGrammarAstReflection extends langium.AbstractAstReflection {
             name: TerminalElement.$type,
             properties: {
                 cardinality: {
-                    name: TerminalElement.cardinality
+                    name: TerminalElement.cardinality,
+                    optional: true
                 },
                 lookahead: {
-                    name: TerminalElement.lookahead
+                    name: TerminalElement.lookahead,
+                    optional: true
                 },
                 parenthesized: {
                     name: TerminalElement.parenthesized,
-                    defaultValue: false
+                    defaultValue: false,
+                    optional: true
                 }
             },
             superTypes: [AbstractElement.$type]
@@ -1571,18 +1618,21 @@ export class LangiumGrammarAstReflection extends langium.AbstractAstReflection {
             name: TerminalGroup.$type,
             properties: {
                 cardinality: {
-                    name: TerminalGroup.cardinality
+                    name: TerminalGroup.cardinality,
+                    optional: true
                 },
                 elements: {
                     name: TerminalGroup.elements,
                     defaultValue: []
                 },
                 lookahead: {
-                    name: TerminalGroup.lookahead
+                    name: TerminalGroup.lookahead,
+                    optional: true
                 },
                 parenthesized: {
                     name: TerminalGroup.parenthesized,
-                    defaultValue: false
+                    defaultValue: false,
+                    optional: true
                 }
             },
             superTypes: [TerminalElement.$type]
@@ -1605,7 +1655,8 @@ export class LangiumGrammarAstReflection extends langium.AbstractAstReflection {
                     name: TerminalRule.name
                 },
                 type: {
-                    name: TerminalRule.type
+                    name: TerminalRule.type,
+                    optional: true
                 }
             },
             superTypes: [AbstractRule.$type]
@@ -1614,14 +1665,17 @@ export class LangiumGrammarAstReflection extends langium.AbstractAstReflection {
             name: TerminalRuleCall.$type,
             properties: {
                 cardinality: {
-                    name: TerminalRuleCall.cardinality
+                    name: TerminalRuleCall.cardinality,
+                    optional: true
                 },
                 lookahead: {
-                    name: TerminalRuleCall.lookahead
+                    name: TerminalRuleCall.lookahead,
+                    optional: true
                 },
                 parenthesized: {
                     name: TerminalRuleCall.parenthesized,
-                    defaultValue: false
+                    defaultValue: false,
+                    optional: true
                 },
                 rule: {
                     name: TerminalRuleCall.rule,
@@ -1646,7 +1700,8 @@ export class LangiumGrammarAstReflection extends langium.AbstractAstReflection {
             name: TypeAttribute.$type,
             properties: {
                 defaultValue: {
-                    name: TypeAttribute.defaultValue
+                    name: TypeAttribute.defaultValue,
+                    optional: true
                 },
                 isOptional: {
                     name: TypeAttribute.isOptional,
@@ -1681,7 +1736,8 @@ export class LangiumGrammarAstReflection extends langium.AbstractAstReflection {
             name: UnorderedGroup.$type,
             properties: {
                 cardinality: {
-                    name: UnorderedGroup.cardinality
+                    name: UnorderedGroup.cardinality,
+                    optional: true
                 },
                 elements: {
                     name: UnorderedGroup.elements,
@@ -1694,14 +1750,17 @@ export class LangiumGrammarAstReflection extends langium.AbstractAstReflection {
             name: UntilToken.$type,
             properties: {
                 cardinality: {
-                    name: UntilToken.cardinality
+                    name: UntilToken.cardinality,
+                    optional: true
                 },
                 lookahead: {
-                    name: UntilToken.lookahead
+                    name: UntilToken.lookahead,
+                    optional: true
                 },
                 parenthesized: {
                     name: UntilToken.parenthesized,
-                    defaultValue: false
+                    defaultValue: false,
+                    optional: true
                 },
                 terminal: {
                     name: UntilToken.terminal
@@ -1719,14 +1778,17 @@ export class LangiumGrammarAstReflection extends langium.AbstractAstReflection {
             name: Wildcard.$type,
             properties: {
                 cardinality: {
-                    name: Wildcard.cardinality
+                    name: Wildcard.cardinality,
+                    optional: true
                 },
                 lookahead: {
-                    name: Wildcard.lookahead
+                    name: Wildcard.lookahead,
+                    optional: true
                 },
                 parenthesized: {
                     name: Wildcard.parenthesized,
-                    defaultValue: false
+                    defaultValue: false,
+                    optional: true
                 }
             },
             superTypes: [TerminalElement.$type]

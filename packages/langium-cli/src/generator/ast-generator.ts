@@ -180,6 +180,9 @@ function buildPropertyMetaData(props: Property[], ownerTypeName: string): Genera
             if (refType) {
                 attributes.push(`referenceType: ${refType}.$type`);
             }
+            if (property.optional) {
+                attributes.push('optional: true');
+            }
 
             return expandToNode`
                 ${property.name}: {

@@ -145,7 +145,8 @@ function buildPropertyMetaData(props: Property[]): { [name: string]: PropertyMet
     for (const property of all) {
         properties[property.name] = {
             name: property.name,
-            defaultValue: property.defaultValue
+            defaultValue: property.defaultValue,
+            ...(property.optional ? { optional: true } : {})
         };
     }
     return properties;

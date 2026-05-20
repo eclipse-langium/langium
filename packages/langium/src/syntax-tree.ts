@@ -172,6 +172,7 @@ export interface AstReflection {
     isInstance(node: unknown, type: string): boolean
     isSubtype(subtype: string, supertype: string): boolean
     getAllSubTypes(type: string): string[]
+    isComplete(node: AstNode): boolean
 }
 
 /**
@@ -251,6 +252,27 @@ export abstract class AbstractAstReflection implements AstReflection {
             return types;
         }
     }
+
+    /**
+     * Check whether a given AST node is missing any non-optional properties.
+     * Used to guard against incomplete nodes that deviate from their declared type,
+     * particularly when error recovery is in effect.
+     */
+    isComplete(node: AstNode): boolean {
+        const meta = this.getTypeMetaData(node.$type);
+        for (const key of Object.keys(meta.properties)) {
+            const prop = meta.properties[key];
+            if (prop.optional) {
+                continue;
+            }
+
+            const value = (node as GenericAstNode)[prop.name];
+            if (value === undefined || value === null) {
+                return false;
+            }
+        }
+        return true;
+    }
 }
 
 /**
@@ -281,11 +303,19 @@ export interface PropertyMetaData {
     /** The name of this property. */
     name: string
     /**
-     * Indicates that the property is mandatory in the AST node.
+     * Indicates that the property's value is mandatory in the AST node when present.
      * For example, if an AST node contains an array, but no elements of this array have been parsed,
      * we still expect an empty array instead of `undefined`.
+     * A property with a `defaultValue` may still be `optional`, in which case this indicates
+     * the property must have a value when it is present.
      */
     defaultValue?: PropertyType
+    /**
+     * Indicates whether this property is optional in the AST node.
+     * Note that a node with a `defaultValue` may also be optional.
+     * `isComplete` relies on this info for runtime node completeness checks
+     */
+    optional?: boolean
     /**
      * If the property is a reference, this is the type of the reference target.
      */

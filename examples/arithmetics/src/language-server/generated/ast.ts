@@ -229,7 +229,8 @@ export class ArithmeticsAstReflection extends langium.AbstractAstReflection {
             properties: {
                 args: {
                     name: Definition.args,
-                    defaultValue: []
+                    defaultValue: [],
+                    optional: true
                 },
                 expr: {
                     name: Definition.expr
@@ -260,7 +261,8 @@ export class ArithmeticsAstReflection extends langium.AbstractAstReflection {
             properties: {
                 args: {
                     name: FunctionCall.args,
-                    defaultValue: []
+                    defaultValue: [],
+                    optional: true
                 },
                 func: {
                     name: FunctionCall.func,
@@ -277,7 +279,8 @@ export class ArithmeticsAstReflection extends langium.AbstractAstReflection {
                 },
                 statements: {
                     name: Module.statements,
-                    defaultValue: []
+                    defaultValue: [],
+                    optional: true
                 }
             },
             superTypes: []
