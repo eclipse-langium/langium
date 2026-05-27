@@ -5,7 +5,6 @@
  ******************************************************************************/
 
 import Generator, { type PromptQuestion } from 'yeoman-generator';
-import type { CopyOptions } from 'mem-fs-editor';
 import _ from 'lodash';
 import chalk from 'chalk';
 import * as path from 'node:path';
@@ -50,7 +49,27 @@ export interface Answers {
 }
 
 export interface PostAnwers {
-    openWith: 'code' | false
+    openWith: string | false
+}
+
+type CopyOptions = NonNullable<Parameters<Generator['fs']['copy']>[2]>;
+
+interface MainPackageJson {
+    scripts: Record<string, string>
+    workspaces: string[]
+}
+
+interface TsConfigBuildJson {
+    references: Array<{ path: string }>
+}
+
+interface LanguagePackageJson {
+    devDependencies: Record<string, string>
+    scripts: Record<string, string>
+}
+
+interface ExtensionsJson {
+    recommendations: string[]
 }
 
 /**
@@ -84,10 +103,6 @@ function description(...d: string[]): string {
 
 export class LangiumGenerator extends Generator {
     private answers: Answers;
-
-    constructor(args: string | string[], options: Record<string, unknown>) {
-        super(args, options);
-    }
 
     async prompting(): Promise<void> {
         printLogo(this.log);
@@ -203,14 +218,16 @@ export class LangiumGenerator extends Generator {
         const languageId = _.kebabCase(this.answers.rawLanguageName);
 
         const templateCopyOptions: CopyOptions = {
-            process: content => this._replaceLocalLangium(this._replaceTemplateWords(fileExtensionGlob, languageName, languageId, content)),
-            processDestinationPath: path => this._replaceTemplateNames(languageId, path)
+            fileTransform: ({ destinationPath, contents }) => ({
+                path: this._replaceTemplateNames(languageId, destinationPath),
+                contents: this._replaceLocalLangium(this._replaceTemplateWords(fileExtensionGlob, languageName, languageId, contents))
+            })
         };
 
         const pathBase = path.join(__dirname, BASE_DIR);
         this.sourceRoot(pathBase);
-        const mainPackageJson = this.fs.readJSON(path.join(this.sourceRoot(), 'package.json'));
-        const tsConfigBuildJson = this.fs.readJSON(path.join(this.sourceRoot(), 'tsconfig.build.json'));
+        const mainPackageJson = this._readJson<MainPackageJson>(path.join(this.sourceRoot(), 'package.json'));
+        const tsConfigBuildJson = this._readJson<TsConfigBuildJson>(path.join(this.sourceRoot(), 'tsconfig.build.json'));
 
         const baseFiles = [
             'tsconfig.json',
@@ -279,13 +296,13 @@ export * from './generated/module.js';
             // ensure reference is directly behind ./packages/language/tsconfig.src.json
             tsConfigBuildJson.references.push({ path: './packages/language/tsconfig.test.json' });
 
-            const languagePackageJson = this.fs.readJSON(this._extensionPath('packages/language/package.json'));
+            const languagePackageJson = this._readJson<LanguagePackageJson>(this._extensionPath('packages/language/package.json'));
             languagePackageJson.devDependencies.vitest = '~3.1.3';
             languagePackageJson.scripts.test = 'vitest run';
             this.fs.delete(this._extensionPath('packages/language/package.json'));
             this.fs.writeJSON(this._extensionPath('packages/language/package.json'), languagePackageJson, undefined, 4);
 
-            const extensionsJson = this.fs.readJSON(this._extensionPath('.vscode/extensions.json'));
+            const extensionsJson = this._readJson<ExtensionsJson>(this._extensionPath('.vscode/extensions.json'));
             extensionsJson.recommendations.push('vitest.explorer');
             this.fs.delete(this._extensionPath('.vscode/extensions.json'));
             this.fs.writeJSON(this._extensionPath('.vscode/extensions.json'), extensionsJson, undefined, 4);
@@ -359,7 +376,7 @@ export * from './generated/module.js';
         const code = await which('code').catch(() => undefined);
         if (code) {
             const answer = await this.prompt<PostAnwers>({
-                type: 'list',
+                type: 'select',
                 name: 'openWith',
                 message: 'Do you want to open the new folder with Visual Studio Code?',
                 choices: [
@@ -412,6 +429,14 @@ export * from './generated/module.js';
             );
         }
         return content;
+    }
+
+    _readJson<T extends object>(filePath: string): T {
+        const content = this.fs.readJSON(filePath);
+        if (!content) {
+            throw new Error(`Could not read JSON file: ${filePath}`);
+        }
+        return content as T;
     }
 
     _replaceTemplateNames(languageId: string, path: string): string {
