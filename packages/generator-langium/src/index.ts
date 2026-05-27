@@ -5,7 +5,6 @@
  ******************************************************************************/
 
 import Generator, { type PromptQuestion } from 'yeoman-generator';
-import type { MemFsEditor } from 'mem-fs-editor';
 import _ from 'lodash';
 import chalk from 'chalk';
 import * as path from 'node:path';
@@ -53,7 +52,7 @@ export interface PostAnwers {
     openWith: string | false
 }
 
-type CopyOptions = Parameters<MemFsEditor['copy']>[2];
+type CopyOptions = NonNullable<Parameters<Generator['fs']['copy']>[2]>;
 
 interface MainPackageJson {
     scripts: Record<string, string>
