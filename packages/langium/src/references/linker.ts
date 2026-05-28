@@ -91,6 +91,69 @@ export interface DefaultMultiReference extends MultiReference {
     _linkingError?: LinkingError;
 }
 
+function defineReferenceContext(reference: object, linker: DefaultLinker, node: AstNode, property: string): void {
+    Object.defineProperties(reference, {
+        // Keep linker context off Object.keys/reference spreads while sharing prototype accessors.
+        linker: { value: linker },
+        node: { value: node },
+        property: { value: property }
+    });
+}
+
+class DefaultReferenceImpl implements DefaultReference {
+    readonly $refNode: CstNode | undefined;
+    readonly $refText: string;
+    _ref: AstNode | LinkingError | typeof RefResolving | undefined = undefined;
+    _nodeDescription?: AstNodeDescription;
+
+    declare private readonly linker: DefaultLinker;
+    declare private readonly node: AstNode;
+    declare private readonly property: string;
+
+    constructor(linker: DefaultLinker, node: AstNode, property: string, refNode: CstNode | undefined, refText: string) {
+        defineReferenceContext(this, linker, node, property);
+        this.$refNode = refNode;
+        this.$refText = refText;
+    }
+
+    get ref(): AstNode | undefined {
+        return this.linker.resolveReference(this, this.node, this.property);
+    }
+
+    get $nodeDescription(): AstNodeDescription | undefined {
+        return this._nodeDescription;
+    }
+
+    get error(): LinkingError | undefined {
+        return isLinkingError(this._ref) ? this._ref : undefined;
+    }
+}
+
+class DefaultMultiReferenceImpl implements DefaultMultiReference {
+    readonly $refNode: CstNode | undefined;
+    readonly $refText: string;
+    _items: MultiReferenceItem[] | typeof RefResolving | undefined = undefined;
+    _linkingError?: LinkingError;
+
+    declare private readonly linker: DefaultLinker;
+    declare private readonly node: AstNode;
+    declare private readonly property: string;
+
+    constructor(linker: DefaultLinker, node: AstNode, property: string, refNode: CstNode | undefined, refText: string) {
+        defineReferenceContext(this, linker, node, property);
+        this.$refNode = refNode;
+        this.$refText = refText;
+    }
+
+    get items(): MultiReferenceItem[] {
+        return this.linker.resolveMultiReference(this, this.node, this.property);
+    }
+
+    get error(): LinkingError | undefined {
+        return this.linker.getMultiReferenceError(this, this.node, this.property);
+    }
+}
+
 export class DefaultLinker implements Linker {
     protected readonly reflection: AstReflection;
     protected readonly scopeProvider: ScopeProvider;
@@ -214,100 +277,84 @@ export class DefaultLinker implements Linker {
 
     buildReference(node: AstNode, property: string, refNode: CstNode | undefined, refText: string): Reference {
         // See behavior description in doc of Linker, update that on changes in here.
-        // eslint-disable-next-line @typescript-eslint/no-this-alias
-        const linker = this;
-        const reference: DefaultReference = {
-            $refNode: refNode,
-            $refText: refText,
-            _ref: undefined,
-
-            get ref() {
-                if (isAstNode(this._ref)) {
-                    // Most frequent case: the target is already resolved.
-                    return this._ref;
-                } else if (isAstNodeDescription(this._nodeDescription)) {
-                    // A candidate has been found before, but it is not loaded yet.
-                    const linkedNode = linker.loadAstNode(this._nodeDescription);
-                    this._ref = linkedNode ??
-                        linker.createLinkingError({ reference, container: node, property }, this._nodeDescription);
-                } else if (this._ref === undefined) {
-                    // The reference has not been linked yet, so do that now.
-                    this._ref = RefResolving;
-                    const document = findRootNode(node).$document;
-                    const refData = linker.getLinkedNode({ reference, container: node, property });
-                    if (refData.error && document && document.state < DocumentState.ComputedScopes) {
-                        // Document scope is not ready, don't set `this._ref` so linker can retry later.
-                        return this._ref = undefined;
-                    }
-                    this._ref = refData.node ?? refData.error;
-                    this._nodeDescription = refData.descr;
-                    document?.references.push(this);
-                } else if (this._ref === RefResolving) {
-                    linker.throwCyclicReferenceError(node, property, refText);
-                }
-                return isAstNode(this._ref) ? this._ref : undefined;
-            },
-            get $nodeDescription() {
-                return this._nodeDescription;
-            },
-            get error() {
-                return isLinkingError(this._ref) ? this._ref : undefined;
-            }
-        };
-        return reference;
+        return new DefaultReferenceImpl(this, node, property, refNode, refText);
     }
 
     buildMultiReference(node: AstNode, property: string, refNode: CstNode | undefined, refText: string): MultiReference {
         // See behavior description in doc of Linker, update that on changes in here.
-        // eslint-disable-next-line @typescript-eslint/no-this-alias
-        const linker = this;
-        const reference: DefaultMultiReference = {
-            $refNode: refNode,
-            $refText: refText,
-            _items: undefined,
+        return new DefaultMultiReferenceImpl(this, node, property, refNode, refText);
+    }
 
-            get items() {
-                if (Array.isArray(this._items)) {
-                    return this._items;
-                } else if (this._items === undefined) {
-                    this._items = RefResolving;
-                    const document = findRootNode(node).$document;
-                    const descriptions = linker.getCandidates({
-                        reference,
-                        container: node,
-                        property
-                    });
-                    const items: MultiReferenceItem[] = [];
-                    if (isLinkingError(descriptions)) {
-                        this._linkingError = descriptions;
-                    } else {
-                        for (const description of descriptions) {
-                            const linkedNode = linker.loadAstNode(description);
-                            if (linkedNode) {
-                                items.push({ ref: linkedNode, $nodeDescription: description });
-                            }
-                        }
+    /** @internal */
+    resolveReference(reference: DefaultReference, node: AstNode, property: string): AstNode | undefined {
+        if (isAstNode(reference._ref)) {
+            // Most frequent case: the target is already resolved.
+            return reference._ref;
+        } else if (isAstNodeDescription(reference._nodeDescription)) {
+            // A candidate has been found before, but it is not loaded yet.
+            const linkedNode = this.loadAstNode(reference._nodeDescription);
+            reference._ref = linkedNode ??
+                this.createLinkingError({ reference, container: node, property }, reference._nodeDescription);
+        } else if (reference._ref === undefined) {
+            // The reference has not been linked yet, so do that now.
+            reference._ref = RefResolving;
+            const document = findRootNode(node).$document;
+            const refData = this.getLinkedNode({ reference, container: node, property });
+            if (refData.error && document && document.state < DocumentState.ComputedScopes) {
+                // Document scope is not ready, don't set `reference._ref` so linker can retry later.
+                return reference._ref = undefined;
+            }
+            reference._ref = refData.node ?? refData.error;
+            reference._nodeDescription = refData.descr;
+            document?.references.push(reference);
+        } else if (reference._ref === RefResolving) {
+            this.throwCyclicReferenceError(node, property, reference.$refText);
+        }
+        return isAstNode(reference._ref) ? reference._ref : undefined;
+    }
+
+    /** @internal */
+    resolveMultiReference(reference: DefaultMultiReference, node: AstNode, property: string): MultiReferenceItem[] {
+        if (Array.isArray(reference._items)) {
+            return reference._items;
+        } else if (reference._items === undefined) {
+            reference._items = RefResolving;
+            const document = findRootNode(node).$document;
+            const descriptions = this.getCandidates({
+                reference,
+                container: node,
+                property
+            });
+            const items: MultiReferenceItem[] = [];
+            if (isLinkingError(descriptions)) {
+                reference._linkingError = descriptions;
+            } else {
+                for (const description of descriptions) {
+                    const linkedNode = this.loadAstNode(description);
+                    if (linkedNode) {
+                        items.push({ ref: linkedNode, $nodeDescription: description });
                     }
-                    this._items = items;
-                    document?.references.push(this);
-                } else if (this._items === RefResolving) {
-                    linker.throwCyclicReferenceError(node, property, refText);
-                }
-                return Array.isArray(this._items) ? this._items : [];
-            },
-            get error() {
-                if (this._linkingError) {
-                    return this._linkingError;
-                }
-                const refs = this.items;
-                if (refs.length > 0) {
-                    return undefined;
-                } else {
-                    return (this._linkingError = linker.createLinkingError({ reference, container: node, property }));
                 }
             }
-        };
-        return reference;
+            reference._items = items;
+            document?.references.push(reference);
+        } else if (reference._items === RefResolving) {
+            this.throwCyclicReferenceError(node, property, reference.$refText);
+        }
+        return Array.isArray(reference._items) ? reference._items : [];
+    }
+
+    /** @internal */
+    getMultiReferenceError(reference: DefaultMultiReference, node: AstNode, property: string): LinkingError | undefined {
+        if (reference._linkingError) {
+            return reference._linkingError;
+        }
+        const refs = this.resolveMultiReference(reference, node, property);
+        if (refs.length > 0) {
+            return undefined;
+        } else {
+            return (reference._linkingError = this.createLinkingError({ reference, container: node, property }));
+        }
     }
 
     protected throwCyclicReferenceError(node: AstNode, property: string, refText: string): never {
