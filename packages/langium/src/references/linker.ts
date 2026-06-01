@@ -91,13 +91,10 @@ export interface DefaultMultiReference extends MultiReference {
     _linkingError?: LinkingError;
 }
 
-function defineReferenceContext(reference: object, linker: DefaultLinker, node: AstNode, property: string): void {
-    Object.defineProperties(reference, {
-        // Keep linker context off Object.keys/reference spreads while sharing prototype accessors.
-        linker: { value: linker },
-        node: { value: node },
-        property: { value: property }
-    });
+interface ReferenceResolver {
+    resolveReference(reference: DefaultReference, node: AstNode, property: string): AstNode | undefined;
+    resolveMultiReference(reference: DefaultMultiReference, node: AstNode, property: string): MultiReferenceItem[];
+    getMultiReferenceError(reference: DefaultMultiReference, node: AstNode, property: string): LinkingError | undefined;
 }
 
 class DefaultReferenceImpl implements DefaultReference {
@@ -106,18 +103,19 @@ class DefaultReferenceImpl implements DefaultReference {
     _ref: AstNode | LinkingError | typeof RefResolving | undefined = undefined;
     _nodeDescription?: AstNodeDescription;
 
-    declare private readonly linker: DefaultLinker;
-    declare private readonly node: AstNode;
-    declare private readonly property: string;
-
-    constructor(linker: DefaultLinker, node: AstNode, property: string, refNode: CstNode | undefined, refText: string) {
-        defineReferenceContext(this, linker, node, property);
+    constructor(
+        private readonly resolver: ReferenceResolver,
+        private readonly node: AstNode,
+        private readonly property: string,
+        refNode: CstNode | undefined,
+        refText: string
+    ) {
         this.$refNode = refNode;
         this.$refText = refText;
     }
 
     get ref(): AstNode | undefined {
-        return this.linker.resolveReference(this, this.node, this.property);
+        return this.resolver.resolveReference(this, this.node, this.property);
     }
 
     get $nodeDescription(): AstNodeDescription | undefined {
@@ -135,22 +133,23 @@ class DefaultMultiReferenceImpl implements DefaultMultiReference {
     _items: MultiReferenceItem[] | typeof RefResolving | undefined = undefined;
     _linkingError?: LinkingError;
 
-    declare private readonly linker: DefaultLinker;
-    declare private readonly node: AstNode;
-    declare private readonly property: string;
-
-    constructor(linker: DefaultLinker, node: AstNode, property: string, refNode: CstNode | undefined, refText: string) {
-        defineReferenceContext(this, linker, node, property);
+    constructor(
+        private readonly resolver: ReferenceResolver,
+        private readonly node: AstNode,
+        private readonly property: string,
+        refNode: CstNode | undefined,
+        refText: string
+    ) {
         this.$refNode = refNode;
         this.$refText = refText;
     }
 
     get items(): MultiReferenceItem[] {
-        return this.linker.resolveMultiReference(this, this.node, this.property);
+        return this.resolver.resolveMultiReference(this, this.node, this.property);
     }
 
     get error(): LinkingError | undefined {
-        return this.linker.getMultiReferenceError(this, this.node, this.property);
+        return this.resolver.getMultiReferenceError(this, this.node, this.property);
     }
 }
 
@@ -161,6 +160,7 @@ export class DefaultLinker implements Linker {
     protected readonly langiumDocuments: () => LangiumDocuments;
     protected readonly profiler: LangiumProfiler | undefined;
     protected readonly languageId: string;
+    private readonly referenceResolver: ReferenceResolver;
 
     constructor(services: LangiumCoreServices) {
         this.reflection = services.shared.AstReflection;
@@ -169,6 +169,11 @@ export class DefaultLinker implements Linker {
         this.astNodeLocator = services.workspace.AstNodeLocator;
         this.profiler = services.shared.profilers.LangiumProfiler;
         this.languageId = services.LanguageMetaData.languageId;
+        this.referenceResolver = {
+            resolveReference: (reference, node, property) => this.resolveReference(reference, node, property),
+            resolveMultiReference: (reference, node, property) => this.resolveMultiReference(reference, node, property),
+            getMultiReferenceError: (reference, node, property) => this.getMultiReferenceError(reference, node, property)
+        };
     }
 
     async link(document: LangiumDocument, cancelToken = CancellationToken.None): Promise<void> {
@@ -277,16 +282,15 @@ export class DefaultLinker implements Linker {
 
     buildReference(node: AstNode, property: string, refNode: CstNode | undefined, refText: string): Reference {
         // See behavior description in doc of Linker, update that on changes in here.
-        return new DefaultReferenceImpl(this, node, property, refNode, refText);
+        return new DefaultReferenceImpl(this.referenceResolver, node, property, refNode, refText);
     }
 
     buildMultiReference(node: AstNode, property: string, refNode: CstNode | undefined, refText: string): MultiReference {
         // See behavior description in doc of Linker, update that on changes in here.
-        return new DefaultMultiReferenceImpl(this, node, property, refNode, refText);
+        return new DefaultMultiReferenceImpl(this.referenceResolver, node, property, refNode, refText);
     }
 
-    /** @internal */
-    resolveReference(reference: DefaultReference, node: AstNode, property: string): AstNode | undefined {
+    protected resolveReference(reference: DefaultReference, node: AstNode, property: string): AstNode | undefined {
         if (isAstNode(reference._ref)) {
             // Most frequent case: the target is already resolved.
             return reference._ref;
@@ -313,8 +317,7 @@ export class DefaultLinker implements Linker {
         return isAstNode(reference._ref) ? reference._ref : undefined;
     }
 
-    /** @internal */
-    resolveMultiReference(reference: DefaultMultiReference, node: AstNode, property: string): MultiReferenceItem[] {
+    protected resolveMultiReference(reference: DefaultMultiReference, node: AstNode, property: string): MultiReferenceItem[] {
         if (Array.isArray(reference._items)) {
             return reference._items;
         } else if (reference._items === undefined) {
@@ -344,8 +347,7 @@ export class DefaultLinker implements Linker {
         return Array.isArray(reference._items) ? reference._items : [];
     }
 
-    /** @internal */
-    getMultiReferenceError(reference: DefaultMultiReference, node: AstNode, property: string): LinkingError | undefined {
+    protected getMultiReferenceError(reference: DefaultMultiReference, node: AstNode, property: string): LinkingError | undefined {
         if (reference._linkingError) {
             return reference._linkingError;
         }
