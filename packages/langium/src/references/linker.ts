@@ -170,9 +170,9 @@ export class DefaultLinker implements Linker {
         this.profiler = services.shared.profilers.LangiumProfiler;
         this.languageId = services.LanguageMetaData.languageId;
         this.referenceResolver = {
-            resolveReference: (reference, node, property) => this.resolveReference(reference, node, property),
-            resolveMultiReference: (reference, node, property) => this.resolveMultiReference(reference, node, property),
-            getMultiReferenceError: (reference, node, property) => this.getMultiReferenceError(reference, node, property)
+            resolveReference: this.resolveReference.bind(this),
+            resolveMultiReference: this.resolveMultiReference.bind(this),
+            getMultiReferenceError: this.getMultiReferenceError.bind(this)
         };
     }
 
