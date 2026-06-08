@@ -1,51 +1,132 @@
 name: Publish
 
 permissions:
+  contents: read
   id-token: write
 
 on:
   push:
-    # Only trigger on changes to package.json files in the main and maintenance branches
     branches:
       - 'main'
       - 'maintenance/**'
     paths:
       - '**/package.json'
-      # Also trigger if the publish workflow/script itself is changed
       - '.github/workflows/publish.yml'
-      - 'scripts/publish-updated-packages.ts'
 
 jobs:
   publish:
-    name: Langium Publish
+    name: Publish to NPM
     runs-on: ubuntu-latest
     timeout-minutes: 20
+    env:
+      NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
     steps:
-    - name: Checkout
-      uses: actions/checkout@v6
-    - name: Use Node.js
-      uses: actions/setup-node@v6
-      with:
-        node-version-file: '.nvmrc'
-        registry-url: 'https://registry.npmjs.org'
-    - name: Build
-      shell: bash
-      # Ensure latest npm version
-      run: |
-        npm i -g npm
-        npm ci
-        npm run build:clean
-        npm run langium:generate:production --workspace=langium
-        npm run build
-    - name: Test
-      if: success() || failure()
-      shell: bash
-      run: |
-        npm run test
-    - name: Publish
-      shell: bash
-      env:
-        OVSX_TOKEN: ${{ secrets.OVSX_TOKEN }}
-        VSCE_TOKEN: ${{ secrets.VSCE_TOKEN }}
-      run: |
-        npm run publish:updated
+      - name: Checkout
+        uses: actions/checkout@v6
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v6
+        with:
+          node-version-file: '.nvmrc'
+          registry-url: 'https://registry.npmjs.org'
+
+      # Adjust this step per repository as needed
+      - name: Build
+        shell: bash
+        run: |
+          npm i -g npm
+          npm ci
+          npm run build:clean
+          npm run langium:generate:production --workspace=langium
+          npm run build
+
+      - name: Test
+        if: success() || failure()
+        shell: bash
+        run: npm run test
+
+      - name: Publish npm packages
+        shell: bash
+        run: |
+          # ── Configure npm packages to publish ──────────────────────────
+          NPM_PACKAGES=(
+            "packages/langium"
+            "packages/langium-railroad"
+            "packages/langium-cli"
+            "packages/langium-sprotty"
+            "packages/generator-langium"
+            "examples/arithmetics"
+            "examples/domainmodel"
+            "examples/statemachine"
+          )
+          # ────────────────────────────────────────────────────────────────
+
+          PUBLISHED_ANY=false
+          for PKG in "${NPM_PACKAGES[@]}"; do
+            NAME=$(node -p "require('./$PKG/package.json').name")
+            LOCAL=$(node -p "require('./$PKG/package.json').version")
+            PUBLISHED=$(npm view "$NAME" version 2>/dev/null || echo "0.0.0")
+
+            if node -e "const s=require('semver'); process.exit(s.gt('$LOCAL','$PUBLISHED') ? 0 : 1)"; then
+              echo "Publishing $NAME@$LOCAL (was: $PUBLISHED)"
+              (cd "$PKG" && npm publish --provenance --access public)
+              PUBLISHED_ANY=true
+            else
+              echo "$NAME@$LOCAL is up to date"
+            fi
+          done
+
+          if [ "$PUBLISHED_ANY" = "false" ]; then
+            echo "All npm packages are up to date."
+          fi
+
+      - name: Publish VSCode extensions
+        shell: bash
+        env:
+          VSCE_TOKEN: ${{ secrets.VSCE_TOKEN }}
+          OVSX_TOKEN: ${{ secrets.OVSX_TOKEN }}
+        run: |
+          # ── Configure VS extension paths to publish ─────────────────────
+          VSCE_PACKAGES=(
+            "packages/langium-vscode"
+          )
+          # ────────────────────────────────────────────────────────────────
+
+          for VSCE_PACKAGE in "${VSCE_PACKAGES[@]}"; do
+            NAME=$(node -p "require('./$VSCE_PACKAGE/package.json').name")
+            PUBLISHER=$(node -p "require('./$VSCE_PACKAGE/package.json').publisher")
+            LOCAL=$(node -p "require('./$VSCE_PACKAGE/package.json').version")
+            FULL_NAME="$PUBLISHER.$NAME"
+            VSIX="$NAME-$LOCAL.vsix"
+
+            VSCE_VER=$(npx vsce show "$FULL_NAME" --json | node -e "
+              let d=''; process.stdin.on('data',c=>d+=c);
+              process.stdin.on('end',()=>{ try{process.stdout.write(JSON.parse(d).versions[0].version)}catch{process.stdout.write('0.0.0')} });
+            ")
+            OVSX_VER=$(npx ovsx get "$FULL_NAME" --metadata | node -e "
+              let d=''; process.stdin.on('data',c=>d+=c);
+              process.stdin.on('end',()=>{ try{process.stdout.write(JSON.parse(d).version)}catch{process.stdout.write('0.0.0')} });
+            ")
+
+            SHOULD_VSCE=$(node -e "const s=require('semver'); process.stdout.write(String(s.gt('$LOCAL','$VSCE_VER')))")
+            SHOULD_OVSX=$(node -e "const s=require('semver'); process.stdout.write(String(s.gt('$LOCAL','$OVSX_VER')))")
+
+            if [ "$SHOULD_VSCE" = "true" ] || [ "$SHOULD_OVSX" = "true" ]; then
+              echo "Packaging $FULL_NAME@$LOCAL..."
+              (cd "$VSCE_PACKAGE" && npx vsce package -o "$VSIX")
+            fi
+
+            if [ "$SHOULD_VSCE" = "true" ]; then
+              echo "Publishing $FULL_NAME to VS Marketplace..."
+              (cd "$VSCE_PACKAGE" && npx vsce publish "$VSIX" -p "$VSCE_TOKEN")
+            else
+              echo "VS Marketplace: $FULL_NAME is up to date"
+            fi
+
+            if [ "$SHOULD_OVSX" = "true" ]; then
+              echo "Publishing $FULL_NAME to Open VSX..."
+              (cd "$VSCE_PACKAGE" && npx ovsx publish "$VSIX" -p "$OVSX_TOKEN")
+            else
+              echo "Open VSX: $FULL_NAME is up to date"
+            fi
+          done
