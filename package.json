@@ -20,6 +20,7 @@
     "coverage": "vitest run --coverage",
     "validate-exports": "npm run validate-exports --workspace=langium",
     "version:dependencies": "tsx ./scripts/update-version.ts && npm install",
+    "build:publish-action": "node .github/actions/publish/esbuild.mjs",
     "publish:updated": "tsx ./scripts/publish-updated-packages.ts",
     "langium:generate": "npm run langium:generate --workspace=langium --workspace=examples/domainmodel --workspace=examples/arithmetics --workspace=examples/statemachine --workspace=examples/requirements",
     "dev-build": "npm run dev-clean && npm install && npm link ./packages/langium && npm link ./packages/langium-cli && npm link ./packages/generator-langium",
@@ -27,6 +28,7 @@
     "reset:repo": "git clean -f -X -d"
   },
   "devDependencies": {
+    "@actions/core": "^3.0.1",
     "@eslint/eslintrc": "~3.3.5",
     "@eslint/js": "~9.39.4",
     "@stylistic/eslint-plugin": "~5.10.0",
