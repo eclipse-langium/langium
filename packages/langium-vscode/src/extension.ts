@@ -5,8 +5,8 @@
  ******************************************************************************/
 
 import type * as vscode from 'vscode';
-import type { LanguageClientOptions, ServerOptions } from 'vscode-languageclient/node.js';
-import { LanguageClient, TransportKind } from 'vscode-languageclient/node.js';
+import type { LanguageClientOptions, ServerOptions } from 'vscode-languageclient/node';
+import { LanguageClient, TransportKind } from 'vscode-languageclient/node';
 import { registerRailroadWebview } from './railroad-webview.js';
 
 let client: LanguageClient;

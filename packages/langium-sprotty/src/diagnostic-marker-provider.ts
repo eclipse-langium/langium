@@ -6,7 +6,7 @@
 
 import type { AstNode } from 'langium';
 import type { SModelElement } from 'sprotty-protocol';
-import type { Diagnostic, Range } from 'vscode-languageserver';
+import { Diagnostic, type Range } from 'vscode-languageserver';
 import type { GeneratorContext } from './diagram-generator.js';
 import type { LangiumSprottyServices } from './sprotty-services.js';
 import { AstUtils } from 'langium';
@@ -40,7 +40,7 @@ export class DefaultDiagnosticMarkerProvider implements DiagnosticMarkerProvider
         }
         diagnostics.sort((a, b) => (a.severity ?? 0) - (b.severity ?? 0));
         const issues = diagnostics.map(diagnostic => ({
-            message: diagnostic.message,
+            message: Diagnostic.getMessageString(diagnostic),
             severity: convertSeverity(diagnostic)
         }) satisfies LangiumSprottyIssue);
         const marker: SDiagnosticMarker = {

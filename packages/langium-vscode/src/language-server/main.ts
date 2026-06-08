@@ -8,7 +8,7 @@ import { type Module } from 'langium';
 import { createLangiumGrammarServices } from 'langium/grammar';
 import { startLanguageServer, type LangiumSharedServices, type PartialLangiumSharedServices } from 'langium/lsp';
 import { NodeFileSystem } from 'langium/node';
-import { ProposedFeatures, createConnection } from 'vscode-languageserver/node.js';
+import { ProposedFeatures, createConnection } from 'vscode-languageserver/node';
 import { LangiumGrammarWorkspaceManager } from './grammar-workspace-manager.js';
 import { registerRailroadConnectionHandler } from './railroad-handler.js';
 import { registerLangiumConfigHandler } from './config-handler.js';
