@@ -141,7 +141,7 @@ export default [{
             patterns: [ {
                 group: [ 'vscode-jsonrpc' ],
                 importNamePattern: '^(?!CancellationToken)',
-                message: 'Don\'t import types or symbols from "vscode-jsonrpc" (package index), as that brings a large overhead in bundle size. Import from "vscode-jsonrpc/lib/common/...js" and add a // eslint-disable..., if really necessary.'
+                message: 'Don\'t import types or symbols from "vscode-jsonrpc" (package index), as that brings a large overhead in bundle size. Add a // eslint-disable... comment if really necessary.'
             }]
         }],
         // use @typescript-eslint/no-unused-vars instead

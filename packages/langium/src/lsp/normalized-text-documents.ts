@@ -10,13 +10,26 @@ import type {
     NotebookCell,
     NotebookDocument,
     DocumentUri,
-    NotificationHandler
+    NotificationHandler,
+    LSPObject
 } from 'vscode-languageserver';
 import { TextDocumentSyncKind, Disposable, Emitter } from 'vscode-languageserver';
 import type { URI } from '../utils/uri-utils.js';
 import { UriUtils } from '../utils/uri-utils.js';
-// For some reason, this isn't exported by vscode-languageserver
-import type { NotebookDocumentChangeEvent } from 'vscode-languageserver/lib/common/notebook.js';
+
+// NotebookDocumentChangeEvent is not part of the public vscode-languageserver exports
+export type NotebookDocumentChangeEvent = {
+    notebookDocument: NotebookDocument;
+    metadata?: { old: LSPObject | undefined; new: LSPObject | undefined };
+    cells?: {
+        added: NotebookCell[];
+        removed: NotebookCell[];
+        changed: {
+            data: { old: NotebookCell; new: NotebookCell }[];
+            textContent: NotebookCell[];
+        };
+    };
+};
 
 export type TextDocumentConnection = Pick<Connection,
 'onDidOpenTextDocument' |

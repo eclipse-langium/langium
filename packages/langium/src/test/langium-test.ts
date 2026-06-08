@@ -6,7 +6,7 @@
 
 import * as assert from 'node:assert';
 import type { CompletionItem, CompletionList, Diagnostic, DocumentSymbol, FoldingRange, FormattingOptions, Range, ReferenceParams, SemanticTokensParams, SemanticTokenTypes, TextDocumentIdentifier, TextDocumentPositionParams, WorkspaceSymbol } from 'vscode-languageserver-protocol';
-import { CodeAction, DiagnosticSeverity, MarkupContent } from 'vscode-languageserver-types';
+import { CodeAction, Diagnostic, DiagnosticSeverity, MarkupContent } from 'vscode-languageserver-types';
 import { normalizeEOL } from '../generate/template-string.js';
 import type { LangiumServices, LangiumSharedLSPServices } from '../lsp/lsp-services.js';
 import { SemanticTokensDecoder } from '../lsp/semantic-token-provider.js';
@@ -662,7 +662,7 @@ export function filterByOptions<T extends AstNode = AstNode, N extends AstNode =
             filters.push(d => d.message === options.message);
         } else if (options.message instanceof RegExp) {
             const regexp = options.message as RegExp;
-            filters.push(d => regexp.test(d.message));
+            filters.push(d => regexp.test(Diagnostic.getMessageString(d)));
         }
     }
     if (options.severity) {

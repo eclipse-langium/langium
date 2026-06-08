@@ -31,7 +31,7 @@ import type {
 import { DidChangeConfigurationNotification, Emitter, LSPErrorCodes, ResponseError, TextDocumentSyncKind } from 'vscode-languageserver-protocol';
 import { eagerLoad } from '../dependency-injection.js';
 import type { LangiumCoreServices } from '../services.js';
-import { isOperationCancelled } from '../utils/promise-utils.js';
+import { isOperationCancelled, type MaybePromise } from '../utils/promise-utils.js';
 import { URI } from '../utils/uri-utils.js';
 import type { ConfigurationInitializedParams } from '../workspace/configuration.js';
 import { DocumentState, type LangiumDocument } from '../workspace/documents.js';
@@ -703,7 +703,7 @@ export function addTypeHierarchyHandler(connection: Connection, sharedServices: 
 }
 
 export function createHierarchyRequestHandler<P extends TypeHierarchySupertypesParams | TypeHierarchySubtypesParams | CallHierarchyIncomingCallsParams | CallHierarchyOutgoingCallsParams, R, PR, E = void>(
-    serviceCall: (services: LangiumCoreAndPartialLSPServices, params: P, cancelToken: CancellationToken) => HandlerResult<R, E>,
+    serviceCall: (services: LangiumCoreAndPartialLSPServices, params: P, cancelToken: CancellationToken) => MaybePromise<R | undefined>,
     sharedServices: LangiumSharedServices,
     requiredState?: ServiceRequirement
 ): ServerRequestHandler<P, R, PR, E> {
@@ -721,7 +721,7 @@ export function createHierarchyRequestHandler<P extends TypeHierarchySupertypesP
         }
         const language = serviceRegistry.getServices(uri);
         try {
-            return await serviceCall(language, params, cancelToken);
+            return await serviceCall(language, params, cancelToken) ?? null;
         } catch (err) {
             return responseError<E>(err);
         }
@@ -729,7 +729,7 @@ export function createHierarchyRequestHandler<P extends TypeHierarchySupertypesP
 }
 
 export function createServerRequestHandler<P extends { textDocument: TextDocumentIdentifier }, R, PR, E = void>(
-    serviceCall: (services: LangiumCoreAndPartialLSPServices, document: LangiumDocument, params: P, cancelToken: CancellationToken) => HandlerResult<R, E>,
+    serviceCall: (services: LangiumCoreAndPartialLSPServices, document: LangiumDocument, params: P, cancelToken: CancellationToken) => MaybePromise<R | undefined>,
     sharedServices: LangiumSharedServices,
     requiredState?: ServiceRequirement
 ): ServerRequestHandler<P, R, PR, E> {
@@ -749,7 +749,7 @@ export function createServerRequestHandler<P extends { textDocument: TextDocumen
         const language = serviceRegistry.getServices(uri);
         try {
             const document = await documents.getOrCreateDocument(uri);
-            return await serviceCall(language, document, params, cancelToken);
+            return await serviceCall(language, document, params, cancelToken) ?? null;
         } catch (err) {
             return responseError<E>(err);
         }
@@ -757,7 +757,7 @@ export function createServerRequestHandler<P extends { textDocument: TextDocumen
 }
 
 export function createRequestHandler<P extends { textDocument: TextDocumentIdentifier }, R, E = void>(
-    serviceCall: (services: LangiumCoreAndPartialLSPServices, document: LangiumDocument, params: P, cancelToken: CancellationToken) => HandlerResult<R, E>,
+    serviceCall: (services: LangiumCoreAndPartialLSPServices, document: LangiumDocument, params: P, cancelToken: CancellationToken) => MaybePromise<R | undefined>,
     sharedServices: LangiumSharedServices,
     requiredState?: ServiceRequirement
 ): RequestHandler<P, R | null, E> {
@@ -776,7 +776,7 @@ export function createRequestHandler<P extends { textDocument: TextDocumentIdent
         const language = serviceRegistry.getServices(uri);
         try {
             const document = await documents.getOrCreateDocument(uri);
-            return await serviceCall(language, document, params, cancelToken);
+            return await serviceCall(language, document, params, cancelToken) ?? null;
         } catch (err) {
             return responseError<E>(err);
         }
