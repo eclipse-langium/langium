@@ -704,7 +704,7 @@ export function addTypeHierarchyHandler(connection: Connection, sharedServices: 
 }
 
 export function createHierarchyRequestHandler<P extends TypeHierarchySupertypesParams | TypeHierarchySubtypesParams | CallHierarchyIncomingCallsParams | CallHierarchyOutgoingCallsParams, R extends NonNullable<unknown>, _PR, E = void>(
-    serviceCall: (services: LangiumCoreAndPartialLSPServices, params: P, cancelToken: CancellationToken) => MaybePromise<R | null | undefined>,
+    serviceCall: (services: LangiumCoreAndPartialLSPServices, params: P, cancelToken: CancellationToken) => MaybePromise<R | null | undefined | ResponseError<E>>,
     sharedServices: LangiumSharedServices,
     requiredState?: ServiceRequirement
 ): LangiumServerRequestHandler<P, R, E> {
@@ -730,7 +730,7 @@ export function createHierarchyRequestHandler<P extends TypeHierarchySupertypesP
 }
 
 export function createServerRequestHandler<P extends { textDocument: TextDocumentIdentifier }, R extends NonNullable<unknown>, _PR, E = void>(
-    serviceCall: (services: LangiumCoreAndPartialLSPServices, document: LangiumDocument, params: P, cancelToken: CancellationToken) => MaybePromise<R | null | undefined>,
+    serviceCall: (services: LangiumCoreAndPartialLSPServices, document: LangiumDocument, params: P, cancelToken: CancellationToken) => MaybePromise<R | null | undefined | ResponseError<E>>,
     sharedServices: LangiumSharedServices,
     requiredState?: ServiceRequirement
 ): LangiumServerRequestHandler<P, R, E> {
@@ -758,7 +758,7 @@ export function createServerRequestHandler<P extends { textDocument: TextDocumen
 }
 
 export function createRequestHandler<P extends { textDocument: TextDocumentIdentifier }, R extends NonNullable<unknown>, E = void>(
-    serviceCall: (services: LangiumCoreAndPartialLSPServices, document: LangiumDocument, params: P, cancelToken: CancellationToken) => MaybePromise<R | null | undefined>,
+    serviceCall: (services: LangiumCoreAndPartialLSPServices, document: LangiumDocument, params: P, cancelToken: CancellationToken) => MaybePromise<R | null | undefined | ResponseError<E>>,
     sharedServices: LangiumSharedServices,
     requiredState?: ServiceRequirement
 ): LangiumRequestHandler<P, R, E> {
