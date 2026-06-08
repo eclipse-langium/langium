@@ -25,7 +25,7 @@ export type NotebookDocumentChangeEvent = {
         added: NotebookCell[];
         removed: NotebookCell[];
         changed: {
-            data: { old: NotebookCell; new: NotebookCell }[];
+            data: Array<{ old: NotebookCell; new: NotebookCell }>;
             textContent: NotebookCell[];
         };
     };

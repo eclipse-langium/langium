@@ -11,7 +11,6 @@ import type {
     Connection,
     Disposable,
     Event,
-    HandlerResult,
     InitializedParams,
     InitializeParams,
     InitializeResult,
@@ -708,7 +707,7 @@ export function createHierarchyRequestHandler<P extends TypeHierarchySupertypesP
     requiredState?: ServiceRequirement
 ): ServerRequestHandler<P, R, PR, E> {
     const serviceRegistry = sharedServices.ServiceRegistry;
-    return async (params: P, cancelToken: CancellationToken) => {
+    return (async (params: P, cancelToken: CancellationToken) => {
         const uri = URI.parse(params.item.uri);
         const cancellationError = await waitUntilPhase<E>(sharedServices, cancelToken, uri, requiredState);
         if (cancellationError) {
@@ -725,7 +724,7 @@ export function createHierarchyRequestHandler<P extends TypeHierarchySupertypesP
         } catch (err) {
             return responseError<E>(err);
         }
-    };
+    }) as unknown as ServerRequestHandler<P, R, PR, E>;
 }
 
 export function createServerRequestHandler<P extends { textDocument: TextDocumentIdentifier }, R, PR, E = void>(
@@ -735,7 +734,7 @@ export function createServerRequestHandler<P extends { textDocument: TextDocumen
 ): ServerRequestHandler<P, R, PR, E> {
     const documents = sharedServices.workspace.LangiumDocuments;
     const serviceRegistry = sharedServices.ServiceRegistry;
-    return async (params: P, cancelToken: CancellationToken) => {
+    return (async (params: P, cancelToken: CancellationToken) => {
         const uri = URI.parse(params.textDocument.uri);
         const cancellationError = await waitUntilPhase<E>(sharedServices, cancelToken, uri, requiredState);
         if (cancellationError) {
@@ -753,7 +752,7 @@ export function createServerRequestHandler<P extends { textDocument: TextDocumen
         } catch (err) {
             return responseError<E>(err);
         }
-    };
+    }) as unknown as ServerRequestHandler<P, R, PR, E>;
 }
 
 export function createRequestHandler<P extends { textDocument: TextDocumentIdentifier }, R, E = void>(
@@ -763,7 +762,7 @@ export function createRequestHandler<P extends { textDocument: TextDocumentIdent
 ): RequestHandler<P, R | null, E> {
     const documents = sharedServices.workspace.LangiumDocuments;
     const serviceRegistry = sharedServices.ServiceRegistry;
-    return async (params: P, cancelToken: CancellationToken) => {
+    return (async (params: P, cancelToken: CancellationToken) => {
         const uri = URI.parse(params.textDocument.uri);
         const cancellationError = await waitUntilPhase<E>(sharedServices, cancelToken, uri, requiredState);
         if (cancellationError) {
@@ -780,7 +779,7 @@ export function createRequestHandler<P extends { textDocument: TextDocumentIdent
         } catch (err) {
             return responseError<E>(err);
         }
-    };
+    }) as unknown as RequestHandler<P, R | null, E>;
 }
 
 async function waitUntilPhase<E>(services: LangiumSharedServices, cancelToken: CancellationToken, uri?: URI, requiredState?: ServiceRequirement): Promise<ResponseError<E> | undefined> {

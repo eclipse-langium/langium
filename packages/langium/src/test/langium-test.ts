@@ -5,7 +5,7 @@
  ******************************************************************************/
 
 import * as assert from 'node:assert';
-import type { CompletionItem, CompletionList, Diagnostic, DocumentSymbol, FoldingRange, FormattingOptions, Range, ReferenceParams, SemanticTokensParams, SemanticTokenTypes, TextDocumentIdentifier, TextDocumentPositionParams, WorkspaceSymbol } from 'vscode-languageserver-protocol';
+import type { CompletionItem, CompletionList, DocumentSymbol, FoldingRange, FormattingOptions, Range, ReferenceParams, SemanticTokensParams, SemanticTokenTypes, TextDocumentIdentifier, TextDocumentPositionParams, WorkspaceSymbol } from 'vscode-languageserver-protocol';
 import { CodeAction, Diagnostic, DiagnosticSeverity, MarkupContent } from 'vscode-languageserver-types';
 import { normalizeEOL } from '../generate/template-string.js';
 import type { LangiumServices, LangiumSharedLSPServices } from '../lsp/lsp-services.js';

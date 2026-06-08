@@ -5,4 +5,4 @@
  ******************************************************************************/
 
 // eslint-disable-next-line no-restricted-imports
-export { Event, Emitter, EmitterOptions } from 'vscode-jsonrpc';
+export { type Event, Emitter } from 'vscode-jsonrpc';
