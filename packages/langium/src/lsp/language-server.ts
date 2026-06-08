@@ -11,10 +11,10 @@ import type {
     Connection,
     Disposable,
     Event,
+    HandlerResult,
     InitializedParams,
     InitializeParams,
     InitializeResult,
-    RequestHandler,
     SemanticTokens,
     SemanticTokensDelta,
     SemanticTokensDeltaParams,
@@ -22,7 +22,6 @@ import type {
     SemanticTokensParams,
     SemanticTokensPartialResult,
     SemanticTokensRangeParams,
-    ServerRequestHandler,
     TextDocumentIdentifier,
     TypeHierarchySubtypesParams,
     TypeHierarchySupertypesParams
@@ -52,6 +51,9 @@ export interface LanguageServer {
  * Shared services should be accessed via the language server's `services` property.
  */
 export type LangiumCoreAndPartialLSPServices = Omit<LangiumCoreServices & PartialLangiumLSPServices, 'shared'>
+
+type LangiumServerRequestHandler<P, R, E> = (params: P, token: CancellationToken) => HandlerResult<R | null, E, R | null>;
+type LangiumRequestHandler<P, R, E> = (params: P, token: CancellationToken) => HandlerResult<R | null, E, R | null>;
 
 export class DefaultLanguageServer implements LanguageServer {
 
@@ -701,13 +703,13 @@ export function addTypeHierarchyHandler(connection: Connection, sharedServices: 
     );
 }
 
-export function createHierarchyRequestHandler<P extends TypeHierarchySupertypesParams | TypeHierarchySubtypesParams | CallHierarchyIncomingCallsParams | CallHierarchyOutgoingCallsParams, R, PR, E = void>(
-    serviceCall: (services: LangiumCoreAndPartialLSPServices, params: P, cancelToken: CancellationToken) => MaybePromise<R | undefined>,
+export function createHierarchyRequestHandler<P extends TypeHierarchySupertypesParams | TypeHierarchySubtypesParams | CallHierarchyIncomingCallsParams | CallHierarchyOutgoingCallsParams, R extends NonNullable<unknown>, _PR, E = void>(
+    serviceCall: (services: LangiumCoreAndPartialLSPServices, params: P, cancelToken: CancellationToken) => MaybePromise<R | null | undefined>,
     sharedServices: LangiumSharedServices,
     requiredState?: ServiceRequirement
-): ServerRequestHandler<P, R, PR, E> {
+): LangiumServerRequestHandler<P, R, E> {
     const serviceRegistry = sharedServices.ServiceRegistry;
-    return (async (params: P, cancelToken: CancellationToken) => {
+    return async (params: P, cancelToken: CancellationToken) => {
         const uri = URI.parse(params.item.uri);
         const cancellationError = await waitUntilPhase<E>(sharedServices, cancelToken, uri, requiredState);
         if (cancellationError) {
@@ -724,17 +726,17 @@ export function createHierarchyRequestHandler<P extends TypeHierarchySupertypesP
         } catch (err) {
             return responseError<E>(err);
         }
-    }) as unknown as ServerRequestHandler<P, R, PR, E>;
+    };
 }
 
-export function createServerRequestHandler<P extends { textDocument: TextDocumentIdentifier }, R, PR, E = void>(
-    serviceCall: (services: LangiumCoreAndPartialLSPServices, document: LangiumDocument, params: P, cancelToken: CancellationToken) => MaybePromise<R | undefined>,
+export function createServerRequestHandler<P extends { textDocument: TextDocumentIdentifier }, R extends NonNullable<unknown>, _PR, E = void>(
+    serviceCall: (services: LangiumCoreAndPartialLSPServices, document: LangiumDocument, params: P, cancelToken: CancellationToken) => MaybePromise<R | null | undefined>,
     sharedServices: LangiumSharedServices,
     requiredState?: ServiceRequirement
-): ServerRequestHandler<P, R, PR, E> {
+): LangiumServerRequestHandler<P, R, E> {
     const documents = sharedServices.workspace.LangiumDocuments;
     const serviceRegistry = sharedServices.ServiceRegistry;
-    return (async (params: P, cancelToken: CancellationToken) => {
+    return async (params: P, cancelToken: CancellationToken) => {
         const uri = URI.parse(params.textDocument.uri);
         const cancellationError = await waitUntilPhase<E>(sharedServices, cancelToken, uri, requiredState);
         if (cancellationError) {
@@ -752,17 +754,17 @@ export function createServerRequestHandler<P extends { textDocument: TextDocumen
         } catch (err) {
             return responseError<E>(err);
         }
-    }) as unknown as ServerRequestHandler<P, R, PR, E>;
+    };
 }
 
-export function createRequestHandler<P extends { textDocument: TextDocumentIdentifier }, R, E = void>(
-    serviceCall: (services: LangiumCoreAndPartialLSPServices, document: LangiumDocument, params: P, cancelToken: CancellationToken) => MaybePromise<R | undefined>,
+export function createRequestHandler<P extends { textDocument: TextDocumentIdentifier }, R extends NonNullable<unknown>, E = void>(
+    serviceCall: (services: LangiumCoreAndPartialLSPServices, document: LangiumDocument, params: P, cancelToken: CancellationToken) => MaybePromise<R | null | undefined>,
     sharedServices: LangiumSharedServices,
     requiredState?: ServiceRequirement
-): RequestHandler<P, R | null, E> {
+): LangiumRequestHandler<P, R, E> {
     const documents = sharedServices.workspace.LangiumDocuments;
     const serviceRegistry = sharedServices.ServiceRegistry;
-    return (async (params: P, cancelToken: CancellationToken) => {
+    return async (params: P, cancelToken: CancellationToken) => {
         const uri = URI.parse(params.textDocument.uri);
         const cancellationError = await waitUntilPhase<E>(sharedServices, cancelToken, uri, requiredState);
         if (cancellationError) {
@@ -779,7 +781,7 @@ export function createRequestHandler<P extends { textDocument: TextDocumentIdent
         } catch (err) {
             return responseError<E>(err);
         }
-    }) as unknown as RequestHandler<P, R | null, E>;
+    };
 }
 
 async function waitUntilPhase<E>(services: LangiumSharedServices, cancelToken: CancellationToken, uri?: URI, requiredState?: ServiceRequirement): Promise<ResponseError<E> | undefined> {
