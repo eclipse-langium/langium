@@ -94,7 +94,6 @@ export interface DefaultMultiReference extends MultiReference {
 interface ReferenceResolver {
     resolveReference(reference: DefaultReference, node: AstNode, property: string): AstNode | undefined;
     resolveMultiReference(reference: DefaultMultiReference, node: AstNode, property: string): MultiReferenceItem[];
-    getMultiReferenceError(reference: DefaultMultiReference, node: AstNode, property: string): LinkingError | undefined;
 }
 
 class DefaultReferenceImpl implements DefaultReference {
@@ -149,7 +148,7 @@ class DefaultMultiReferenceImpl implements DefaultMultiReference {
     }
 
     get error(): LinkingError | undefined {
-        return this.resolver.getMultiReferenceError(this, this.node, this.property);
+        return this._linkingError;
     }
 }
 
@@ -171,8 +170,7 @@ export class DefaultLinker implements Linker {
         this.languageId = services.LanguageMetaData.languageId;
         this.referenceResolver = {
             resolveReference: this.resolveReference.bind(this),
-            resolveMultiReference: this.resolveMultiReference.bind(this),
-            getMultiReferenceError: this.getMultiReferenceError.bind(this)
+            resolveMultiReference: this.resolveMultiReference.bind(this)
         };
     }
 
@@ -338,6 +336,9 @@ export class DefaultLinker implements Linker {
                         items.push({ ref: linkedNode, $nodeDescription: description });
                     }
                 }
+                if (items.length === 0) {
+                    reference._linkingError = this.createLinkingError({ reference, container: node, property });
+                }
             }
             reference._items = items;
             document?.references.push(reference);
@@ -345,18 +346,6 @@ export class DefaultLinker implements Linker {
             this.throwCyclicReferenceError(node, property, reference.$refText);
         }
         return Array.isArray(reference._items) ? reference._items : [];
-    }
-
-    protected getMultiReferenceError(reference: DefaultMultiReference, node: AstNode, property: string): LinkingError | undefined {
-        if (reference._linkingError) {
-            return reference._linkingError;
-        }
-        const refs = this.resolveMultiReference(reference, node, property);
-        if (refs.length > 0) {
-            return undefined;
-        } else {
-            return (reference._linkingError = this.createLinkingError({ reference, container: node, property }));
-        }
     }
 
     protected throwCyclicReferenceError(node: AstNode, property: string, refText: string): never {
