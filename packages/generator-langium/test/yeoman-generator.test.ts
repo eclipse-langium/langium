@@ -275,7 +275,7 @@ const PACKAGE_JSON_EXPECTATION_EXTENSION: Record<string, any> = {
     version: '0.0.1',
     displayName: 'hello-world',
     engines: {
-        vscode: '^1.67.0'
+        vscode: '^1.91.0'
     },
     categories: [
         'Programming Languages'
@@ -307,11 +307,11 @@ const PACKAGE_JSON_EXPECTATION_EXTENSION: Record<string, any> = {
     },
     dependencies: {
         'hello-world-language': '0.0.1',
-        'vscode-languageclient': '~9.0.1',
-        'vscode-languageserver': '~9.0.1'
+        'vscode-languageclient': '~10.0.0',
+        'vscode-languageserver': '~10.0.0'
     },
     devDependencies: {
-        '@types/vscode': '~1.67.0',
+        '@types/vscode': '~1.91.0',
         'concurrently': '~9.2.1',
         'esbuild': '~0.27.3'
     }
