@@ -1,6 +1,6 @@
 import fs from 'fs';
 import path from 'path';
-import { exec, execSync } from 'child_process';
+import { execFile, execFileSync } from 'child_process';
 import { compare } from 'semver';
 
 export interface PublishOptions {
@@ -57,7 +57,7 @@ async function readPackageJson(packagePath?: string): Promise<Record<string, str
 async function isUpToDate(packagePath: string): Promise<boolean> {
     const { name, version } = await readPackageJson(packagePath);
     return new Promise((resolve, reject) => {
-        exec(`npm view ${name} version`, { cwd: packagePath }, (error, stdout, stderr) => {
+        execFile('npm', ['view', name, 'version'], { cwd: packagePath }, (error, stdout, stderr) => {
             if (error) {
                 reject(error);
                 return;
@@ -83,7 +83,7 @@ async function publishPackage(packagePath: string, dryRun: boolean, npmToken?: s
         if (npmToken) {
             env.NODE_AUTH_TOKEN = npmToken;
         }
-        exec('npm publish --provenance --access public', { cwd: packagePath, env }, (error, stdout) => {
+        execFile('npm', ['publish', '--provenance', '--access', 'public'], { cwd: packagePath, env }, (error, stdout) => {
             if (error) {
                 reject(error);
                 return;
@@ -106,7 +106,8 @@ async function publishExtension(packagePath: string, dryRun: boolean, vsceToken?
     if (shouldPublishVsce || shouldPublishOvsx) {
         console.log(`Extension ${fullName} has updates. Generating vsix...`);
         if (!dryRun) {
-            execSync(`npx vsce package -o ${fileName}`, { cwd: packagePath });
+            // npx.cmd is needed on Windows; out of scope (publishes on ubuntu-latest)
+            execFileSync('npx', ['vsce', 'package', '-o', fileName], { cwd: packagePath });
         }
     }
 
@@ -129,7 +130,7 @@ async function publishExtension(packagePath: string, dryRun: boolean, vsceToken?
 
 async function getVsceVersion(id: string): Promise<string> {
     return new Promise((resolve, reject) => {
-        exec(`npx vsce show ${id} --json`, (error, stdout) => {
+        execFile('npx', ['vsce', 'show', id, '--json'], (error, stdout) => {
             if (error) {
                 reject(error);
                 return;
@@ -147,7 +148,7 @@ async function publishVsce(packagePath: string, fileName: string, dryRun: boolea
             resolve();
             return;
         }
-        exec(`npx vsce publish ${fileName} -p ${token}`, { cwd: packagePath }, (error, stdout) => {
+        execFile('npx', ['vsce', 'publish', fileName, '-p', token!], { cwd: packagePath }, (error, stdout) => {
             if (error) {
                 reject(error);
                 return;
@@ -160,7 +161,7 @@ async function publishVsce(packagePath: string, fileName: string, dryRun: boolea
 
 async function getOvsxVersion(id: string): Promise<string> {
     return new Promise((resolve, reject) => {
-        exec(`npx ovsx get ${id} --metadata`, (error, stdout) => {
+        execFile('npx', ['ovsx', 'get', id, '--metadata'], (error, stdout) => {
             if (error) {
                 reject(error);
                 return;
@@ -178,7 +179,7 @@ async function publishOvsx(packagePath: string, fileName: string, dryRun: boolea
             resolve();
             return;
         }
-        exec(`npx ovsx publish ${fileName} -p ${token}`, { cwd: packagePath }, (error, stdout) => {
+        execFile('npx', ['ovsx', 'publish', fileName, '-p', token!], { cwd: packagePath }, (error, stdout) => {
             if (error) {
                 reject(error);
                 return;
