@@ -160,7 +160,7 @@ export class DefaultLinker implements Linker {
     protected readonly langiumDocuments: () => LangiumDocuments;
     protected readonly profiler: LangiumProfiler | undefined;
     protected readonly languageId: string;
-    private readonly referenceResolver: ReferenceResolver;
+    protected readonly referenceResolver: ReferenceResolver;
 
     constructor(services: LangiumCoreServices) {
         this.reflection = services.shared.AstReflection;
