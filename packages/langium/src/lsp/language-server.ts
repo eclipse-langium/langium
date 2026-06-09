@@ -15,7 +15,6 @@ import type {
     InitializedParams,
     InitializeParams,
     InitializeResult,
-    RequestHandler,
     SemanticTokens,
     SemanticTokensDelta,
     SemanticTokensDeltaParams,
@@ -23,7 +22,6 @@ import type {
     SemanticTokensParams,
     SemanticTokensPartialResult,
     SemanticTokensRangeParams,
-    ServerRequestHandler,
     TextDocumentIdentifier,
     TypeHierarchySubtypesParams,
     TypeHierarchySupertypesParams
@@ -31,7 +29,7 @@ import type {
 import { DidChangeConfigurationNotification, Emitter, LSPErrorCodes, ResponseError, TextDocumentSyncKind } from 'vscode-languageserver-protocol';
 import { eagerLoad } from '../dependency-injection.js';
 import type { LangiumCoreServices } from '../services.js';
-import { isOperationCancelled } from '../utils/promise-utils.js';
+import { isOperationCancelled, type MaybePromise } from '../utils/promise-utils.js';
 import { URI } from '../utils/uri-utils.js';
 import type { ConfigurationInitializedParams } from '../workspace/configuration.js';
 import { DocumentState, type LangiumDocument } from '../workspace/documents.js';
@@ -53,6 +51,9 @@ export interface LanguageServer {
  * Shared services should be accessed via the language server's `services` property.
  */
 export type LangiumCoreAndPartialLSPServices = Omit<LangiumCoreServices & PartialLangiumLSPServices, 'shared'>
+
+type LangiumServerRequestHandler<P, R, E> = (params: P, token: CancellationToken) => HandlerResult<R | null, E, R | null>;
+type LangiumRequestHandler<P, R, E> = (params: P, token: CancellationToken) => HandlerResult<R | null, E, R | null>;
 
 export class DefaultLanguageServer implements LanguageServer {
 
@@ -702,11 +703,11 @@ export function addTypeHierarchyHandler(connection: Connection, sharedServices: 
     );
 }
 
-export function createHierarchyRequestHandler<P extends TypeHierarchySupertypesParams | TypeHierarchySubtypesParams | CallHierarchyIncomingCallsParams | CallHierarchyOutgoingCallsParams, R, PR, E = void>(
-    serviceCall: (services: LangiumCoreAndPartialLSPServices, params: P, cancelToken: CancellationToken) => HandlerResult<R, E>,
+export function createHierarchyRequestHandler<P extends TypeHierarchySupertypesParams | TypeHierarchySubtypesParams | CallHierarchyIncomingCallsParams | CallHierarchyOutgoingCallsParams, R extends NonNullable<unknown>, _PR, E = void>(
+    serviceCall: (services: LangiumCoreAndPartialLSPServices, params: P, cancelToken: CancellationToken) => MaybePromise<R | null | undefined | ResponseError<E>>,
     sharedServices: LangiumSharedServices,
     requiredState?: ServiceRequirement
-): ServerRequestHandler<P, R, PR, E> {
+): LangiumServerRequestHandler<P, R, E> {
     const serviceRegistry = sharedServices.ServiceRegistry;
     return async (params: P, cancelToken: CancellationToken) => {
         const uri = URI.parse(params.item.uri);
@@ -721,18 +722,18 @@ export function createHierarchyRequestHandler<P extends TypeHierarchySupertypesP
         }
         const language = serviceRegistry.getServices(uri);
         try {
-            return await serviceCall(language, params, cancelToken);
+            return await serviceCall(language, params, cancelToken) ?? null;
         } catch (err) {
             return responseError<E>(err);
         }
     };
 }
 
-export function createServerRequestHandler<P extends { textDocument: TextDocumentIdentifier }, R, PR, E = void>(
-    serviceCall: (services: LangiumCoreAndPartialLSPServices, document: LangiumDocument, params: P, cancelToken: CancellationToken) => HandlerResult<R, E>,
+export function createServerRequestHandler<P extends { textDocument: TextDocumentIdentifier }, R extends NonNullable<unknown>, _PR, E = void>(
+    serviceCall: (services: LangiumCoreAndPartialLSPServices, document: LangiumDocument, params: P, cancelToken: CancellationToken) => MaybePromise<R | null | undefined | ResponseError<E>>,
     sharedServices: LangiumSharedServices,
     requiredState?: ServiceRequirement
-): ServerRequestHandler<P, R, PR, E> {
+): LangiumServerRequestHandler<P, R, E> {
     const documents = sharedServices.workspace.LangiumDocuments;
     const serviceRegistry = sharedServices.ServiceRegistry;
     return async (params: P, cancelToken: CancellationToken) => {
@@ -749,18 +750,18 @@ export function createServerRequestHandler<P extends { textDocument: TextDocumen
         const language = serviceRegistry.getServices(uri);
         try {
             const document = await documents.getOrCreateDocument(uri);
-            return await serviceCall(language, document, params, cancelToken);
+            return await serviceCall(language, document, params, cancelToken) ?? null;
         } catch (err) {
             return responseError<E>(err);
         }
     };
 }
 
-export function createRequestHandler<P extends { textDocument: TextDocumentIdentifier }, R, E = void>(
-    serviceCall: (services: LangiumCoreAndPartialLSPServices, document: LangiumDocument, params: P, cancelToken: CancellationToken) => HandlerResult<R, E>,
+export function createRequestHandler<P extends { textDocument: TextDocumentIdentifier }, R extends NonNullable<unknown>, E = void>(
+    serviceCall: (services: LangiumCoreAndPartialLSPServices, document: LangiumDocument, params: P, cancelToken: CancellationToken) => MaybePromise<R | null | undefined | ResponseError<E>>,
     sharedServices: LangiumSharedServices,
     requiredState?: ServiceRequirement
-): RequestHandler<P, R | null, E> {
+): LangiumRequestHandler<P, R, E> {
     const documents = sharedServices.workspace.LangiumDocuments;
     const serviceRegistry = sharedServices.ServiceRegistry;
     return async (params: P, cancelToken: CancellationToken) => {
@@ -776,7 +777,7 @@ export function createRequestHandler<P extends { textDocument: TextDocumentIdent
         const language = serviceRegistry.getServices(uri);
         try {
             const document = await documents.getOrCreateDocument(uri);
-            return await serviceCall(language, document, params, cancelToken);
+            return await serviceCall(language, document, params, cancelToken) ?? null;
         } catch (err) {
             return responseError<E>(err);
         }

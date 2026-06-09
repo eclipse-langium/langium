@@ -6,7 +6,7 @@
 
 import { startLanguageServer } from 'langium/lsp';
 import { NodeFileSystem } from 'langium/node';
-import { createConnection, ProposedFeatures } from 'vscode-languageserver/node.js';
+import { createConnection, ProposedFeatures } from 'vscode-languageserver/node';
 import { createStatemachineServices } from './statemachine-module.js';
 
 // Create a connection to the client

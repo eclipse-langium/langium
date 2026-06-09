@@ -6,7 +6,7 @@
 
 import { startLanguageServer } from 'langium/lsp';
 import { NodeFileSystem } from 'langium/node';
-import { createConnection, ProposedFeatures } from 'vscode-languageserver/node.js';
+import { createConnection, ProposedFeatures } from 'vscode-languageserver/node';
 import { createArithmeticsServices } from './arithmetics-module.js';
 
 const connection = createConnection(ProposedFeatures.all);
