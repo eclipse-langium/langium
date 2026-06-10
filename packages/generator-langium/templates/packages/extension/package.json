@@ -42,8 +42,8 @@
     },
     "devDependencies": {
         "@types/vscode": "~1.91.0",
-        "concurrently": "~9.2.1",
-        "esbuild": "~0.27.3"
+        "concurrently": "~10.0.3",
+        "esbuild": "~0.28.0"
     },
     "vsce": {
       "dependencies": false
