@@ -45,7 +45,7 @@
     "eslint-plugin-header": "~3.1.1",
     "eslint-plugin-import": "~2.32.0",
     "eslint-plugin-unused-imports": "~4.4.1",
-    "ovsx": "~0.10.12",
+    "ovsx": "^0.10.12",
     "semver": "~7.8.4",
     "shx": "~0.4.0",
     "tsx": "~4.22.4",
