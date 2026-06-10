@@ -43,7 +43,7 @@
     "@types/lodash": "~4.17.24",
     "@types/which": "~3.0.4",
     "@yeoman/types": "~1.11.1",
-    "yeoman-test": "~11.5.2"
+    "yeoman-test": "~11.5.3"
   },
   "repository": {
     "type": "git",
