@@ -30,11 +30,16 @@ describe('DefaultLinker', async () => {
         grammar,
         module: cyclicModule
     });
+    const services = await createServicesForGrammar({
+        grammar
+    });
     const cyclicParser = parseHelper<Root>(cyclicServices);
+    const parser = parseHelper<Root>(services);
 
     let errorLog: typeof console.error;
     beforeEach(() => {
         clearDocuments(cyclicServices);
+        clearDocuments(services);
         errorLog = console.error;
         console.error = () => {};
     });
@@ -51,6 +56,20 @@ describe('DefaultLinker', async () => {
         expect(model.referrers[0]?.node?.error).toBeDefined();
         expect(model.referrers[0].node.error?.message).toBe(
             "An error occurred while resolving reference to 'a': Cyclic reference resolution detected: /referrers@0/node (symbol 'a')");
+    });
+
+    test('uses prototype accessors for references', async () => {
+        const document = await parser(`
+            node a
+            referrer a
+        `, { documentUri: 'test:/test.txt' });
+        const model = document.parseResult.value;
+        const reference = model.referrers[0].node;
+        const descriptor = Object.getOwnPropertyDescriptor(Object.getPrototypeOf(reference), 'ref');
+
+        expect(Object.prototype.hasOwnProperty.call(reference, 'ref')).toBe(false);
+        expect(descriptor?.get).toBeTypeOf('function');
+        expect(reference.ref?.name).toBe('a');
     });
 
 });

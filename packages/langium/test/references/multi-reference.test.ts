@@ -54,6 +54,18 @@ describe('Multi Reference', () => {
         expect(ref.items[1].ref.$cstNode?.range.start.line).toBe(2);
     });
 
+    test('Uses prototype accessors for multi references', async () => {
+        const document = await parse(text);
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        const model = document.parseResult.value as any;
+        const ref = model.greetings[0].person as MultiReference;
+        const descriptor = Object.getOwnPropertyDescriptor(Object.getPrototypeOf(ref), 'items');
+
+        expect(Object.prototype.hasOwnProperty.call(ref, 'items')).toBe(false);
+        expect(descriptor?.get).toBeTypeOf('function');
+        expect(ref.items).toHaveLength(2);
+    });
+
     test('Can find multiple declarations for the reference', async () => {
         const document = await parse(text);
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
