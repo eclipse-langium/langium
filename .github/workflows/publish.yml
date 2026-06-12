@@ -31,6 +31,7 @@ jobs:
     name: Langium Publish
     runs-on: ubuntu-latest
     timeout-minutes: 20
+    environment: publish
     steps:
       - name: Checkout
         uses: actions/checkout@0c366fd6a839edf440554fa01a7085ccba70ac98 # v6.0.2

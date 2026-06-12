@@ -1,3 +1,9 @@
+/******************************************************************************
+ * Copyright 2026 TypeFox GmbH
+ * This program and the accompanying materials are made available under the
+ * terms of the MIT License, which is available in the project root.
+******************************************************************************/
+
 import fs from 'fs';
 import path from 'path';
 import { execFile, execFileSync } from 'child_process';
@@ -10,10 +16,12 @@ export interface PublishOptions {
     npmToken?: string;
     vsceToken?: string;
     ovsxToken?: string;
+    vsceVersion: string;
+    ovsxVersion: string;
 }
 
 export async function publishPackages(opts: PublishOptions): Promise<void> {
-    const { npmPackages, vscodePackages, dryRun, npmToken, vsceToken, ovsxToken } = opts;
+    const { npmPackages, vscodePackages, dryRun, npmToken, vsceToken, ovsxToken, vsceVersion, ovsxVersion } = opts;
 
     if (dryRun) {
         console.log('Running in dry mode. No packages will be published.');
@@ -37,7 +45,7 @@ export async function publishPackages(opts: PublishOptions): Promise<void> {
     }
 
     for (const extPath of vscodePackages) {
-        const published = await publishExtension(extPath, dryRun, vsceToken, ovsxToken);
+        const published = await publishExtension(extPath, dryRun, vsceToken, ovsxToken, vsceVersion, ovsxVersion);
         if (published) {
             publishedAny = true;
         }
@@ -94,11 +102,11 @@ async function publishPackage(packagePath: string, dryRun: boolean, npmToken?: s
     });
 }
 
-async function publishExtension(packagePath: string, dryRun: boolean, vsceToken?: string, ovsxToken?: string): Promise<boolean> {
+async function publishExtension(packagePath: string, dryRun: boolean, vsceToken?: string, ovsxToken?: string, vsceCliVersion = 'latest', ovsxCliVersion = 'latest'): Promise<boolean> {
     const { name, publisher, version } = await readPackageJson(packagePath);
     const fullName = `${publisher}.${name}`;
-    const vsceVersion = await getVsceVersion(fullName);
-    const ovsxVersion = await getOvsxVersion(fullName);
+    const vsceVersion = await getVsceVersion(fullName, vsceCliVersion);
+    const ovsxVersion = await getOvsxVersion(fullName, ovsxCliVersion);
     const shouldPublishVsce = compare(version, vsceVersion) === 1;
     const shouldPublishOvsx = compare(version, ovsxVersion) === 1;
     const fileName = `${name}-${version}.vsix`;
@@ -107,20 +115,20 @@ async function publishExtension(packagePath: string, dryRun: boolean, vsceToken?
         console.log(`Extension ${fullName} has updates. Generating vsix...`);
         if (!dryRun) {
             // npx.cmd is needed on Windows; out of scope (publishes on ubuntu-latest)
-            execFileSync('npx', ['vsce', 'package', '-o', fileName], { cwd: packagePath });
+            execFileSync('npx', [`vsce@${vsceCliVersion}`, 'package', '-o', fileName], { cwd: packagePath });
         }
     }
 
     if (shouldPublishVsce) {
         console.log(`Publishing VSCE extension ${fullName}...`);
-        await publishVsce(packagePath, fileName, dryRun, vsceToken);
+        await publishVsce(packagePath, fileName, dryRun, vsceToken, vsceCliVersion);
     } else {
         console.log(`VSCE extension ${fullName} is up to date. Skipping publish.`);
     }
 
     if (shouldPublishOvsx) {
         console.log(`Publishing OVSX extension ${fullName}...`);
-        await publishOvsx(packagePath, fileName, dryRun, ovsxToken);
+        await publishOvsx(packagePath, fileName, dryRun, ovsxToken, ovsxCliVersion);
     } else {
         console.log(`OVSX extension ${fullName} is up to date. Skipping publish.`);
     }
@@ -128,9 +136,9 @@ async function publishExtension(packagePath: string, dryRun: boolean, vsceToken?
     return shouldPublishVsce || shouldPublishOvsx;
 }
 
-async function getVsceVersion(id: string): Promise<string> {
+async function getVsceVersion(id: string, cliVersion = 'latest'): Promise<string> {
     return new Promise((resolve, reject) => {
-        execFile('npx', ['vsce', 'show', id, '--json'], (error, stdout) => {
+        execFile('npx', [`vsce@${cliVersion}`, 'show', id, '--json'], (error, stdout) => {
             if (error) {
                 reject(error);
                 return;
@@ -141,14 +149,14 @@ async function getVsceVersion(id: string): Promise<string> {
     });
 }
 
-async function publishVsce(packagePath: string, fileName: string, dryRun: boolean, token?: string): Promise<void> {
+async function publishVsce(packagePath: string, fileName: string, dryRun: boolean, token?: string, cliVersion = 'latest'): Promise<void> {
     return new Promise((resolve, reject) => {
         if (dryRun) {
             console.log(`[Dry Run] Would publish VSCE extension at ${packagePath}`);
             resolve();
             return;
         }
-        execFile('npx', ['vsce', 'publish', fileName, '-p', token!], { cwd: packagePath }, (error, stdout) => {
+        execFile('npx', [`vsce@${cliVersion}`, 'publish', fileName, '-p', token!], { cwd: packagePath }, (error, stdout) => {
             if (error) {
                 reject(error);
                 return;
@@ -159,9 +167,9 @@ async function publishVsce(packagePath: string, fileName: string, dryRun: boolea
     });
 }
 
-async function getOvsxVersion(id: string): Promise<string> {
+async function getOvsxVersion(id: string, cliVersion = 'latest'): Promise<string> {
     return new Promise((resolve, reject) => {
-        execFile('npx', ['ovsx', 'get', id, '--metadata'], (error, stdout) => {
+        execFile('npx', [`ovsx@${cliVersion}`, 'get', id, '--metadata'], (error, stdout) => {
             if (error) {
                 reject(error);
                 return;
@@ -172,14 +180,14 @@ async function getOvsxVersion(id: string): Promise<string> {
     });
 }
 
-async function publishOvsx(packagePath: string, fileName: string, dryRun: boolean, token?: string): Promise<void> {
+async function publishOvsx(packagePath: string, fileName: string, dryRun: boolean, token?: string, cliVersion = 'latest'): Promise<void> {
     return new Promise((resolve, reject) => {
         if (dryRun) {
             console.log(`[Dry Run] Would publish OVSX extension at ${packagePath}`);
             resolve();
             return;
         }
-        execFile('npx', ['ovsx', 'publish', fileName, '-p', token!], { cwd: packagePath }, (error, stdout) => {
+        execFile('npx', [`ovsx@${cliVersion}`, 'publish', fileName, '-p', token!], { cwd: packagePath }, (error, stdout) => {
             if (error) {
                 reject(error);
                 return;

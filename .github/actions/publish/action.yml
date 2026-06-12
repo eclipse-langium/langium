@@ -29,6 +29,14 @@ inputs:
     description: 'Open VSX access token.'
     required: false
     default: ''
+  vsce-version:
+    description: 'Version of the vsce CLI to use (e.g. "1.2.3" or "latest").'
+    required: false
+    default: 'latest'
+  ovsx-version:
+    description: 'Version of the ovsx CLI to use (e.g. "1.2.3" or "latest").'
+    required: false
+    default: 'latest'
 
 runs:
   using: 'node20'
