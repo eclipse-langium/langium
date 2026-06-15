@@ -1,5 +1,18 @@
 # Change Log of `langium`
 
+## v4.3.0 (Jun. 2026)
+
+* Update LSP support to version 3.18 of the protocol ([#2165](https://github.com/eclipse-langium/langium/pull/2165)).
+* Improve memory usage of references ([#2161](https://github.com/eclipse-langium/langium/pull/2161)).
+* Add a `isComplete` check to the AST reflection service ([#2155](https://github.com/eclipse-langium/langium/pull/2155)).
+
+### Breaking Changes
+
+* As a consequence of the LSP version upgrade, Langium now requires updated versions of the language-server packages:
+  * `"vscode-languageserver": "~10.0.0"`
+  * `"vscode-languageserver-protocol": "~3.18.0"`
+  * `"vscode-languageserver-types": "~3.18.0"`
+
 ## v4.2.3 (May. 2026)
 
 * Fix a long-standing completion issue for parser rules with common prefixes ([#2146](https://github.com/eclipse-langium/langium/pull/2146), [#2147](https://github.com/eclipse-langium/langium/pull/2147)).
