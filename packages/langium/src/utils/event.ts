@@ -4,4 +4,4 @@
  * terms of the MIT License, which is available in the project root.
  ******************************************************************************/
 
-export { type Event, Emitter } from 'vscode-jsonrpc';
+export { type Event, Emitter } from 'vscode-languageserver-protocol';

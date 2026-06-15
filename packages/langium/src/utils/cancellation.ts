@@ -4,4 +4,4 @@
  * terms of the MIT License, which is available in the project root.
  ******************************************************************************/
 
-export { CancellationToken, type AbstractCancellationTokenSource, CancellationTokenSource } from 'vscode-jsonrpc';
+export { CancellationToken, type AbstractCancellationTokenSource, CancellationTokenSource } from 'vscode-languageserver-protocol';
