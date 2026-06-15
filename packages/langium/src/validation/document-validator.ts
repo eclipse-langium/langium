@@ -5,7 +5,7 @@
  ******************************************************************************/
 
 import type { MismatchedTokenException } from 'chevrotain';
-import type { DiagnosticSeverity, Position, Range, Diagnostic } from 'vscode-languageserver-types';
+import type { DiagnosticSeverity, MarkupContent, Position, Range, Diagnostic } from 'vscode-languageserver-types';
 import type { LanguageMetaData } from '../languages/language-meta-data.js';
 import type { ParseResult } from '../parser/langium-parser.js';
 import type { LangiumCoreServices } from '../services.js';
@@ -196,7 +196,7 @@ export class DefaultDocumentValidator implements DocumentValidator {
 
     protected async validateAst(rootNode: AstNode, options: ValidationOptions, cancelToken = CancellationToken.None): Promise<Diagnostic[]> {
         const validationItems: Diagnostic[] = [];
-        const acceptor: ValidationAcceptor = <N extends AstNode>(severity: ValidationSeverity, message: string, info: DiagnosticInfo<N>) => {
+        const acceptor: ValidationAcceptor = <N extends AstNode>(severity: ValidationSeverity, message: string | MarkupContent, info: DiagnosticInfo<N>) => {
             validationItems.push(this.toDiagnostic(severity, message, info));
         };
 
@@ -272,7 +272,7 @@ export class DefaultDocumentValidator implements DocumentValidator {
         }
     }
 
-    protected toDiagnostic<N extends AstNode>(severity: ValidationSeverity, message: string, info: DiagnosticInfo<N, string>): Diagnostic {
+    protected toDiagnostic<N extends AstNode>(severity: ValidationSeverity, message: string | MarkupContent, info: DiagnosticInfo<N, string>): Diagnostic {
         return {
             message,
             range: getDiagnosticRange(info),
