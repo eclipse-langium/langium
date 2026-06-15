@@ -9,15 +9,15 @@ import type { LangiumCoreServices } from '../../services.js';
 import type { AstNode, AstNodeDescription, ReferenceInfo } from '../../syntax-tree.js';
 import type { MultiMap } from '../../utils/collections.js';
 import type { AstNodeLocator } from '../../workspace/ast-node-locator.js';
-import type { DocumentSegment, LangiumDocument, LangiumDocuments } from '../../workspace/documents.js';
+import type { LangiumDocument, LangiumDocuments } from '../../workspace/documents.js';
 import type { Grammar } from '../../languages/generated/ast.js';
 import { EMPTY_SCOPE, MultiMapScope } from '../../references/scope.js';
 import { DefaultScopeComputation } from '../../references/scope-computation.js';
 import { DefaultScopeProvider } from '../../references/scope-provider.js';
 import { findRootNode, getContainerOfType, getDocument, streamAllContents } from '../../utils/ast-utils.js';
-import { toDocumentSegment } from '../../utils/cst-utils.js';
 import { AbstractType, InferredType, Interface, NamedArgument, Type, isAbstractParserRule, isAction, isGrammar, isReturnType, isRuleCall } from '../../languages/generated/ast.js';
 import { resolveImportUri } from '../internal-grammar-util.js';
+import { DefaultAstNodeDescription } from '../../workspace/ast-descriptions.js';
 
 export class LangiumGrammarScopeProvider extends DefaultScopeProvider {
 
@@ -178,18 +178,10 @@ export class LangiumGrammarScopeComputation extends DefaultScopeComputation {
     }
 
     protected createInferredTypeDescription(node: AstNode, name: string, document: LangiumDocument = getDocument(node)): AstNodeDescription {
-        let nameNodeSegment: DocumentSegment | undefined;
-        const nameSegmentGetter = () => nameNodeSegment ??= toDocumentSegment(this.nameProvider.getNameNode(node) ?? node.$cstNode);
-        return {
-            node,
-            name,
-            get nameSegment() {
-                return nameSegmentGetter();
-            },
-            selectionSegment: toDocumentSegment(node.$cstNode),
-            type: InferredType.$type,
-            documentUri: document.uri,
-            path: this.astNodeLocator.getAstNodePath(node)
-        };
+        const path = this.astNodeLocator.getAstNodePath(node);
+        const description = new DefaultAstNodeDescription(node, name, path, document.uri, this.nameProvider);
+        // Override the type
+        description.type = InferredType.$type;
+        return description;
     }
 }

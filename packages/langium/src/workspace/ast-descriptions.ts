@@ -53,19 +53,40 @@ export class DefaultAstNodeDescriptionProvider implements AstNodeDescriptionProv
         if (!name) {
             throw new Error(`Node at path ${path} has no name.`);
         }
-        let nameNodeSegment: DocumentSegment | undefined;
-        const nameSegmentGetter = () => nameNodeSegment ??= toDocumentSegment(this.nameProvider.getNameNode(node) ?? node.$cstNode);
-        return {
-            node,
-            name,
-            get nameSegment() {
-                return nameSegmentGetter();
-            },
-            selectionSegment: toDocumentSegment(node.$cstNode),
-            type: node.$type,
-            documentUri: doc.uri,
-            path
-        };
+        return new DefaultAstNodeDescription(node, name, path, doc.uri, this.nameProvider);
+    }
+
+}
+
+export class DefaultAstNodeDescription implements AstNodeDescription {
+
+    node: AstNode;
+    selectionSegment?: DocumentSegment;
+    type: string;
+    name: string;
+    documentUri: URI;
+    path: string;
+
+    private _nameSegment?: DocumentSegment;
+    private readonly nameProvider: NameProvider;
+
+    constructor(node: AstNode, name: string, path: string, documentUri: URI, nameProvider: NameProvider) {
+        this.node = node;
+        this.type = node.$type;
+        this.name = name;
+        this.path = path;
+        this.documentUri = documentUri;
+        this.selectionSegment = toDocumentSegment(node.$cstNode);
+        this.nameProvider = nameProvider;
+    }
+
+    get nameSegment(): DocumentSegment | undefined {
+        if (!this._nameSegment) {
+            this._nameSegment = toDocumentSegment(
+                this.nameProvider.getNameNode(this.node) ?? this.node.$cstNode
+            );
+        }
+        return this._nameSegment;
     }
 
 }
