@@ -12,10 +12,8 @@ on:
       - 'maintenance/**'
     paths:
       - '**/package.json'
-      # Also trigger if the publish workflow, action, or script itself is changed
+      # Also trigger if the publish workflow itself is changed
       - '.github/workflows/publish.yml'
-      - '.github/actions/publish/**'
-      - 'scripts/publish-updated-packages.ts'
   pull_request:
     branches:
       - 'main'
@@ -23,8 +21,6 @@ on:
     paths:
       - '**/package.json'
       - '.github/workflows/publish.yml'
-      - '.github/actions/publish/**'
-      - 'scripts/publish-updated-packages.ts'
 
 jobs:
   publish:
@@ -57,7 +53,7 @@ jobs:
         run: npm run test
 
       - name: Publish
-        uses: ./.github/actions/publish
+        uses: TypeFox/gh-publish-npm@v0.2.0
         with:
           dry-run: ${{ github.event_name == 'pull_request' }}
           npm-packages: |
