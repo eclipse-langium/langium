@@ -53,7 +53,7 @@ jobs:
         run: npm run test
 
       - name: Publish
-        uses: TypeFox/gh-publish-npm@v0.2.0
+        uses: TypeFox/gh-publish-npm@d6447156b25fba31023a7960b37338b29569fb05 # v0.2.0
         with:
           dry-run: ${{ github.event_name == 'pull_request' }}
           npm-packages: |
