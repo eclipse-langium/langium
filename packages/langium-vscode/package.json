@@ -9,6 +9,15 @@
     "Programming Languages",
     "Other"
   ],
+  "keywords": [
+    "langium",
+    "grammar",
+    "typescript",
+    "parser",
+    "dsl",
+    "lsp",
+    "language server"
+  ],
   "type": "module",
   "license": "MIT",
   "icon": "data/langium-logo.png",
@@ -83,9 +92,9 @@
     }
   },
   "activationEvents": [
-    "onLanguage:langium",
     "onWebviewPanel:railroadDiagram"
   ],
+  "extensionKind": ["workspace"],
   "vsce": {
     "dependencies": false
   },
