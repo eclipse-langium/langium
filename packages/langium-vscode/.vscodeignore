@@ -1,10 +1,10 @@
 .vscode/**
 .vscode-test/**
+node_modules/**
 out/test/**
 src/**
 .gitignore
-.yarnrc
-**/tsconfig.json
-**/eslint.config.mjs
+esbuild.mjs
+tsconfig.json
+tsconfig.tsbuildinfo
 **/*.map
-**/*.ts
