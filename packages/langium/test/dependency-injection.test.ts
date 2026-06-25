@@ -447,4 +447,20 @@ describe('The Module.merge function', () => {
         // besides, 'moduleA' and 'm2.subModule' shall stay unchanged during the merge,
         //   which is enforced by them being frozen;
     });
+
+    test('Throws on __proto__ key to prevent prototype pollution', () => {
+        const malicious = JSON.parse('{"__proto__": {"polluted": true}}');
+        expect(() => Module.merge({}, malicious)).toThrow('__proto__');
+        expect((Object.prototype as any).polluted).toBeUndefined();
+    });
+
+    test('Throws on constructor key to prevent prototype pollution', () => {
+        const malicious = JSON.parse('{"constructor": {"prototype": {"polluted": true}}}');
+        expect(() => Module.merge({}, malicious)).toThrow('constructor');
+    });
+
+    test('Throws on prototype key to prevent prototype pollution', () => {
+        const malicious = { prototype: { polluted: true } } as any;
+        expect(() => Module.merge({}, malicious)).toThrow('prototype');
+    });
 });
