@@ -448,19 +448,20 @@ describe('The Module.merge function', () => {
         //   which is enforced by them being frozen;
     });
 
-    test('Throws on __proto__ key to prevent prototype pollution', () => {
-        const malicious = JSON.parse('{"__proto__": {"polluted": true}}');
-        expect(() => Module.merge({}, malicious)).toThrow('__proto__');
-        expect((Object.prototype as any).polluted).toBeUndefined();
+    test('Silently skips __proto__ key to prevent prototype pollution', () => {
+        const malicious = JSON.parse('{"__proto__": {"polluted": true}}') as object;
+        expect(() => Module.merge({}, malicious)).not.toThrow();
+        expect((Object.prototype as Record<string, unknown>).polluted).toBeUndefined();
     });
 
-    test('Throws on constructor key to prevent prototype pollution', () => {
-        const malicious = JSON.parse('{"constructor": {"prototype": {"polluted": true}}}');
-        expect(() => Module.merge({}, malicious)).toThrow('constructor');
+    test('Silently skips constructor key to prevent prototype pollution', () => {
+        const malicious = JSON.parse('{"constructor": {"prototype": {"polluted": true}}}') as object;
+        expect(() => Module.merge({}, malicious)).not.toThrow();
     });
 
-    test('Throws on prototype key to prevent prototype pollution', () => {
-        const malicious = { prototype: { polluted: true } } as any;
-        expect(() => Module.merge({}, malicious)).toThrow('prototype');
+    test('Silently skips prototype key to prevent prototype pollution', () => {
+        const malicious = { prototype: { polluted: true } } as object;
+        expect(() => Module.merge({}, malicious)).not.toThrow();
+        expect((Object.prototype as Record<string, unknown>).polluted).toBeUndefined();
     });
 });

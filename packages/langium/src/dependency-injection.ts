@@ -154,7 +154,7 @@ function _merge(target: Module<any>, source?: Module<any>): Module<unknown> {
     if (source) {
         for (const [key, sourceValue] of Object.entries(source)) {
             if (key === '__proto__' || key === 'constructor' || key === 'prototype') {
-                throw new Error(`Prototype pollution attempt blocked: key "${key}" is not allowed in Module objects`);
+                continue;
             }
             if (sourceValue !== undefined && sourceValue !== null) {
                 if (typeof sourceValue === 'object') {
