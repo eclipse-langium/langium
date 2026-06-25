@@ -153,6 +153,9 @@ function _resolve<I, T>(obj: any, prop: string | symbol | number, module: Module
 function _merge(target: Module<any>, source?: Module<any>): Module<unknown> {
     if (source) {
         for (const [key, sourceValue] of Object.entries(source)) {
+            if (key === '__proto__' || key === 'constructor' || key === 'prototype') {
+                continue;
+            }
             if (sourceValue !== undefined && sourceValue !== null) {
                 if (typeof sourceValue === 'object') {
                     const targetValue = target[key];
