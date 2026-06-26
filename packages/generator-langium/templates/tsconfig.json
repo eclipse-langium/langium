@@ -14,7 +14,8 @@
     "skipLibCheck": true,
     "forceConsistentCasingInFileNames": true,
     "declaration": true,
-    "composite": true
+    "composite": true,
+    "types": [ "node" ]
   },
   "include": [
      "**/src/**/*",
