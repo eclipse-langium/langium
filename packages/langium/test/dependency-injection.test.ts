@@ -447,4 +447,21 @@ describe('The Module.merge function', () => {
         // besides, 'moduleA' and 'm2.subModule' shall stay unchanged during the merge,
         //   which is enforced by them being frozen;
     });
+
+    test('Silently skips __proto__ key to prevent prototype pollution', () => {
+        const malicious = JSON.parse('{"__proto__": {"polluted": true}}') as object;
+        expect(() => Module.merge({}, malicious)).not.toThrow();
+        expect((Object.prototype as Record<string, unknown>).polluted).toBeUndefined();
+    });
+
+    test('Silently skips constructor key to prevent prototype pollution', () => {
+        const malicious = JSON.parse('{"constructor": {"prototype": {"polluted": true}}}') as object;
+        expect(() => Module.merge({}, malicious)).not.toThrow();
+    });
+
+    test('Silently skips prototype key to prevent prototype pollution', () => {
+        const malicious = { prototype: { polluted: true } } as object;
+        expect(() => Module.merge({}, malicious)).not.toThrow();
+        expect((Object.prototype as Record<string, unknown>).polluted).toBeUndefined();
+    });
 });

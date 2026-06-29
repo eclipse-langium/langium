@@ -1,11 +1,11 @@
 {
   "name": "langium-arithmetics-dsl",
   "displayName": "Arithmetics DSL",
-  "version": "4.2.0",
+  "version": "4.3.0",
   "description": "Example language built with Langium",
   "homepage": "https://langium.org",
   "engines": {
-    "vscode": "^1.67.0"
+    "vscode": "^1.91.0"
   },
   "license": "MIT",
   "categories": [
@@ -67,13 +67,13 @@
   },
   "dependencies": {
     "chalk": "~5.6.2",
-    "commander": "~14.0.3",
-    "langium": "~4.2.0",
-    "vscode-languageclient": "~9.0.1",
-    "vscode-languageserver": "~9.0.1"
+    "commander": "~15.0.0",
+    "langium": "~4.3.0",
+    "vscode-languageclient": "~10.0.1",
+    "vscode-languageserver": "~10.0.1"
   },
   "devDependencies": {
-    "langium-cli": "~4.2.0"
+    "langium-cli": "~4.3.0"
   },
   "repository": {
     "type": "git",

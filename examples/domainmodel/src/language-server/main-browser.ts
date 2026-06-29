@@ -4,10 +4,10 @@
  * terms of the MIT License, which is available in the project root.
  ******************************************************************************/
 
-import type { Diagnostic } from 'vscode-languageserver/browser.js';
+import type { Diagnostic } from 'vscode-languageserver/browser';
 import { EmptyFileSystem, DocumentState } from 'langium';
 import { startLanguageServer } from 'langium/lsp';
-import { BrowserMessageReader, BrowserMessageWriter, createConnection, NotificationType } from 'vscode-languageserver/browser.js';
+import { BrowserMessageReader, BrowserMessageWriter, createConnection, NotificationType } from 'vscode-languageserver/browser';
 import { createDomainModelServices } from './domain-model-module.js';
 
 /* browser specific setup code */

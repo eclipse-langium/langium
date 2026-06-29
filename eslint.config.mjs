@@ -128,22 +128,6 @@ export default [{
         'pluginHeader/header': [2, 'block', [
             { pattern: 'MIT License|DO NOT EDIT MANUALLY!' }
         ]],
-        'no-restricted-imports': ['error', {
-            paths: [{
-                name: 'vscode-jsonrpc',
-                importNames: [ 'CancellationToken' ],
-                message: 'Import "CancellationToken" via "Cancellation.CancellationToken" from "langium", or directly from "./utils/cancellation.ts" within Langium.'
-            }, {
-                name: 'vscode-jsonrpc/',
-                importNames: [ 'CancellationToken'],
-                message: 'Import "CancellationToken" via "Cancellation.CancellationToken" from "langium", or directly from "./utils/cancellation.ts" within Langium.'
-            }],
-            patterns: [ {
-                group: [ 'vscode-jsonrpc' ],
-                importNamePattern: '^(?!CancellationToken)',
-                message: 'Don\'t import types or symbols from "vscode-jsonrpc" (package index), as that brings a large overhead in bundle size. Import from "vscode-jsonrpc/lib/common/...js" and add a // eslint-disable..., if really necessary.'
-            }]
-        }],
         // use @typescript-eslint/no-unused-vars instead
         'no-unused-vars': 'off',
         // Disallow unnecessary escape characters

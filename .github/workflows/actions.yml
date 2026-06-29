@@ -19,7 +19,7 @@ jobs:
     timeout-minutes: 20
     steps:
     - name: Checkout
-      uses: actions/checkout@v6
+      uses: actions/checkout@v7
     - name: Use Node.js
       uses: actions/setup-node@v6
       with:
@@ -41,7 +41,7 @@ jobs:
     timeout-minutes: 20
     steps:
     - name: Checkout
-      uses: actions/checkout@v6
+      uses: actions/checkout@v7
     - name: Use Node.js
       uses: actions/setup-node@v6
       with:

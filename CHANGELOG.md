@@ -9,6 +9,7 @@ We maintain separate change logs for the individual packages:
 
 ## Closed Issues and PRs
 
+* [v4.3.0](https://github.com/eclipse-langium/langium/milestone/20?closed=1)
 * [v4.2.0](https://github.com/eclipse-langium/langium/milestone/19?closed=1)
 * [v4.1.0](https://github.com/eclipse-langium/langium/milestone/18?closed=1)
 * [v4.0.0](https://github.com/eclipse-langium/langium/milestone/15?closed=1)

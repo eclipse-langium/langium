@@ -5,7 +5,7 @@
     "displayName": "<%= extension-name %>",
     "type": "module",
     "engines": {
-        "vscode": "^1.67.0"
+        "vscode": "^1.91.0"
     },
     "categories": [
         "Programming Languages"
@@ -37,13 +37,13 @@
     },
     "dependencies": {
         "<%= language-id %>-language": "0.0.1",
-        "vscode-languageclient": "~9.0.1",
-        "vscode-languageserver": "~9.0.1"
+        "vscode-languageclient": "~10.0.1",
+        "vscode-languageserver": "~10.0.1"
     },
     "devDependencies": {
-        "@types/vscode": "~1.67.0",
-        "concurrently": "~9.2.1",
-        "esbuild": "~0.27.3"
+        "@types/vscode": "~1.91.0",
+        "concurrently": "~10.0.3",
+        "esbuild": "~0.28.1"
     },
     "vsce": {
       "dependencies": false
