@@ -6,6 +6,7 @@
 
 import { startLanguageServer } from 'langium/lsp';
 import { createConnection, ProposedFeatures } from 'vscode-languageserver/node';
+import { addInspectorSupport } from 'langium-inspector';
 import { createRequirementsAndTestsLangServices } from './requirements-and-tests-lang-module.js';
 import { NodeFileSystem } from 'langium/node';
 
@@ -15,5 +16,6 @@ const connection = createConnection(ProposedFeatures.all);
 // Inject the shared services and language-specific services
 const { shared } = createRequirementsAndTestsLangServices({ connection, ...NodeFileSystem });
 
+addInspectorSupport(shared);
 // Start the language server with the shared services
 startLanguageServer(shared);

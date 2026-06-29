@@ -7,6 +7,7 @@
 import { startLanguageServer } from 'langium/lsp';
 import { NodeFileSystem } from 'langium/node';
 import { createConnection, ProposedFeatures } from 'vscode-languageserver/node';
+import { addInspectorSupport } from 'langium-inspector';
 import { createStatemachineServices } from './statemachine-module.js';
 
 // Create a connection to the client
@@ -15,5 +16,5 @@ const connection = createConnection(ProposedFeatures.all);
 // Inject the shared services and language-specific services
 const { shared } = createStatemachineServices({ connection, ...NodeFileSystem });
 
-// Start the language server with the shared services
+addInspectorSupport(shared);
 startLanguageServer(shared);

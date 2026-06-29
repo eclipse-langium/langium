@@ -1,0 +1,51 @@
+{
+    "name": "langium-inspector",
+    "version": "4.2.0",
+    "description": "Server-side adapter exposing the parsed AST of any Langium-based DSL over LSP",
+    "homepage": "https://langium.org",
+    "engines": {
+        "node": ">=20.10.0",
+        "npm": ">=10.2.3"
+    },
+    "keywords": [
+        "langium",
+        "dsl",
+        "lsp",
+        "ast",
+        "inspector"
+    ],
+    "license": "MIT",
+    "type": "module",
+    "files": [
+        "lib",
+        "src"
+    ],
+    "exports": {
+        ".": {
+            "import": "./lib/index.js",
+            "types": "./lib/index.d.ts"
+        },
+        "./protocol": {
+            "import": "./lib/protocol.js",
+            "types": "./lib/protocol.d.ts"
+        }
+    },
+    "scripts": {
+        "clean": "shx rm -rf lib coverage",
+        "build": "tsc -p tsconfig.src.json",
+        "watch": "tsc -p tsconfig.src.json --watch"
+    },
+    "peerDependencies": {
+        "langium": "~4.2.0"
+    },
+    "repository": {
+        "type": "git",
+        "url": "git+https://github.com/eclipse-langium/langium.git",
+        "directory": "packages/langium-inspector"
+    },
+    "bugs": "https://github.com/eclipse-langium/langium/issues",
+    "author": {
+        "name": "TypeFox",
+        "url": "https://www.typefox.io"
+    }
+}
