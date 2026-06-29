@@ -1,6 +1,6 @@
 {
     "name": "langium-inspector",
-    "version": "4.2.0",
+    "version": "4.3.0",
     "description": "Server-side adapter exposing the parsed AST of any Langium-based DSL over LSP",
     "homepage": "https://langium.org",
     "engines": {
@@ -36,7 +36,7 @@
         "watch": "tsc -p tsconfig.src.json --watch"
     },
     "peerDependencies": {
-        "langium": "~4.2.0"
+        "langium": "~4.3.0"
     },
     "repository": {
         "type": "git",
