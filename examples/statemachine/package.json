@@ -36,6 +36,9 @@
   "activationEvents": [
     "onLanguage:statemachine"
   ],
+  "extensionDependencies": [
+    "langium.langium-vscode"
+  ],
   "files": [
     "bin",
     "out",
@@ -59,6 +62,7 @@
     "chalk": "~5.6.2",
     "commander": "~15.0.0",
     "langium": "~4.3.0",
+    "langium-inspector": "~4.3.0",
     "vscode-languageclient": "~10.0.1",
     "vscode-languageserver": "~10.0.1"
   },
