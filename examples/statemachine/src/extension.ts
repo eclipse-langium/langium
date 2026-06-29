@@ -52,5 +52,17 @@ async function startLanguageClient(context: vscode.ExtensionContext): Promise<La
 
     // Start the client. This will also launch the server
     await client.start();
+    // Register with the Langium Inspector extension if present
+    context.subscriptions.push(await registerInspector(client, 'statemachine'));
     return client;
+}
+
+async function registerInspector(client: LanguageClient, languageId: string): Promise<vscode.Disposable> {
+    const vscodeApi = await import('vscode');
+    try {
+        await vscodeApi.commands.executeCommand('langium-inspector.register', client, languageId);
+    } catch {
+        // Inspector extension not installed — ignore
+    }
+    return { dispose: () => undefined };
 }

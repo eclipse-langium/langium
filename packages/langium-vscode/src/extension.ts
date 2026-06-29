@@ -4,17 +4,23 @@
  * terms of the MIT License, which is available in the project root.
  ******************************************************************************/
 
-import type * as vscode from 'vscode';
+import * as vscode from 'vscode';
 import type { LanguageClientOptions, ServerOptions } from 'vscode-languageclient/node';
 import { LanguageClient, TransportKind } from 'vscode-languageclient/node';
 import { registerRailroadWebview } from './railroad-webview.js';
+import { AstViewProvider } from './ast-view.js';
 
 let client: LanguageClient;
 
+export interface LangiumInspectorApi {
+    registerLangiumInspector(client: LanguageClient, languageId: string): void;
+}
+
 // Called by vscode on activation event, see package.json "activationEvents"
-export async function activate(context: vscode.ExtensionContext): Promise<void> {
+export async function activate(context: vscode.ExtensionContext): Promise<LangiumInspectorApi> {
     client = await startLanguageClient(context);
     registerRailroadWebview(client);
+    return registerAstInspector(context);
 }
 
 export function deactivate(): Thenable<void> | undefined {
@@ -22,6 +28,47 @@ export function deactivate(): Thenable<void> | undefined {
         return client.stop();
     }
     return undefined;
+}
+
+function registerAstInspector(context: vscode.ExtensionContext): LangiumInspectorApi {
+    const provider = new AstViewProvider(context);
+
+    context.subscriptions.push(
+        vscode.window.registerWebviewViewProvider(
+            AstViewProvider.viewId,
+            provider,
+            { webviewOptions: { retainContextWhenHidden: true } }
+        ),
+
+        vscode.commands.registerCommand('langium-inspector.show', () => {
+            vscode.commands.executeCommand('langium-inspector.astView.focus');
+        }),
+
+        vscode.commands.registerCommand('langium-inspector.register', (client: LanguageClient, languageId: string) => {
+            provider.registerClient(client, languageId);
+        }),
+
+        vscode.window.onDidChangeActiveTextEditor(editor => {
+            if (editor) {
+                provider.onActiveEditorChanged(editor);
+            }
+        }),
+
+        vscode.window.onDidChangeTextEditorSelection(event => {
+            provider.onSelectionChanged(event);
+        })
+    );
+
+    // Refresh for the currently active editor if already open
+    if (vscode.window.activeTextEditor) {
+        provider.onActiveEditorChanged(vscode.window.activeTextEditor);
+    }
+
+    return {
+        registerLangiumInspector: (client: LanguageClient, languageId: string) => {
+            provider.registerClient(client, languageId);
+        }
+    };
 }
 
 async function startLanguageClient(context: vscode.ExtensionContext): Promise<LanguageClient> {

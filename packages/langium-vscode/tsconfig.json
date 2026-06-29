@@ -7,6 +7,8 @@
   "references": [{
     "path": "../langium/tsconfig.src.json"
   }, {
+    "path": "../langium-inspector/tsconfig.src.json"
+  }, {
     "path": "../langium-railroad/tsconfig.json"
   }],
   "include": [
