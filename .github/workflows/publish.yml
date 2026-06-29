@@ -1,6 +1,7 @@
 name: Publish
 
 permissions:
+  contents: read
   id-token: write
 
 on:
@@ -11,9 +12,15 @@ on:
       - 'maintenance/**'
     paths:
       - '**/package.json'
-      # Also trigger if the publish workflow/script itself is changed
+      # Also trigger if the publish workflow itself is changed
       - '.github/workflows/publish.yml'
-      - 'scripts/publish-updated-packages.ts'
+  pull_request:
+    branches:
+      - 'main'
+      - 'maintenance/**'
+    paths:
+      - '**/package.json'
+      - '.github/workflows/publish.yml'
 
 jobs:
   publish:
@@ -21,31 +28,43 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 20
     steps:
-    - name: Checkout
-      uses: actions/checkout@v7
-    - name: Use Node.js
-      uses: actions/setup-node@v6
-      with:
-        node-version-file: '.nvmrc'
-        registry-url: 'https://registry.npmjs.org'
-    - name: Build
-      shell: bash
-      # Ensure latest npm version
-      run: |
-        npm i -g npm
-        npm ci
-        npm run build:clean
-        npm run langium:generate:production --workspace=langium
-        npm run build
-    - name: Test
-      if: success() || failure()
-      shell: bash
-      run: |
-        npm run test
-    - name: Publish
-      shell: bash
-      env:
-        OVSX_TOKEN: ${{ secrets.OVSX_TOKEN }}
-        VSCE_TOKEN: ${{ secrets.VSCE_TOKEN }}
-      run: |
-        npm run publish:updated
+      - name: Checkout
+        uses: actions/checkout@0c366fd6a839edf440554fa01a7085ccba70ac98 # v6.0.2
+
+      - name: Use Node.js
+        uses: actions/setup-node@53b83947a5a98c8d113130e565377fae1a50d02f # v6.3.0
+        with:
+          node-version-file: '.nvmrc'
+          registry-url: 'https://registry.npmjs.org'
+
+      - name: Build
+        shell: bash
+        run: |
+          npm i -g npm
+          npm ci
+          npm run build:clean
+          npm run langium:generate:production --workspace=langium
+          npm run build
+
+      - name: Test
+        if: success() || failure()
+        shell: bash
+        run: npm run test
+
+      - name: Publish
+        uses: TypeFox/gh-publish-npm@d6447156b25fba31023a7960b37338b29569fb05 # v0.2.0
+        with:
+          dry-run: ${{ github.event_name == 'pull_request' }}
+          npm-packages: |
+            packages/langium
+            packages/langium-railroad
+            packages/langium-cli
+            packages/langium-sprotty
+            packages/generator-langium
+            examples/arithmetics
+            examples/domainmodel
+            examples/statemachine
+          vscode-packages: |
+            packages/langium-vscode
+          vsce-token: ${{ github.event_name != 'pull_request' && secrets.VSCE_TOKEN || '' }}
+          ovsx-token: ${{ github.event_name != 'pull_request' && secrets.OVSX_TOKEN || '' }}
