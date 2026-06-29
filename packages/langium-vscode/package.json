@@ -123,7 +123,8 @@
   },
   "dependencies": {
     "langium": "4.3.0",
-    "langium-inspector": "4.2.0",
+    "langium-inspector": "4.3.0",
+    "vscode-languageclient": "~10.0.1",
     "langium-railroad": "4.3.0",
     "vscode-languageserver": "~10.0.1",
     "ignore": "~7.0.5"

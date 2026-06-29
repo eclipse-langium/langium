@@ -5,7 +5,7 @@
  ******************************************************************************/
 
 import type * as vscodeType from 'vscode';
-import type { LanguageClient } from 'vscode-languageclient/node.js';
+import type { LanguageClient } from 'vscode-languageclient/node';
 import type { AstChangedParams, InspectAstResult } from 'langium-inspector/protocol';
 import { AST_CHANGED_NOTIFICATION, INSPECT_AST_REQUEST, isInspectAstError } from 'langium-inspector/protocol';
 
