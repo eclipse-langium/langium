@@ -661,6 +661,8 @@ function flattenTypes(alternatives: TypePath[], part: TypePart): TypePath[] {
                 const existingProperty = properties.find(e => e.name === altProperty.name);
                 if (existingProperty) {
                     existingProperty.type = mergePropertyTypes(existingProperty.type, altProperty.type);
+                    // if either occurrence is optional, the merged property must be optional
+                    existingProperty.optional = existingProperty.optional || altProperty.optional;
                     altProperty.astNodes.forEach(e => existingProperty.astNodes.add(e));
                 } else {
                     properties.push({ ...altProperty });

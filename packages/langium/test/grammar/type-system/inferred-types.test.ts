@@ -42,6 +42,25 @@ describe('Inferred types', () => {
         `);
     });
 
+    test('Should infer optional property when same property has mixed optionality in alternatives', async () => {
+        // both A and B should produce `name?: string` regardless of alternative order
+        await expectTypes(`
+            A: 'a1' name=ID | 'a2' name=ID?;
+            B: 'b1' name=ID? | 'b2' name=ID;
+
+            terminal ID returns string: /string/;
+        `, expandToString`
+            export interface A extends langium.AstNode {
+                readonly $type: 'A';
+                name?: string;
+            }
+            export interface B extends langium.AstNode {
+                readonly $type: 'B';
+                name?: string;
+            }
+        `);
+    });
+
     test('Should infer types for alternatives', async () => {
         await expectTypes(`
             A: name=ID | name=NUMBER;
