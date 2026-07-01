@@ -105,7 +105,7 @@ interface IntermediateReference {
 }
 
 function isIntermediateReference(obj: unknown): obj is IntermediateReference {
-    return typeof obj === 'object' && !!obj && ('$ref' in obj || '$error' in obj);
+    return typeof obj === 'object' && !!obj && ('$ref' in obj || '$refs' in obj || '$error' in obj);
 }
 
 export class DefaultJsonSerializer implements JsonSerializer {

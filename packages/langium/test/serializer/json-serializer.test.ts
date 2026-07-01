@@ -4,7 +4,7 @@
  * terms of the MIT License, which is available in the project root.
  ******************************************************************************/
 
-import type { AstNode, Reference } from 'langium';
+import type { AstNode, MultiReference, Reference } from 'langium';
 import { createServicesForGrammar } from 'langium/grammar';
 import { expandToStringLF } from 'langium/generate';
 import { clearDocuments, parseHelper } from 'langium/test';
@@ -18,7 +18,7 @@ describe('JsonSerializer', async () => {
 
         entry Entry: elements+=Element*;
         
-        Element: 'element' name=ID ('refers' other=[Element:ID])?;
+        Element: 'element' name=ID ('refers' other=[Element:ID] | 'refer' others=[+Element:ID])?;
         
         hidden terminal WS: /\s+/;
         terminal ID: /[_a-zA-Z][\w]*/;
@@ -143,6 +143,40 @@ describe('JsonSerializer', async () => {
         expect(model.elements[1].other?.ref).toStrictEqual(model.elements[0]);
     });
 
+    test('Revive multi reference to same document', async () => {
+        const json = expandToStringLF`
+            {
+                "$type": "Entry",
+                "elements": [
+                    {
+                        "$type": "Element",
+                        "name": "a"
+                    },
+                    {
+                        "$type": "Element",
+                        "name": "a"
+                    },
+                    {
+                        "$type": "Element",
+                        "name": "b",
+                        "others": {
+                            "$refs": [
+                                "#/elements@0",
+                                "#/elements@1"
+                            ]
+                        }
+                    }
+                ]
+            }
+        `;
+        const model = serializer.deserialize<Entry>(json);
+        expect(model.elements).toHaveLength(3);
+        const others = model.elements[2].others;
+        expect(others).toBeDefined();
+        const otherRefs = others?.items.map(e => e.ref);
+        expect(otherRefs).toStrictEqual([model.elements[0], model.elements[1]]);
+    });
+
     test('Revive reference to other document', async () => {
         const document1 = await parse(`
             element a
@@ -229,4 +263,5 @@ interface Entry extends AstNode {
 interface Element extends AstNode {
     name: string
     other?: Reference<Element>
+    others?: MultiReference<Element>
 }
