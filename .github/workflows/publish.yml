@@ -26,6 +26,7 @@ jobs:
   publish:
     name: Langium Publish
     runs-on: ubuntu-latest
+    environment: publish
     timeout-minutes: 20
     steps:
       - name: Checkout
