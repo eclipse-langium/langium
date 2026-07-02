@@ -12,20 +12,12 @@ on:
       - 'maintenance/**'
     paths:
       - '**/package.json'
-      # Also trigger if the publish workflow itself is changed
-      - '.github/workflows/publish.yml'
-  pull_request:
-    branches:
-      - 'main'
-      - 'maintenance/**'
-    paths:
-      - '**/package.json'
-      - '.github/workflows/publish.yml'
 
 jobs:
   publish:
     name: Langium Publish
     runs-on: ubuntu-latest
+    environment: publish
     timeout-minutes: 20
     steps:
       - name: Checkout
