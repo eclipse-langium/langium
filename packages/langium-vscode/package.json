@@ -45,8 +45,7 @@
     "views": {
       "explorer": [
         {
-          "type": "webview",
-          "id": "langium-inspector.astView",
+          "id": "langium-inspector.astTreeView",
           "name": "Langium AST"
         }
       ]

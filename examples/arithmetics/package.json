@@ -36,9 +36,6 @@
   "activationEvents": [
     "onLanguage:arithmetics"
   ],
-  "extensionDependencies": [
-    "langium.langium-vscode"
-  ],
   "files": [
     "bin",
     "out",

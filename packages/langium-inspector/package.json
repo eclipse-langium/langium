@@ -24,10 +24,6 @@
         ".": {
             "import": "./lib/index.js",
             "types": "./lib/index.d.ts"
-        },
-        "./protocol": {
-            "import": "./lib/protocol.js",
-            "types": "./lib/protocol.d.ts"
         }
     },
     "scripts": {

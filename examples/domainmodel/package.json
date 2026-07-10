@@ -36,9 +36,6 @@
   "activationEvents": [
     "onLanguage:domain-model"
   ],
-  "extensionDependencies": [
-    "langium.langium-vscode"
-  ],
   "files": [
     "bin",
     "out",

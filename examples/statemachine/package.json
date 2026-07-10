@@ -36,9 +36,6 @@
   "activationEvents": [
     "onLanguage:statemachine"
   ],
-  "extensionDependencies": [
-    "langium.langium-vscode"
-  ],
   "files": [
     "bin",
     "out",

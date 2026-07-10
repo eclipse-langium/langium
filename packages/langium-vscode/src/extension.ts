@@ -8,7 +8,9 @@ import * as vscode from 'vscode';
 import type { LanguageClientOptions, ServerOptions } from 'vscode-languageclient/node';
 import { LanguageClient, TransportKind } from 'vscode-languageclient/node';
 import { registerRailroadWebview } from './railroad-webview.js';
-import { AstViewProvider } from './ast-view.js';
+import { AstTreeProvider } from './ast-tree-view.js';
+import type { AstTreeNode } from './ast-tree-view.js';
+import { InspectorController } from './inspector-controller.js';
 
 let client: LanguageClient;
 
@@ -31,42 +33,49 @@ export function deactivate(): Thenable<void> | undefined {
 }
 
 function registerAstInspector(context: vscode.ExtensionContext): LangiumInspectorApi {
-    const provider = new AstViewProvider(context);
+    const controller = new InspectorController();
+    const treeProvider = new AstTreeProvider(controller);
+    const treeView = vscode.window.createTreeView<AstTreeNode>(AstTreeProvider.viewId, { treeDataProvider: treeProvider });
+    treeProvider.attachView(treeView);
 
     context.subscriptions.push(
-        vscode.window.registerWebviewViewProvider(
-            AstViewProvider.viewId,
-            provider,
-            { webviewOptions: { retainContextWhenHidden: true } }
-        ),
+        controller,
+        treeProvider,
+        treeView,
 
         vscode.commands.registerCommand('langium-inspector.show', () => {
-            vscode.commands.executeCommand('langium-inspector.astView.focus');
+            vscode.commands.executeCommand('langium-inspector.astTreeView.focus');
         }),
 
         vscode.commands.registerCommand('langium-inspector.register', (client: LanguageClient, languageId: string) => {
-            provider.registerClient(client, languageId);
+            controller.registerClient(client, languageId);
+        }),
+
+        vscode.commands.registerCommand('langium-inspector.revealNode', (node: AstTreeNode) => {
+            if (node.uri && node.range) {
+                void controller.revealInEditor(node.uri, node.range);
+            }
         }),
 
         vscode.window.onDidChangeActiveTextEditor(editor => {
             if (editor) {
-                provider.onActiveEditorChanged(editor);
+                controller.onActiveEditorChanged(editor);
             }
         }),
 
         vscode.window.onDidChangeTextEditorSelection(event => {
-            provider.onSelectionChanged(event);
+            controller.onSelectionChanged(event);
         })
     );
 
     // Refresh for the currently active editor if already open
     if (vscode.window.activeTextEditor) {
-        provider.onActiveEditorChanged(vscode.window.activeTextEditor);
+        controller.onActiveEditorChanged(vscode.window.activeTextEditor);
     }
 
     return {
         registerLangiumInspector: (client: LanguageClient, languageId: string) => {
-            provider.registerClient(client, languageId);
+            controller.registerClient(client, languageId);
         }
     };
 }
