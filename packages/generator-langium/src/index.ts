@@ -297,7 +297,7 @@ export * from './generated/module.js';
             tsConfigBuildJson.references.push({ path: './packages/language/tsconfig.test.json' });
 
             const languagePackageJson = this._readJson<LanguagePackageJson>(this._extensionPath('packages/language/package.json'));
-            languagePackageJson.devDependencies.vitest = '~3.1.3';
+            languagePackageJson.devDependencies.vitest = '~3.2.7';
             languagePackageJson.scripts.test = 'vitest run';
             this.fs.delete(this._extensionPath('packages/language/package.json'));
             this.fs.writeJSON(this._extensionPath('packages/language/package.json'), languagePackageJson, undefined, 4);
