@@ -111,7 +111,7 @@
     "langium": "4.3.0",
     "langium-railroad": "4.3.0",
     "vscode-languageserver": "~10.1.0",
-    "ignore": "~7.0.5"
+    "ignore": "~7.0.6"
   },
   "repository": {
     "type": "git",

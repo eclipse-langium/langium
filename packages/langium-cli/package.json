@@ -45,7 +45,7 @@
   "dependencies": {
     "chalk": "~5.6.2",
     "commander": "~15.0.0",
-    "fs-extra": "~11.3.5",
+    "fs-extra": "~11.3.6",
     "jsonschema": "~1.5.0",
     "langium": "~4.3.0",
     "langium-railroad": "~4.3.0",
