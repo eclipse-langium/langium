@@ -1,4 +1,4 @@
-import { describe } from "vitest";
+import { describe, it } from "vitest";
 
 /*
 let services: ReturnType<typeof create<%= LanguageName %>Services>;
@@ -18,4 +18,5 @@ beforeAll(async () => {
 describe('Validating', () => {
 
     // TODO: Add validation tests
+    it.todo('add validation tests');
 });
