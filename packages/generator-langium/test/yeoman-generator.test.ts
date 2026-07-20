@@ -215,6 +215,56 @@ describe('Check yeoman generator works', () => {
                 context.cleanTestDirectory(true);
             });
     }, 150_000);
+
+    test('4 Should produce files for workspace and language (plus test, no example)', async () => {
+        const context = createHelpers({}).run<LangiumGenerator>(path.join(moduleRoot));
+
+        // generate in examples
+        const targetRoot = path.resolve(packageTestDir, './generator-tests/test4');
+        const extensionName = 'hello-world';
+
+        // remove examples/hello-world (if existing) now and finally (don't delete everything else in examples)
+        context.targetDirectory = path.resolve(targetRoot, extensionName);
+        context.cleanTestDirectory(true);
+
+        await context
+            .withOptions(<Generator.BaseOptions>{
+                // we need to explicitly tell the generator it's destinationRoot
+                destinationRoot: targetRoot
+            })
+            .onTargetDirectory(workingDir => {
+                // just for double checking
+                console.log(`Generating into directory: ${workingDir}`);
+            })
+            .withAnswers(<Answers>{
+                ...answersForCore,
+                extensionName,
+                includeTest: true
+            })
+            .withArguments('use-local-langium')
+            .then((result) => {
+                const projectRoot = targetRoot + '/' + extensionName;
+
+                result.assertFile(files(projectRoot));
+                result.assertFile(filesTest(projectRoot));
+                result.assertNoFile(filesCli(projectRoot));
+                result.assertNoFile(filesExtension(projectRoot));
+
+                const packageJson = JSON.parse(JSON.stringify(PACKAGE_JSON_EXPECTATION));
+                packageJson.scripts.test = 'npm run --workspace packages/language test';
+                result.assertJsonFileContent(projectRoot + '/package.json', packageJson);
+
+                const returnVal = result.generator.spawnSync('npm', ['test'], {
+                    cwd: result.generator._extensionPath()
+                });
+
+                result.assertTextEqual(String(returnVal.exitCode), '0');
+
+            }).finally(() => {
+                // clean-up examples/generator-tests/test4/hello-world
+                context.cleanTestDirectory(true);
+            });
+    }, 120_000);
 });
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any

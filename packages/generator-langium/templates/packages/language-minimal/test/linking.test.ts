@@ -1,4 +1,4 @@
-import { describe } from "vitest";
+import { describe, it } from "vitest";
 
 /*
 let services: ReturnType<typeof create<%= LanguageName %>Services>;
@@ -21,4 +21,5 @@ afterEach(async () => {
 describe('Linking tests', () => {
 
     // TODO: Add linking tests
+    it.todo('add linking tests');
 });
