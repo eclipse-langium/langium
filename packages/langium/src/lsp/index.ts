@@ -34,6 +34,7 @@ export * from './references-provider.js';
 export * from './rename-provider.js';
 export * from './semantic-token-provider.js';
 export * from './signature-help-provider.js';
+export * from './text-document-content-provider.js';
 export * from './type-hierarchy-provider.js';
 export * from './type-provider.js';
 export * from './workspace-symbol-provider.js';
