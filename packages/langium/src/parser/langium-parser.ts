@@ -10,7 +10,7 @@ import type { AbstractElement, Action, Assignment, InfixRule, ParserRule } from 
 import type { DSLMethodOpts, ILexingError, IOrAlt, IParserErrorMessageProvider, IRecognitionException, IToken, ParserMethod, SubruleMethodOpts, TokenType, TokenVocabulary, IRuleConfig } from 'chevrotain';
 import type { Linker } from '../references/linker.js';
 import type { LangiumCoreServices } from '../services.js';
-import type { AstNode, AstReflection, CompositeCstNode, CstNode } from '../syntax-tree.js';
+import type { AstNode, AstReflection, CompositeCstNode, CstNode, Mutable } from '../syntax-tree.js';
 import type { Lexer, LexerResult } from './lexer.js';
 import type { IParserConfig } from './parser-config.js';
 import type { ValueConverter } from './value-converter.js';
@@ -19,6 +19,7 @@ import { LLStarLookaheadStrategy } from 'chevrotain-allstar';
 import { isAssignment, isCrossReference, isKeyword, isParserRule } from '../languages/generated/ast.js';
 import { getTypeName, isDataTypeRule } from '../utils/grammar-utils.js';
 import { assignMandatoryProperties, getContainerOfType, linkContentToContainer } from '../utils/ast-utils.js';
+import { isAstNode } from '../syntax-tree.js';
 import { CstNodeBuilder } from './cst-node-builder.js';
 import type { LexingReport } from './token-builder.js';
 import type { ProfilingTask } from '../workspace/profiler.js';
@@ -305,7 +306,21 @@ export class LangiumParser extends AbstractLangiumParser {
         } else if (this.stack.length > 0) {
             throw new Error('Parser stack is not empty after parsing');
         }
+        this.linkCstNode(result);
         return result;
+    }
+
+    /**
+     * Assigns the CST-to-AST backlink for the given AST node. The link is stored only on the
+     * CST node that is directly associated with an AST node (i.e. its `$cstNode`); all other
+     * CST nodes find their AST node by walking up the container hierarchy in the `astNode`
+     * getter. This method is called once per AST node as soon as its `$cstNode` is final:
+     * for the parse result root here in `doParse`, for all other nodes in `assign`.
+     */
+    private linkCstNode(item: unknown): void {
+        if (isAstNode(item) && item.$cstNode) {
+            (item.$cstNode as Mutable<CstNode>).astNode = item;
+        }
     }
 
     private startImplementation($type: string | symbol | undefined, infixName: string | undefined, implementation: RuleImpl): RuleImpl {
@@ -564,6 +579,8 @@ export class LangiumParser extends AbstractLangiumParser {
         } else {
             item = value;
         }
+        // The assigned node is fully constructed at this point, so we can link its CST node
+        this.linkCstNode(item);
         switch (operator) {
             case '=': {
                 obj[feature] = item;
@@ -595,13 +612,7 @@ export class LangiumParser extends AbstractLangiumParser {
         // The target was parsed from a unassigned subrule
         // After the subrule construction, it received a cst node
         // This CST node will later be overriden by the cst node builder
-        // To prevent references to stale AST nodes in the CST,
-        // we need to remove the reference here
-        const targetCstNode = target.$cstNode;
-        if (targetCstNode) {
-            targetCstNode.astNode = undefined;
-            target.$cstNode = undefined;
-        }
+        target.$cstNode = undefined;
         return target;
     }
 

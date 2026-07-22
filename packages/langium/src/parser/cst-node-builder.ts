@@ -22,7 +22,6 @@ export class CstNodeBuilder {
 
     buildRootNode(input: string): RootCstNode {
         this.rootNode = new RootCstNodeImpl(input);
-        this.rootNode.root = this.rootNode;
         this.nodeStack = [this.rootNode];
         return this.rootNode;
     }
@@ -30,7 +29,6 @@ export class CstNodeBuilder {
     buildCompositeNode(feature: AbstractElement): CompositeCstNode {
         const compositeNode = new CompositeCstNodeImpl();
         compositeNode.grammarSource = feature;
-        compositeNode.root = this.rootNode;
         this.current.content.push(compositeNode);
         this.nodeStack.push(compositeNode);
         return compositeNode;
@@ -38,8 +36,9 @@ export class CstNodeBuilder {
 
     buildLeafNode(token: IToken, feature?: AbstractElement): LeafCstNode {
         const leafNode = new LeafCstNodeImpl(token.startOffset, token.image.length, tokenToRange(token), token.tokenType, !feature);
-        leafNode.grammarSource = feature;
-        leafNode.root = this.rootNode;
+        if (feature) {
+            leafNode.grammarSource = feature;
+        }
         this.current.content.push(leafNode);
         return leafNode;
     }
@@ -58,7 +57,6 @@ export class CstNodeBuilder {
         const nodes: LeafCstNode[] = [];
         for (const token of tokens) {
             const leafNode = new LeafCstNodeImpl(token.startOffset, token.image.length, tokenToRange(token), token.tokenType, true);
-            leafNode.root = this.rootNode;
             nodes.push(leafNode);
         }
         let current: CompositeCstNode = this.current;
@@ -89,11 +87,6 @@ export class CstNodeBuilder {
 
     construct(item: { $type: string | symbol | undefined, $cstNode: CstNode, $infixName?: string }): void {
         const current: CstNode = this.current;
-        // The specified item could be a datatype ($type is symbol), fragment ($type is undefined) or infix rule ($infix is true)
-        // Only if the $type is a string, we actually assign the element
-        if (typeof item.$type === 'string' && !item.$infixName) {
-            this.current.astNode = <AstNode>item;
-        }
         item.$cstNode = current;
         const node = this.nodeStack.pop();
         // Empty composite nodes are not valid
@@ -112,19 +105,31 @@ export abstract class AbstractCstNode implements CstNode {
 
     container?: CompositeCstNode;
     grammarSource?: AbstractElement;
-    root: RootCstNode;
     private _astNode?: AstNode;
+
+    get root(): RootCstNode {
+        // eslint-disable-next-line @typescript-eslint/no-this-alias
+        let node: CstNode = this;
+        while (node.container) {
+            node = node.container;
+        }
+        return node as RootCstNode;
+    }
 
     get hidden(): boolean {
         return false;
     }
 
     get astNode(): AstNode {
-        const node = typeof this._astNode?.$type === 'string' ? this._astNode : this.container?.astNode;
-        if (!node) {
-            throw new Error('This node has no associated AST element');
+        // eslint-disable-next-line @typescript-eslint/no-this-alias
+        let node: AbstractCstNode | undefined = this;
+        while (node) {
+            if (node._astNode) {
+                return node._astNode;
+            }
+            node = node.container as AbstractCstNode | undefined;
         }
-        return node;
+        throw new Error('This node has no associated AST element');
     }
 
     set astNode(value: AstNode | undefined) {
@@ -137,6 +142,12 @@ export abstract class AbstractCstNode implements CstNode {
 }
 
 export class LeafCstNodeImpl extends AbstractCstNode implements LeafCstNode {
+    private _hidden: boolean;
+    private _offset: number;
+    private _length: number;
+    private _range: Range;
+    private _tokenType: TokenType;
+
     get offset(): number {
         return this._offset;
     }
@@ -160,12 +171,6 @@ export class LeafCstNodeImpl extends AbstractCstNode implements LeafCstNode {
     get range(): Range {
         return this._range;
     }
-
-    private _hidden: boolean;
-    private _offset: number;
-    private _length: number;
-    private _range: Range;
-    private _tokenType: TokenType;
 
     constructor(offset: number, length: number, range: Range, tokenType: TokenType, hidden = false) {
         super();
