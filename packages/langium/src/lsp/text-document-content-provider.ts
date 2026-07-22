@@ -6,7 +6,7 @@
 
 import type { CancellationToken, TextDocumentContentParams, TextDocumentContentResult } from 'vscode-languageserver-protocol';
 import { URI } from 'vscode-uri';
-import type { LangiumDocuments } from '../workspace/index.js';
+import type { LangiumDocuments, WorkspaceManager } from '../workspace/index.js';
 import type { LangiumSharedServices } from './lsp-services.js';
 
 /**
@@ -39,15 +39,19 @@ export interface TextDocumentContentProvider {
 export class DefaultTextDocumentContentProvider implements TextDocumentContentProvider {
 
     private readonly langiumDocuments: LangiumDocuments;
+    private readonly workspaceManager: WorkspaceManager;
 
     readonly schemes: string[];
 
     constructor(services: LangiumSharedServices, schemes: string[]) {
         this.langiumDocuments = services.workspace.LangiumDocuments;
+        this.workspaceManager = services.workspace.WorkspaceManager;
         this.schemes = schemes;
     }
 
     async provideTextDocumentContent(params: TextDocumentContentParams, _cancellationToken: CancellationToken): Promise<TextDocumentContentResult | undefined> {
+        // Ensure that documents are loaded before attempting to retrieve the content of a document.
+        await this.workspaceManager.ready;
         const uri = URI.parse(params.uri);
         if (!this.schemes.includes(uri.scheme)) {
             return undefined;
