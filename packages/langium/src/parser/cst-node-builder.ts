@@ -351,18 +351,19 @@ export class CompositeCstNodeImpl extends AbstractCstNode implements CompositeCs
     }
 
     get range(): Range {
-        const firstNode = this.firstNonHiddenNode;
-        const lastNode = this.lastNonHiddenNode;
-        if (firstNode && lastNode) {
-            if (this._rangeCache === undefined) {
+        let range = this._rangeCache;
+        if (range === undefined) {
+            const firstNode = this.firstNonHiddenNode;
+            const lastNode = this.lastNonHiddenNode;
+            if (firstNode && lastNode) {
                 const { range: firstRange } = firstNode;
                 const { range: lastRange } = lastNode;
-                this._rangeCache = { start: firstRange.start, end: lastRange.end.line < firstRange.start.line ? firstRange.start : lastRange.end };
+                this._rangeCache = range = { start: firstRange.start, end: lastRange.end.line < firstRange.start.line ? firstRange.start : lastRange.end };
+            } else {
+                return { start: Position.create(0, 0), end: Position.create(0, 0) };
             }
-            return this._rangeCache;
-        } else {
-            return { start: Position.create(0, 0), end: Position.create(0, 0) };
         }
+        return range;
     }
 
     private get firstNonHiddenNode(): CstNode | undefined {
