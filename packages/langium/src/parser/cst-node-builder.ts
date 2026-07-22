@@ -8,7 +8,6 @@ import type { IToken, TokenType } from 'chevrotain';
 import type { Range } from 'vscode-languageserver-types';
 import type { AbstractElement } from '../languages/generated/ast.js';
 import type { AstNode, CompositeCstNode, CstNode, LeafCstNode, RootCstNode } from '../syntax-tree.js';
-import { Position } from 'vscode-languageserver-types';
 
 /**
  * Incrementally builds the concrete syntax tree (CST) while the parser processes the input.
@@ -360,7 +359,7 @@ export class CompositeCstNodeImpl extends AbstractCstNode implements CompositeCs
                 const { range: lastRange } = lastNode;
                 this._rangeCache = range = { start: firstRange.start, end: lastRange.end.line < firstRange.start.line ? firstRange.start : lastRange.end };
             } else {
-                return { start: Position.create(0, 0), end: Position.create(0, 0) };
+                return { start: { line: 0, character: 0 }, end: { line: 0, character: 0 } };
             }
         }
         return range;

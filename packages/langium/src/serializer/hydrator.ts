@@ -156,10 +156,11 @@ export class DefaultHydrator implements Hydrator {
             cstNode.tokenType = node.tokenType.name;
             cstNode.offset = node.offset;
             cstNode.length = node.length;
-            cstNode.startLine = node.range.start.line;
-            cstNode.startColumn = node.range.start.character;
-            cstNode.endLine = node.range.end.line;
-            cstNode.endColumn = node.range.end.character;
+            const { start, end } = node.range;
+            cstNode.startLine = start.line;
+            cstNode.startColumn = start.character;
+            cstNode.endLine = end.line;
+            cstNode.endColumn = end.character;
         }
         return cstNode;
     }

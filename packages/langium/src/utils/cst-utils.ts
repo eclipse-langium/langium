@@ -79,12 +79,12 @@ export function tokenToRange(token: IToken): Range {
     // So we subtract 1 from every value to align with the LSP
     return {
         start: {
-            character: token.startColumn! - 1,
-            line: token.startLine! - 1
+            line: token.startLine! - 1,
+            character: token.startColumn! - 1
         },
         end: {
-            character: token.endColumn!, // endColumn uses the correct index
-            line: token.endLine! - 1
+            line: token.endLine! - 1,
+            character: token.endColumn! // endColumn uses the correct index
         }
     };
 }
@@ -150,8 +150,7 @@ export const DefaultNameRegexp = /^[\w\p{L}]$/u;
 export function findDeclarationNodeAtOffset(cstNode: CstNode | undefined, offset: number, nameRegexp = DefaultNameRegexp): LeafCstNode | undefined {
     if (cstNode) {
         if (offset > 0) {
-            const localOffset = offset - cstNode.offset;
-            const textAtOffset = cstNode.text.charAt(localOffset);
+            const textAtOffset = offset >= cstNode.offset && offset < cstNode.end ? cstNode.root.fullText.charAt(offset) : '';
             if (!nameRegexp.test(textAtOffset)) {
                 offset--;
             }

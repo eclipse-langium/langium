@@ -140,8 +140,7 @@ export class DefaultFoldingRangeProvider implements FoldingRangeProvider {
             return false;
         }
 
-        const nodeText = node.text;
-        const endChar = nodeText.charAt(nodeText.length - 1);
+        const endChar = node.root.fullText.charAt(node.end - 1);
         if (endChar === '}' || endChar === ')' || endChar === ']') {
             return false;
         }
