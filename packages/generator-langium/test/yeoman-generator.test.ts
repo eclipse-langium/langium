@@ -5,12 +5,26 @@
  ******************************************************************************/
 
 import { normalizeEOL } from 'langium/generate';
+import * as fs from 'node:fs';
 import * as path from 'node:path';
 import * as url from 'node:url';
 import { describe, test } from 'vitest';
 import type * as Generator from 'yeoman-generator';
 import { createHelpers } from 'yeoman-test';
 import type { Answers, LangiumGenerator, PostAnwers } from 'generator-langium';
+
+/**
+ * Removes the target directory of the given run context. Replacement for yeoman-test's
+ * `cleanTestDirectory`, which uses `rmSync` without retries and sporadically fails with
+ * `ENOTEMPTY` when deleting the generated `node_modules` tree while a stray child process
+ * (e.g. an esbuild service spawned by the generated project's tests) is still shutting down.
+ * The async `rm` waits between retries with linear backoff, giving such processes time to exit.
+ */
+async function cleanTestDirectory(context: { targetDirectory?: string }): Promise<void> {
+    if (context.targetDirectory) {
+        await fs.promises.rm(context.targetDirectory, { recursive: true, force: true, maxRetries: 30, retryDelay: 200 });
+    }
+}
 
 const answersForCore: Answers & PostAnwers = {
     extensionName: 'hello-world',
@@ -86,7 +100,7 @@ describe('Check yeoman generator works', () => {
 
         // remove examples/hello-world (if existing) now and finally (don't delete everything else in examples)
         context.targetDirectory = path.resolve(targetRoot, extensionName);
-        context.cleanTestDirectory(true);
+        await cleanTestDirectory(context);
 
         await context
             .withOptions(<Generator.BaseOptions>{
@@ -112,7 +126,7 @@ describe('Check yeoman generator works', () => {
                 result.assertFileContent(projectRoot + '/.vscode/tasks.json', TASKS_JSON_EXPECTATION);
             }).finally(() => {
                 // clean-up examples/generator-tests/test1/hello-world
-                context.cleanTestDirectory(true);
+                return cleanTestDirectory(context);
             });
     }, 120_000);
 
@@ -125,7 +139,7 @@ describe('Check yeoman generator works', () => {
 
         // remove examples/hello-world (if existing) now and finally (don't delete everything else in examples)
         context.targetDirectory = path.resolve(targetRoot, extensionName);
-        context.cleanTestDirectory(true);
+        await cleanTestDirectory(context);
 
         await context
             .withOptions(<Generator.BaseOptions>{
@@ -165,7 +179,7 @@ describe('Check yeoman generator works', () => {
 
             }).finally(() => {
                 // clean-up examples/generator-tests/test2/hello-world
-                context.cleanTestDirectory(true);
+                return cleanTestDirectory(context);
             });
     }, 120_000);
 
@@ -178,7 +192,7 @@ describe('Check yeoman generator works', () => {
 
         // remove examples/hello-world (if existing) now and finally (don't delete everything else in examples)
         context.targetDirectory = path.resolve(targetRoot, extensionName);
-        context.cleanTestDirectory(true);
+        await cleanTestDirectory(context);
 
         await context
             .withOptions(<Generator.BaseOptions>{
@@ -212,7 +226,7 @@ describe('Check yeoman generator works', () => {
                 result.assertJsonFileContent(projectRoot + '/packages/extension/package.json', PACKAGE_JSON_EXPECTATION_EXTENSION);
             }).finally(() => {
                 // clean-up examples/generator-tests/test3/hello-world
-                context.cleanTestDirectory(true);
+                return cleanTestDirectory(context);
             });
     }, 150_000);
 
@@ -225,7 +239,7 @@ describe('Check yeoman generator works', () => {
 
         // remove examples/hello-world (if existing) now and finally (don't delete everything else in examples)
         context.targetDirectory = path.resolve(targetRoot, extensionName);
-        context.cleanTestDirectory(true);
+        await cleanTestDirectory(context);
 
         await context
             .withOptions(<Generator.BaseOptions>{
@@ -262,7 +276,7 @@ describe('Check yeoman generator works', () => {
 
             }).finally(() => {
                 // clean-up examples/generator-tests/test4/hello-world
-                context.cleanTestDirectory(true);
+                return cleanTestDirectory(context);
             });
     }, 120_000);
 });

@@ -115,10 +115,11 @@ export abstract class AbstractCstNode implements CstNode {
     abstract get length(): number;
     abstract get end(): number;
     abstract get range(): Range;
+    abstract get astNode(): AstNode;
+    abstract get hidden(): boolean;
 
-    container?: CompositeCstNode;
-    grammarSource?: AbstractElement;
-    private _astNode?: AstNode;
+    container: CompositeCstNode | undefined = undefined;
+    grammarSource: AbstractElement | undefined = undefined;
 
     get root(): RootCstNode {
         // eslint-disable-next-line @typescript-eslint/no-this-alias
@@ -127,26 +128,6 @@ export abstract class AbstractCstNode implements CstNode {
             node = node.container;
         }
         return node as RootCstNode;
-    }
-
-    get hidden(): boolean {
-        return false;
-    }
-
-    get astNode(): AstNode {
-        // eslint-disable-next-line @typescript-eslint/no-this-alias
-        let node: AbstractCstNode | undefined = this;
-        while (node) {
-            if (node._astNode) {
-                return node._astNode;
-            }
-            node = node.container as AbstractCstNode | undefined;
-        }
-        throw new Error('This node has no associated AST element');
-    }
-
-    set astNode(value: AstNode | undefined) {
-        this._astNode = value;
     }
 
     get text(): string {
@@ -176,12 +157,20 @@ export class LeafCstNodeImpl extends AbstractCstNode implements LeafCstNode {
         return this._offset + this._length;
     }
 
-    override get hidden(): boolean {
+    get hidden(): boolean {
         return this._hidden;
     }
 
     get tokenType(): TokenType {
         return this._tokenType;
+    }
+
+    get astNode(): AstNode {
+        const container = this.container;
+        if (!container) {
+            throw new Error('This node has no associated AST element');
+        }
+        return container.astNode;
     }
 
     get range(): Range {
@@ -228,7 +217,34 @@ function toSmi(value: number): number {
 
 export class CompositeCstNodeImpl extends AbstractCstNode implements CompositeCstNode {
     readonly content: CstNode[] = new CstNodeContainer(this);
-    private _rangeCache?: Range;
+    /**
+     * These fields are assigned lazily, but eagerly initialized with `undefined` so V8 reserves
+     * in-object slots for them. Without the initializers, late assignments would go to an
+     * out-of-object backing store, costing more memory than the reserved slots and splitting
+     * the hidden class of composite nodes (slower property access).
+     */
+    private _astNode: AstNode | undefined = undefined;
+    private _rangeCache: Range | undefined = undefined;
+
+    get astNode(): AstNode {
+        // eslint-disable-next-line @typescript-eslint/no-this-alias
+        let node: CompositeCstNodeImpl | undefined = this;
+        while (node) {
+            if (node._astNode) {
+                return node._astNode;
+            }
+            node = node.container as CompositeCstNodeImpl | undefined;
+        }
+        throw new Error('This node has no associated AST element');
+    }
+
+    set astNode(value: AstNode | undefined) {
+        this._astNode = value;
+    }
+
+    get hidden(): boolean {
+        return false;
+    }
 
     get offset(): number {
         return this.firstNonHiddenNode?.offset ?? 0;

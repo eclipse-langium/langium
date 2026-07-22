@@ -15,7 +15,7 @@
 import type { IToken, TokenType } from 'chevrotain';
 import type { AbstractElement } from '../../src/languages/generated/ast.js';
 import type { AstNode, CstNode, RootCstNode } from '../../src/syntax-tree.js';
-import type { AbstractCstNode } from '../../src/parser/cst-node-builder.js';
+import type { CompositeCstNodeImpl } from '../../src/parser/cst-node-builder.js';
 import { CstNodeBuilder } from '../../src/parser/cst-node-builder.js';
 
 declare const global: { gc?: () => void };
@@ -65,7 +65,7 @@ interface BuildResult {
 function constructNode(builder: CstNodeBuilder, $type: string): void {
     const item = { $type, $cstNode: undefined! as CstNode };
     builder.construct(item);
-    (item.$cstNode as AbstractCstNode).astNode = item as unknown as AstNode;
+    (item.$cstNode as CompositeCstNodeImpl).astNode = item as unknown as AstNode;
 }
 
 function buildLargeCst(): BuildResult {
