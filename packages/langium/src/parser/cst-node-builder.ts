@@ -10,21 +10,43 @@ import type { AbstractElement } from '../languages/generated/ast.js';
 import type { AstNode, CompositeCstNode, CstNode, LeafCstNode, RootCstNode } from '../syntax-tree.js';
 import { Position } from 'vscode-languageserver-types';
 
+/**
+ * Incrementally builds the concrete syntax tree (CST) while the parser processes the input.
+ *
+ * The parser drives the builder with the following protocol: `buildRootNode` starts a new tree,
+ * `buildCompositeNode` opens a nested node whenever a parser rule is invoked, `buildLeafNode`
+ * adds a node for every consumed token, and `construct` closes the innermost open composite node
+ * once its rule implementation has finished. Hidden tokens (e.g. comments and whitespace) are not
+ * part of the parser's token stream and are added separately via `addHiddenNodes`.
+ */
 export class CstNodeBuilder {
 
     private rootNode!: RootCstNodeImpl;
     private nodeStack: CompositeCstNodeImpl[] = [];
 
+    /**
+     * The composite node currently being built, i.e. the one to which new child nodes are added:
+     * the innermost parser rule invocation that has not been completed with `construct` yet.
+     */
     get current(): CompositeCstNodeImpl {
         return this.nodeStack[this.nodeStack.length - 1] ?? this.rootNode;
     }
 
+    /**
+     * Reset the builder and create the root node of a new tree. This must be called once
+     * before each parser run; all nodes built afterwards belong to the returned root.
+     */
     buildRootNode(input: string): RootCstNode {
         this.rootNode = new RootCstNodeImpl(input);
         this.nodeStack = [this.rootNode];
         return this.rootNode;
     }
 
+    /**
+     * Create a composite node as a child of the current node and make it the new current node.
+     * The parser calls this when a rule is invoked that creates its own AST node; the node
+     * remains current until the corresponding `construct` call closes it.
+     */
     buildCompositeNode(feature: AbstractElement): CompositeCstNode {
         const compositeNode = new CompositeCstNodeImpl();
         compositeNode.grammarSource = feature;
@@ -33,6 +55,10 @@ export class CstNodeBuilder {
         return compositeNode;
     }
 
+    /**
+     * Create a leaf node for a consumed token and append it to the current composite node.
+     * If no grammar element is given, the token is treated as hidden (e.g. a comment).
+     */
     buildLeafNode(token: IToken, feature?: AbstractElement): LeafCstNode {
         const leafNode = this.createLeafNode(token, !feature);
         if (feature) {
@@ -42,6 +68,10 @@ export class CstNodeBuilder {
         return leafNode;
     }
 
+    /**
+     * Create a detached leaf node from a token, translating Chevrotain's position
+     * information to the LSP conventions used by the CST.
+     */
     protected createLeafNode(token: IToken, hidden: boolean): LeafCstNodeImpl {
         // Chevrotain uses 1-based line/column indices, so we subtract 1 to align with the LSP.
         // The end column needs no adjustment: Chevrotain's inclusive end is the LSP's exclusive end.
@@ -104,6 +134,13 @@ export class CstNodeBuilder {
         }
     }
 
+    /**
+     * Insert leaf nodes for hidden tokens (e.g. comments) into the tree. Since hidden tokens are
+     * not part of the parser's token stream, the parser calls this separately: once before each
+     * consumed token with the hidden tokens preceding it, and once after parsing for the trailing
+     * hidden tokens. The nodes are attached where the tree is currently being built, so hidden
+     * nodes end up next to the non-hidden token that follows them.
+     */
     addHiddenNodes(tokens: IToken[]): void {
         const nodes: LeafCstNode[] = [];
         for (const token of tokens) {
@@ -135,6 +172,13 @@ export class CstNodeBuilder {
         }
     }
 
+    /**
+     * Close the current composite node and assign it to the given AST node (`item.$cstNode`).
+     * The parser calls this when a rule implementation has finished, matching the preceding
+     * `buildCompositeNode` (or `buildRootNode`) call; the parent node becomes current again.
+     * If the closed node has no content, e.g. due to an unsuccessful optional rule call,
+     * it is removed from the tree.
+     */
     construct(item: { $type: string | symbol | undefined, $cstNode: CstNode, $infixName?: string }): void {
         const current: CstNode = this.current;
         item.$cstNode = current;
