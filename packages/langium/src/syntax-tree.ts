@@ -347,9 +347,12 @@ export interface CstNode extends DocumentSegment {
 
 /**
  * A composite CST node contains other nodes, but no directly associated token.
+ *
+ * The content array must not be modified directly; use the `CstNodeBuilder` methods instead
+ * to ensure that the `container` references of the child nodes are set correctly.
  */
 export interface CompositeCstNode extends CstNode {
-    readonly content: CstNode[];
+    readonly content: readonly CstNode[];
 }
 
 export function isCompositeCstNode(node: unknown): node is CompositeCstNode {

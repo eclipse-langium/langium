@@ -7,7 +7,7 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 
 import type { TokenType } from 'chevrotain';
-import { CompositeCstNodeImpl, LeafCstNodeImpl, RootCstNodeImpl } from '../parser/cst-node-builder.js';
+import { CompositeCstNodeImpl, CstNodeBuilder, LeafCstNodeImpl, RootCstNodeImpl } from '../parser/cst-node-builder.js';
 import { isAbstractElement, type AbstractElement, type Grammar } from '../languages/generated/ast.js';
 import type { Linker } from '../references/linker.js';
 import type { Lexer } from '../parser/lexer.js';
@@ -55,6 +55,8 @@ export class DefaultHydrator implements Hydrator {
 
     protected readonly grammarElementIdMap = new BiMap<AbstractElement, number>();
     protected readonly tokenTypeIdMap = new BiMap<number, TokenType>();
+    /** Used to assemble the CST during hydration; `CstNodeBuilder` is not a service, so we keep a local instance. */
+    protected readonly cstNodeBuilder = new CstNodeBuilder();
 
     constructor(services: LangiumCoreServices) {
         this.grammar = services.Grammar;
@@ -261,10 +263,11 @@ export class DefaultHydrator implements Hydrator {
             cstNodeObj.grammarSource = this.getGrammarElement(cstNode.grammarSource);
         }
         if (isCompositeCstNode(cstNodeObj)) {
+            const children: CstNode[] = [];
             for (const child of cstNode.content) {
-                const hydrated = this.hydrateCstNode(child, context, num++);
-                cstNodeObj.content.push(hydrated);
+                children.push(this.hydrateCstNode(child, context, num++));
             }
+            this.cstNodeBuilder.appendChildren(cstNodeObj, children);
         }
         return cstNodeObj;
     }

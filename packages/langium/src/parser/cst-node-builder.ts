@@ -28,7 +28,7 @@ export class CstNodeBuilder {
     buildCompositeNode(feature: AbstractElement): CompositeCstNode {
         const compositeNode = new CompositeCstNodeImpl();
         compositeNode.grammarSource = feature;
-        this.current.content.push(compositeNode);
+        this.appendChild(this.current, compositeNode);
         this.nodeStack.push(compositeNode);
         return compositeNode;
     }
@@ -38,7 +38,7 @@ export class CstNodeBuilder {
         if (feature) {
             leafNode.grammarSource = feature;
         }
-        this.current.content.push(leafNode);
+        this.appendChild(this.current, leafNode);
         return leafNode;
     }
 
@@ -57,12 +57,49 @@ export class CstNodeBuilder {
         );
     }
 
+    /**
+     * Append a child node to the content of a composite node and set the child's container reference.
+     */
+    appendChild(parent: CompositeCstNode, child: CstNode): void {
+        (child as AbstractCstNode).container = parent;
+        (parent as CompositeCstNodeImpl).content.push(child);
+    }
+
+    /**
+     * Append multiple child nodes to the content of a composite node and set their container references.
+     */
+    appendChildren(parent: CompositeCstNode, children: CstNode[]): void {
+        for (const child of children) {
+            (child as AbstractCstNode).container = parent;
+        }
+        if (parent.content.length === 0) {
+            // Copying into a fresh array yields a backing store with exact capacity,
+            // whereas pushing into an empty array over-allocates (see `construct`).
+            (parent as CompositeCstNodeImpl).content = children.slice();
+        } else {
+            (parent.content as CstNode[]).push(...children);
+        }
+    }
+
+    /**
+     * Insert child nodes at the given index into the content of a composite node and set their container references.
+     */
+    insertChildren(parent: CompositeCstNode, index: number, children: CstNode[]): void {
+        for (const child of children) {
+            (child as AbstractCstNode).container = parent;
+        }
+        (parent as CompositeCstNodeImpl).content.splice(index, 0, ...children);
+    }
+
+    /**
+     * Remove a node from the content of its container.
+     */
     removeNode(node: CstNode): void {
         const parent = node.container;
         if (parent) {
             const index = parent.content.indexOf(node);
             if (index >= 0) {
-                parent.content.splice(index, 1);
+                (parent as CompositeCstNodeImpl).content.splice(index, 1);
             }
         }
     }
@@ -76,7 +113,7 @@ export class CstNodeBuilder {
         let added = false;
         // If we are within a composite node, we add the hidden nodes to the content
         if (current.content.length > 0) {
-            current.content.push(...nodes);
+            this.appendChildren(current, nodes);
             return;
         }
         // Otherwise we are at a newly created node
@@ -85,7 +122,7 @@ export class CstNodeBuilder {
             const index = current.container.content.indexOf(current);
             if (index > 0) {
                 // Add the hidden nodes before the current node
-                current.container.content.splice(index, 0, ...nodes);
+                this.insertChildren(current.container, index, nodes);
                 added = true;
                 break;
             }
@@ -94,7 +131,7 @@ export class CstNodeBuilder {
         // If we arrive at the root node, we add the hidden nodes at the beginning
         // This is the case if the hidden nodes are the first nodes in the tree
         if (!added) {
-            this.rootNode.content.unshift(...nodes);
+            this.insertChildren(this.rootNode, 0, nodes);
         }
     }
 
@@ -102,10 +139,17 @@ export class CstNodeBuilder {
         const current: CstNode = this.current;
         item.$cstNode = current;
         const node = this.nodeStack.pop();
-        // Empty composite nodes are not valid
-        // Simply remove the node from the tree
-        if (node?.content.length === 0) {
-            this.removeNode(node);
+        if (node) {
+            if (node.content.length === 0) {
+                // Empty composite nodes are not valid
+                // Simply remove the node from the tree
+                this.removeNode(node);
+            } else {
+                // Compact the content array: pushing into an empty array makes V8 allocate a
+                // backing store with capacity 16, wasting memory for the many small composite
+                // nodes in typical CSTs. Copying yields a backing store with exact capacity.
+                node.content = node.content.slice();
+            }
         }
     }
 }
@@ -216,7 +260,11 @@ function toSmi(value: number): number {
 }
 
 export class CompositeCstNodeImpl extends AbstractCstNode implements CompositeCstNode {
-    readonly content: CstNode[] = new CstNodeContainer(this);
+    /**
+     * This array must not be modified directly; use the `CstNodeBuilder` methods instead
+     * to ensure that the `container` references of the child nodes are set correctly.
+     */
+    content: CstNode[] = [];
     /**
      * These fields are assigned lazily, but eagerly initialized with `undefined` so V8 reserves
      * in-object slots for them. Without the initializers, late assignments would go to an
@@ -290,37 +338,6 @@ export class CompositeCstNodeImpl extends AbstractCstNode implements CompositeCs
             }
         }
         return this.content[this.content.length - 1];
-    }
-}
-
-class CstNodeContainer extends Array<CstNode> {
-    readonly parent: CompositeCstNode;
-
-    constructor(parent: CompositeCstNode) {
-        super();
-        this.parent = parent;
-        Object.setPrototypeOf(this, CstNodeContainer.prototype);
-    }
-
-    override push(...items: CstNode[]): number {
-        this.addParents(items);
-        return super.push(...items);
-    }
-
-    override unshift(...items: CstNode[]): number {
-        this.addParents(items);
-        return super.unshift(...items);
-    }
-
-    override splice(start: number, count: number, ...items: CstNode[]): CstNode[] {
-        this.addParents(items);
-        return super.splice(start, count, ...items);
-    }
-
-    private addParents(items: CstNode[]): void {
-        for (const item of items) {
-            (<AbstractCstNode>item).container = this.parent;
-        }
     }
 }
 
