@@ -9,7 +9,6 @@ import type { Range } from 'vscode-languageserver-types';
 import type { AbstractElement } from '../languages/generated/ast.js';
 import type { AstNode, CompositeCstNode, CstNode, LeafCstNode, RootCstNode } from '../syntax-tree.js';
 import { Position } from 'vscode-languageserver-types';
-import { tokenToRange } from '../utils/cst-utils.js';
 
 export class CstNodeBuilder {
 
@@ -35,12 +34,27 @@ export class CstNodeBuilder {
     }
 
     buildLeafNode(token: IToken, feature?: AbstractElement): LeafCstNode {
-        const leafNode = new LeafCstNodeImpl(token.startOffset, token.image.length, tokenToRange(token), token.tokenType, !feature);
+        const leafNode = this.createLeafNode(token, !feature);
         if (feature) {
             leafNode.grammarSource = feature;
         }
         this.current.content.push(leafNode);
         return leafNode;
+    }
+
+    protected createLeafNode(token: IToken, hidden: boolean): LeafCstNodeImpl {
+        // Chevrotain uses 1-based line/column indices, so we subtract 1 to align with the LSP.
+        // The end column needs no adjustment: Chevrotain's inclusive end is the LSP's exclusive end.
+        return new LeafCstNodeImpl(
+            token.startOffset,
+            token.image.length,
+            token.startLine! - 1,
+            token.startColumn! - 1,
+            token.endLine! - 1,
+            token.endColumn!,
+            token.tokenType,
+            hidden
+        );
     }
 
     removeNode(node: CstNode): void {
@@ -56,8 +70,7 @@ export class CstNodeBuilder {
     addHiddenNodes(tokens: IToken[]): void {
         const nodes: LeafCstNode[] = [];
         for (const token of tokens) {
-            const leafNode = new LeafCstNodeImpl(token.startOffset, token.image.length, tokenToRange(token), token.tokenType, true);
-            nodes.push(leafNode);
+            nodes.push(this.createLeafNode(token, true));
         }
         let current: CompositeCstNode = this.current;
         let added = false;
@@ -145,7 +158,10 @@ export class LeafCstNodeImpl extends AbstractCstNode implements LeafCstNode {
     private _hidden: boolean;
     private _offset: number;
     private _length: number;
-    private _range: Range;
+    private _startLine: number;
+    private _startColumn: number;
+    private _endLine: number;
+    private _endColumn: number;
     private _tokenType: TokenType;
 
     get offset(): number {
@@ -169,17 +185,45 @@ export class LeafCstNodeImpl extends AbstractCstNode implements LeafCstNode {
     }
 
     get range(): Range {
-        return this._range;
+        return {
+            start: {
+                line: this._startLine,
+                character: this._startColumn
+            },
+            end: {
+                line: this._endLine,
+                character: this._endColumn
+            }
+        };
     }
 
-    constructor(offset: number, length: number, range: Range, tokenType: TokenType, hidden = false) {
+    /**
+     * All position values are 0-based and the end position is exclusive,
+     * following the LSP convention (see the `Range` type).
+     */
+    constructor(offset: number, length: number, startLine: number, startColumn: number,
+        endLine: number, endColumn: number, tokenType: TokenType, hidden = false) {
         super();
         this._hidden = hidden;
-        this._offset = offset;
+        this._offset = toSmi(offset);
+        this._length = toSmi(length);
+        this._startLine = toSmi(startLine);
+        this._startColumn = toSmi(startColumn);
+        this._endLine = toSmi(endLine);
+        this._endColumn = toSmi(endColumn);
         this._tokenType = tokenType;
-        this._length = length;
-        this._range = range;
     }
+}
+
+/**
+ * Normalizes a number so V8 stores it as an inline small integer (Smi field representation).
+ * Without this, the CST node fields inherit the boxed heap number ("double") representation
+ * of Chevrotain's token position fields, costing 16 extra bytes per number. The conversion
+ * is lossless here because offsets and positions are always non-negative integers far below 2^31.
+ */
+function toSmi(value: number): number {
+    // eslint-disable-next-line no-bitwise
+    return value | 0;
 }
 
 export class CompositeCstNodeImpl extends AbstractCstNode implements CompositeCstNode {

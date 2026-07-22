@@ -271,30 +271,16 @@ export class DefaultHydrator implements Hydrator {
 
     protected hydrateCstLeafNode(cstNode: any): LeafCstNode {
         const tokenType = this.getTokenType(cstNode.tokenType);
-        const offset = cstNode.offset;
-        const length = cstNode.length;
-        const startLine = cstNode.startLine;
-        const startColumn = cstNode.startColumn;
-        const endLine = cstNode.endLine;
-        const endColumn = cstNode.endColumn;
-        const hidden = cstNode.hidden;
-        const node = new LeafCstNodeImpl(
-            offset,
-            length,
-            {
-                start: {
-                    line: startLine,
-                    character: startColumn
-                },
-                end: {
-                    line: endLine,
-                    character: endColumn
-                }
-            },
+        return new LeafCstNodeImpl(
+            cstNode.offset,
+            cstNode.length,
+            cstNode.startLine,
+            cstNode.startColumn,
+            cstNode.endLine,
+            cstNode.endColumn,
             tokenType,
-            hidden
+            cstNode.hidden
         );
-        return node;
     }
 
     protected getTokenType(name: string): TokenType {
