@@ -28,7 +28,7 @@ In case you have a question, please look into the [documentation](https://langiu
 
 ## Prerequisites
 
-For developing Langium, you require at least Node.js version 16 and at least npm version 7.7.0 to be able to use npm workspaces.
+For developing Langium, you require at least Node.js version 20.10.0 (see the `engines` entry in [package.json](./package.json)). The npm version bundled with it supports npm workspaces, which this repository relies on.
 
 ## Local Development Guide
 
@@ -49,7 +49,44 @@ Take a look at the examples readily available inside the repository to get start
 
 * [Arithmetics](./examples/arithmetics/README.md)
 * [Domain Model](./examples/domainmodel/README.md)
+* [Requirements](./examples/requirements/README.md)
 * [State Machine](./examples/statemachine/README.md)
+
+#### Running tests
+
+The test suite is based on [Vitest](https://vitest.dev). Run it from the repository root:
+
+```shell
+npm test               # run all tests once
+npm run test:watch     # re-run tests on file changes
+npm run coverage       # run tests with coverage report
+```
+
+You can also run the tests of a single package, e.g. `npm test --workspace=langium`.
+
+#### Performance benchmarks
+
+In addition to the functional tests, the repository contains a set of benchmark scripts that measure parser performance and memory usage. They are not part of the Vitest suite; each is a standalone script that prints its results to the console. All of them generate deterministic input (the same pseudo-random sequence on every run), so results are comparable across runs and branches — useful for evaluating performance-related changes.
+
+Three benchmarks live in [packages/langium/test/parser](./packages/langium/test/parser) and run directly on the TypeScript sources (no build required). Run them from the `packages/langium` directory:
+
+```shell
+node --expose-gc --import tsx test/parser/parser-time-benchmark.ts
+node --expose-gc --import tsx test/parser/cst-parse-memory-benchmark.ts
+node --expose-gc --import tsx test/parser/cst-node-memory-benchmark.ts
+```
+
+* `parser-time-benchmark.ts` measures execution time of the Langium parser (lexing, parsing, CST/AST construction) using an in-memory grammar that covers a large portion of Langium's grammar features.
+* `cst-parse-memory-benchmark.ts` measures the retained heap memory of parse results produced by a real parser run on an expression grammar.
+* `cst-node-memory-benchmark.ts` measures the retained heap memory of large CSTs built directly via `CstNodeBuilder`, reporting bytes per CST node.
+
+A fourth benchmark, [workspace-build-benchmark.ts](./examples/statemachine/test/workspace-build-benchmark.ts), covers the full document lifecycle of a real language (parsing, indexing, scope computation, linking, validation) using the statemachine example. Unlike the parser benchmarks, it imports the compiled `langium` package, so make sure to build first (e.g. after switching branches). Run it from the `examples/statemachine` directory:
+
+```shell
+node --expose-gc --import tsx test/workspace-build-benchmark.ts
+```
+
+The `--expose-gc` flag lets the benchmarks trigger garbage collection between measurement rounds; it is required for the memory measurements and recommended for the time measurements (it reduces round-to-round variance).
 
 ### Developing your own language
 
@@ -67,15 +104,15 @@ then you should follow some recommendations.
 
 #### npm dependency resolution pitfalls
 
-If you have long experience in using node and npm this sub-chapter will likely offer no new info an you can skip it. But, if you are more familiar with other languages, build and dependency management eco-systems then this sub-chapter could be helpful to you.
+If you have long experience in using node and npm this sub-chapter will likely offer no new info and you can skip it. But, if you are more familiar with other languages, build and dependency management eco-systems then this sub-chapter could be helpful to you.
 
 When you add a dependency to a `package.json` npm resolves this from the configured registry (default is [registry.npmjs.org](https://registry.npmjs.org/)). In other dependency management systems you can create something like a dev or snapshot version and install it locally, but this is not possible as such with npm. If you want to achieve a similar behavior you need to link your packages globally (global refers to you user's account scope, local refers to the project's scope). When you do this you forcefully overwrite what was downloaded from the npm registry. Incrementing the version of Langium itself will lead to problems, because npm will not be able to resolve those from its registry and therefore fail any install attempts in projects referring to Langium.
 
- If you execute `npm install` on the top-level of your Langium checkout all dependencies will be gathered locally inside `node_modules` and all four packages or sub-projects will be built. **Warning**: Do not run npm install directly inside the four Langium packages as it will mess up dependency resolution once you link packages globally.
+If you execute `npm install` on the top-level of your Langium checkout all dependencies will be gathered locally inside `node_modules` and all packages or sub-projects will be built. **Warning**: Do not run npm install directly inside the individual Langium packages as it will mess up dependency resolution once you link packages globally.
 
 #### Altered Langium for own language projects
 
-There is an npm build target available (`npm run dev-build`) linking all Langium packages to your global scope. It unlinks and uninstalls the Langium packages from the global scope, deletes any `node_modules` folders below the packages directory (see warning above), afterwards performs `npm install` and then links all packages to the global scope again. Then your are able to use `yo langium` or `langium generate` containing your local Langium adjustments from everywhere with your local user.
+There is an npm build target available (`npm run dev-build`) linking all Langium packages to your global scope. It unlinks and uninstalls the Langium packages from the global scope, deletes any `node_modules` folders below the packages directory (see warning above), afterwards performs `npm install` and then links all packages to the global scope again. Then you are able to use `yo langium` or `langium generate` containing your local Langium adjustments from everywhere with your local user.
 
 A project you created with `yo langium` contains a dependency to `langium` (e.g. `2.0.0`) and a dev-dependency to `langium-cli`) inside `package.json` by default. Now, you have to link your own global Langium build to your own language project.
 Issue the following commands in a shell from the root of your language project:
@@ -135,7 +172,7 @@ const debugOptions = { execArgv: ['--nolazy', '--inspect-brk=6009'] };
 ## Release Process
 
 The release process is mostly automated and requires running only a few commands.
-After commiting, pushing, tagging and releasing the changes, a GitHub Action will publish all artifacts (npm packages and vscode extensions).
+After committing, pushing, tagging and releasing the changes, a GitHub Action will publish all artifacts (npm packages and vscode extensions).
 
 1. Pull the latest changes.
 2. Uplift the package versions.
