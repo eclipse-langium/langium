@@ -39,3 +39,20 @@ export interface AstChangedParams {
 export function isInspectAstError(result: InspectAstResult): result is InspectAstError {
     return 'error' in result;
 }
+
+/** Extension ID of the Langium VS Code extension that hosts the AST Inspector. */
+export const LANGIUM_VSCODE_EXTENSION_ID = 'langium.langium-vscode';
+
+/**
+ * Minimal subset of `LanguageClient` used by the AST Inspector. Declared structurally so this
+ * package needs no `vscode-languageclient` dependency; a `LanguageClient` satisfies it.
+ */
+export interface InspectorClient {
+    sendRequest<R>(method: string, param: unknown): Promise<R>;
+    onNotification(method: string, handler: (params: unknown) => void): { dispose(): void };
+}
+
+/** API returned by the Langium VS Code extension's `activate()`. */
+export interface LangiumInspectorApi {
+    registerLangiumInspector(client: InspectorClient, languageId: string): { dispose(): void };
+}

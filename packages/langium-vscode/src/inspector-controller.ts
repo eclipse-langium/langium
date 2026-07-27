@@ -5,15 +5,8 @@
  ******************************************************************************/
 
 import * as vscode from 'vscode';
-import type { LanguageClient } from 'vscode-languageclient/node';
-import type { AstChangedParams, InspectAstResult } from 'langium-inspector/protocol';
+import type { AstChangedParams, InspectAstResult, InspectorClient } from 'langium-inspector/protocol';
 import { AST_CHANGED_NOTIFICATION, INSPECT_AST_REQUEST, isInspectAstError } from 'langium-inspector/protocol';
-
-// Minimal interface we use from LanguageClient so we don't need to depend on the full type at runtime
-interface InspectorClient {
-    sendRequest(method: string, params: unknown): Promise<unknown>;
-    onNotification(method: string, handler: (params: unknown) => void): { dispose(): void };
-}
 
 export interface PlainRange {
     start: { line: number; character: number };
@@ -54,8 +47,8 @@ export class InspectorController implements vscode.Disposable {
         return this.state;
     }
 
-    registerClient(client: LanguageClient, languageId: string): void {
-        this.clients.set(languageId, client as unknown as InspectorClient);
+    registerClient(client: InspectorClient, languageId: string): vscode.Disposable {
+        this.clients.set(languageId, client);
 
         const disposable = client.onNotification(AST_CHANGED_NOTIFICATION, (params: unknown) => {
             const { uri } = params as AstChangedParams;
@@ -69,6 +62,21 @@ export class InspectorController implements vscode.Disposable {
         // Refresh if the currently open editor uses this language
         if (this.activeLanguageId === languageId && this.activeUri) {
             this.refreshAst(this.activeUri, languageId);
+        }
+
+        return new vscode.Disposable(() => this.unregisterClient(languageId, client));
+    }
+
+    private unregisterClient(languageId: string, client: InspectorClient): void {
+        // A later registration for the same language must not be torn down by an earlier disposable
+        if (this.clients.get(languageId) !== client) return;
+
+        this.clients.delete(languageId);
+        this.notificationDisposables.get(languageId)?.dispose();
+        this.notificationDisposables.delete(languageId);
+
+        if (this.activeLanguageId === languageId) {
+            this.setState({ kind: 'clear', message: `No Langium Inspector registered for language: ${languageId}` });
         }
     }
 
@@ -107,7 +115,7 @@ export class InspectorController implements vscode.Disposable {
         if (!client) return;
         this.setState({ kind: 'loading' });
         try {
-            const result = await client.sendRequest(INSPECT_AST_REQUEST, { uri }) as InspectAstResult;
+            const result = await client.sendRequest<InspectAstResult>(INSPECT_AST_REQUEST, { uri });
             if (isInspectAstError(result)) {
                 this.setState({ kind: 'error', message: result.error });
             } else {
@@ -129,5 +137,6 @@ export class InspectorController implements vscode.Disposable {
         for (const disposable of this.notificationDisposables.values()) {
             disposable.dispose();
         }
+        this.clients.clear();
     }
 }

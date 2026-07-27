@@ -7,16 +7,13 @@
 import * as vscode from 'vscode';
 import type { LanguageClientOptions, ServerOptions } from 'vscode-languageclient/node';
 import { LanguageClient, TransportKind } from 'vscode-languageclient/node';
+import type { LangiumInspectorApi } from 'langium-inspector/protocol';
 import { registerRailroadWebview } from './railroad-webview.js';
 import { AstTreeProvider } from './ast-tree-view.js';
 import type { AstTreeNode } from './ast-tree-view.js';
 import { InspectorController } from './inspector-controller.js';
 
 let client: LanguageClient;
-
-export interface LangiumInspectorApi {
-    registerLangiumInspector(client: LanguageClient, languageId: string): void;
-}
 
 // Called by vscode on activation event, see package.json "activationEvents"
 export async function activate(context: vscode.ExtensionContext): Promise<LangiumInspectorApi> {
@@ -47,10 +44,6 @@ function registerAstInspector(context: vscode.ExtensionContext): LangiumInspecto
             vscode.commands.executeCommand('langium-inspector.astTreeView.focus');
         }),
 
-        vscode.commands.registerCommand('langium-inspector.register', (client: LanguageClient, languageId: string) => {
-            controller.registerClient(client, languageId);
-        }),
-
         vscode.commands.registerCommand('langium-inspector.revealNode', (node: AstTreeNode) => {
             if (node.uri && node.range) {
                 void controller.revealInEditor(node.uri, node.range);
@@ -74,9 +67,7 @@ function registerAstInspector(context: vscode.ExtensionContext): LangiumInspecto
     }
 
     return {
-        registerLangiumInspector: (client: LanguageClient, languageId: string) => {
-            controller.registerClient(client, languageId);
-        }
+        registerLangiumInspector: (client, languageId) => controller.registerClient(client, languageId)
     };
 }
 

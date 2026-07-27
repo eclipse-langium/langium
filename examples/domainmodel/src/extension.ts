@@ -5,9 +5,11 @@
  ******************************************************************************/
 
 import type { LanguageClientOptions, ServerOptions } from 'vscode-languageclient/node';
-import type * as vscode from 'vscode';
+import * as vscode from 'vscode';
 import * as path from 'node:path';
 import { LanguageClient, TransportKind } from 'vscode-languageclient/node';
+import type { LangiumInspectorApi } from 'langium-inspector/protocol';
+import { LANGIUM_VSCODE_EXTENSION_ID } from 'langium-inspector/protocol';
 
 let client: LanguageClient;
 
@@ -52,17 +54,20 @@ async function startLanguageClient(context: vscode.ExtensionContext): Promise<La
 
     // Start the client. This will also launch the server
     await client.start();
-    // Register with the Langium Inspector extension if present
-    context.subscriptions.push(await registerInspector(client, 'domain-model'));
+    // Register with the AST Inspector of the Langium extension, if it is installed
+    const inspector = await registerInspector(client, 'domain-model');
+    if (inspector) {
+        context.subscriptions.push(inspector);
+    }
     return client;
 }
 
-async function registerInspector(client: LanguageClient, languageId: string): Promise<vscode.Disposable> {
-    const vscodeApi = await import('vscode');
-    try {
-        await vscodeApi.commands.executeCommand('langium-inspector.register', client, languageId);
-    } catch {
-        // Inspector extension not installed — ignore
+async function registerInspector(client: LanguageClient, ...languageIds: string[]): Promise<vscode.Disposable | undefined> {
+    const langiumExtension = vscode.extensions.getExtension<LangiumInspectorApi>(LANGIUM_VSCODE_EXTENSION_ID);
+    if (!langiumExtension) {
+        // Langium extension (which hosts the AST Inspector) is not installed
+        return undefined;
     }
-    return { dispose: () => undefined };
+    const api = await langiumExtension.activate();
+    return vscode.Disposable.from(...languageIds.map(id => api.registerLangiumInspector(client, id)));
 }
