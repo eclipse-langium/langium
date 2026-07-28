@@ -1,28 +1,32 @@
 import js from '@eslint/js';
 import globals from 'globals';
-import { FlatCompat } from '@eslint/eslintrc';
 import tsParser from '@typescript-eslint/parser';
 
 import pluginTypescriptEslint from '@typescript-eslint/eslint-plugin';
-import pluginImport from 'eslint-plugin-import';
 import pluginUnusedImports from 'eslint-plugin-unused-imports';
 import pluginHeader from 'eslint-plugin-header';
 import pluginStylistic from '@stylistic/eslint-plugin';
 
-import path from 'node:path';
-import { fileURLToPath } from 'node:url';
-
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = path.dirname(__filename);
-
-const compat = new FlatCompat({
-    baseDirectory: __dirname,
-    recommendedConfig: js.configs.recommended,
-    allConfig: js.configs.all
-});
-
-// Workaround, see https://github.com/Stuk/eslint-plugin-header/issues/57#issuecomment-2378485611
-pluginHeader.rules.header.meta.schema = false;
+const headerRule = pluginHeader.rules.header;
+pluginHeader.rules.header = {
+    ...headerRule,
+    // Workaround, see https://github.com/Stuk/eslint-plugin-header/issues/57#issuecomment-2378485611
+    meta: {
+        ...headerRule.meta,
+        schema: false
+    },
+    create(context) {
+        const legacyContext = new Proxy(context, {
+            get(target, property, receiver) {
+                if (property === 'getSourceCode') {
+                    return () => context.sourceCode;
+                }
+                return Reflect.get(target, property, receiver);
+            }
+        });
+        return headerRule.create(legacyContext);
+    }
+};
 
 export default [{
     ignores: [
@@ -42,7 +46,7 @@ export default [{
         // WA: 'no-useless-escape': 'off' has no effect
         '**/examples/**/*.monarch.ts'
     ],
-}, ...compat.extends('eslint:recommended', 'plugin:@typescript-eslint/recommended'), {
+}, js.configs.recommended, ...pluginTypescriptEslint.configs['flat/recommended'], {
     files: [
         '**/src/**/*.ts',
         '**/src/**/*.tsx',
@@ -51,7 +55,6 @@ export default [{
     ],
     plugins: {
         '@typescript-eslint': pluginTypescriptEslint,
-        import: pluginImport,
         'unused-imports': pluginUnusedImports,
         pluginHeader,
         '@stylistic': pluginStylistic
@@ -132,6 +135,8 @@ export default [{
         'no-unused-vars': 'off',
         // Disallow unnecessary escape characters
         'no-useless-escape': 'off',
+        // Preserve the ESLint 9 recommended rule set
+        'no-useless-assignment': 'off',
 
         // List of [@typescript-eslint rules](https://typescript-eslint.io/rules/)
         // Require that function overload signatures be consecutive
