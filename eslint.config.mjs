@@ -22,10 +22,13 @@ const pluginLangium = {
                 return {
                     Program(node) {
                         const { sourceCode } = context;
-                        const [comment] = sourceCode.getAllComments().filter(c => c.type !== 'Shebang');
+                        const text = sourceCode.getText();
+                        // A shebang line is allowed to precede the header comment
+                        const headerStart = text.startsWith('#!') ? text.indexOf('\n') + 1 : 0;
+                        const comment = sourceCode.getAllComments().find(c => c.range[0] >= headerStart);
                         const isHeader = comment
                             && comment.type === 'Block'
-                            && sourceCode.getText().slice(0, comment.range[0]).trim().length === 0
+                            && text.slice(headerStart, comment.range[0]).trim().length === 0
                             && HEADER_PATTERN.test(comment.value);
                         if (!isHeader) {
                             context.report({
