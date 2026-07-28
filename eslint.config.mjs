@@ -4,27 +4,40 @@ import tsParser from '@typescript-eslint/parser';
 
 import pluginTypescriptEslint from '@typescript-eslint/eslint-plugin';
 import pluginUnusedImports from 'eslint-plugin-unused-imports';
-import pluginHeader from 'eslint-plugin-header';
 import pluginStylistic from '@stylistic/eslint-plugin';
 
-const headerRule = pluginHeader.rules.header;
-pluginHeader.rules.header = {
-    ...headerRule,
-    // Workaround, see https://github.com/Stuk/eslint-plugin-header/issues/57#issuecomment-2378485611
-    meta: {
-        ...headerRule.meta,
-        schema: false
-    },
-    create(context) {
-        const legacyContext = new Proxy(context, {
-            get(target, property, receiver) {
-                if (property === 'getSourceCode') {
-                    return () => context.sourceCode;
+// Replaces the unmaintained `eslint-plugin-header`, which is stuck on the eslintrc API.
+const HEADER_PATTERN = /MIT License|DO NOT EDIT MANUALLY!/;
+const pluginLangium = {
+    rules: {
+        header: {
+            meta: {
+                type: 'layout',
+                schema: [],
+                messages: {
+                    incorrectHeader: 'Missing or incorrect file header, expected a leading block comment matching {{pattern}}.'
                 }
-                return Reflect.get(target, property, receiver);
+            },
+            create(context) {
+                return {
+                    Program(node) {
+                        const { sourceCode } = context;
+                        const [comment] = sourceCode.getAllComments().filter(c => c.type !== 'Shebang');
+                        const isHeader = comment
+                            && comment.type === 'Block'
+                            && sourceCode.getText().slice(0, comment.range[0]).trim().length === 0
+                            && HEADER_PATTERN.test(comment.value);
+                        if (!isHeader) {
+                            context.report({
+                                loc: comment?.loc ?? node.loc,
+                                messageId: 'incorrectHeader',
+                                data: { pattern: String(HEADER_PATTERN) }
+                            });
+                        }
+                    }
+                };
             }
-        });
-        return headerRule.create(legacyContext);
+        }
     }
 };
 
@@ -56,7 +69,7 @@ export default [{
     plugins: {
         '@typescript-eslint': pluginTypescriptEslint,
         'unused-imports': pluginUnusedImports,
-        pluginHeader,
+        langium: pluginLangium,
         '@stylistic': pluginStylistic
     },
     languageOptions: {
@@ -128,9 +141,7 @@ export default [{
         // isNaN(i) Number.isNaN(i) instead of i === NaN
         'use-isnan': 'error',
         // Use MIT file header
-        'pluginHeader/header': [2, 'block', [
-            { pattern: 'MIT License|DO NOT EDIT MANUALLY!' }
-        ]],
+        'langium/header': 'error',
         // use @typescript-eslint/no-unused-vars instead
         'no-unused-vars': 'off',
         // Disallow unnecessary escape characters
