@@ -19,6 +19,7 @@ import { LLStarLookaheadStrategy } from 'chevrotain-allstar';
 import { isAssignment, isCrossReference, isKeyword, isParserRule } from '../languages/generated/ast.js';
 import { getTypeName, isDataTypeRule } from '../utils/grammar-utils.js';
 import { assignMandatoryProperties, getContainerOfType, linkContentToContainer } from '../utils/ast-utils.js';
+import { isValidTokenRange } from '../utils/cst-utils.js';
 import { isAstNode } from '../syntax-tree.js';
 import { CstNodeBuilder } from './cst-node-builder.js';
 import type { LexingReport } from './token-builder.js';
@@ -392,7 +393,7 @@ export class LangiumParser extends AbstractLangiumParser {
      * 2. They contain invalid token ranges. This might include the special EOF token, or other tokens produced by invalid token builders.
      */
     private isValidToken(token: IToken): boolean {
-        return !token.isInsertedInRecovery && !isNaN(token.startOffset) && typeof token.endOffset === 'number' && !isNaN(token.endOffset);
+        return !token.isInsertedInRecovery && isValidTokenRange(token);
     }
 
     subrule(idx: number, rule: RuleResult, fragment: boolean, feature: AbstractElement, args: Args): void {

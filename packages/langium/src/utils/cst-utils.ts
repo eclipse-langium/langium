@@ -89,6 +89,23 @@ export function tokenToRange(token: IToken): Range {
     };
 }
 
+/**
+ * Checks whether a token has a valid source range.
+ *
+ * Chevrotain uses negative offsets for virtual tokens such as EOF and tokens
+ * inserted during error recovery. Older versions used `NaN` for the same
+ * purpose, so both forms need to be rejected here.
+ */
+export function isValidTokenRange(token: Pick<IToken, 'startOffset' | 'endOffset'>): boolean {
+    const { startOffset, endOffset } = token;
+    return typeof startOffset === 'number'
+        && Number.isFinite(startOffset)
+        && startOffset >= 0
+        && typeof endOffset === 'number'
+        && Number.isFinite(endOffset)
+        && endOffset >= startOffset;
+}
+
 export function toDocumentSegment(node: CstNode): DocumentSegment;
 export function toDocumentSegment(node?: CstNode): DocumentSegment | undefined;
 export function toDocumentSegment(node?: CstNode): DocumentSegment | undefined {

@@ -10,7 +10,7 @@
     },
     {
       "name": "keyword.control.domain-model",
-      "match": "\\b(datatype|entity|extends|many|package)\\b"
+      "match": "\\b(datatype|extends|package|entity|many)\\b"
     }
   ],
   "repository": {

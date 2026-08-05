@@ -10,7 +10,7 @@
     },
     {
       "name": "keyword.control.arithmetics",
-      "match": "(?i)\\b(def|module)\\b"
+      "match": "(?i)\\b(module|def)\\b"
     }
   ],
   "repository": {

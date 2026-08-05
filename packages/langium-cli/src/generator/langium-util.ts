@@ -34,7 +34,15 @@ export function collectKeywords(grammar: Grammar): string[] {
         keywords.add(keyword.value);
     }
 
-    return Array.from(keywords).sort();
+    // Sort keywords by length (longer first) and then alphabetically to make sure
+    // highlighting works correctly for keywords that are substrings of other keywords
+    // (e.g. 'if' and 'if-def').
+    return Array.from(keywords).sort((a, b) => {
+        if (a.length === b.length) {
+            return a.localeCompare(b);
+        }
+        return b.length - a.length;
+    });
 }
 
 export function collectTerminalRegexps(grammar: Grammar): Record<string, RegExp> {
