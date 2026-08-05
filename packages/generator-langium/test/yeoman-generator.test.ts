@@ -362,7 +362,7 @@ const PACKAGE_JSON_EXPECTATION_EXTENSION: Record<string, any> = {
     },
     devDependencies: {
         '@types/vscode': '~1.91.0',
-        'concurrently': '~10.0.3',
+        'concurrently': '~10.0.4',
         'esbuild': '~0.28.1'
     }
 };
