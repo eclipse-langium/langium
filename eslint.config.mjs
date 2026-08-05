@@ -1,28 +1,48 @@
 import js from '@eslint/js';
 import globals from 'globals';
-import { FlatCompat } from '@eslint/eslintrc';
 import tsParser from '@typescript-eslint/parser';
 
 import pluginTypescriptEslint from '@typescript-eslint/eslint-plugin';
-import pluginImport from 'eslint-plugin-import';
 import pluginUnusedImports from 'eslint-plugin-unused-imports';
-import pluginHeader from 'eslint-plugin-header';
 import pluginStylistic from '@stylistic/eslint-plugin';
 
-import path from 'node:path';
-import { fileURLToPath } from 'node:url';
-
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = path.dirname(__filename);
-
-const compat = new FlatCompat({
-    baseDirectory: __dirname,
-    recommendedConfig: js.configs.recommended,
-    allConfig: js.configs.all
-});
-
-// Workaround, see https://github.com/Stuk/eslint-plugin-header/issues/57#issuecomment-2378485611
-pluginHeader.rules.header.meta.schema = false;
+// Replaces the unmaintained `eslint-plugin-header`, which is stuck on the eslintrc API.
+const HEADER_PATTERN = /MIT License|DO NOT EDIT MANUALLY!/;
+const pluginLangium = {
+    rules: {
+        header: {
+            meta: {
+                type: 'layout',
+                schema: [],
+                messages: {
+                    incorrectHeader: 'Missing or incorrect file header, expected a leading block comment matching {{pattern}}.'
+                }
+            },
+            create(context) {
+                return {
+                    Program(node) {
+                        const { sourceCode } = context;
+                        const text = sourceCode.getText();
+                        // A shebang line is allowed to precede the header comment
+                        const headerStart = text.startsWith('#!') ? text.indexOf('\n') + 1 : 0;
+                        const comment = sourceCode.getAllComments().find(c => c.range[0] >= headerStart);
+                        const isHeader = comment
+                            && comment.type === 'Block'
+                            && text.slice(headerStart, comment.range[0]).trim().length === 0
+                            && HEADER_PATTERN.test(comment.value);
+                        if (!isHeader) {
+                            context.report({
+                                loc: comment?.loc ?? node.loc,
+                                messageId: 'incorrectHeader',
+                                data: { pattern: String(HEADER_PATTERN) }
+                            });
+                        }
+                    }
+                };
+            }
+        }
+    }
+};
 
 export default [{
     ignores: [
@@ -42,7 +62,7 @@ export default [{
         // WA: 'no-useless-escape': 'off' has no effect
         '**/examples/**/*.monarch.ts'
     ],
-}, ...compat.extends('eslint:recommended', 'plugin:@typescript-eslint/recommended'), {
+}, js.configs.recommended, ...pluginTypescriptEslint.configs['flat/recommended'], {
     files: [
         '**/src/**/*.ts',
         '**/src/**/*.tsx',
@@ -51,9 +71,8 @@ export default [{
     ],
     plugins: {
         '@typescript-eslint': pluginTypescriptEslint,
-        import: pluginImport,
         'unused-imports': pluginUnusedImports,
-        pluginHeader,
+        langium: pluginLangium,
         '@stylistic': pluginStylistic
     },
     languageOptions: {
@@ -125,13 +144,13 @@ export default [{
         // isNaN(i) Number.isNaN(i) instead of i === NaN
         'use-isnan': 'error',
         // Use MIT file header
-        'pluginHeader/header': [2, 'block', [
-            { pattern: 'MIT License|DO NOT EDIT MANUALLY!' }
-        ]],
+        'langium/header': 'error',
         // use @typescript-eslint/no-unused-vars instead
         'no-unused-vars': 'off',
         // Disallow unnecessary escape characters
         'no-useless-escape': 'off',
+        // Preserve the ESLint 9 recommended rule set
+        'no-useless-assignment': 'off',
 
         // List of [@typescript-eslint rules](https://typescript-eslint.io/rules/)
         // Require that function overload signatures be consecutive
