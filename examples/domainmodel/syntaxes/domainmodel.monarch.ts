@@ -1,12 +1,12 @@
 // Monarch syntax highlighting for the domain-model language.
 export default {
     keywords: [
-        'datatype','entity','extends','many','package'
+        'datatype','extends','package','entity','many'
     ],
     operators: [
-        '.',':'
+        ':','.'
     ],
-    symbols: /\.|:|\{|\}/,
+    symbols: /:|\.|\{|\}/,
 
     tokenizer: {
         initial: [

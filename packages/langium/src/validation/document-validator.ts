@@ -15,7 +15,7 @@ import type { DiagnosticData, DiagnosticInfo, ValidationAcceptor, ValidationCate
 import { CancellationToken } from '../utils/cancellation.js';
 import { findNodeForKeyword, findNodeForProperty } from '../utils/grammar-utils.js';
 import { streamAst } from '../utils/ast-utils.js';
-import { tokenToRange } from '../utils/cst-utils.js';
+import { isValidTokenRange, tokenToRange } from '../utils/cst-utils.js';
 import { interruptAndCheck, isOperationCancelled } from '../utils/promise-utils.js';
 import { diagnosticData } from './validation-registry.js';
 import type { LexingDiagnostic, LexingDiagnosticSeverity } from '../parser/token-builder.js';
@@ -141,13 +141,13 @@ export class DefaultDocumentValidator implements DocumentValidator {
             let range: Range | undefined = undefined;
             // We can run into the chevrotain error recovery here
             // The token contained in the parser error might be automatically inserted
-            // In this case every position value will be `NaN`
-            if (isNaN(parserError.token.startOffset)) {
+            // In this case every position value will be invalid (`NaN` or `-1`)
+            if (!isValidTokenRange(parserError.token)) {
                 // Some special parser error types contain a `previousToken`
                 // We can simply append our diagnostic to that token
                 if ('previousToken' in parserError) {
                     const token = (parserError as MismatchedTokenException).previousToken;
-                    if (!isNaN(token.startOffset)) {
+                    if (isValidTokenRange(token)) {
                         const position: Position = { line: token.endLine! - 1, character: token.endColumn! };
                         range = { start: position, end: position};
                     } else {
