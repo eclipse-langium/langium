@@ -333,9 +333,20 @@ export type PropertyType = number | string | boolean | PropertyType[];
 export interface CstNode extends DocumentSegment {
     /** The container node in the CST */
     readonly container?: CompositeCstNode;
-    /** The actual text */
+    /**
+     * The actual text covered by this node.
+     *
+     * The text is extracted from the document content on every access. When processing many
+     * nodes of the same tree, prefer resolving `root.fullText` once and slicing it with the
+     * nodes' `offset` and `end` values.
+     */
     readonly text: string;
-    /** The root CST node */
+    /**
+     * The root CST node.
+     *
+     * The root is resolved by walking up the `container` chain on every access. Avoid repeated
+     * accesses in loops over many nodes of the same tree; resolve the root once instead.
+     */
     readonly root: RootCstNode;
     /** The grammar element from which this node was parsed */
     readonly grammarSource?: AbstractElement;
@@ -347,9 +358,12 @@ export interface CstNode extends DocumentSegment {
 
 /**
  * A composite CST node contains other nodes, but no directly associated token.
+ *
+ * The content array must not be modified directly; use the `CstNodeBuilder` methods instead
+ * to ensure that the `container` references of the child nodes are set correctly.
  */
 export interface CompositeCstNode extends CstNode {
-    readonly content: CstNode[];
+    readonly content: readonly CstNode[];
 }
 
 export function isCompositeCstNode(node: unknown): node is CompositeCstNode {

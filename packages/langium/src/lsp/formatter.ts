@@ -268,8 +268,9 @@ export abstract class AbstractFormatter implements Formatter {
     }
 
     protected createHiddenTextEdits(previous: CstNode | undefined, hidden: CstNode, formatting: FormattingAction | undefined, context: FormattingContext): TextEdit[] {
+        const hiddenStart = hidden.range.start;
+        const startLine = hiddenStart.line;
         // Don't format the hidden node if it is on the same line as its previous node
-        const startLine = hidden.range.start.line;
         if (previous && previous.range.end.line === startLine) {
             return [];
         }
@@ -280,7 +281,7 @@ export abstract class AbstractFormatter implements Formatter {
                 character: 0,
                 line: startLine
             },
-            end: hidden.range.start
+            end: hiddenStart
         };
         const hiddenStartText = context.document.getText(startRange);
         const move = this.findFittingMove(startRange, formatting?.moves ?? [], context);
@@ -369,17 +370,20 @@ export abstract class AbstractFormatter implements Formatter {
         if (b.hidden) {
             return this.createHiddenTextEdits(a, b, formatting, context);
         }
+        // The range getters create fresh objects on every access, so read them only once
+        const aEnd = a?.range.end;
+        const bStart = b.range.start;
         // Ignore the edit if the previous node ends after the current node starts
-        if (a && (a.range.end.line > b.range.start.line ||
-            (a.range.end.line === b.range.start.line && a.range.end.character > b.range.start.character))) {
+        if (aEnd && (aEnd.line > bStart.line ||
+            (aEnd.line === bStart.line && aEnd.character > bStart.character))) {
             return [];
         }
         const betweenRange: Range = {
-            start: a?.range.end ?? {
+            start: aEnd ?? {
                 character: 0,
                 line: 0
             },
-            end: b.range.start
+            end: bStart
         };
         const move = this.findFittingMove(betweenRange, formatting.moves, context);
         if (!move) {

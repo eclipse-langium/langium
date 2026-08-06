@@ -7,13 +7,13 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 
 import type { TokenType } from 'chevrotain';
-import { CompositeCstNodeImpl, LeafCstNodeImpl, RootCstNodeImpl } from '../parser/cst-node-builder.js';
+import { CompositeCstNodeImpl, CstNodeBuilder, LeafCstNodeImpl, RootCstNodeImpl } from '../parser/cst-node-builder.js';
 import { isAbstractElement, type AbstractElement, type Grammar } from '../languages/generated/ast.js';
 import type { Linker } from '../references/linker.js';
 import type { Lexer } from '../parser/lexer.js';
 import type { LangiumCoreServices } from '../services.js';
 import type { ParseResult } from '../parser/langium-parser.js';
-import type { Reference, AstNode, CstNode, LeafCstNode, GenericAstNode, Mutable, RootCstNode } from '../syntax-tree.js';
+import type { Reference, AstNode, CstNode, LeafCstNode, GenericAstNode, Mutable } from '../syntax-tree.js';
 import { isRootCstNode, isCompositeCstNode, isLeafCstNode, isAstNode, isReference } from '../syntax-tree.js';
 import { streamAst } from '../utils/ast-utils.js';
 import { BiMap } from '../utils/collections.js';
@@ -43,6 +43,8 @@ export interface DehydrateContext {
 export interface HydrateContext {
     astNodes: Map<any, AstNode>;
     cstNodes: Map<any, CstNode>;
+    /** CST nodes that already received their AST backlink; used to let the outermost AST node win for shared CST nodes. */
+    linkedCstNodes: Set<CstNode>;
 }
 
 export class DefaultHydrator implements Hydrator {
@@ -53,6 +55,8 @@ export class DefaultHydrator implements Hydrator {
 
     protected readonly grammarElementIdMap = new BiMap<AbstractElement, number>();
     protected readonly tokenTypeIdMap = new BiMap<number, TokenType>();
+    /** Used to assemble the CST during hydration; `CstNodeBuilder` is not a service, so we keep a local instance. */
+    protected readonly cstNodeBuilder = new CstNodeBuilder();
 
     constructor(services: LangiumCoreServices) {
         this.grammar = services.Grammar;
@@ -146,17 +150,17 @@ export class DefaultHydrator implements Hydrator {
             cstNode.grammarSource = this.getGrammarElementId(node.grammarSource);
         }
         cstNode.hidden = node.hidden;
-        cstNode.astNode = context.astNodes.get(node.astNode);
         if (isCompositeCstNode(node)) {
             cstNode.content = node.content.map(child => this.dehydrateCstNode(child, context));
         } else if (isLeafCstNode(node)) {
             cstNode.tokenType = node.tokenType.name;
             cstNode.offset = node.offset;
             cstNode.length = node.length;
-            cstNode.startLine = node.range.start.line;
-            cstNode.startColumn = node.range.start.character;
-            cstNode.endLine = node.range.end.line;
-            cstNode.endColumn = node.range.end.character;
+            const { start, end } = node.range;
+            cstNode.startLine = start.line;
+            cstNode.startColumn = start.character;
+            cstNode.endLine = end.line;
+            cstNode.endColumn = end.character;
         }
         return cstNode;
     }
@@ -181,13 +185,11 @@ export class DefaultHydrator implements Hydrator {
         for (const astNode of streamAst(node)) {
             astNodes.set(astNode, {} as AstNode);
         }
-        let root: RootCstNode;
         if (node.$cstNode) {
             for (const cstNode of streamCst(node.$cstNode)) {
                 let cst: Mutable<CstNode> | undefined;
                 if ('fullText' in cstNode) {
                     cst = new RootCstNodeImpl(cstNode.fullText as string);
-                    root = cst as RootCstNode;
                 } else if ('content' in cstNode) {
                     cst = new CompositeCstNodeImpl();
                 } else if ('tokenType' in cstNode) {
@@ -195,13 +197,13 @@ export class DefaultHydrator implements Hydrator {
                 }
                 if (cst) {
                     cstNodes.set(cstNode, cst);
-                    cst.root = root!;
                 }
             }
         }
         return {
             astNodes,
-            cstNodes
+            cstNodes,
+            linkedCstNodes: new Set()
         };
     }
 
@@ -211,7 +213,14 @@ export class DefaultHydrator implements Hydrator {
         astNode.$containerIndex = node.$containerIndex;
         astNode.$containerProperty = node.$containerProperty;
         if (node.$cstNode) {
-            astNode.$cstNode = context.cstNodes.get(node.$cstNode);
+            const cstNode = context.cstNodes.get(node.$cstNode);
+            astNode.$cstNode = cstNode;
+            // Store the AST backlink only on the directly associated CST node;
+            // all other CST nodes resolve their AST node via the container hierarchy
+            if (cstNode && !context.linkedCstNodes.has(cstNode)) {
+                context.linkedCstNodes.add(cstNode);
+                (cstNode as Mutable<CstNode>).astNode = astNode;
+            }
         }
         for (const [name, value] of Object.entries(node)) {
             if (name.startsWith('$')) {
@@ -254,42 +263,28 @@ export class DefaultHydrator implements Hydrator {
         if (typeof cstNode.grammarSource === 'number') {
             cstNodeObj.grammarSource = this.getGrammarElement(cstNode.grammarSource);
         }
-        cstNodeObj.astNode = context.astNodes.get(cstNode.astNode)!;
         if (isCompositeCstNode(cstNodeObj)) {
+            const children: CstNode[] = [];
             for (const child of cstNode.content) {
-                const hydrated = this.hydrateCstNode(child, context, num++);
-                cstNodeObj.content.push(hydrated);
+                children.push(this.hydrateCstNode(child, context, num++));
             }
+            this.cstNodeBuilder.appendChildren(cstNodeObj, children);
         }
         return cstNodeObj;
     }
 
     protected hydrateCstLeafNode(cstNode: any): LeafCstNode {
         const tokenType = this.getTokenType(cstNode.tokenType);
-        const offset = cstNode.offset;
-        const length = cstNode.length;
-        const startLine = cstNode.startLine;
-        const startColumn = cstNode.startColumn;
-        const endLine = cstNode.endLine;
-        const endColumn = cstNode.endColumn;
-        const hidden = cstNode.hidden;
-        const node = new LeafCstNodeImpl(
-            offset,
-            length,
-            {
-                start: {
-                    line: startLine,
-                    character: startColumn
-                },
-                end: {
-                    line: endLine,
-                    character: endColumn
-                }
-            },
+        return new LeafCstNodeImpl(
+            cstNode.offset,
+            cstNode.length,
+            cstNode.startLine,
+            cstNode.startColumn,
+            cstNode.endLine,
+            cstNode.endColumn,
             tokenType,
-            hidden
+            cstNode.hidden
         );
-        return node;
     }
 
     protected getTokenType(name: string): TokenType {
