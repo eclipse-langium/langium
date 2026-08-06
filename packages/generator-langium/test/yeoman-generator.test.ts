@@ -77,7 +77,7 @@ describe('Check yeoman generator works', () => {
         targetRoot + '/packages/extension/tsconfig.json'
     ];
 
-    test('1 Should produce files for workspace and language (no test)', async () => {
+    test('1 Should produce files for workspace and language with multiple extensions (no test)', async () => {
         const context = createHelpers({}).run(path.join(moduleRoot));
 
         // generate in examples
@@ -97,7 +97,10 @@ describe('Check yeoman generator works', () => {
                 // just for double checking
                 console.log(`Generating into directory: ${workingDir}`);
             })
-            .withAnswers(answersForCore)
+            .withAnswers({
+                ...answersForCore,
+                fileExtensions: '.hello, .world'
+            })
             // speed up tests by skipping install
             .withArguments('skip-install')
             // speed up tests by skipping build
@@ -110,6 +113,16 @@ describe('Check yeoman generator works', () => {
 
                 result.assertJsonFileContent(projectRoot + '/package.json', PACKAGE_JSON_EXPECTATION);
                 result.assertFileContent(projectRoot + '/.vscode/tasks.json', TASKS_JSON_EXPECTATION);
+
+                result.assertJsonFileContent(projectRoot + '/packages/language/langium-config.json', {
+                    languages: [{
+                        fileExtensions: ['.hello', '.world']
+                    }]
+                });
+                result.assertFileContent(
+                    projectRoot + '/packages/language/src/generated/module.ts',
+                    "fileExtensions: ['.hello', '.world'],"
+                );
             }).finally(() => {
                 // clean-up examples/generator-tests/test1/hello-world
                 context.cleanTestDirectory(true);
