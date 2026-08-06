@@ -7,8 +7,10 @@
 import { startLanguageServer } from 'langium/lsp';
 import { NodeFileSystem } from 'langium/node';
 import { createConnection, ProposedFeatures } from 'vscode-languageserver/node';
+import { addInspectorSupport } from 'langium-inspector';
 import { createDomainModelServices } from './domain-model-module.js';
 
 const connection = createConnection(ProposedFeatures.all);
 const { shared } = createDomainModelServices({ connection, ...NodeFileSystem });
+addInspectorSupport(shared);
 startLanguageServer(shared);
