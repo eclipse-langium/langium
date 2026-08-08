@@ -344,10 +344,19 @@ function calculateInfixInterfaces(rules: InfixRule[]): PlainInterface[] {
 }
 
 function getDataRuleType(rule: ParserRule): PlainPropertyType {
-    if (rule.dataType && rule.dataType !== 'string') {
-        return {
-            primitive: rule.dataType
-        };
+    if (rule.dataType) {
+        // If a data type was declared, use that data type. Otherwise, infer the data type.
+        // Special cases to consider:
+        // "A return string: INT;" must result in a string type, not a number type.
+        // "A return string: (INT)+;" must result in a string type, not a number type.
+        // "A returns string: 'a' | 'b';" must result in a union type 'a' | 'b', not a plain string type.
+        // "A returns string: 'a';" must result in a string constant type 'a', not a plain string type.
+        const isAlternativeOrKeyword = isAlternatives(rule.definition) || isKeyword(rule.definition);
+        if (rule.dataType !== 'string' || !isAlternativeOrKeyword) {
+            return {
+                primitive: rule.dataType
+            };
+        }
     }
     let cancelled = false;
     const cancel = (): PlainPropertyType => {

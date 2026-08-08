@@ -328,3 +328,65 @@ describe('Infix operator parsing', async () => {
         value?: string;
     }
 });
+
+describe('AST feature values', () => {
+    test('Should create a string for a feature with a string data rule containing a single terminal', async () => {
+        const text = `
+            grammar Test
+            entry A: name=B b=B;
+            B returns string: INT;
+            terminal INT returns number: /[0-9]+/;
+            hidden terminal WS: /\\s+/;
+        `;
+        const services = await createServicesForGrammar({ grammar: text });
+        const result = services.parser.LangiumParser.parse('3 9');
+        expect(result.parserErrors).toHaveLength(0);
+        expect(result.value).toHaveProperty('name', '3');
+        expect(result.value).toHaveProperty('b', '9');
+    });
+
+    test('Should create a number for a feature with a number data rule containing a single terminal', async () => {
+        const text = `
+            grammar Test
+            entry A: name=B b=B;
+            B returns number: INT;
+            terminal INT returns number: /[0-9]+/;
+            hidden terminal WS: /\\s+/;
+        `;
+        const services = await createServicesForGrammar({ grammar: text });
+        const result = services.parser.LangiumParser.parse('3 9');
+        expect(result.parserErrors).toHaveLength(0);
+        expect(result.value).toHaveProperty('name', 3);
+        expect(result.value).toHaveProperty('b', 9);
+    });
+
+    test('Should create a string for a feature with a string data rule containing multiple terminals', async () => {
+        const text = `
+            grammar Test
+            entry A: 'name' name=B 'b' b=B;
+            B returns string: INT '.' INT;
+            terminal INT returns number: /[0-9]+/;
+            hidden terminal WS: /\\s+/;
+        `;
+        const services = await createServicesForGrammar({ grammar: text });
+        const result = services.parser.LangiumParser.parse('name 3.1 b 9.63');
+        expect(result.parserErrors).toHaveLength(0);
+        expect(result.value).toHaveProperty('name', '3.1');
+        expect(result.value).toHaveProperty('b', '9.63');
+    });
+
+    test('Should create a number for a feature with a number data rule containing multiple terminals', async () => {
+        const text = `
+            grammar Test
+            entry A: name=B b=B;
+            B returns number: '0x' INT;
+            terminal INT returns number: /[0-9]+/;
+            hidden terminal WS: /\\s+/;
+        `;
+        const services = await createServicesForGrammar({ grammar: text });
+        const result = services.parser.LangiumParser.parse('0x7 0x20');
+        expect(result.parserErrors).toHaveLength(0);
+        expect(result.value).toHaveProperty('name', 7);
+        expect(result.value).toHaveProperty('b', 32);
+    });
+});
