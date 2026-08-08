@@ -87,6 +87,131 @@ describe('Inferred types', () => {
         `);
     });
 
+    test('Should infer number type for data type rule with no return type and single terminal of type number', async () => {
+        await expectTypes(`
+            terminal INT returns number: /[0-9]+/;
+            B: INT;
+            A: name=B b=B;
+        `, expandToString`
+            export interface A extends langium.AstNode {
+                readonly $type: 'A';
+                b: B;
+                name: B;
+            }
+            export type B = number;
+        `);
+    });
+
+    test('Should infer string type for data type rule with explicit string return type and single terminal of type number', async () => {
+        await expectTypes(`
+            terminal INT returns number: /[0-9]+/;
+            B returns string: INT;
+            A: name=B b=B;
+        `, expandToString`
+            export interface A extends langium.AstNode {
+                readonly $type: 'A';
+                b: B;
+                name: B;
+            }
+            export type B = string;
+
+            export function isB(item: unknown): item is B {
+                return typeof item === 'string';
+            }
+        `);
+    });
+
+    test('Should infer boolean type for data type rule with explicit boolean return type and single terminal of type string', async () => {
+        await expectTypes(`
+            terminal FALSE_OR_TRUE returns string: /false|true/;
+            B returns boolean: FALSE_OR_TRUE;
+            A: name=B b=B;
+        `, expandToString`
+            export interface A extends langium.AstNode {
+                readonly $type: 'A';
+                b: B;
+                name: B;
+            }
+            export type B = boolean;
+
+            export function isB(item: unknown): item is B {
+                return typeof item === 'boolean';
+            }
+        `);
+    });
+
+    test('Should infer string type for data type rule with explicit string return type and a group with a single int terminal', async () => {
+        await expectTypes(`
+            terminal INT returns number: /[0-9]+/;
+            B returns string: (INT)+;
+            A: name=B b=B;
+        `, expandToString`
+            export interface A extends langium.AstNode {
+                readonly $type: 'A';
+                b: B;
+                name: B;
+            }
+            export type B = string;
+
+            export function isB(item: unknown): item is B {
+                return typeof item === 'string';
+            }
+        `);
+    });
+
+    test('Should infer string type for data type rule with no return type and multiple terminals', async () => {
+        await expectTypes(`
+            terminal INT returns number: /[0-9]+/;
+            B: INT INT;
+            A: name=B b=B;
+        `, expandToString`
+            export interface A extends langium.AstNode {
+                readonly $type: 'A';
+                b: B;
+                name: B;
+            }
+            export type B = string;
+        `);
+    });
+
+    test('Should infer string type for data type rule with explicit string return type and multiple terminals', async () => {
+        await expectTypes(`
+            terminal INT returns number: /[0-9]+/;
+            B returns string: INT INT;
+            A: name=B b=B;
+        `, expandToString`
+            export interface A extends langium.AstNode {
+                readonly $type: 'A';
+                b: B;
+                name: B;
+            }
+            export type B = string;
+
+            export function isB(item: unknown): item is B {
+                return typeof item === 'string';
+            }
+        `);
+    });
+
+    test('Should infer boolean type for data type rule with explicit boolean return type and multiple terminals', async () => {
+        await expectTypes(`
+            terminal ZERO_OR_ONE returns string: /0|1/;
+            B returns boolean: 'b' ZERO_OR_ONE;
+            A: name=B b=B;
+        `, expandToString`
+            export interface A extends langium.AstNode {
+                readonly $type: 'A';
+                b: B;
+                name: B;
+            }
+            export type B = boolean;
+
+            export function isB(item: unknown): item is B {
+                return typeof item === 'boolean';
+            }
+        `);
+    });
+
     test('Should correctly infer types using chained actions', async () => {
         await expectTypes(`
             A: a=ID ({infer B} b=ID ({infer C} c=ID)?)? d=ID;
@@ -296,6 +421,8 @@ describe('Inferred types', () => {
         await expectTypes(`
             Strings returns string: 'a' | 'b' | 'c';
             MoreStrings returns string: Strings | 'd' | 'e';
+            InferredStrings: 'f' | 'g';
+            SingleString returns string: 'h';
             Complex returns string: ID ('.' ID)*;
             DateLike returns Date: 'x';
             terminal ID: /[a-zA-Z_][a-zA-Z0-9_]*/;
@@ -310,10 +437,16 @@ describe('Inferred types', () => {
             export function isDateLike(item: unknown): item is DateLike {
                 return item instanceof Date;
             }
+            export type InferredStrings = 'f' | 'g';
             export type MoreStrings = 'd' | 'e' | Strings;
 
             export function isMoreStrings(item: unknown): item is MoreStrings {
                 return isStrings(item) || item === 'd' || item === 'e';
+            }
+            export type SingleString = 'h';
+
+            export function isSingleString(item: unknown): item is SingleString {
+                return item === 'h';
             }
             export type Strings = 'a' | 'b' | 'c';
 
