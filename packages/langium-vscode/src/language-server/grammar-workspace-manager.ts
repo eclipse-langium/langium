@@ -53,7 +53,7 @@ export class LangiumGrammarWorkspaceManager extends DefaultWorkspaceManager {
     }
 
     override shouldIncludeEntry(entry: FileSystemNode): boolean {
-        const workspaceFolder = this.workspaceFolders?.find(folder => UriUtils.contains(folder.uri, entry.uri));
+        const workspaceFolder = this.workspaceFolders?.find(folder => UriUtils.contains(URI.parse(folder.uri), entry.uri));
         if (this.matcher && workspaceFolder) {
             // create path relative to workspace folder root: /user/foo/workspace/entry.txt -> entry.txt
             const relPath = path.relative(URI.parse(workspaceFolder.uri).path, entry.uri.path);
