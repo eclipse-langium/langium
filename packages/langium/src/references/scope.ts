@@ -139,7 +139,7 @@ export class MapScope implements Scope {
         const localName = this.caseInsensitive ? name.toLowerCase() : name;
         const local = this.elements.get(localName);
         const arr = local ? [local] : [];
-        if ((this.concatOuterScope || arr.length > 0) && this.outerScope) {
+        if ((this.concatOuterScope || arr.length === 0) && this.outerScope) {
             return stream(arr).concat(this.outerScope.getElements(name));
         } else {
             return stream(arr);
