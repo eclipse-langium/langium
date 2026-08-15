@@ -174,7 +174,7 @@ export class UriTrie<T> {
     }
 
     findAll(prefix: URI | string): T[] {
-        const node = this.getNode(UriUtils.normalize(prefix), false);
+        const node = this.getNode(this.normalizeUri(prefix), false);
         if (!node) {
             return [];
         }
