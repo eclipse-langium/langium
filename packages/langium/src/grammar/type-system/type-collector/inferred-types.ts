@@ -402,7 +402,7 @@ function buildDataRuleType(element: AbstractElement, hasStringConstraint: boolea
                     regex = undefined;
                 }
                 return {
-                    primitive: hasStringConstraint ? 'string' :ref.type?.name ?? 'string',
+                    primitive: hasStringConstraint ? 'string' : ref.type?.name ?? 'string',
                     regex
                 };
             } else {
