@@ -91,12 +91,11 @@ describe('Inferred types', () => {
         await expectTypes(`
             terminal INT returns number: /[0-9]+/;
             B: INT;
-            A: name=B b=B;
+            A: b=B;
         `, expandToString`
             export interface A extends langium.AstNode {
                 readonly $type: 'A';
                 b: B;
-                name: B;
             }
             export type B = number;
         `);
@@ -106,17 +105,16 @@ describe('Inferred types', () => {
         await expectTypes(`
             terminal INT returns number: /[0-9]+/;
             B returns string: INT;
-            A: name=B b=B;
+            A: b=B;
         `, expandToString`
             export interface A extends langium.AstNode {
                 readonly $type: 'A';
                 b: B;
-                name: B;
             }
             export type B = string;
 
             export function isB(item: unknown): item is B {
-                return typeof item === 'string';
+                return (typeof item === 'string' && (/[0-9]+/.test(item)));
             }
         `);
     });
@@ -125,12 +123,11 @@ describe('Inferred types', () => {
         await expectTypes(`
             terminal FALSE_OR_TRUE returns string: /false|true/;
             B returns boolean: FALSE_OR_TRUE;
-            A: name=B b=B;
+            A: b=B;
         `, expandToString`
             export interface A extends langium.AstNode {
                 readonly $type: 'A';
                 b: B;
-                name: B;
             }
             export type B = boolean;
 
@@ -144,12 +141,11 @@ describe('Inferred types', () => {
         await expectTypes(`
             terminal INT returns number: /[0-9]+/;
             B returns string: (INT)+;
-            A: name=B b=B;
+            A: b=B;
         `, expandToString`
             export interface A extends langium.AstNode {
                 readonly $type: 'A';
                 b: B;
-                name: B;
             }
             export type B = string;
 
@@ -163,12 +159,11 @@ describe('Inferred types', () => {
         await expectTypes(`
             terminal INT returns number: /[0-9]+/;
             B: INT INT;
-            A: name=B b=B;
+            A: b=B;
         `, expandToString`
             export interface A extends langium.AstNode {
                 readonly $type: 'A';
                 b: B;
-                name: B;
             }
             export type B = string;
         `);
@@ -178,12 +173,11 @@ describe('Inferred types', () => {
         await expectTypes(`
             terminal INT returns number: /[0-9]+/;
             B returns string: INT INT;
-            A: name=B b=B;
+            A: b=B;
         `, expandToString`
             export interface A extends langium.AstNode {
                 readonly $type: 'A';
                 b: B;
-                name: B;
             }
             export type B = string;
 
@@ -197,12 +191,11 @@ describe('Inferred types', () => {
         await expectTypes(`
             terminal ZERO_OR_ONE returns string: /0|1/;
             B returns boolean: 'b' ZERO_OR_ONE;
-            A: name=B b=B;
+            A: b=B;
         `, expandToString`
             export interface A extends langium.AstNode {
                 readonly $type: 'A';
                 b: B;
-                name: B;
             }
             export type B = boolean;
 
@@ -292,6 +285,78 @@ describe('Inferred types', () => {
                 z: string;
             }
             export type A = B | X | Y | Z;
+        `);
+    });
+
+    test('Should infer the declared type for a keyword', async () => {
+        await expectTypes(`
+            Zero returns number: '0';
+        `, expandToString`
+            export type Zero = number;
+
+            export function isZero(item: unknown): item is Zero {
+                return typeof item === 'number';
+            }
+        `);
+    });
+
+    test('Should use the declared return type for a data type rule that references another primitive type', async () => {
+        await expectTypes(`
+            type ABC = "a" | "b" | "c";
+            OnlyAB returns ABC: 'a' | 'b';
+        `, expandToString`
+            export type ABC = 'a' | 'b' | 'c';
+            export type OnlyAB = ABC;
+        `);
+    });
+
+    test('Should infer string-compatible types for an alternative of keywords and an integer terminal', async () => {
+        await expectTypes(`
+            terminal INT returns number: /[0-9]+/;
+            ABInt returns string: 'a' | 'b' | INT;
+        `, expandToString`
+            export type ABInt = 'a' | 'b' | string;
+
+            export function isABInt(item: unknown): item is ABInt {
+                return item === 'a' || item === 'b' || (typeof item === 'string' && (/[0-9]+/.test(item)));
+            }        
+        `);
+    });
+
+    test('Should return string for explicit string return type with alternative of integer terminals', async () => {
+        await expectTypes(`
+            terminal INT returns number: /[0-9]+/;
+            terminal INT_ARABIC returns number: INT;
+            terminal INT_SINO returns number: /[◯一二三四五六七八九]+/;
+            PlainText returns string: INT_ARABIC | INT_SINO;
+        `, expandToString`
+            export type PlainText = string;
+
+            export function isPlainText(item: unknown): item is PlainText {
+                return (typeof item === 'string' && (/(?:[0-9]+)/.test(item) || /[◯一二三四五六七八九]+/.test(item)));
+            }
+        `);
+    });
+
+    test('Should return string for explicit string return type with alternative of data type rules', async () => {
+        await expectTypes(`
+            terminal INT_ARABIC returns number: /[0-9]+/;
+            terminal INT_SINO returns number: /[◯一二三四五六七八九]+/;
+            A returns number: INT_ARABIC;
+            B returns number: INT_SINO;
+            C returns string: A | B;
+        `, expandToString`
+            export type A = number;
+
+            export function isA(item: unknown): item is A {
+                return typeof item === 'number';
+            }
+            export type B = number;
+
+            export function isB(item: unknown): item is B {
+                return typeof item === 'number';
+            }
+            export type C = string;
         `);
     });
 
@@ -417,15 +482,19 @@ describe('Inferred types', () => {
         `);
     });
 
-    test('Should infer data type rules as unions', async () => {
+    test('Should infer string data type rules as unions', async () => {
         await expectTypes(`
             Strings returns string: 'a' | 'b' | 'c';
             MoreStrings returns string: Strings | 'd' | 'e';
             InferredStrings: 'f' | 'g';
+            InferredNumbers: '3' | '4';
+            InferredStringOrNumber: ID | INT;
+            StringOrNumber returns string: ID | INT;
             SingleString returns string: 'h';
             Complex returns string: ID ('.' ID)*;
             DateLike returns Date: 'x';
             terminal ID: /[a-zA-Z_][a-zA-Z0-9_]*/;
+            terminal INT returns number: /[0-9]+/;
         `, expandToString`
             export type Complex = string;
 
@@ -437,6 +506,8 @@ describe('Inferred types', () => {
             export function isDateLike(item: unknown): item is DateLike {
                 return item instanceof Date;
             }
+            export type InferredNumbers = '3' | '4';
+            export type InferredStringOrNumber = number | string;
             export type InferredStrings = 'f' | 'g';
             export type MoreStrings = 'd' | 'e' | Strings;
 
@@ -448,10 +519,33 @@ describe('Inferred types', () => {
             export function isSingleString(item: unknown): item is SingleString {
                 return item === 'h';
             }
+            export type StringOrNumber = string;
+
+            export function isStringOrNumber(item: unknown): item is StringOrNumber {
+                return (typeof item === 'string' && (/[a-zA-Z_][a-zA-Z0-9_]*/.test(item) || /[0-9]+/.test(item)));
+            }
             export type Strings = 'a' | 'b' | 'c';
 
             export function isStrings(item: unknown): item is Strings {
                 return item === 'a' || item === 'b' || item === 'c';
+            }
+        `);
+    });
+
+    test('Should infer non-string data type rules as plain type', async () => {
+        await expectTypes(`
+            Boolean returns boolean: 'false' | 'true';
+            Numbers returns number: '0' | '1' | '2';
+        `, expandToString`
+            export type Boolean = boolean;
+
+            export function isBoolean(item: unknown): item is Boolean {
+                return typeof item === 'boolean';
+            }
+            export type Numbers = number;
+            
+            export function isNumbers(item: unknown): item is Numbers {
+                return typeof item === 'number';
             }
         `);
     });

@@ -9,7 +9,7 @@ import type { PlainAstTypes, PlainInterface, PlainProperty, PlainPropertyType, P
 import type { LangiumCoreServices } from '../../../index.js';
 import { isNamed } from '../../../references/name-provider.js';
 import { MultiMap } from '../../../utils/collections.js';
-import { isAlternatives, isKeyword, isParserRule, isAction, isGroup, isUnorderedGroup, isAssignment, isRuleCall, isCrossReference, isTerminalRule, isAbstractParserRule } from '../../../languages/generated/ast.js';
+import { isAlternatives, isKeyword, isParserRule, isAction, isGroup, isUnorderedGroup, isAssignment, isRuleCall, isCrossReference, isTerminalRule, isAbstractParserRule, isType } from '../../../languages/generated/ast.js';
 import { getTypeNameWithoutError, isPrimitiveGrammarType } from '../../internal-grammar-util.js';
 import { mergePropertyTypes } from './plain-types.js';
 import { isOptionalCardinality, terminalRegex, getRuleTypeName, getTypeName } from '../../../utils/grammar-utils.js';
@@ -344,19 +344,19 @@ function calculateInfixInterfaces(rules: InfixRule[]): PlainInterface[] {
 }
 
 function getDataRuleType(rule: ParserRule): PlainPropertyType {
-    if (rule.dataType) {
-        // If a data type was declared, use that data type. Otherwise, infer the data type.
-        // Special cases to consider:
-        // "A return string: INT;" must result in a string type, not a number type.
-        // "A return string: (INT)+;" must result in a string type, not a number type.
-        // "A returns string: 'a' | 'b';" must result in a union type 'a' | 'b', not a plain string type.
-        // "A returns string: 'a';" must result in a string constant type 'a', not a plain string type.
-        const isAlternativeOrKeyword = isAlternatives(rule.definition) || isKeyword(rule.definition);
-        if (rule.dataType !== 'string' || !isAlternativeOrKeyword) {
-            return {
-                primitive: rule.dataType
-            };
-        }
+    // Note: The declared type of a data type rule must be either:
+    // - unset (will be inferred)
+    // - a primitive type (string, number, boolean, ...)
+    // - a reference to a type declaration that is itself a primitive type (type X = 'foo' | 'bar')
+    if (rule.dataType && rule.dataType !== 'string') {
+        return {
+            primitive: rule.dataType
+        };
+    }
+    if (rule.returnType && isType(rule.returnType.ref)) {
+        return {
+            value: rule.returnType.ref.name
+        };
     }
     let cancelled = false;
     const cancel = (): PlainPropertyType => {
@@ -365,7 +365,7 @@ function getDataRuleType(rule: ParserRule): PlainPropertyType {
             primitive: 'unknown'
         };
     };
-    const type = buildDataRuleType(rule.definition, cancel);
+    const type = buildDataRuleType(rule.definition, rule.dataType === 'string', cancel);
     if (cancelled) {
         return {
             primitive: 'string'
@@ -375,20 +375,20 @@ function getDataRuleType(rule: ParserRule): PlainPropertyType {
     }
 }
 
-function buildDataRuleType(element: AbstractElement, cancel: () => PlainPropertyType): PlainPropertyType {
+function buildDataRuleType(element: AbstractElement, hasStringConstraint: boolean, cancel: () => PlainPropertyType): PlainPropertyType {
     if (element.cardinality) {
         // Multiplicity/optionality is not supported for types
         return cancel();
     }
     if (isAlternatives(element)) {
         return {
-            types: element.elements.map(e => buildDataRuleType(e, cancel))
+            types: element.elements.map(e => buildDataRuleType(e, hasStringConstraint, cancel))
         };
     } else if (isGroup(element) || isUnorderedGroup(element)) {
         if (element.elements.length !== 1) {
             return cancel();
         } else {
-            return buildDataRuleType(element.elements[0], cancel);
+            return buildDataRuleType(element.elements[0], hasStringConstraint, cancel);
         }
     } else if (isRuleCall(element)) {
         const ref = element.rule?.ref;
@@ -402,13 +402,17 @@ function buildDataRuleType(element: AbstractElement, cancel: () => PlainProperty
                     regex = undefined;
                 }
                 return {
-                    primitive: ref.type?.name ?? 'string',
+                    primitive: hasStringConstraint ? 'string' :ref.type?.name ?? 'string',
                     regex
                 };
             } else {
-                return {
-                    value: ref.name
-                };
+                if (hasStringConstraint && isParserRule(ref) && ref.dataType && ref.dataType !== 'string') {
+                    return { primitive: 'string' };
+                } else {
+                    return {
+                        value: ref.name
+                    };
+                }
             }
         } else {
             return cancel();
