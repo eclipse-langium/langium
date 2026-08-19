@@ -205,6 +205,78 @@ describe('Inferred types', () => {
         `);
     });
 
+    test('Should infer the declared type for a keyword', async () => {
+        await expectTypes(`
+            Zero returns number: '0';
+        `, expandToString`
+            export type Zero = number;
+
+            export function isZero(item: unknown): item is Zero {
+                return typeof item === 'number';
+            }
+        `);
+    });
+
+    test('Should use the declared return type for a data type rule that references another primitive type', async () => {
+        await expectTypes(`
+            type ABC = "a" | "b" | "c";
+            OnlyAB returns ABC: 'a' | 'b';
+        `, expandToString`
+            export type ABC = 'a' | 'b' | 'c';
+            export type OnlyAB = ABC;
+        `);
+    });
+
+    test('Should infer string-compatible types for an alternative of keywords and an integer terminal', async () => {
+        await expectTypes(`
+            terminal INT returns number: /[0-9]+/;
+            ABInt returns string: 'a' | 'b' | INT;
+        `, expandToString`
+            export type ABInt = 'a' | 'b' | string;
+
+            export function isABInt(item: unknown): item is ABInt {
+                return item === 'a' || item === 'b' || (typeof item === 'string' && (/[0-9]+/.test(item)));
+            }        
+        `);
+    });
+
+    test('Should return string for explicit string return type with alternative of integer terminals', async () => {
+        await expectTypes(`
+            terminal INT returns number: /[0-9]+/;
+            terminal INT_ARABIC returns number: INT;
+            terminal INT_SINO returns number: /[◯一二三四五六七八九]+/;
+            PlainText returns string: INT_ARABIC | INT_SINO;
+        `, expandToString`
+            export type PlainText = string;
+
+            export function isPlainText(item: unknown): item is PlainText {
+                return (typeof item === 'string' && (/(?:[0-9]+)/.test(item) || /[◯一二三四五六七八九]+/.test(item)));
+            }
+        `);
+    });
+
+    test('Should return string for explicit string return type with alternative of data type rules', async () => {
+        await expectTypes(`
+            terminal INT_ARABIC returns number: /[0-9]+/;
+            terminal INT_SINO returns number: /[◯一二三四五六七八九]+/;
+            A returns number: INT_ARABIC;
+            B returns number: INT_SINO;
+            C returns string: A | B;
+        `, expandToString`
+            export type A = number;
+
+            export function isA(item: unknown): item is A {
+                return typeof item === 'number';
+            }
+            export type B = number;
+
+            export function isB(item: unknown): item is B {
+                return typeof item === 'number';
+            }
+            export type C = string;
+        `);
+    });
+
     test('Should correctly infer types using chained actions', async () => {
         await expectTypes(`
             A: a=ID ({infer B} b=ID ({infer C} c=ID)?)? d=ID;
@@ -285,78 +357,6 @@ describe('Inferred types', () => {
                 z: string;
             }
             export type A = B | X | Y | Z;
-        `);
-    });
-
-    test('Should infer the declared type for a keyword', async () => {
-        await expectTypes(`
-            Zero returns number: '0';
-        `, expandToString`
-            export type Zero = number;
-
-            export function isZero(item: unknown): item is Zero {
-                return typeof item === 'number';
-            }
-        `);
-    });
-
-    test('Should use the declared return type for a data type rule that references another primitive type', async () => {
-        await expectTypes(`
-            type ABC = "a" | "b" | "c";
-            OnlyAB returns ABC: 'a' | 'b';
-        `, expandToString`
-            export type ABC = 'a' | 'b' | 'c';
-            export type OnlyAB = ABC;
-        `);
-    });
-
-    test('Should infer string-compatible types for an alternative of keywords and an integer terminal', async () => {
-        await expectTypes(`
-            terminal INT returns number: /[0-9]+/;
-            ABInt returns string: 'a' | 'b' | INT;
-        `, expandToString`
-            export type ABInt = 'a' | 'b' | string;
-
-            export function isABInt(item: unknown): item is ABInt {
-                return item === 'a' || item === 'b' || (typeof item === 'string' && (/[0-9]+/.test(item)));
-            }        
-        `);
-    });
-
-    test('Should return string for explicit string return type with alternative of integer terminals', async () => {
-        await expectTypes(`
-            terminal INT returns number: /[0-9]+/;
-            terminal INT_ARABIC returns number: INT;
-            terminal INT_SINO returns number: /[◯一二三四五六七八九]+/;
-            PlainText returns string: INT_ARABIC | INT_SINO;
-        `, expandToString`
-            export type PlainText = string;
-
-            export function isPlainText(item: unknown): item is PlainText {
-                return (typeof item === 'string' && (/(?:[0-9]+)/.test(item) || /[◯一二三四五六七八九]+/.test(item)));
-            }
-        `);
-    });
-
-    test('Should return string for explicit string return type with alternative of data type rules', async () => {
-        await expectTypes(`
-            terminal INT_ARABIC returns number: /[0-9]+/;
-            terminal INT_SINO returns number: /[◯一二三四五六七八九]+/;
-            A returns number: INT_ARABIC;
-            B returns number: INT_SINO;
-            C returns string: A | B;
-        `, expandToString`
-            export type A = number;
-
-            export function isA(item: unknown): item is A {
-                return typeof item === 'number';
-            }
-            export type B = number;
-
-            export function isB(item: unknown): item is B {
-                return typeof item === 'number';
-            }
-            export type C = string;
         `);
     });
 
