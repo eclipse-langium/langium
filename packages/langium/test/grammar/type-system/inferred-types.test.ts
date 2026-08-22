@@ -341,6 +341,47 @@ describe('Data type rules', () => {
             }
         `);
     });
+
+    test('Should infer type of referenced string fragment data type rule from its definition', async () => {
+        await expectTypes(`
+            fragment F returns string: 'a' | 'b';
+            A returns string: F;
+        `, expandToString`
+            export type A = 'a' | 'b';
+
+            export function isA(item: unknown): item is A {
+                return item === 'a' || item === 'b';
+            }
+        `);
+    });
+
+    test('Should infer type of referenced number fragment data type rule with terminal from its definition', async () => {
+        await expectTypes(`
+            terminal INT returns number: /[0-9]+/;
+            fragment F returns number: INT;
+            A returns string: F;
+        `, expandToString`
+            export type A = string;
+
+            export function isA(item: unknown): item is A {
+                return typeof item === 'string';
+            }            
+        `);
+    });
+
+    test('Should infer type of referenced number fragment data type rule with string literal union from its definition', async () => {
+        await expectTypes(`
+            fragment F returns number: '0' | '1';
+            A returns string: F;
+        `, expandToString`
+            export type A = string;
+
+            export function isA(item: unknown): item is A {
+                return typeof item === 'string';
+            }            
+        `);
+    });
+
     test('Should infer string data type rules as unions', async () => {
         // Note: langium requires an explicit return type on data type rules.
         // The data type rules without a return type exist only
@@ -934,6 +975,20 @@ describe('Data type rules', () => {
             Rule returns string: 'a' | Rule | 'b';
         `, expandToString`
             export type Rule = 'a' | 'b' | string;
+        `);
+    });
+
+    test('Should not error when a data type rule references a fragment that forms a cycle with another fragment', async () => {
+        await expectTypes(`
+            fragment A returns string: 'a' | B;
+            fragment B returns string: 'b' | A;
+            C returns string: B;
+        `, expandToString`
+            export type C = string;
+            
+            export function isC(item: unknown): item is C {
+                return typeof item === 'string';
+            }
         `);
     });
 

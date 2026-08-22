@@ -272,7 +272,7 @@ export function collectInferredTypes(parserRules: ParserRule[], datatypeRules: P
     };
     for (const rule of parserRules) {
         const comment = commentProvider?.getComment(rule);
-        allTypes.push(...getRuleTypes(context, rule, services).map(typePath => ({...typePath, comment})));
+        allTypes.push(...getRuleTypes(context, rule, services).map(typePath => ({ ...typePath, comment })));
     }
     const infixInterfaces = calculateInfixInterfaces(infixRules);
     const interfaces = calculateInterfaces(allTypes, infixInterfaces);
@@ -438,9 +438,18 @@ function buildDataRuleType(element: AbstractElement, hasStringConstraint: boolea
                 // Only other remaining alternative is 'infix rule', and
                 // data type rules are not allowed to reference infix rules.
                 if (hasStringConstraint && isParserRule(ref)) {
-                    type = isDataTypeRuleAssignableToString(ref, visited)
-                        ? { value: ref.name }
-                        : { primitive: 'string' };
+                    if (isDataTypeRuleAssignableToString(ref, visited)) {
+                        if (ref.fragment) {
+                            // Cannot reference a fragment type, since fragments
+                            // are not output as types. Instead, recurse into the
+                            // fragment and build the type from its definition.
+                            type = buildDataRuleType(ref.definition, hasStringConstraint, visited);
+                        } else {
+                            type = { value: ref.name };
+                        }
+                    } else {
+                        type = { primitive: 'string' };
+                    }
                 }
                 else {
                     type = {
