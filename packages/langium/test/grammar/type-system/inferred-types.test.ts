@@ -342,20 +342,24 @@ describe('Data type rules', () => {
         `);
     });
 
-    test('Should infer type of referenced string fragment data type rule from its definition', async () => {
+    // Since langium 4.2, data type rule fragments are not allowed anymore
+    // (data type rules require a return type, but fragments must not have one)
+    // This test exists to ensure a defined behavior for invalid grammars, and
+    // as an entry point for future support of data type rule fragments.
+    test('Should infer unknown for string data type rule referencing a string fragment', async () => {
         await expectTypes(`
             fragment F returns string: 'a' | 'b';
             A returns string: F;
         `, expandToString`
-            export type A = 'a' | 'b';
-
-            export function isA(item: unknown): item is A {
-                return item === 'a' || item === 'b';
-            }
+            export type A = unknown;
         `);
     });
 
-    test('Should infer type of referenced number fragment data type rule with terminal from its definition', async () => {
+    // Since langium 4.2, data type rule fragments are not allowed anymore
+    // (data type rules require a return type, but fragments must not have one)
+    // This test exists to ensure a defined behavior for invalid grammars, and
+    // as an entry point for future support of data type rule fragments.
+    test('Should infer string for string data type rule referencing a number fragment', async () => {
         await expectTypes(`
             terminal INT returns number: /[0-9]+/;
             fragment F returns number: INT;
@@ -365,7 +369,7 @@ describe('Data type rules', () => {
 
             export function isA(item: unknown): item is A {
                 return typeof item === 'string';
-            }            
+            }
         `);
     });
 
@@ -973,11 +977,7 @@ describe('Data type rules', () => {
             fragment B returns string: 'b' | A;
             C returns string: B;
         `, expandToString`
-            export type C = string;
-
-            export function isC(item: unknown): item is C {
-                return typeof item === 'string';
-            }
+            export type C = unknown;
         `);
     });
 
