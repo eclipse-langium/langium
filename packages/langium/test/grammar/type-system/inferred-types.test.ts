@@ -329,6 +329,18 @@ describe('Inferred types', () => {
 });
 
 describe('Data type rules', () => {
+    test('Should not include regex for a string data type rule with a date terminal', async () => {
+        await expectTypes(`
+            terminal DATE returns Date: /\\d{4}-\\d{2}-\\d{2}/;
+            A returns string: DATE;
+        `, expandToString`
+            export type A = string;
+
+            export function isA(item: unknown): item is A {
+                return typeof item === 'string';
+            }
+        `);
+    });
     test('Should infer string data type rules as unions', async () => {
         // Note: langium requires an explicit return type on data type rules.
         // The data type rules without a return type exist only
@@ -371,9 +383,6 @@ describe('Data type rules', () => {
             }
             export type StringOrNumber = string;
 
-            export function isStringOrNumber(item: unknown): item is StringOrNumber {
-                return (typeof item === 'string' && (/[a-zA-Z_][a-zA-Z0-9_]*/.test(item) || /[0-9]+/.test(item)));
-            }
             export type Strings = 'a' | 'b' | 'c';
 
             export function isStrings(item: unknown): item is Strings {
@@ -427,7 +436,7 @@ describe('Data type rules', () => {
             export type B = string;
 
             export function isB(item: unknown): item is B {
-                return (typeof item === 'string' && (/[0-9]+/.test(item)));
+                return typeof item === 'string';
             }
         `);
     });
@@ -546,10 +555,6 @@ describe('Data type rules', () => {
             ABInt returns string: 'a' | 'b' | INT;
         `, expandToString`
             export type ABInt = 'a' | 'b' | string;
-
-            export function isABInt(item: unknown): item is ABInt {
-                return item === 'a' || item === 'b' || (typeof item === 'string' && (/[0-9]+/.test(item)));
-            }        
         `);
     });
 
@@ -561,10 +566,6 @@ describe('Data type rules', () => {
             PlainText returns string: INT_ARABIC | INT_SINO;
         `, expandToString`
             export type PlainText = string;
-
-            export function isPlainText(item: unknown): item is PlainText {
-                return (typeof item === 'string' && (/(?:[0-9]+)/.test(item) || /[◯一二三四五六七八九]+/.test(item)));
-            }
         `);
     });
 
@@ -690,7 +691,7 @@ describe('Data type rules', () => {
             export type A = string;
 
             export function isA(item: unknown): item is A {
-                return (typeof item === 'string' && (/[0-9]+/.test(item)));
+                return typeof item === 'string';
             }
             export type B = string;
             

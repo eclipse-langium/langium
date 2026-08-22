@@ -418,6 +418,7 @@ function buildDataRuleType(element: AbstractElement, hasStringConstraint: boolea
         const ref = element.rule?.ref;
         if (ref) {
             if (isTerminalRule(ref)) {
+                const terminalType = ref.type?.name ?? 'string';
                 let regex: string | undefined;
                 try {
                     regex = terminalRegex(ref).toString();
@@ -425,9 +426,13 @@ function buildDataRuleType(element: AbstractElement, hasStringConstraint: boolea
                     // If the regex cannot be built, we assume it's just a string
                     regex = undefined;
                 }
+                // Include regex only for string terminals. Other data types are
+                // converted to string, with a format that won't match the regex.
+                // E.g. 'Rule returns string: DATE' will use Date.toString() as a
+                // value in the AST.
                 type = {
-                    primitive: hasStringConstraint ? 'string' : ref.type?.name ?? 'string',
-                    regex
+                    primitive: hasStringConstraint ? 'string' : terminalType,
+                    regex: terminalType === 'string' ? regex : undefined,
                 };
             } else {
                 // Only other remaining alternative is 'infix rule', and
