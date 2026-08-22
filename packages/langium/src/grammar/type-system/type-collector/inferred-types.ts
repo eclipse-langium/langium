@@ -371,8 +371,7 @@ function getDataRuleType(rule: ParserRule): PlainPropertyType {
     if (rule.returnType && isType(rule.returnType.ref)) {
         return { value: rule.returnType.ref.name };
     }
-    const visited = new Set();
-    const type = buildDataRuleType(rule.definition, rule.dataType === 'string', visited);
+    const type = buildDataRuleType(rule.definition, rule.dataType === 'string');
     return type ?? { primitive: 'string' };
 }
 
@@ -392,12 +391,7 @@ function getDataRuleType(rule: ParserRule): PlainPropertyType {
  * @param visited A set of elements that have already been visited, to avoid infinite recursion.
  * @returns The inferred type of the data type rule, or undefined if the type cannot be inferred.
  */
-function buildDataRuleType(element: AbstractElement, hasStringConstraint: boolean, visited: Set<unknown>): PlainPropertyType | undefined {
-    if (visited.has(element)) {
-        return undefined;
-    }
-    visited.add(element);
-
+function buildDataRuleType(element: AbstractElement, hasStringConstraint: boolean): PlainPropertyType | undefined {
     let type: PlainPropertyType | undefined;
     if (element.cardinality) {
         // Multiplicity/optionality is not supported for types
@@ -405,14 +399,14 @@ function buildDataRuleType(element: AbstractElement, hasStringConstraint: boolea
     }
     else if (isAlternatives(element)) {
         const types = element.elements
-            .map(e => buildDataRuleType(e, hasStringConstraint, visited))
+            .map(e => buildDataRuleType(e, hasStringConstraint))
             .filter(t => t !== undefined);
         type = element.elements.length === types.length ? { types } : undefined;
     } else if (isGroup(element) || isUnorderedGroup(element)) {
         if (element.elements.length !== 1) {
             type = undefined;
         } else {
-            type = buildDataRuleType(element.elements[0], hasStringConstraint, visited);
+            type = buildDataRuleType(element.elements[0], hasStringConstraint);
         }
     } else if (isRuleCall(element)) {
         const ref = element.rule?.ref;
@@ -438,12 +432,12 @@ function buildDataRuleType(element: AbstractElement, hasStringConstraint: boolea
                 // Only other remaining alternative is 'infix rule', and
                 // data type rules are not allowed to reference infix rules.
                 if (hasStringConstraint && isParserRule(ref)) {
-                    if (isDataTypeRuleAssignableToString(ref, visited)) {
+                    if (isDataTypeRuleAssignableToString(ref)) {
                         if (ref.fragment) {
                             // Cannot reference a fragment type, since fragments
                             // are not output as types. Instead, recurse into the
                             // fragment and build the type from its definition.
-                            type = buildDataRuleType(ref.definition, hasStringConstraint, visited);
+                            type = buildDataRuleType(ref.definition, hasStringConstraint);
                         } else {
                             type = { value: ref.name };
                         }
@@ -468,39 +462,28 @@ function buildDataRuleType(element: AbstractElement, hasStringConstraint: boolea
         type = undefined;
     }
 
-    visited.delete(element);
     return type;
 }
 
 /**
  * Checks if the return type of the given data type rule is assignable to 'string'.
  *
- * - If the return type is a non-string primitive type, it is not assignable to 'string'.
+ * - If the rule has a (primitive) data type as its return type, check if that data type is assignable to 'string'. 
  * - If the return type is a reference to a type definition, check if that declared type is assignable to 'string'.
- * - Otherwise, check the definition of the data type rule to see if it is assignable to 'string',
- *   using the same inference logic as {@link buildDataRuleType}.
+ * - All other cases are not allowed for data type rules and the grammar will fail validation.
+ *   Consider these cases as not assignable to 'string'.
  *
  * @param rule The parser rule to check.
- * @param visited A set of elements that have already been visited, to avoid infinite recursion.
  * @returns Whether the data type rule's return type is assignable to 'string'.
  */
-function isDataTypeRuleAssignableToString(rule: ParserRule, visited: Set<unknown>): boolean {
-    if (visited.has(rule)) {
+function isDataTypeRuleAssignableToString(rule: ParserRule): boolean {
+    if (rule.dataType) {
+        return rule.dataType === 'string';
+    } else if (rule.returnType && isType(rule.returnType.ref)) {
+        return isDataRuleTypeDefinitionAssignableToString(rule.returnType.ref.type, new Map());
+    } else {
         return false;
     }
-    visited.add(rule);
-
-    let assignableToString: boolean;
-    if (rule.dataType && rule.dataType !== 'string') {
-        assignableToString = false;
-    } else if (rule.returnType && isType(rule.returnType.ref)) {
-        assignableToString = isDataRuleTypeDefinitionAssignableToString(rule.returnType.ref.type, visited);
-    } else {
-        assignableToString = isDataTypeRuleDefinitionAssignableToString(rule.definition, visited) ?? true;
-    }
-
-    visited.delete(rule);
-    return assignableToString;
 }
 
 /**
@@ -511,11 +494,11 @@ function isDataTypeRuleAssignableToString(rule: ParserRule, visited: Set<unknown
  * @param visited A set of elements that have already been visited, to avoid infinite recursion.
  * @returns Whether the type defined by the given type definition is assignable to 'string'.
  */
-function isDataRuleTypeDefinitionAssignableToString(type: TypeDefinition, visited: Set<unknown>): boolean {
+function isDataRuleTypeDefinitionAssignableToString(type: TypeDefinition, visited: Map<TypeDefinition, boolean>): boolean {
     if (visited.has(type)) {
-        return false;
+        return visited.get(type)!;
     }
-    visited.add(type);
+    visited.set(type, false);
 
     let assignableToString: boolean;
     if (isUnionType(type)) {
@@ -542,57 +525,7 @@ function isDataRuleTypeDefinitionAssignableToString(type: TypeDefinition, visite
         assignableToString = false;
     }
 
-    visited.delete(type);
-    return assignableToString;
-}
-
-/**
- * Checks if the type inferred from the definition of a data type rule is assignable to string.
- * The logic here mirrors {@link buildDataRuleType}, but instead of building a type, it checks
- * if the inferred type is assignable to string.
- *
- * To that end, it cannot simply stop at a rule call, but must recurse into the definition of
- * the called rule to check whether it too is assignable to string.
- *
- * @param element The element representing the AST of the data type rule's definition.
- * @param visited A set of elements that have already been visited, to avoid infinite recursion.
- * @returns Whether the inferred type from the definition is assignable to string.
- */
-function isDataTypeRuleDefinitionAssignableToString(element: AbstractElement, visited: Set<unknown>): boolean | undefined {
-    if (visited.has(element)) {
-        return false;
-    }
-    visited.add(element);
-
-    let assignableToString: boolean | undefined;
-    if (element.cardinality) {
-        assignableToString = undefined;
-    } else if (isAlternatives(element)) {
-        const elementsAssignability = element.elements.map(e => isDataTypeRuleDefinitionAssignableToString(e, visited));
-        assignableToString = elementsAssignability.every(e => e === true) || elementsAssignability.includes(undefined);
-    } else if (isGroup(element) || isUnorderedGroup(element)) {
-        if (element.elements.length !== 1) {
-            assignableToString = undefined;
-        } else {
-            assignableToString = isDataTypeRuleDefinitionAssignableToString(element.elements[0], visited);
-        }
-    } else if (isRuleCall(element)) {
-        const ref = element.rule?.ref;
-        if (isTerminalRule(ref)) {
-            const typeName = ref.type?.name ?? 'string';
-            assignableToString = typeName === 'string';
-        } else if (isParserRule(ref)) {
-            assignableToString = isDataTypeRuleAssignableToString(ref, visited);
-        } else {
-            assignableToString = undefined;
-        }
-    } else if (isKeyword(element)) {
-        assignableToString = true;
-    } else {
-        assignableToString = undefined;
-    }
-
-    visited.delete(element);
+    visited.set(type, assignableToString);
     return assignableToString;
 }
 

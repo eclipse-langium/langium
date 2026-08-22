@@ -734,11 +734,7 @@ describe('Data type rules', () => {
             export function isA(item: unknown): item is A {
                 return typeof item === 'string';
             }
-            export type B = string;
-            
-            export function isB(item: unknown): item is B {
-                return typeof item === 'string';
-            }
+            export type B = A;
         `);
     });
 
@@ -780,11 +776,8 @@ describe('Data type rules', () => {
         `, expandToString`
             export type A = string;
 
-            export type B = string;
+            export type B = A;
 
-            export function isB(item: unknown): item is B {
-                return typeof item === 'string';
-            }
             export type N1 = number;
 
             export function isN1(item: unknown): item is N1 {
@@ -845,11 +838,7 @@ describe('Data type rules', () => {
             export function isB(item: unknown): item is B {
                 return typeof item === 'string';
             }
-            export type C = string;
-            
-            export function isC(item: unknown): item is C {
-                return typeof item === 'string';
-            }        
+            export type C = B;
         `);
     });
 
