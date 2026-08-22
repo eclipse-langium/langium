@@ -531,6 +531,9 @@ function containsOnlyStringTypes(propertyType: PropertyType, visited: Map<Proper
                 }
             } else if (isPropertyUnion(type)) {
                 result = containsOnlyStringTypes(type, visited);
+                if (!result) {
+                    break;
+                }
             } else if (!isStringType(type)) {
                 result = false;
                 break;
