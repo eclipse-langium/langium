@@ -963,7 +963,7 @@ describe('Data type rules', () => {
         await expectTypes(`
             Rule returns string: 'a' | Rule | 'b';
         `, expandToString`
-            export type Rule = 'a' | 'b' | string;
+            export type Rule = 'a' | 'b' | Rule;
         `);
     });
 
@@ -973,11 +973,7 @@ describe('Data type rules', () => {
             fragment B returns string: 'b' | A;
             C returns string: B;
         `, expandToString`
-            export type C = string;
-            
-            export function isC(item: unknown): item is C {
-                return typeof item === 'string';
-            }
+            export type C = 'b' | ('a' | string);
         `);
     });
 
@@ -986,40 +982,23 @@ describe('Data type rules', () => {
             Rule1 returns string: Rule2;
             Rule2 returns string: Rule1;
         `, expandToString`
-            export type Rule1 = string;
+            export type Rule1 = Rule2;
 
-            export function isRule1(item: unknown): item is Rule1 {
-                return typeof item === 'string';
-            }
-            export type Rule2 = string;
-
-            export function isRule2(item: unknown): item is Rule2 {
-                return typeof item === 'string';
-            }
+            export type Rule2 = Rule1;
         `);
     });
 
     test('Should not error when a data type rule references a rule that forms a cycle with another rule', async () => {
         await expectTypes(`
-            Rule1 returns string: Rule2;
+            Rule1 returns string: Rule3;
             Rule2 returns string: Rule1;
             Rule3 returns string: Rule2;
         `, expandToString`
-            export type Rule1 = string;
+            export type Rule1 = Rule3;
 
-            export function isRule1(item: unknown): item is Rule1 {
-                return typeof item === 'string';
-            }
-            export type Rule2 = string;
+            export type Rule2 = Rule1;
 
-            export function isRule2(item: unknown): item is Rule2 {
-                return typeof item === 'string';
-            }
-            export type Rule3 = string;
-
-            export function isRule3(item: unknown): item is Rule3 {
-                return typeof item === 'string';
-            }
+            export type Rule3 = Rule2;
         `);
     });
 

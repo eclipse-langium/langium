@@ -472,7 +472,7 @@ function addReflectionInfo(name: string, properties: Property[] = []): Generated
 function addDataTypeReflectionInfo(union: UnionType): Generated {
     switch (union.dataType) {
         case 'string':
-            if (containsOnlyStringTypes(union.type)) {
+            if (containsOnlyStringTypes(union.type, new Map())) {
                 const subTypes = Array.from(union.subTypes).map(e => e.name);
                 const strings = collectStringValuesFromDataType(union.type);
                 const regexes = collectRegexesFromDataType(union.type);
@@ -495,39 +495,50 @@ function addDataTypeReflectionInfo(union: UnionType): Generated {
     }
 }
 
-function containsOnlyStringTypes(propertyType: PropertyType): boolean {
+function containsOnlyStringTypes(propertyType: PropertyType, visited: Map<PropertyType, boolean>): boolean {
+    if (visited.has(propertyType)) {
+        return visited.get(propertyType)!;
+    }
+    visited.set(propertyType, false);
+
     let result = true;
     if (isPrimitiveType(propertyType)) {
         if (propertyType.primitive === 'string') {
-            return true;
+            result = true;
         } else {
-            return false;
+            result = false;
         }
     } else if (isStringType(propertyType)) {
-        return true;
+        result = true;
     } else if (!isPropertyUnion(propertyType)) {
-        return false;
+        result = false;
     } else {
         for (const type of propertyType.types) {
             if (isValueType(type)) {
                 if (isUnionType(type.value)) {
-                    if (!containsOnlyStringTypes(type.value.type)) {
-                        return false;
+                    if (!containsOnlyStringTypes(type.value.type, visited)) {
+                        result = false;
+                        break;
                     }
                 } else {
-                    return false;
+                    result = false;
+                    break;
                 }
             } else if (isPrimitiveType(type)) {
                 if (type.primitive !== 'string' || !type.regex) {
-                    return false;
+                    result = false;
+                    break;
                 }
             } else if (isPropertyUnion(type)) {
-                result = containsOnlyStringTypes(type);
+                result = containsOnlyStringTypes(type, visited);
             } else if (!isStringType(type)) {
-                return false;
+                result = false;
+                break;
             }
         }
     }
+
+    visited.set(propertyType, result);
     return result;
 }
 

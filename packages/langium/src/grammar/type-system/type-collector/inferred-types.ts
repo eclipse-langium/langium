@@ -371,7 +371,7 @@ function getDataRuleType(rule: ParserRule): PlainPropertyType {
     if (rule.returnType && isType(rule.returnType.ref)) {
         return { value: rule.returnType.ref.name };
     }
-    const type = buildDataRuleType(rule.definition, rule.dataType === 'string');
+    const type = buildDataRuleType(rule.definition, rule.dataType === 'string', new Map());
     return type ?? { primitive: 'string' };
 }
 
@@ -391,7 +391,12 @@ function getDataRuleType(rule: ParserRule): PlainPropertyType {
  * @param visited A set of elements that have already been visited, to avoid infinite recursion.
  * @returns The inferred type of the data type rule, or undefined if the type cannot be inferred.
  */
-function buildDataRuleType(element: AbstractElement, hasStringConstraint: boolean): PlainPropertyType | undefined {
+function buildDataRuleType(element: AbstractElement, hasStringConstraint: boolean, visited: Map<AbstractElement, PlainPropertyType | undefined>): PlainPropertyType | undefined {
+    if (visited.has(element)) {
+        return visited.get(element);
+    }
+    visited.set(element, { primitive: 'string' }); // default to string to avoid infinite recursion
+
     let type: PlainPropertyType | undefined;
     if (element.cardinality) {
         // Multiplicity/optionality is not supported for types
@@ -399,14 +404,14 @@ function buildDataRuleType(element: AbstractElement, hasStringConstraint: boolea
     }
     else if (isAlternatives(element)) {
         const types = element.elements
-            .map(e => buildDataRuleType(e, hasStringConstraint))
+            .map(e => buildDataRuleType(e, hasStringConstraint, visited))
             .filter(t => t !== undefined);
         type = element.elements.length === types.length ? { types } : undefined;
     } else if (isGroup(element) || isUnorderedGroup(element)) {
         if (element.elements.length !== 1) {
             type = undefined;
         } else {
-            type = buildDataRuleType(element.elements[0], hasStringConstraint);
+            type = buildDataRuleType(element.elements[0], hasStringConstraint, visited);
         }
     } else if (isRuleCall(element)) {
         const ref = element.rule?.ref;
@@ -437,7 +442,7 @@ function buildDataRuleType(element: AbstractElement, hasStringConstraint: boolea
                             // Cannot reference a fragment type, since fragments
                             // are not output as types. Instead, recurse into the
                             // fragment and build the type from its definition.
-                            type = buildDataRuleType(ref.definition, hasStringConstraint);
+                            type = buildDataRuleType(ref.definition, hasStringConstraint, visited);
                         } else {
                             type = { value: ref.name };
                         }
@@ -462,13 +467,14 @@ function buildDataRuleType(element: AbstractElement, hasStringConstraint: boolea
         type = undefined;
     }
 
+    visited.set(element, type);
     return type;
 }
 
 /**
  * Checks if the return type of the given data type rule is assignable to 'string'.
  *
- * - If the rule has a (primitive) data type as its return type, check if that data type is assignable to 'string'. 
+ * - If the rule has a (primitive) data type as its return type, check if that data type is assignable to 'string'.
  * - If the return type is a reference to a type definition, check if that declared type is assignable to 'string'.
  * - All other cases are not allowed for data type rules and the grammar will fail validation.
  *   Consider these cases as not assignable to 'string'.
