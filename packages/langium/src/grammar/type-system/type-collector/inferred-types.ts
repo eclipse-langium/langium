@@ -395,7 +395,7 @@ function buildDataRuleType(element: AbstractElement, hasStringConstraint: boolea
     if (visited.has(element)) {
         return visited.get(element);
     }
-    visited.set(element, { primitive: 'string' }); // default to string to avoid infinite recursion
+    visited.set(element, undefined);
 
     let type: PlainPropertyType | undefined;
     if (element.cardinality) {

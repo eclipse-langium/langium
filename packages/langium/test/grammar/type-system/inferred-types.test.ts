@@ -973,7 +973,11 @@ describe('Data type rules', () => {
             fragment B returns string: 'b' | A;
             C returns string: B;
         `, expandToString`
-            export type C = 'b' | ('a' | string);
+            export type C = string;
+
+            export function isC(item: unknown): item is C {
+                return typeof item === 'string';
+            }
         `);
     });
 
