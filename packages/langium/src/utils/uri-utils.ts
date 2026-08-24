@@ -58,8 +58,13 @@ export namespace UriUtils {
     }
 
     export function contains(parent: URI | string, child: URI | string): boolean {
-        let parentPath = typeof parent === 'string' ? parent : parent.path;
-        let childPath = typeof child === 'string' ? child : child.path;
+        const parentUri = typeof parent === 'string' ? URI.parse(parent) : parent;
+        const childUri = typeof child === 'string' ? URI.parse(child) : child;
+        if (parentUri.scheme !== childUri.scheme) {
+            return false;
+        }
+        let parentPath = parentUri.path;
+        let childPath = childUri.path;
         // Trim trailing slashes
         if (childPath.charAt(childPath.length - 1) === '/') {
             childPath = childPath.slice(0, -1);
