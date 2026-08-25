@@ -62,7 +62,6 @@ describe('Inferred types', () => {
     });
 
     test('Rule with action inferring same type produces a non optional property', async () => {
-        // note @montymxb: This should produce a non-optional prop down the road
         await expectTypes(`
              Entry: {infer Entry} ref=ID;
              terminal ID returns string: /string/;
