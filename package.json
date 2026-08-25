@@ -39,7 +39,7 @@
     "@vscode/vsce": "~3.9.2",
     "concurrently": "~10.0.4",
     "editorconfig": "~3.0.2",
-    "esbuild": "~0.28.1",
+    "esbuild": "0.28.2",
     "eslint": "~10.8.0",
     "eslint-plugin-unused-imports": "~4.4.1",
     "globals": "~17.9.0",
@@ -64,5 +64,11 @@
     "examples/domainmodel",
     "examples/requirements",
     "examples/statemachine"
-  ]
+  ],
+  "allowScripts": {
+    "@vscode/vsce-sign@2.0.9": true,
+    "esbuild@0.28.2": true,
+    "fsevents@2.3.3": true,
+    "keytar@7.9.0": true
+  }
 }
