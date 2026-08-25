@@ -33,6 +33,7 @@ import { isOperationCancelled, type MaybePromise } from '../utils/promise-utils.
 import { URI } from '../utils/uri-utils.js';
 import type { ConfigurationInitializedParams } from '../workspace/configuration.js';
 import { DocumentState, type LangiumDocument } from '../workspace/documents.js';
+import { ReadPriority } from '../workspace/workspace-lock.js';
 import { mergeCompletionProviderOptions } from './completion/completion-provider.js';
 import type { LangiumSharedServices, PartialLangiumLSPServices } from './lsp-services.js';
 import { mergeSemanticTokenProviderOptions } from './semantic-token-provider.js';
@@ -603,10 +604,12 @@ export function addWorkspaceSymbolHandler(connection: Connection, services: Lang
         }
 
         const documentBuilder = services.workspace.DocumentBuilder;
+        const mutex = services.workspace.WorkspaceLock;
         connection.onWorkspaceSymbol(async (params, token) => {
             try {
+                // The required workspace state has been awaited, so the read can run concurrently to an ongoing write
                 await documentBuilder.waitUntil(requiredState.state, token);
-                return await workspaceSymbolProvider.getSymbols(params, token);
+                return await mutex.read(() => workspaceSymbolProvider.getSymbols(params, token), ReadPriority.Immediate);
             } catch (err) {
                 return responseError(err);
             }
@@ -616,7 +619,7 @@ export function addWorkspaceSymbolHandler(connection: Connection, services: Lang
             connection.onWorkspaceSymbolResolve(async (workspaceSymbol, token) => {
                 try {
                     await documentBuilder.waitUntil(requiredState.state, token);
-                    return await resolveWorkspaceSymbol(workspaceSymbol, token);
+                    return await mutex.read(() => resolveWorkspaceSymbol(workspaceSymbol, token), ReadPriority.Immediate);
                 } catch (err) {
                     return responseError(err);
                 }
@@ -709,6 +712,7 @@ export function createHierarchyRequestHandler<P extends TypeHierarchySupertypesP
     requiredState?: ServiceRequirement
 ): LangiumServerRequestHandler<P, R, E> {
     const serviceRegistry = sharedServices.ServiceRegistry;
+    const mutex = sharedServices.workspace.WorkspaceLock;
     return async (params: P, cancelToken: CancellationToken) => {
         const uri = URI.parse(params.item.uri);
         const cancellationError = await waitUntilPhase<E>(sharedServices, cancelToken, uri, requiredState);
@@ -722,7 +726,7 @@ export function createHierarchyRequestHandler<P extends TypeHierarchySupertypesP
         }
         const language = serviceRegistry.getServices(uri);
         try {
-            return await serviceCall(language, params, cancelToken) ?? null;
+            return await mutex.read(() => serviceCall(language, params, cancelToken), readPriority(requiredState)) ?? null;
         } catch (err) {
             return responseError<E>(err);
         }
@@ -736,6 +740,7 @@ export function createServerRequestHandler<P extends { textDocument: TextDocumen
 ): LangiumServerRequestHandler<P, R, E> {
     const documents = sharedServices.workspace.LangiumDocuments;
     const serviceRegistry = sharedServices.ServiceRegistry;
+    const mutex = sharedServices.workspace.WorkspaceLock;
     return async (params: P, cancelToken: CancellationToken) => {
         const uri = URI.parse(params.textDocument.uri);
         const cancellationError = await waitUntilPhase<E>(sharedServices, cancelToken, uri, requiredState);
@@ -749,8 +754,10 @@ export function createServerRequestHandler<P extends { textDocument: TextDocumen
         }
         const language = serviceRegistry.getServices(uri);
         try {
-            const document = await documents.getOrCreateDocument(uri);
-            return await serviceCall(language, document, params, cancelToken) ?? null;
+            return await mutex.read(async () => {
+                const document = await documents.getOrCreateDocument(uri);
+                return serviceCall(language, document, params, cancelToken);
+            }, readPriority(requiredState)) ?? null;
         } catch (err) {
             return responseError<E>(err);
         }
@@ -764,6 +771,7 @@ export function createRequestHandler<P extends { textDocument: TextDocumentIdent
 ): LangiumRequestHandler<P, R, E> {
     const documents = sharedServices.workspace.LangiumDocuments;
     const serviceRegistry = sharedServices.ServiceRegistry;
+    const mutex = sharedServices.workspace.WorkspaceLock;
     return async (params: P, cancelToken: CancellationToken) => {
         const uri = URI.parse(params.textDocument.uri);
         const cancellationError = await waitUntilPhase<E>(sharedServices, cancelToken, uri, requiredState);
@@ -776,12 +784,23 @@ export function createRequestHandler<P extends { textDocument: TextDocumentIdent
         }
         const language = serviceRegistry.getServices(uri);
         try {
-            const document = await documents.getOrCreateDocument(uri);
-            return await serviceCall(language, document, params, cancelToken) ?? null;
+            return await mutex.read(async () => {
+                const document = await documents.getOrCreateDocument(uri);
+                return serviceCall(language, document, params, cancelToken);
+            }, readPriority(requiredState)) ?? null;
         } catch (err) {
             return responseError<E>(err);
         }
     };
+}
+
+/**
+ * Handlers that have awaited a required document/workspace state via {@link waitUntilPhase} don't need to wait
+ * until a whole write action (such as a workspace build) has finished — their read can run concurrently to it.
+ * Without a required state, the read has to wait for write actions to ensure a consistent workspace.
+ */
+function readPriority(requiredState?: ServiceRequirement): ReadPriority {
+    return requiredState === undefined ? ReadPriority.Normal : ReadPriority.Immediate;
 }
 
 async function waitUntilPhase<E>(services: LangiumSharedServices, cancelToken: CancellationToken, uri?: URI, requiredState?: ServiceRequirement): Promise<ResponseError<E> | undefined> {

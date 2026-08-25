@@ -5,7 +5,7 @@
  ******************************************************************************/
 
 import { describe, expect, test } from 'vitest';
-import { Deferred, delayNextTick, DefaultWorkspaceLock } from 'langium';
+import { Deferred, delayNextTick, DefaultWorkspaceLock, ReadPriority } from 'langium';
 
 describe('WorkspaceLock', () => {
 
@@ -111,5 +111,70 @@ describe('WorkspaceLock', () => {
         // Counter is 0, since first action has been cancelled
         // and the second action decreases the value again
         expect(counter).toBe(0);
+    });
+
+    test('Immediate read actions are executed concurrently to running write actions', async () => {
+        let counter = 0;
+        const mutex = new DefaultWorkspaceLock();
+        const blocker = new Deferred();
+        mutex.write(async () => {
+            await blocker.promise;
+            counter++;
+        });
+        await delayNextTick();
+        // The write action is still running, but the immediate read is executed right away
+        const immediateResult = await mutex.read(() => counter, ReadPriority.Immediate);
+        expect(immediateResult).toBe(0);
+        blocker.resolve();
+        await delayNextTick();
+        expect(counter).toBe(1);
+    });
+
+    test('Normal read actions wait for write actions, immediate ones do not', async () => {
+        let counter = 0;
+        const mutex = new DefaultWorkspaceLock();
+        const blocker = new Deferred();
+        mutex.write(async () => {
+            await blocker.promise;
+            counter++;
+        });
+        await delayNextTick();
+        const normalRead = mutex.read(() => counter);
+        const immediateRead = mutex.read(() => counter, ReadPriority.Immediate);
+        // The immediate read resolves while the write action is still blocked
+        expect(await immediateRead).toBe(0);
+        blocker.resolve();
+        // The normal read only resolves after the write action has finished
+        expect(await normalRead).toBe(1);
+    });
+
+    test('Write actions do not start while immediate read actions are running', async () => {
+        const mutex = new DefaultWorkspaceLock();
+        let writeStarted = false;
+        const readBlocker = new Deferred();
+        const readAction = mutex.read(() => readBlocker.promise, ReadPriority.Immediate);
+        mutex.write(async () => {
+            writeStarted = true;
+        });
+        await delayNextTick();
+        // The write action is queued, but must not start while the immediate read is in progress
+        expect(writeStarted).toBe(false);
+        readBlocker.resolve();
+        await readAction;
+        await delayNextTick();
+        expect(writeStarted).toBe(true);
+    });
+
+    test('Immediate read actions return the action result', async () => {
+        const mutex = new DefaultWorkspaceLock();
+        const magicalNumber = await mutex.read(() => new Promise(resolve => setTimeout(() => resolve(42), 10)), ReadPriority.Immediate);
+        expect(magicalNumber).toBe(42);
+    });
+
+    test('Immediate read actions propagate errors', async () => {
+        const mutex = new DefaultWorkspaceLock();
+        await expect(mutex.read(() => {
+            throw new Error('Expected error');
+        }, ReadPriority.Immediate)).rejects.toThrow('Expected error');
     });
 });
