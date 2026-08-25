@@ -61,6 +61,38 @@ describe('Inferred types', () => {
         `);
     });
 
+    test('Rule with action inferring same type produces a non optional property', async () => {
+        // note @montymxb: This should produce a non-optional prop down the road
+        await expectTypes(`
+             Entry: {infer Entry} ref=ID;
+             terminal ID returns string: /string/;
+        `, expandToString`
+            export interface Entry extends langium.AstNode {
+                readonly $type: 'Entry';
+                ref: string;
+            }
+        `);
+    });
+
+    test('Rule with action inferring same type on alternative has req property', async () => {
+        await expectTypes(`
+             Entry: A | B;
+             A: {infer A} 'a1' ref=ID | 'a2' ref=ID;
+             B: 'b1' ref=ID | {infer B} 'b2' ref=ID;
+             terminal ID returns string: /string/;
+        `, expandToString`
+            export interface A extends langium.AstNode {
+                readonly $type: 'A';
+                ref: string;
+            }
+            export interface B extends langium.AstNode {
+                readonly $type: 'B';
+                ref: string;
+            }
+            export type Entry = A | B;
+        `);
+    });
+
     test('Should infer types for alternatives', async () => {
         await expectTypes(`
             A: name=ID | name=NUMBER;
