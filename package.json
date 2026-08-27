@@ -55,6 +55,7 @@
   },
   "workspaces": [
     "packages/langium",
+    "packages/langium-mcp",
     "packages/langium-railroad",
     "packages/langium-cli",
     "packages/langium-sprotty",

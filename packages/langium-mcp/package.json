@@ -1,0 +1,48 @@
+{
+  "name": "langium-mcp",
+  "version": "4.3.0",
+  "description": "Use Langium to build MCP Servers",
+  "homepage": "https://langium.org",
+  "keywords": [
+    "language",
+    "dsl",
+    "lsp",
+    "mcp"
+  ],
+  "license": "MIT",
+  "files": [
+    "lib",
+    "src"
+  ],
+  "sideEffects": false,
+  "type": "module",
+  "exports": {
+    ".": {
+      "types": "./lib/index.d.ts",
+      "import": "./lib/index.js"
+    }
+  },
+  "scripts": {
+    "clean": "shx rm -rf lib coverage",
+    "build": "tsc",
+    "watch": "tsc --watch",
+    "publish:next": "npm --no-git-tag-version version \"$(semver $npm_package_version -i minor)-next.$(git rev-parse --short HEAD)\" && npm publish --tag next",
+    "publish:latest": "npm publish --tag latest --access public"
+  },
+  "dependencies": {
+    "@modelcontextprotocol/server": "~2.0.0",
+    "langium": "~4.3.0",
+    "vscode-languageserver-types": "~3.18.0",
+    "zod": "~4.4.3"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/eclipse-langium/langium.git",
+    "directory": "packages/langium-mcp"
+  },
+  "bugs": "https://github.com/eclipse-langium/langium/issues",
+  "author": {
+    "name": "TypeFox",
+    "url": "https://www.typefox.io"
+  }
+}
