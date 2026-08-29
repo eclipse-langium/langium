@@ -13,9 +13,10 @@ import { AstUtils, type MultiReference } from 'langium';
 const languageService = await createServicesForGrammar({
     grammar: `
         grammar test
-        entry Model: (persons+=Person | greetings+=Greeting)*;
+        entry Model: (persons+=Person | greetings+=Greeting | groups+=Group)*;
         Person: 'person' name=ID;
         Greeting: 'hello' person=[+Person:ID];
+        Group: 'group' persons+=[+Person:ID];
         terminal ID: /[\\w]+/;
         hidden terminal WS :/\\s+/;
     `
@@ -52,6 +53,12 @@ describe('Multi Reference', () => {
         expect(ref.items[0].ref.$cstNode?.range.start.line).toBe(0);
         expect(ref.items[1].ref).toHaveProperty('name', 'Alice');
         expect(ref.items[1].ref.$cstNode?.range.start.line).toBe(2);
+    });
+
+    test('Can stream array-valued multi-references', async () => {
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        const group = ((await parse('person Alice group Alice')).parseResult.value as any).groups[0];
+        expect(AstUtils.streamReferences(group).toArray()).toHaveLength(1);
     });
 
     test('Uses prototype accessors for multi references', async () => {
