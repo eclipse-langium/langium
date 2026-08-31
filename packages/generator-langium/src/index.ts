@@ -365,7 +365,13 @@ export * from './generated/module.js';
 
         const opts = { cwd: extensionPath };
         if(!this.args.includes('skip-install')) {
-            this.spawnSync('npm', ['install'], opts);
+            // When the local langium packages are used, they must be copied instead of being symlinked:
+            // with a symlink, TypeScript resolves their dependencies (vscode-languageserver etc.) through
+            // the real path in this repo, which yields duplicate types in the generated project.
+            const installArgs = this.args.includes('use-local-langium')
+                ? ['install', '--install-links']
+                : ['install'];
+            this.spawnSync('npm', installArgs, opts);
         }
         this.spawnSync('npm', ['run', 'langium:generate'], opts);
         if(!this.args.includes('skip-build')) {
@@ -417,16 +423,21 @@ export * from './generated/module.js';
     _replaceLocalLangium(content: string): string {
         // Only used for testing purposes in this repo
         if (this.args.includes('use-local-langium')) {
-            const levels = 6;
-            const relativePath = '../'.repeat(levels);
+            // The langium dependencies are declared in the generated `packages/language`,
+            // so the file references must be relative to that directory.
+            const localPackage = (name: string) => {
+                const source = path.resolve(__dirname, '..', '..', name);
+                const target = this._extensionPath(PACKAGE_LANGUAGE);
+                return path.relative(target, source).split(path.sep).join('/');
+            };
             // replace local langium with relative path
             content = content.replace(
                 /"langium": "~?\d\.\d\.\d"/g,
-                `"langium": "file:${relativePath}langium"`
+                `"langium": "file:${localPackage('langium')}"`
             );
             content = content.replace(
                 /"langium-cli": "~?\d\.\d\.\d"/g,
-                `"langium-cli": "file:${relativePath}langium-cli"`
+                `"langium-cli": "file:${localPackage('langium-cli')}"`
             );
         }
         return content;
