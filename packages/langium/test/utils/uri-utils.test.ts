@@ -132,6 +132,8 @@ describe('URIUtils#contains', () => {
         const parent = 'file:///path/to';
         const child = 'file:///path/to/file';
         expect(UriUtils.contains(parent, child)).toBeTruthy();
+        expect(UriUtils.contains(parent, URI.parse(child))).toBeTruthy();
+        expect(UriUtils.contains(URI.parse(parent), child)).toBeTruthy();
     });
 
     test('Should return true for child URIs with trailing slashes', () => {
@@ -150,6 +152,12 @@ describe('URIUtils#contains', () => {
         const parent = 'file:///path/to/directory';
         const unrelated = 'file:///path/to/other';
         expect(UriUtils.contains(parent, unrelated)).toBeFalsy();
+    });
+
+    test('Should return false for URIs with different schemes', () => {
+        const parent = URI.parse('file:///path/to');
+        const child = URI.parse('test:///path/to/file');
+        expect(UriUtils.contains(parent, child)).toBeFalsy();
     });
 
 });

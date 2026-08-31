@@ -91,7 +91,7 @@ describe('Check yeoman generator works', () => {
         targetRoot + '/packages/extension/tsconfig.json'
     ];
 
-    test('1 Should produce files for workspace and language (no test)', async () => {
+    test('1 Should produce files for workspace and language with multiple extensions (no test)', async () => {
         const context = createHelpers({}).run(path.join(moduleRoot));
 
         // generate in examples
@@ -111,7 +111,10 @@ describe('Check yeoman generator works', () => {
                 // just for double checking
                 console.log(`Generating into directory: ${workingDir}`);
             })
-            .withAnswers(answersForCore)
+            .withAnswers({
+                ...answersForCore,
+                fileExtensions: '.hello, .world'
+            })
             // speed up tests by skipping install
             .withArguments('skip-install')
             // speed up tests by skipping build
@@ -124,6 +127,16 @@ describe('Check yeoman generator works', () => {
 
                 result.assertJsonFileContent(projectRoot + '/package.json', PACKAGE_JSON_EXPECTATION);
                 result.assertFileContent(projectRoot + '/.vscode/tasks.json', TASKS_JSON_EXPECTATION);
+
+                result.assertJsonFileContent(projectRoot + '/packages/language/langium-config.json', {
+                    languages: [{
+                        fileExtensions: ['.hello', '.world']
+                    }]
+                });
+                result.assertFileContent(
+                    projectRoot + '/packages/language/src/generated/module.ts',
+                    "fileExtensions: ['.hello', '.world'],"
+                );
             }).finally(() => {
                 // clean-up examples/generator-tests/test1/hello-world
                 return cleanTestDirectory(context);
@@ -303,7 +316,11 @@ const PACKAGE_JSON_EXPECTATION: Record<string, any> = {
     },
     workspaces: [
         'packages/language'
-    ]
+    ],
+    allowScripts: {
+        'esbuild@0.28.2': true,
+        'fsevents@2.3.3': true
+    }
 };
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -376,8 +393,8 @@ const PACKAGE_JSON_EXPECTATION_EXTENSION: Record<string, any> = {
     },
     devDependencies: {
         '@types/vscode': '~1.91.0',
-        'concurrently': '~10.0.3',
-        'esbuild': '~0.28.1'
+        'concurrently': '~10.0.4',
+        'esbuild': '0.28.2'
     }
 };
 

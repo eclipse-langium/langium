@@ -204,7 +204,8 @@ export class LangiumGenerator extends Generator {
                     .map(ext => ext.replace(/\./g, '').trim()),
             )
         );
-        this.answers.fileExtensions = `[${fileExtensions.map(ext => `".${ext}"`).join(', ')}]`;
+        const fileExtensionsWithDot = fileExtensions.map(ext => `.${ext}`);
+        this.answers.fileExtensions = `[${fileExtensionsWithDot.map(ext => `"${ext}"`).join(', ')}]`;
 
         const fileExtensionGlob = fileExtensions.length > 1 ? `{${fileExtensions.join(',')}}` : fileExtensions[0];
 
@@ -272,7 +273,7 @@ export class LangiumGenerator extends Generator {
             languages: [{
                 id: languageId,
                 grammar: `src/${languageId}.langium`,
-                fileExtensions: [ fileExtensionGlob ],
+                fileExtensions: fileExtensionsWithDot,
                 textMate: {
                     out: `syntaxes/${languageId}.tmLanguage.json`
                 }

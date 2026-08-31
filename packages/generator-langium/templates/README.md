@@ -13,5 +13,5 @@ Some file are contained in the root directory as well.
 
 - [package.json](./package.json) - The manifest file the main workspace package
 - [tsconfig.json](./tsconfig.json) - The base TypeScript compiler configuration
-- [tsconfig.build.json](./package.json) - Configuration used to build the complete source code.
+- [tsconfig.build.json](./tsconfig.build.json) - Configuration used to build the complete source code.
 - [.gitignore](.gitignore) - Files ignored by git
