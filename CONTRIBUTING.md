@@ -28,7 +28,7 @@ In case you have a question, please look into the [documentation](https://langiu
 
 ## Prerequisites
 
-For developing Langium, you require at least Node.js version 20.10.0 (see the `engines` entry in [package.json](./package.json)). The npm version bundled with it supports npm workspaces, which this repository relies on.
+For developing Langium, you need Node.js and npm. The Node.js version used in CI is pinned in [`.nvmrc`](./.nvmrc) and picked up automatically by version managers such as [nvm](https://github.com/nvm-sh/nvm) or [fnm](https://github.com/Schniz/fnm); the range of supported versions is declared in the `engines` entry of the root [package.json](./package.json). The npm version bundled with any of these Node.js releases supports npm workspaces, which this repository relies on.
 
 ## Local Development Guide
 
@@ -62,7 +62,7 @@ npm run test:watch     # re-run tests on file changes
 npm run coverage       # run tests with coverage report
 ```
 
-You can also run the tests of a single package, e.g. `npm test --workspace=langium`.
+You can also restrict the run to a subset of the tests by passing a path filter, e.g. `npm test -- packages/langium/` runs only the tests of the `langium` package (note the trailing slash, which excludes `langium-cli` and `langium-sprotty`).
 
 #### Performance benchmarks
 
@@ -108,7 +108,7 @@ If you have long experience in using node and npm this sub-chapter will likely o
 
 When you add a dependency to a `package.json` npm resolves this from the configured registry (default is [registry.npmjs.org](https://registry.npmjs.org/)). In other dependency management systems you can create something like a dev or snapshot version and install it locally, but this is not possible as such with npm. If you want to achieve a similar behavior you need to link your packages globally (global refers to you user's account scope, local refers to the project's scope). When you do this you forcefully overwrite what was downloaded from the npm registry. Incrementing the version of Langium itself will lead to problems, because npm will not be able to resolve those from its registry and therefore fail any install attempts in projects referring to Langium.
 
-If you execute `npm install` on the top-level of your Langium checkout all dependencies will be gathered locally inside `node_modules` and all packages or sub-projects will be built. **Warning**: Do not run npm install directly inside the individual Langium packages as it will mess up dependency resolution once you link packages globally.
+If you execute `npm install` on the top-level of your Langium checkout, all dependencies will be gathered locally inside `node_modules` and the workspace packages will be linked to each other. Note that this does not build the packages; run `npm run build` (or `npm run watch`) for that. **Warning**: Do not run npm install directly inside the individual Langium packages as it will mess up dependency resolution once you link packages globally.
 
 #### Altered Langium for own language projects
 
