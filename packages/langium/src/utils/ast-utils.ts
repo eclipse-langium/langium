@@ -221,7 +221,7 @@ export function streamReferences(node: AstNode): Stream<ReferenceInfo> {
                     while (state.arrayIndex < value.length) {
                         const index = state.arrayIndex++;
                         const element = value[index];
-                        if (isReference(element) || isMultiReference(value)) {
+                        if (isReference(element) || isMultiReference(element)) {
                             return { done: false, value: { reference: element, container: node, property, index } };
                         }
                     }
