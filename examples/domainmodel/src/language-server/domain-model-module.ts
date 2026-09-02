@@ -5,14 +5,15 @@
  ******************************************************************************/
 
 import { type Module, inject } from 'langium';
-import type { LangiumServices, LangiumSharedServices, PartialLangiumServices } from 'langium/lsp';
-import { createDefaultModule, createDefaultSharedModule, type DefaultSharedModuleContext } from 'langium/lsp';
+import type { LangiumServices, LangiumSharedServices, PartialLangiumServices, PartialLangiumSharedServices } from 'langium/lsp';
+import { createDefaultModule, createDefaultSharedModule, DefaultTextDocumentContentProvider, type DefaultSharedModuleContext } from 'langium/lsp';
 import { DomainModelFormatter } from './domain-model-formatter.js';
 import { QualifiedNameProvider } from './domain-model-naming.js';
 import { DomainModelRenameProvider } from './domain-model-rename-refactoring.js';
 import { DomainModelScopeComputation } from './domain-model-scope.js';
 import { DomainModelValidator, registerValidationChecks } from './domain-model-validator.js';
 import { DomainModelGeneratedModule, DomainModelGeneratedSharedModule } from './generated/module.js';
+import { DomainModelWorkspaceManager } from './domain-model-workspace-manager.js';
 
 export type DomainModelAddedServices = {
     references: {
@@ -39,13 +40,23 @@ export const DomainModelModule: Module<DomainModelServices, PartialLangiumServic
     }
 };
 
+export const DomainModelSharedModule: Module<LangiumSharedServices, PartialLangiumSharedServices> = {
+    lsp: {
+        TextDocumentContentProvider: (services) => new DefaultTextDocumentContentProvider(services, ['domain-model'])
+    },
+    workspace: {
+        WorkspaceManager: (services) => new DomainModelWorkspaceManager(services)
+    }
+};
+
 export function createDomainModelServices(context: DefaultSharedModuleContext): {
     shared: LangiumSharedServices,
     domainmodel: DomainModelServices
 } {
     const shared = inject(
         createDefaultSharedModule(context),
-        DomainModelGeneratedSharedModule
+        DomainModelGeneratedSharedModule,
+        DomainModelSharedModule
     );
     const domainmodel = inject(
         createDefaultModule({ shared }),

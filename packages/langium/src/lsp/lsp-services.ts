@@ -35,6 +35,7 @@ import type { TypeHierarchyProvider } from './type-hierarchy-provider.js';
 import type { TypeDefinitionProvider } from './type-provider.js';
 import type { WorkspaceSymbolProvider } from './workspace-symbol-provider.js';
 import type { NotebookDocuments, TextDocuments } from './normalized-text-documents.js';
+import type { TextDocumentContentProvider } from './text-document-content-provider.js';
 
 /**
  * Combined Core + LSP services of Langium (total services)
@@ -87,6 +88,7 @@ export type LangiumSharedLSPServices = {
         readonly FuzzyMatcher: FuzzyMatcher
         readonly LanguageServer: LanguageServer
         readonly NodeKindProvider: NodeKindProvider
+        readonly TextDocumentContentProvider?: TextDocumentContentProvider
         readonly WorkspaceSymbolProvider?: WorkspaceSymbolProvider
     },
     readonly workspace: {
