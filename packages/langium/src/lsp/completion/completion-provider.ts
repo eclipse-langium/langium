@@ -4,7 +4,7 @@
  * terms of the MIT License, which is available in the project root.
  ******************************************************************************/
 
-import type { CompletionItem, CompletionParams, TextEdit } from 'vscode-languageserver-protocol';
+import type { CompletionClientCapabilities, CompletionItem, CompletionParams, InitializeParams, InsertReplaceEdit, TextEdit } from 'vscode-languageserver-protocol';
 import type { LangiumCompletionParser } from '../../parser/langium-parser.js';
 import type { NameProvider } from '../../references/name-provider.js';
 import type { ScopeProvider } from '../../references/scope-provider.js';
@@ -135,6 +135,7 @@ export class DefaultCompletionProvider implements CompletionProvider {
     protected readonly fuzzyMatcher: FuzzyMatcher;
     protected readonly grammarConfig: GrammarConfig;
     protected readonly astReflection: AstReflection;
+    protected clientCapabilities?: CompletionClientCapabilities;
     readonly completionOptions?: CompletionProviderOptions;
 
     constructor(services: LangiumServices) {
@@ -148,6 +149,14 @@ export class DefaultCompletionProvider implements CompletionProvider {
         this.grammarConfig = services.parser.GrammarConfig;
         this.astReflection = services.shared.AstReflection;
         this.documentationProvider = services.documentation.DocumentationProvider;
+
+        services.shared.lsp.LanguageServer.onInitialize(params => {
+            this.initialize(params);
+        });
+    }
+
+    protected initialize(params: InitializeParams): void {
+        this.clientCapabilities = params.capabilities.textDocument?.completion;
     }
 
     async getCompletion(document: LangiumDocument, params: CompletionParams, _cancelToken?: CancellationToken): Promise<CompletionList | undefined> {
@@ -595,7 +604,41 @@ export class DefaultCompletionProvider implements CompletionProvider {
         return completionItem;
     }
 
-    protected buildCompletionTextEdit(context: CompletionContext, label: string, newText: string): TextEdit | undefined {
+    protected buildCompletionTextEdit(context: CompletionContext, label: string, newText: string): TextEdit | InsertReplaceEdit | undefined {
+        if (this.clientCapabilities?.completionItem?.insertReplaceSupport) {
+            return this.buildCompletionTextEditWithInsertReplace(context, label, newText);
+        } else {
+            return this.buildCompletionTextEditWithoutInsertReplace(context, label, newText);
+        }
+    }
+
+    /**
+     * Returns an {@link InsertReplaceEdit} to enable clients to pick either the insert {@link TextEdit} or the replace {@link TextEdit},
+     * depending on the editor's insert/replace mode.
+     * Note that the token part to the left of the cursor will be overwritten in both modes.
+     */
+    protected buildCompletionTextEditWithInsertReplace(context: CompletionContext, label: string, newText: string): InsertReplaceEdit | undefined {
+        const start = context.textDocument.positionAt(context.tokenOffset);
+        const cursor = context.position;
+        const identifier = context.textDocument.getText({ start, end: cursor });
+        if (this.fuzzyMatcher.match(identifier, label)) {
+            const tokenEnd = context.textDocument.positionAt(context.tokenEndOffset);
+            return {
+                newText,
+                insert: { start, end: cursor },
+                replace: { start, end: tokenEnd }
+            };
+        } else {
+            return undefined;
+        }
+    }
+
+    /**
+     * A {@link TextEdit} is returned for clients without insert/replace mode configuration.
+     * The range of a {@link TextEdit} ends at the cursor position,
+     * so the suffix of an identifier after the cursor (e.g. `Pos|ition`) is never replaced.
+     */
+    protected buildCompletionTextEditWithoutInsertReplace(context: CompletionContext, label: string, newText: string): TextEdit | undefined {
         const content = context.textDocument.getText();
         const identifier = content.substring(context.tokenOffset, context.offset);
         if (this.fuzzyMatcher.match(identifier, label)) {

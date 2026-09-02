@@ -4,10 +4,10 @@
  * terms of the MIT License, which is available in the project root.
  ******************************************************************************/
 
-import { describe, test, beforeEach } from 'vitest';
+import { describe, test, beforeEach, expect } from 'vitest';
 import type { AstNode, AstNodeDescription, GrammarAST, LangiumDocument, Module, ReferenceInfo } from 'langium';
-import { DefaultAstNodeDescriptionProvider, EmptyFileSystem } from 'langium';
-import { createLangiumGrammarServices, createServicesForGrammar } from 'langium/grammar';
+import { assertCondition, DefaultAstNodeDescriptionProvider, EmptyFileSystem, TextDocument } from 'langium';
+import { createLangiumGrammarServices, createServicesForGrammar, type LangiumGrammarServices } from 'langium/grammar';
 import { DefaultCompletionProvider } from 'langium/lsp';
 import type { CompletionContext, LangiumServices, PartialLangiumServices } from 'langium/lsp';
 import { clearDocuments, expectCompletion, parseHelper } from 'langium/test';
@@ -99,6 +99,93 @@ describe('Langium completion provider', () => {
             text: model,
             index: 1,
             expectedItems: []
+        });
+    });
+});
+
+describe('Insert mode', () => {
+
+    const text = `
+    <|>gramm<|>ar g hid<|>den(hiddenTerminal)
+    X: name="X";
+    terminal hiddenTerminal: /x/;
+    `;
+
+    let grammarServices: LangiumGrammarServices;
+    let completion: ReturnType<typeof expectCompletion>;
+
+    beforeEach(async () => {
+        grammarServices = createLangiumGrammarServices(EmptyFileSystem).grammar;
+        completion = expectCompletion(grammarServices);
+    });
+
+    test('Without insert/replace mode', async () => {
+        // Without language client, client capabilities are not specified
+        // => insert/replace mode is not enabled here by default
+        await completion({
+            text,
+            index: 1,
+            expectedItems: [
+                'grammar'
+            ]
+        });
+        // check the positions, where to apply the proposed completion:
+        await completion({
+            text,
+            index: 1,
+            assert: (completions) => {
+                expect(completions.items).toHaveLength(1);
+                const edit = completions.items[0].textEdit;
+                assertCondition(edit !== undefined);
+                expect(edit.newText).toBe('grammar');
+                assertCondition('range' in edit);
+                const textDocument = grammarServices.shared.workspace.LangiumDocuments.all.toArray()[0].textDocument;
+                // The TextEdit behaves like an "insert":
+                // inserts the completion item at the cursor position and keeps the already existing "ar" right of the cursor
+                expect(edit.range.start.character).toBe(4);
+                expect(edit.range.end.character).toBe(9);
+                const inserted = TextDocument.applyEdits(textDocument, [{ range: edit.range, newText: edit.newText }]);
+                expect(inserted.includes('grammarar g hid'), inserted).toBe(true);
+            }
+        });
+    });
+
+    test('With insert/replace mode', async () => {
+        // explicitly enable the insert/replace mode:
+        grammarServices.shared.lsp.LanguageServer.initialize({
+            processId: null,
+            rootUri: null,
+            capabilities: { textDocument: { completion: { completionItem: { insertReplaceSupport: true } }}}
+        });
+        await completion({
+            text,
+            index: 1,
+            expectedItems: [
+                'grammar'
+            ]
+        });
+        // check the positions, where to apply the proposed completion:
+        await completion({
+            text,
+            index: 1,
+            assert: (completions) => {
+                expect(completions.items).toHaveLength(1);
+                const edit = completions.items[0].textEdit;
+                assertCondition(edit !== undefined);
+                expect(edit.newText).toBe('grammar');
+                assertCondition('insert' in edit);
+                const textDocument = grammarServices.shared.workspace.LangiumDocuments.all.toArray()[0].textDocument;
+                // replace: replaces the current token and removes the already existing "ar" right of the cursor
+                expect(edit.replace.start.character).toBe(4);
+                expect(edit.replace.end.character).toBe(11);
+                const replaced = TextDocument.applyEdits(textDocument, [{ range: edit.replace, newText: edit.newText }]);
+                expect(replaced.includes('grammar g hid'), replaced).toBe(true);
+                // insert: inserts the completion item at the cursor position and keeps the already existing "ar" right of the cursor
+                expect(edit.insert.start.character).toBe(4);
+                expect(edit.insert.end.character).toBe(9);
+                const inserted = TextDocument.applyEdits(textDocument, [{ range: edit.insert, newText: edit.newText }]);
+                expect(inserted.includes('grammarar g hid'), inserted).toBe(true);
+            }
         });
     });
 });
