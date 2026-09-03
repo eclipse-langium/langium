@@ -108,7 +108,10 @@
     "watch": "node esbuild.mjs --watch"
   },
   "dependencies": {
+    "@modelcontextprotocol/node": "~2.0.0",
+    "@modelcontextprotocol/server": "~2.0.0",
     "langium": "4.3.0",
+    "langium-mcp": "4.3.0",
     "langium-railroad": "4.3.0",
     "vscode-languageserver": "~10.1.0",
     "ignore": "~7.0.6"
