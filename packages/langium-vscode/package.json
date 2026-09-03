@@ -35,8 +35,21 @@
         "title": "Show Railroad Syntax Diagram",
         "category": "Langium",
         "icon": "$(list-tree)"
+      },
+      {
+        "command": "langium-inspector.show",
+        "title": "Show AST Inspector",
+        "category": "Langium"
       }
     ],
+    "views": {
+      "explorer": [
+        {
+          "id": "langium-inspector.astTreeView",
+          "name": "Langium AST"
+        }
+      ]
+    },
     "menus": {
       "editor/title": [
         {
@@ -109,6 +122,8 @@
   },
   "dependencies": {
     "langium": "4.3.0",
+    "langium-inspector": "4.3.0",
+    "vscode-languageclient": "~10.0.1",
     "langium-railroad": "4.3.0",
     "vscode-languageserver": "~10.1.0",
     "ignore": "~7.0.6"
