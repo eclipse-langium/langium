@@ -29,7 +29,7 @@ infix BinaryExpression on PrimaryExpression:
     > '+' | '-';
 
 PrimaryExpression infers Expression:
-    '(' Expression ')' |
+    {infer NestedExpression} '(' value=Expression ')' |
     {infer NumberLiteral} value=NUMBER |
     {infer FunctionCall} func=[AbstractDefinition] ('(' args+=Expression (',' args+=Expression)* ')')?;
 
