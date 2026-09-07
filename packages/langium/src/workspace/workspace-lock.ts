@@ -23,7 +23,7 @@ export interface WorkspaceLock {
     /**
      * Performs a single action, like computing completion results or providing workspace symbols.
      * With {@link ReadPriority.Normal} priority (the default), read actions will only be executed after all write actions have finished.
-     * They will be executed in parallel if possible.
+     * They will be executed concurrently if possible.
      *
      * If a write action is currently running, the read action will be queued up and executed afterwards.
      * If a new write action is queued up while a read action is waiting, the write action will receive priority and will be handled before the read action.
@@ -32,6 +32,7 @@ export interface WorkspaceLock {
      * Use this only if the required workspace/document state has already been awaited by other means.
      *
      * Note that read actions are not allowed to modify anything in the workspace. Please use {@link write} instead.
+     * They also cannot be cancelled, independent of their priority, even if a write action is queued up.
      */
     read<T>(action: () => MaybePromise<T>, priority?: ReadPriority): Promise<T>;
 
