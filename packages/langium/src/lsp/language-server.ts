@@ -127,6 +127,7 @@ export class DefaultLanguageServer implements LanguageServer {
         const hasDeclarationProvider = this.hasService(e => e.lsp?.DeclarationProvider);
         const hasInlayHintProvider = this.hasService(e => e.lsp?.InlayHintProvider);
         const workspaceSymbolProvider = this.services.lsp?.WorkspaceSymbolProvider;
+        const textDocumentContentSchemes = this.services.lsp?.TextDocumentContentProvider?.schemes;
 
         const result: InitializeResult = {
             capabilities: {
@@ -134,7 +135,10 @@ export class DefaultLanguageServer implements LanguageServer {
                     workspaceFolders: {
                         supported: true
                     },
-                    fileOperations: fileOperationOptions
+                    fileOperations: fileOperationOptions,
+                    textDocumentContent: textDocumentContentSchemes ? {
+                        schemes: textDocumentContentSchemes
+                    } : undefined
                 },
                 executeCommandProvider: commandNames && {
                     commands: commandNames
@@ -292,6 +296,7 @@ export function startLanguageServer(services: LangiumSharedServices, serviceRequ
     addCallHierarchyHandler(connection, services, serviceRequirements.CallHierarchyProvider);
     addTypeHierarchyHandler(connection, services, serviceRequirements.TypeHierarchyProvider);
     addCodeLensHandler(connection, services, serviceRequirements.CodeLensProvider);
+    addTextDocumentContentRequestHandler(connection, services);
     addDocumentLinkHandler(connection, services, serviceRequirements.DocumentLinkProvider);
     addConfigurationChangeHandler(connection, services);
     addGoToDeclarationHandler(connection, services, serviceRequirements.DeclarationProvider);
@@ -592,6 +597,20 @@ export function addCodeLensHandler(connection: Connection, services: LangiumShar
         services,
         requiredState
     ));
+}
+
+export function addTextDocumentContentRequestHandler(connection: Connection, services: LangiumSharedServices): void {
+    connection.workspace.textDocumentContent.on(async (params, token) => {
+        const textContentProvider = services.lsp?.TextDocumentContentProvider;
+        if (textContentProvider) {
+            try {
+                return await textContentProvider.provideTextDocumentContent(params, token);
+            } catch (err) {
+                return responseError(err);
+            }
+        }
+        return null;
+    });
 }
 
 export function addWorkspaceSymbolHandler(connection: Connection, services: LangiumSharedServices, requiredState: ServiceRequirement = WorkspaceState.IndexedContent): void {
