@@ -43,7 +43,7 @@ export class DefaultTextDocumentContentProvider implements TextDocumentContentPr
 
     readonly schemes: string[];
 
-    constructor(services: LangiumSharedServices, schemes: string[]) {
+    constructor(services: LangiumSharedServices, ...schemes: string[]) {
         this.langiumDocuments = services.workspace.LangiumDocuments;
         this.workspaceManager = services.workspace.WorkspaceManager;
         this.schemes = schemes;

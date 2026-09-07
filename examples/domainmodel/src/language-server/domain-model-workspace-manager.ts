@@ -7,6 +7,8 @@
 import { DefaultWorkspaceManager, URI, type LangiumDocument, type LangiumDocumentFactory, type WorkspaceFolder } from 'langium';
 import type { LangiumSharedServices } from 'langium/lsp';
 
+export const builtinScheme = 'domain-model';
+
 export class DomainModelWorkspaceManager extends DefaultWorkspaceManager {
 
     private readonly documentFactory: LangiumDocumentFactory;
@@ -19,7 +21,7 @@ export class DomainModelWorkspaceManager extends DefaultWorkspaceManager {
     protected override async loadAdditionalDocuments(_folders: WorkspaceFolder[], collector: (document: LangiumDocument) => void): Promise<void> {
         const document = this.documentFactory.fromString(
             'datatype Int',
-            URI.parse('domain-model://domainmodel/Int.dmodel')
+            URI.parse(`${builtinScheme}://domainmodel/Int.dmodel`)
         );
         collector(document);
     }
