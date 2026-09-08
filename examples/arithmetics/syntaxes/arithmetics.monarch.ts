@@ -6,6 +6,7 @@ export default {
     operators: [
         '-',',',';',':','*','/','%','^','+'
     ],
+    ignoreCase: true,
     symbols: /-|,|;|:|\(|\)|\*|\/|%|\^|\+/,
 
     tokenizer: {

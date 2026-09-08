@@ -17,6 +17,7 @@ interface LanguageDefinition {
     readonly keywords: string[];
     readonly operators: string[];
     readonly symbols: string[];
+    readonly caseInsensitive: boolean;
     readonly tokenPostfix: string;
 }
 
@@ -119,6 +120,7 @@ export function generateMonarch(grammar: Grammar, config: LangiumLanguageConfig)
             keywords: getKeywords(grammar),
             operators,
             symbols,
+            caseInsensitive: Boolean(config.caseInsensitive),
             tokenPostfix: '.' + config.id, // category appended to all tokens
         },
         tokenizer: {
@@ -210,9 +212,13 @@ function prettyPrint(monarchGrammar: MonarchGrammar): string {
 function genLanguageDefEntry(name: string, values: string[]): Generated {
     return expandToNode`
         ${name}: [
-            ${ values.map(v => `'${v}'`).join(',') }
+            ${ values.map(v => `'${escapeMonarchString(v)}'`).join(',') }
         ],
     `;
+}
+
+function escapeMonarchString(value: string): string {
+    return value.replace(/\\/g, '\\\\').replace(/'/g, "\\'");
 }
 
 /**
@@ -224,6 +230,7 @@ function prettyPrintLangDef(languageDef: LanguageDefinition): Generated {
     return expandToNode`
         ${genLanguageDefEntry('keywords', languageDef.keywords)}
         ${genLanguageDefEntry('operators', languageDef.operators)}
+        ignoreCase: ${languageDef.caseInsensitive},
         ${/* special case, identify symbols via singular regex*/ undefined}
         symbols: ${new RegExp(languageDef.symbols.map(RegExpUtils.escapeRegExp).join('|')).toString()},
     `;
