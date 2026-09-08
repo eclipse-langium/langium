@@ -2,16 +2,12 @@
   "extends": "../../tsconfig.json",
   "compilerOptions": {
     "rootDir": "src",
-    "outDir": "out"
+    "outDir": "lib"
   },
   "references": [{
     "path": "../langium/tsconfig.src.json"
-  }, {
-    "path": "../langium-mcp/tsconfig.json"
-  }, {
-    "path": "../langium-railroad/tsconfig.json"
   }],
   "include": [
-    "src/**/*"
+    "src/**/*.ts"
   ]
 }
