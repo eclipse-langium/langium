@@ -181,8 +181,12 @@ export class DefaultLangiumDocumentFactory implements LangiumDocumentFactory {
     }
 
     async fromUri<T extends AstNode = AstNode>(uri: URI, cancellationToken = CancellationToken.None): Promise<LangiumDocument<T>> {
-        const content = await this.fileSystemProvider.readFile(uri);
+        const content = await this.getInitialText(uri, cancellationToken);
         return this.createAsync<T>(uri, content, cancellationToken);
+    }
+
+    protected async getInitialText(uri: URI, _cancellationToken: CancellationToken): Promise<string> {
+        return this.fileSystemProvider.readFile(uri);
     }
 
     fromTextDocument<T extends AstNode = AstNode>(textDocument: TextDocument, uri?: URI, options?: ParserOptions): LangiumDocument<T>;
@@ -276,7 +280,7 @@ export class DefaultLangiumDocumentFactory implements LangiumDocumentFactory {
         // The CST full text property contains the original text that was used to create the AST.
         const oldText = document.parseResult.value.$cstNode?.root.fullText;
         const textDocument = this.textDocuments?.get(document.uri.toString());
-        const text = textDocument ? textDocument.getText() : await this.fileSystemProvider.readFile(document.uri);
+        const text = await this.getUpdatedText(document, textDocument, cancellationToken);
 
         if (textDocument) {
             Object.defineProperty(
@@ -305,6 +309,10 @@ export class DefaultLangiumDocumentFactory implements LangiumDocumentFactory {
         }
         document.state = DocumentState.Parsed;
         return document;
+    }
+
+    protected async getUpdatedText<T extends AstNode>(document: Mutable<LangiumDocument<T>>, textDocument: TextDocument | undefined, _cancellationToken: CancellationToken): Promise<string> {
+        return textDocument ? textDocument.getText() : await this.fileSystemProvider.readFile(document.uri);
     }
 
     protected parse<T extends AstNode>(uri: URI, text: string, options?: ParserOptions): ParseResult<T> {
