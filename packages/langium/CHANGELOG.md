@@ -1,5 +1,24 @@
 # Change Log of `langium`
 
+## v4.4.0 (Sep. 2026)
+
+* Significantly reduce the memory usage of the CST and improve parsing performance ([#2191](https://github.com/eclipse-langium/langium/pull/2191)).
+* Support priority read requests to prevent LSP requests from operating on outdated data ([#2214](https://github.com/eclipse-langium/langium/pull/2214)).
+* Implement the LSP 3.18 `workspace/textDocumentContent` request via the new `TextDocumentContentProvider` service ([#2190](https://github.com/eclipse-langium/langium/pull/2190)).
+* The default completion provider now supports both the `insert` and `replace` suggestion modes ([#2211](https://github.com/eclipse-langium/langium/pull/2211)).
+* Test assertions now accept lazily computed error messages ([#2208](https://github.com/eclipse-langium/langium/pull/2208)).
+* Update Chevrotain to v13 ([#2196](https://github.com/eclipse-langium/langium/pull/2196)).
+* Update `vscode-languageserver` to 10.1 and `vscode-languageserver-protocol` to 3.18.2 ([#2184](https://github.com/eclipse-langium/langium/pull/2184)).
+* Fix streaming of array-valued multi-references ([#2220](https://github.com/eclipse-langium/langium/pull/2220)).
+* Fix JSON deserialization of multi-references ([#2181](https://github.com/eclipse-langium/langium/pull/2181)).
+* Fix `MapScope` using its outer scope even when it is disabled ([#2210](https://github.com/eclipse-langium/langium/pull/2210)).
+* Fix `langium.build.ignorePatterns` being ignored during initial workspace indexing ([#2206](https://github.com/eclipse-langium/langium/pull/2206)).
+* Improve customizability of URI normalization in the `UriTrie` ([#2209](https://github.com/eclipse-langium/langium/pull/2209)).
+
+### Breaking Changes
+
+* As part of the CST memory optimization ([#2191](https://github.com/eclipse-langium/langium/pull/2191)), `CstNode#root` is no longer stored but derived from the container hierarchy, and `CompositeCstNode#content` is now a `readonly` array that must be manipulated via the `CstNodeBuilder`.
+
 ## v4.3.0 (Jun. 2026)
 
 * Update LSP support to version 3.18 of the protocol ([#2165](https://github.com/eclipse-langium/langium/pull/2165)).

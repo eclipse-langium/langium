@@ -1,5 +1,12 @@
 # Change Log of `generator-langium`
 
+## v4.4.0 (Sep. 2026)
+
+* Update the generated code for the 4.4.0 release.
+* Generated projects now use Vitest 4 ([#2187](https://github.com/eclipse-langium/langium/pull/2187), [#2188](https://github.com/eclipse-langium/langium/pull/2188)).
+* Fix handling of multiple file extensions entered in the project prompt ([#2199](https://github.com/eclipse-langium/langium/pull/2199)).
+* Fix file references in the generated README files ([#2204](https://github.com/eclipse-langium/langium/pull/2204)).
+
 ## v4.2.0 (Jan. 2026)
 
 * Update the generated code for the 4.2.0 release.

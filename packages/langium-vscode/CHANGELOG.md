@@ -1,5 +1,9 @@
 # Change Log of `langium-vscode`
 
+## v4.4.0 (Sep. 2026)
+
+* Update the internal `langium` version to 4.4.0.
+
 ## v4.2.0 (Jan. 2026)
 
 * Update the internal `langium` version to 4.2.0.
