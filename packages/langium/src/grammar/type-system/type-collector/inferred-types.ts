@@ -433,6 +433,20 @@ function newTypePart(element?: AbstractParserRule | Action | string): TypePart {
 }
 
 /**
+ * Walks up the type path to attempt to find the name of the type we're currently building
+ */
+function nearestNamedParent(part: TypePart): string | undefined {
+    let current: TypePart | undefined = part;
+    while (current) {
+        if (current.name !== undefined) {
+            return current.name;
+        }
+        current = current.parents[0];
+    }
+    return undefined;
+}
+
+/**
  * Collects all possible type branches of a given parser rule element.
  *
  * @param state State to walk over element's graph.
@@ -482,6 +496,13 @@ function collectElement(graph: TypeGraph, current: TypePart, element: AbstractEl
 
 function addAction(graph: TypeGraph, parent: TypePart, action: Action, services?: LangiumCoreServices): TypePart {
     const commentProvider = services?.documentation.CommentProvider;
+    if (!action.feature || !action.operator) {
+        const actionName = getTypeNameWithoutError(action);
+        if (actionName !== undefined && actionName === nearestNamedParent(parent)) {
+            // action that re-introduces the same type as is, with no other contribution, disregard
+            return parent;
+        }
+    }
 
     // We create a copy of the current type part
     // This is essentially a leaf node of the current type
@@ -661,6 +682,8 @@ function flattenTypes(alternatives: TypePath[], part: TypePart): TypePath[] {
                 const existingProperty = properties.find(e => e.name === altProperty.name);
                 if (existingProperty) {
                     existingProperty.type = mergePropertyTypes(existingProperty.type, altProperty.type);
+                    // if either occurrence is optional, the merged property must be optional
+                    existingProperty.optional = existingProperty.optional || altProperty.optional;
                     altProperty.astNodes.forEach(e => existingProperty.astNodes.add(e));
                 } else {
                     properties.push({ ...altProperty });
