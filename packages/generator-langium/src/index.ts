@@ -435,9 +435,12 @@ export * from './generated/module.js';
                 /"langium": "~?\d\.\d\.\d"/g,
                 `"langium": "file:${localPackage('langium')}"`
             );
+            // langium-cli depends on langium-railroad; link it as well so that npm
+            // does not try to resolve a not yet published version from the registry.
             content = content.replace(
                 /"langium-cli": "~?\d\.\d\.\d"/g,
-                `"langium-cli": "file:${localPackage('langium-cli')}"`
+                `"langium-cli": "file:${localPackage('langium-cli')}",
+                 "langium-railroad": "file:${localPackage('langium-railroad')}"`
             );
         }
         return content;

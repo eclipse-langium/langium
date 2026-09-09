@@ -1,5 +1,15 @@
 # Change Log of `langium-cli`
 
+## v4.4.0 (Sep. 2026)
+
+* Update the internal `langium` version to 4.4.0.
+* Sort keywords by length in the generated syntax highlighting files, so that longer keywords with a common prefix take precedence ([#2194](https://github.com/eclipse-langium/langium/pull/2194)).
+* Add `$id` to the `langium-config.json` schema for compatibility with `jsonschema` 1.5 ([#2200](https://github.com/eclipse-langium/langium/pull/2200)).
+
+## v4.3.0 (Jun. 2026)
+
+* Update the internal `langium` version to 4.3.0.
+
 ## v4.2.0 (Jan. 2026)
 
 * Update the internal `langium` version to 4.2.0.
