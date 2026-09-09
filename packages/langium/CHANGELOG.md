@@ -12,7 +12,6 @@
 * Fix streaming of array-valued multi-references ([#2220](https://github.com/eclipse-langium/langium/pull/2220)).
 * Fix JSON deserialization of multi-references ([#2181](https://github.com/eclipse-langium/langium/pull/2181)).
 * Fix `MapScope` using its outer scope even when it is disabled ([#2210](https://github.com/eclipse-langium/langium/pull/2210)).
-* Fix `langium.build.ignorePatterns` being ignored during initial workspace indexing ([#2206](https://github.com/eclipse-langium/langium/pull/2206)).
 * Improve customizability of URI normalization in the `UriTrie` ([#2209](https://github.com/eclipse-langium/langium/pull/2209)).
 
 ### Breaking Changes

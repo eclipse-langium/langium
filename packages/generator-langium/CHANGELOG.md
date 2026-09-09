@@ -7,6 +7,10 @@
 * Fix handling of multiple file extensions entered in the project prompt ([#2199](https://github.com/eclipse-langium/langium/pull/2199)).
 * Fix file references in the generated README files ([#2204](https://github.com/eclipse-langium/langium/pull/2204)).
 
+## v4.3.0 (Jun. 2026)
+
+* Update the generated code for the 4.3.0 release.
+
 ## v4.2.0 (Jan. 2026)
 
 * Update the generated code for the 4.2.0 release.

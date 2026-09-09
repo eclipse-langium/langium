@@ -3,6 +3,11 @@
 ## v4.4.0 (Sep. 2026)
 
 * Update the internal `langium` version to 4.4.0.
+* Fix `langium.build.ignorePatterns` being ignored during initial workspace indexing ([#2206](https://github.com/eclipse-langium/langium/pull/2206)).
+
+## v4.4.0 (Jun)
+
+* Update the internal `langium` version to 4.3.0.
 
 ## v4.2.0 (Jan. 2026)
 
