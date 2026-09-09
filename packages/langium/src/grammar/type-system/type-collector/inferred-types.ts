@@ -4,12 +4,12 @@
  * terms of the MIT License, which is available in the project root.
  ******************************************************************************/
 
-import type { ParserRule, Action, AbstractElement, Assignment, RuleCall, InfixRule, TypeAttribute, AbstractParserRule } from '../../../languages/generated/ast.js';
+import type { ParserRule, Action, AbstractElement, Assignment, RuleCall, InfixRule, TypeAttribute, AbstractParserRule, TypeDefinition } from '../../../languages/generated/ast.js';
 import type { PlainAstTypes, PlainInterface, PlainProperty, PlainPropertyType, PlainUnion } from './plain-types.js';
 import type { LangiumCoreServices } from '../../../index.js';
 import { isNamed } from '../../../references/name-provider.js';
 import { MultiMap } from '../../../utils/collections.js';
-import { isAlternatives, isKeyword, isParserRule, isAction, isGroup, isUnorderedGroup, isAssignment, isRuleCall, isCrossReference, isTerminalRule, isAbstractParserRule } from '../../../languages/generated/ast.js';
+import { isAlternatives, isKeyword, isParserRule, isAction, isGroup, isUnorderedGroup, isAssignment, isRuleCall, isCrossReference, isTerminalRule, isAbstractParserRule, isType, isUnionType, isSimpleType } from '../../../languages/generated/ast.js';
 import { getTypeNameWithoutError, isPrimitiveGrammarType } from '../../internal-grammar-util.js';
 import { mergePropertyTypes } from './plain-types.js';
 import { isOptionalCardinality, terminalRegex, getRuleTypeName, getTypeName } from '../../../utils/grammar-utils.js';
@@ -272,7 +272,7 @@ export function collectInferredTypes(parserRules: ParserRule[], datatypeRules: P
     };
     for (const rule of parserRules) {
         const comment = commentProvider?.getComment(rule);
-        allTypes.push(...getRuleTypes(context, rule, services).map(typePath => ({...typePath, comment})));
+        allTypes.push(...getRuleTypes(context, rule, services).map(typePath => ({ ...typePath, comment })));
     }
     const infixInterfaces = calculateInfixInterfaces(infixRules);
     const interfaces = calculateInterfaces(allTypes, infixInterfaces);
@@ -343,48 +343,74 @@ function calculateInfixInterfaces(rules: InfixRule[]): PlainInterface[] {
     return interfaces;
 }
 
+/**
+ * Finds the effective data type of a data type rule.
+ *
+ * The declared type of a data type rule must be either:
+ * - (1) the type 'string'
+ * - (2) a primitive type other than string (boolean, number, bigint, Date)
+ * - (3) a reference to a type declaration that is itself a primitive type (type X = 'foo' | 'bar')
+ *
+ * For cases (2) and (3), the type is used as declared.
+ *
+ * For case (1), the type is inferred from the definition of the data type rule, e.g.
+ * `Rule returns string: 'a' | 'b';` would be inferred as the union type `type Rule = 'a' | 'b';`.
+ * The implementation makes sure that the inferred type is compatible with the declared `string`
+ * return type, so e.g. `Rule returns string: INT;` would be inferred as `type Rule = string;`.
+ *
+ * Note: A data type rules cannot infer a type. But this method can be called even for invalid
+ * grammars with data type rules that lack a return types, so we must have a defined behavior
+ * for these cases.
+ * @param rule The data type rule to infer the type for.
+ * @returns The inferred type of the data type rule.
+ */
 function getDataRuleType(rule: ParserRule): PlainPropertyType {
     if (rule.dataType && rule.dataType !== 'string') {
-        return {
-            primitive: rule.dataType
-        };
+        return { primitive: rule.dataType };
     }
-    let cancelled = false;
-    const cancel = (): PlainPropertyType => {
-        cancelled = true;
-        return {
-            primitive: 'unknown'
-        };
-    };
-    const type = buildDataRuleType(rule.definition, cancel);
-    if (cancelled) {
-        return {
-            primitive: 'string'
-        };
-    } else {
-        return type;
+    if (rule.returnType && isType(rule.returnType.ref)) {
+        return { value: rule.returnType.ref.name };
     }
+    const type = buildDataRuleType(rule.definition, rule.dataType === 'string');
+    return type ?? { primitive: 'string' };
 }
 
-function buildDataRuleType(element: AbstractElement, cancel: () => PlainPropertyType): PlainPropertyType {
+/**
+ * Infers the type of a data type rule from its definition, e.g. `Rule returns string: 'a' | 'b';`
+ * would be inferred as the union type `type Rule = 'a' | 'b';`.
+ *
+ * If the data rule declares an explicit return type of 'string', `hasStringConstraint` must be set to
+ * true. In that case, the inferred type will be a subtype of string, e.g. `Rule returns string = INT;`
+ * will be inferred as `type Rule = string;`.
+ *
+ * Returns `undefined` if the type cannot be inferred. In that case, the default behavior
+ * should be used, which is to assume the type is string.
+ *
+ * @param element The AST element representing the definition of the data type rule.
+ * @param hasStringConstraint Whether the data type rule is declared to return `string`.
+ * @returns The inferred type of the data type rule, or undefined if the type cannot be inferred.
+ */
+function buildDataRuleType(element: AbstractElement, hasStringConstraint: boolean): PlainPropertyType | undefined {
     if (element.cardinality) {
         // Multiplicity/optionality is not supported for types
-        return cancel();
+        return undefined;
     }
-    if (isAlternatives(element)) {
-        return {
-            types: element.elements.map(e => buildDataRuleType(e, cancel))
-        };
+    else if (isAlternatives(element)) {
+        const types = element.elements
+            .map(e => buildDataRuleType(e, hasStringConstraint))
+            .filter(t => t !== undefined);
+        return element.elements.length === types.length ? { types } : undefined;
     } else if (isGroup(element) || isUnorderedGroup(element)) {
         if (element.elements.length !== 1) {
-            return cancel();
+            return undefined;
         } else {
-            return buildDataRuleType(element.elements[0], cancel);
+            return buildDataRuleType(element.elements[0], hasStringConstraint);
         }
     } else if (isRuleCall(element)) {
         const ref = element.rule?.ref;
         if (ref) {
             if (isTerminalRule(ref)) {
+                const terminalType = ref.type?.name ?? 'string';
                 let regex: string | undefined;
                 try {
                     regex = terminalRegex(ref).toString();
@@ -392,24 +418,104 @@ function buildDataRuleType(element: AbstractElement, cancel: () => PlainProperty
                     // If the regex cannot be built, we assume it's just a string
                     regex = undefined;
                 }
+                // Include regex only for string terminals. Other data types are
+                // converted to string, with a format that won't match the regex.
+                // E.g. 'Rule returns string: DATE' will use Date.toString() as a
+                // value in the AST.
                 return {
-                    primitive: ref.type?.name ?? 'string',
-                    regex
+                    primitive: hasStringConstraint ? 'string' : terminalType,
+                    regex: terminalType === 'string' ? regex : undefined,
                 };
             } else {
-                return {
-                    value: ref.name
+                // Only other remaining alternative is 'infix rule', and
+                // data type rules are not allowed to reference infix rules.
+                if (hasStringConstraint && isParserRule(ref)) {
+                    if (isDataTypeRuleAssignableToString(ref)) {
+                        return { value: ref.name };
+                    } else {
+                        return { primitive: 'string' };
+                    }
+                }
+                else {
+                    return {
+                        value: ref.name,
+                    };
                 };
             }
         } else {
-            return cancel();
+            return undefined;
         }
     } else if (isKeyword(element)) {
         return {
             string: element.value
         };
+    } else {
+        return undefined;
     }
-    return cancel();
+}
+
+/**
+ * Checks if the return type of the given data type rule is assignable to 'string'.
+ *
+ * - If the rule has a (primitive) data type as its return type, check if that data type is assignable to 'string'.
+ * - If the return type is a reference to a type definition, check if that declared type is assignable to 'string'.
+ * - All other cases are not allowed for data type rules and the grammar will fail validation.
+ *   Consider these cases as not assignable to 'string'.
+ *
+ * @param rule The parser rule to check.
+ * @returns Whether the data type rule's return type is assignable to 'string'.
+ */
+function isDataTypeRuleAssignableToString(rule: ParserRule): boolean {
+    if (rule.dataType) {
+        return rule.dataType === 'string';
+    } else if (rule.returnType && isType(rule.returnType.ref)) {
+        return isDataRuleTypeDefinitionAssignableToString(rule.returnType.ref.type, new Map());
+    } else {
+        return false;
+    }
+}
+
+/**
+ * Given a type definition for the return type of a data type rule, check if the type defined
+ * by that type definition is assignable to 'string'. May ignore or not handle any type
+ * definition that is not allowed for data type rules (array type, reference type).
+ * @param type A type definition to check.
+ * @param visited A set of elements that have already been visited, to avoid infinite recursion.
+ * @returns Whether the type defined by the given type definition is assignable to 'string'.
+ */
+function isDataRuleTypeDefinitionAssignableToString(type: TypeDefinition, visited: Map<TypeDefinition, boolean>): boolean {
+    if (visited.has(type)) {
+        return visited.get(type)!;
+    }
+    visited.set(type, false);
+
+    let assignableToString: boolean;
+    if (isUnionType(type)) {
+        assignableToString = type.types.every(t => isDataRuleTypeDefinitionAssignableToString(t, visited));
+    }
+    else if (isSimpleType(type)) {
+        if (type.primitiveType) {
+            assignableToString = type.primitiveType === 'string';
+        }
+        else if (type.stringType) {
+            assignableToString = true;
+        }
+        else if (isType(type.typeRef?.ref)) {
+            assignableToString = isDataRuleTypeDefinitionAssignableToString(type.typeRef.ref.type, visited);
+        } else {
+            // can only happen for invalid grammars
+            // (either primitive type, string type, or type ref must be present)
+            assignableToString = false;
+        }
+    } else {
+        // Remaining are ArrayType and ReferenceType, which
+        // (a) are not allowed for data type rules, and
+        // (b) are not assignable to 'string' either way.
+        assignableToString = false;
+    }
+
+    visited.set(type, assignableToString);
+    return assignableToString;
 }
 
 function getRuleTypes(context: TypeCollectionContext, rule: ParserRule, services?: LangiumCoreServices): TypePath[] {
