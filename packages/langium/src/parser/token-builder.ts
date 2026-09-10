@@ -42,6 +42,14 @@ export interface LexingDiagnostic extends ILexingError {
     severity?: LexingDiagnosticSeverity;
 }
 
+export interface RegExpTokenType extends TokenType {
+    regex: RegExp;
+}
+
+export function isRegExpTokenType(tokenType: TokenType): tokenType is RegExpTokenType {
+    return 'regex' in tokenType && tokenType.regex instanceof RegExp;
+}
+
 export class DefaultTokenBuilder implements TokenBuilder {
     /**
      * The list of diagnostics stored during the lexing process of a single text.
@@ -81,8 +89,9 @@ export class DefaultTokenBuilder implements TokenBuilder {
     protected buildTerminalToken(terminal: TerminalRule): TokenType {
         const regex = terminalRegex(terminal);
         const pattern = this.requiresCustomPattern(regex) ? this.regexPatternFunction(regex) : regex;
-        const tokenType: TokenType = {
+        const tokenType: RegExpTokenType = {
             name: terminal.name,
+            regex,
             PATTERN: pattern,
         };
         if (typeof pattern === 'function') {
@@ -147,8 +156,21 @@ export class DefaultTokenBuilder implements TokenBuilder {
 
     protected findLongerAlt(keyword: Keyword, terminalTokens: TokenType[]): TokenType[] {
         return terminalTokens.reduce((longerAlts: TokenType[], token) => {
-            const pattern = token?.PATTERN as RegExp;
-            if (pattern?.source && partialMatches('^' + pattern.source + '$', keyword.value)) {
+            let pattern: TokenPattern | undefined;
+            if (token.PATTERN instanceof RegExp) {
+                pattern = token.PATTERN;
+            } else if (isRegExpTokenType(token)) {
+                pattern = token.regex;
+            } else {
+                // No regex found, fall back to the pattern function
+                pattern = token.PATTERN;
+            }
+            if (
+                // It's a regexp and we get a (partial) match
+                (pattern instanceof RegExp && partialMatches('^' + pattern.source + '$', keyword.value))
+                // It's a matching function and we full match
+                || (typeof pattern === 'function' && pattern(keyword.value, 0, [], {}) !== null)
+            ) {
                 longerAlts.push(token);
             }
             return longerAlts;
