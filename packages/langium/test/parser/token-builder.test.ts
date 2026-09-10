@@ -5,9 +5,9 @@
  ******************************************************************************/
 
 import type { TokenPattern, TokenType } from '@chevrotain/types';
-import type { Grammar } from 'langium';
+import type { Grammar, RegExpTokenType } from 'langium';
 import { beforeAll, describe, expect, test } from 'vitest';
-import { EmptyFileSystem } from 'langium';
+import { EmptyFileSystem, isRegExpTokenType } from 'langium';
 import { createLangiumGrammarServices } from 'langium/grammar';
 import { parseHelper } from 'langium/test';
 
@@ -104,6 +104,22 @@ describe('tokenBuilder#longerAlts', () => {
 
     test('should create no longer alts for terminals', () => {
         expect(abTerminalToken.LONGER_ALT).toBeUndefined();
+    });
+
+    test('should create partial-match longer alts for custom pattern terminals', async () => {
+        // The 'u' flag forces a custom matcher function. The original regex is kept on the token,
+        // so the keyword 'AB' still gets 'ABC' as a longer alt via partial matching,
+        // even though the matcher function itself would not match 'AB'.
+        const tokens = await getTokens(`
+        grammar test
+        Main: {infer Main} 'AB' ABC;
+        terminal ABC: /ABC/u;
+        `);
+        const [abKeyword, abcTerminal] = tokens;
+        expect(abcTerminal.PATTERN).toBeTypeOf('function');
+        expect(isRegExpTokenType(abcTerminal)).toBe(true);
+        expect((abcTerminal as RegExpTokenType).regex).toEqual(/ABC/u);
+        expect(abKeyword.LONGER_ALT).toEqual([abcTerminal]);
     });
 
 });
