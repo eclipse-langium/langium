@@ -6,6 +6,7 @@
 
 import { type Module, inject } from 'langium';
 import { createDefaultModule, createDefaultSharedModule, type DefaultSharedModuleContext, type LangiumServices, type LangiumSharedServices, type PartialLangiumServices } from 'langium/lsp';
+import { ArithmeticsFormatter } from './arithmetics-formatter.js';
 import { ArithmeticsScopeProvider } from './arithmetics-scope-provider.js';
 import { ArithmeticsValidator, registerValidationChecks } from './arithmetics-validator.js';
 import { ArithmeticsGeneratedModule, ArithmeticsGeneratedSharedModule } from './generated/module.js';
@@ -39,7 +40,8 @@ export const ArithmeticsModule: Module<ArithmeticsServices, PartialLangiumServic
         ArithmeticsValidator: () => new ArithmeticsValidator()
     },
     lsp: {
-        CodeActionProvider: () => new ArithmeticsCodeActionProvider()
+        CodeActionProvider: () => new ArithmeticsCodeActionProvider(),
+        Formatter: () => new ArithmeticsFormatter()
     }
 };
 
