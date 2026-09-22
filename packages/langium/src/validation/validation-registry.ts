@@ -136,10 +136,15 @@ export class ValidationRegistry {
     protected readonly entries = new MultiMap<string, ValidationCheckEntry>();
     protected readonly knownCategories = new Set(ValidationCategory.defaults);
     /**
-     * Caches the result of {@link getCheckArray} per type and category combination. The registry is
-     * static once registration is done, so this is invalidated only in {@link addEntry}.
+     * Caches the result of {@link getCheckArray}, keyed on the identity of the categories array and
+     * then on the node type. Keying on identity rather than on a built string avoids both the
+     * per-lookup allocation - {@link getCheckArray} is called once per AST node - and the question
+     * of which separator is safe inside a user-defined category name. Both are invalidated in
+     * {@link addEntry}; the outer one is a `WeakMap` so a caller passing a fresh array per call
+     * cannot make the registry retain them.
      */
-    protected readonly checkCache = new Map<string, readonly ValidationCheck[]>();
+    protected checkCache = new WeakMap<ValidationCategory[], Map<string, readonly ValidationCheck[]>>();
+    protected readonly uncategorizedCheckCache = new Map<string, readonly ValidationCheck[]>();
 
     protected readonly reflection: AstReflection;
 
@@ -208,7 +213,8 @@ export class ValidationRegistry {
     }
 
     protected addEntry(type: string, entry: ValidationCheckEntry): void {
-        this.checkCache.clear();
+        this.checkCache = new WeakMap();
+        this.uncategorizedCheckCache.clear();
         if (type === 'AstNode') {
             this.entries.add('AstNode', entry);
             return;
@@ -231,10 +237,18 @@ export class ValidationRegistry {
      * registered entries, so it is computed once and cached.
      */
     getCheckArray(type: string, categories?: ValidationCategory[]): readonly ValidationCheck[] {
-        // `\0` separates the joined categories too: joining with ',' would let a category whose
-        // name contains a comma collide with the two categories it looks like.
-        const key = categories ? `${type}\u0000${categories.join('\u0000')}` : type;
-        let checks = this.checkCache.get(key);
+        let byType: Map<string, readonly ValidationCheck[]>;
+        if (categories) {
+            let existing = this.checkCache.get(categories);
+            if (existing === undefined) {
+                existing = new Map();
+                this.checkCache.set(categories, existing);
+            }
+            byType = existing;
+        } else {
+            byType = this.uncategorizedCheckCache;
+        }
+        let checks = byType.get(type);
         if (checks === undefined) {
             let entries = [...this.entries.get(type), ...this.entries.get('AstNode')];
             if (categories) {
@@ -243,7 +257,7 @@ export class ValidationRegistry {
             // `readonly` is erased at runtime, and the cached array is handed straight to callers -
             // freeze it so a caller cannot poison the registry for every subsequent lookup.
             checks = Object.freeze(entries.map(entry => entry.check));
-            this.checkCache.set(key, checks);
+            byType.set(type, checks);
         }
         return checks;
     }
