@@ -231,14 +231,18 @@ export class ValidationRegistry {
      * registered entries, so it is computed once and cached.
      */
     getCheckArray(type: string, categories?: ValidationCategory[]): readonly ValidationCheck[] {
-        const key = categories ? `${type}\u0000${categories.join(',')}` : type;
+        // `\0` separates the joined categories too: joining with ',' would let a category whose
+        // name contains a comma collide with the two categories it looks like.
+        const key = categories ? `${type}\u0000${categories.join('\u0000')}` : type;
         let checks = this.checkCache.get(key);
         if (checks === undefined) {
             let entries = [...this.entries.get(type), ...this.entries.get('AstNode')];
             if (categories) {
                 entries = entries.filter(entry => categories.includes(entry.category));
             }
-            checks = entries.map(entry => entry.check);
+            // `readonly` is erased at runtime, and the cached array is handed straight to callers -
+            // freeze it so a caller cannot poison the registry for every subsequent lookup.
+            checks = Object.freeze(entries.map(entry => entry.check));
             this.checkCache.set(key, checks);
         }
         return checks;

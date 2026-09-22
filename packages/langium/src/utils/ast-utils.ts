@@ -25,7 +25,10 @@ export function linkContentToContainer(node: AstNode, options: {
 } = {}): void {
     const deep = options.deep === true;
     for (const name in node) {
-        if (name.charCodeAt(0) === 36 /* '$' */) {
+        // `for...in` also yields inherited enumerable properties; `streamContents` enumerates with
+        // `Object.keys`. Guarding for own properties keeps both definitions of "children" identical,
+        // without allocating the key array that `Object.keys` would.
+        if (name.charCodeAt(0) === 36 /* '$' */ || !Object.prototype.hasOwnProperty.call(node, name)) {
             continue;
         }
         const value = (node as GenericAstNode)[name];

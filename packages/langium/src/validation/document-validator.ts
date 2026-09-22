@@ -261,7 +261,9 @@ export class DefaultDocumentValidator implements DocumentValidator {
                     // Children are pushed in reverse so that they are visited in document order.
                     const children: AstNode[] = [];
                     for (const property in node) {
-                        if (property.charCodeAt(0) === 36 /* '$' */) {
+                        // own properties only, to match `streamContents`/`streamAst`
+                        if (property.charCodeAt(0) === 36 /* '$' */
+                            || !Object.prototype.hasOwnProperty.call(node, property)) {
                             continue;
                         }
                         const value = (node as GenericAstNode)[property];
