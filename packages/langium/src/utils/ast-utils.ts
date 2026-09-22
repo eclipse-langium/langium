@@ -23,25 +23,29 @@ export function linkContentToContainer(node: AstNode, options: {
      */
     deep?: boolean
 } = {}): void {
-    for (const [name, value] of Object.entries(node)) {
-        if (!name.startsWith('$')) {
-            if (Array.isArray(value)) {
-                value.forEach((item, index) => {
-                    if (isAstNode(item)) {
-                        (item as Mutable<AstNode>).$container = node;
-                        (item as Mutable<AstNode>).$containerProperty = name;
-                        (item as Mutable<AstNode>).$containerIndex = index;
-                        if (options.deep) {
-                            linkContentToContainer(item, options);
-                        }
+    const deep = options.deep === true;
+    for (const name in node) {
+        if (name.charCodeAt(0) === 36 /* '$' */) {
+            continue;
+        }
+        const value = (node as GenericAstNode)[name];
+        if (Array.isArray(value)) {
+            for (let index = 0; index < value.length; index++) {
+                const item = value[index];
+                if (isAstNode(item)) {
+                    (item as Mutable<AstNode>).$container = node;
+                    (item as Mutable<AstNode>).$containerProperty = name;
+                    (item as Mutable<AstNode>).$containerIndex = index;
+                    if (deep) {
+                        linkContentToContainer(item, options);
                     }
-                });
-            } else if (isAstNode(value)) {
-                (value as Mutable<AstNode>).$container = node;
-                (value as Mutable<AstNode>).$containerProperty = name;
-                if (options.deep) {
-                    linkContentToContainer(value, options);
                 }
+            }
+        } else if (isAstNode(value)) {
+            (value as Mutable<AstNode>).$container = node;
+            (value as Mutable<AstNode>).$containerProperty = name;
+            if (deep) {
+                linkContentToContainer(value, options);
             }
         }
     }
@@ -243,7 +247,12 @@ export function streamReferences(node: AstNode): Stream<ReferenceInfo> {
 export function assignMandatoryProperties(reflection: AstReflection, node: AstNode): void {
     const typeMetaData = reflection.getTypeMetaData(node.$type);
     const genericNode = node as GenericAstNode;
-    for (const property of Object.values(typeMetaData.properties)) {
+    const properties = typeMetaData.properties;
+    for (const key in properties) {
+        if (!Object.prototype.hasOwnProperty.call(properties, key)) {
+            continue;
+        }
+        const property = properties[key];
         // Only set the value if the property is not already set and if it has a default value
         if (property.defaultValue !== undefined && genericNode[property.name] === undefined) {
             genericNode[property.name] = copyDefaultValue(property.defaultValue);

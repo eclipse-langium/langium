@@ -135,6 +135,11 @@ type ValidationCheckEntry = {
 export class ValidationRegistry {
     protected readonly entries = new MultiMap<string, ValidationCheckEntry>();
     protected readonly knownCategories = new Set(ValidationCategory.defaults);
+    /**
+     * Caches the result of {@link getCheckArray} per type and category combination. The registry is
+     * static once registration is done, so this is invalidated only in {@link addEntry}.
+     */
+    protected readonly checkCache = new Map<string, readonly ValidationCheck[]>();
 
     protected readonly reflection: AstReflection;
 
@@ -203,6 +208,7 @@ export class ValidationRegistry {
     }
 
     protected addEntry(type: string, entry: ValidationCheckEntry): void {
+        this.checkCache.clear();
         if (type === 'AstNode') {
             this.entries.add('AstNode', entry);
             return;
@@ -213,12 +219,29 @@ export class ValidationRegistry {
     }
 
     getChecks(type: string, categories?: ValidationCategory[]): Stream<ValidationCheck> {
-        let checks = stream(this.entries.get(type))
-            .concat(this.entries.get('AstNode'));
-        if (categories) {
-            checks = checks.filter(entry => categories.includes(entry.category));
+        return stream(this.getCheckArray(type, categories));
+    }
+
+    /**
+     * The checks applicable to the given type, as a plain array.
+     *
+     * `getChecks` is called once per AST node during validation, and building a lazy stream
+     * pipeline for each of them is a significant share of validation time - the more so because
+     * most node types have no checks registered at all. The resolved list depends only on the
+     * registered entries, so it is computed once and cached.
+     */
+    getCheckArray(type: string, categories?: ValidationCategory[]): readonly ValidationCheck[] {
+        const key = categories ? `${type}\u0000${categories.join(',')}` : type;
+        let checks = this.checkCache.get(key);
+        if (checks === undefined) {
+            let entries = [...this.entries.get(type), ...this.entries.get('AstNode')];
+            if (categories) {
+                entries = entries.filter(entry => categories.includes(entry.category));
+            }
+            checks = entries.map(entry => entry.check);
+            this.checkCache.set(key, checks);
         }
-        return checks.map(entry => entry.check);
+        return checks;
     }
 
     /**
