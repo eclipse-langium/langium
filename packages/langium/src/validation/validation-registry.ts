@@ -132,6 +132,24 @@ type ValidationCheckEntry = {
 /**
  * Manages a set of `ValidationCheck`s to be applied when documents are validated.
  */
+interface CheckCacheEntry {
+    /** The categories this entry was built for, copied so a later mutation of the caller's array is visible. */
+    categories: ValidationCategory[]
+    byType: Map<string, readonly ValidationCheck[]>
+}
+
+function sameCategories(a: readonly ValidationCategory[], b: readonly ValidationCategory[]): boolean {
+    if (a.length !== b.length) {
+        return false;
+    }
+    for (let i = 0; i < a.length; i++) {
+        if (a[i] !== b[i]) {
+            return false;
+        }
+    }
+    return true;
+}
+
 export class ValidationRegistry {
     protected readonly entries = new MultiMap<string, ValidationCheckEntry>();
     protected readonly knownCategories = new Set(ValidationCategory.defaults);
@@ -139,11 +157,13 @@ export class ValidationRegistry {
      * Caches the result of {@link getCheckArray}, keyed on the identity of the categories array and
      * then on the node type. Keying on identity rather than on a built string avoids both the
      * per-lookup allocation - {@link getCheckArray} is called once per AST node - and the question
-     * of which separator is safe inside a user-defined category name. Both are invalidated in
+     * of which separator is safe inside a user-defined category name. The cached entry keeps a copy
+     * of the categories it was built for, so an array mutated after its first lookup is detected
+     * and rebuilt rather than answered from the stale entry. Both are invalidated in
      * {@link addEntry}; the outer one is a `WeakMap` so a caller passing a fresh array per call
      * cannot make the registry retain them.
      */
-    protected checkCache = new WeakMap<ValidationCategory[], Map<string, readonly ValidationCheck[]>>();
+    protected checkCache = new WeakMap<ValidationCategory[], CheckCacheEntry>();
     protected readonly uncategorizedCheckCache = new Map<string, readonly ValidationCheck[]>();
 
     protected readonly reflection: AstReflection;
@@ -239,12 +259,12 @@ export class ValidationRegistry {
     getCheckArray(type: string, categories?: ValidationCategory[]): readonly ValidationCheck[] {
         let byType: Map<string, readonly ValidationCheck[]>;
         if (categories) {
-            let existing = this.checkCache.get(categories);
-            if (existing === undefined) {
-                existing = new Map();
-                this.checkCache.set(categories, existing);
+            let entry = this.checkCache.get(categories);
+            if (entry === undefined || !sameCategories(entry.categories, categories)) {
+                entry = { categories: [...categories], byType: new Map() };
+                this.checkCache.set(categories, entry);
             }
-            byType = existing;
+            byType = entry.byType;
         } else {
             byType = this.uncategorizedCheckCache;
         }
