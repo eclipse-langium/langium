@@ -132,9 +132,39 @@ type ValidationCheckEntry = {
 /**
  * Manages a set of `ValidationCheck`s to be applied when documents are validated.
  */
+interface CheckCacheEntry {
+    /** The categories this entry was built for, copied so a later mutation of the caller's array is visible. */
+    categories: ValidationCategory[]
+    byType: Map<string, readonly ValidationCheck[]>
+}
+
+function sameCategories(a: readonly ValidationCategory[], b: readonly ValidationCategory[]): boolean {
+    if (a.length !== b.length) {
+        return false;
+    }
+    for (let i = 0; i < a.length; i++) {
+        if (a[i] !== b[i]) {
+            return false;
+        }
+    }
+    return true;
+}
+
 export class ValidationRegistry {
     protected readonly entries = new MultiMap<string, ValidationCheckEntry>();
     protected readonly knownCategories = new Set(ValidationCategory.defaults);
+    /**
+     * Caches the result of {@link getCheckArray}, keyed on the identity of the categories array and
+     * then on the node type. Keying on identity rather than on a built string avoids both the
+     * per-lookup allocation - {@link getCheckArray} is called once per AST node - and the question
+     * of which separator is safe inside a user-defined category name. The cached entry keeps a copy
+     * of the categories it was built for, so an array mutated after its first lookup is detected
+     * and rebuilt rather than answered from the stale entry. Both are invalidated in
+     * {@link addEntry}; the outer one is a `WeakMap` so a caller passing a fresh array per call
+     * cannot make the registry retain them.
+     */
+    protected checkCache = new WeakMap<ValidationCategory[], CheckCacheEntry>();
+    protected readonly uncategorizedCheckCache = new Map<string, readonly ValidationCheck[]>();
 
     protected readonly reflection: AstReflection;
 
@@ -203,6 +233,8 @@ export class ValidationRegistry {
     }
 
     protected addEntry(type: string, entry: ValidationCheckEntry): void {
+        this.checkCache = new WeakMap();
+        this.uncategorizedCheckCache.clear();
         if (type === 'AstNode') {
             this.entries.add('AstNode', entry);
             return;
@@ -213,12 +245,41 @@ export class ValidationRegistry {
     }
 
     getChecks(type: string, categories?: ValidationCategory[]): Stream<ValidationCheck> {
-        let checks = stream(this.entries.get(type))
-            .concat(this.entries.get('AstNode'));
+        return stream(this.getCheckArray(type, categories));
+    }
+
+    /**
+     * The checks applicable to the given type, as a plain array.
+     *
+     * `getChecks` is called once per AST node during validation, and building a lazy stream
+     * pipeline for each of them is a significant share of validation time - the more so because
+     * most node types have no checks registered at all. The resolved list depends only on the
+     * registered entries, so it is computed once and cached.
+     */
+    getCheckArray(type: string, categories?: ValidationCategory[]): readonly ValidationCheck[] {
+        let byType: Map<string, readonly ValidationCheck[]>;
         if (categories) {
-            checks = checks.filter(entry => categories.includes(entry.category));
+            let entry = this.checkCache.get(categories);
+            if (entry === undefined || !sameCategories(entry.categories, categories)) {
+                entry = { categories: [...categories], byType: new Map() };
+                this.checkCache.set(categories, entry);
+            }
+            byType = entry.byType;
+        } else {
+            byType = this.uncategorizedCheckCache;
         }
-        return checks.map(entry => entry.check);
+        let checks = byType.get(type);
+        if (checks === undefined) {
+            let entries = [...this.entries.get(type), ...this.entries.get('AstNode')];
+            if (categories) {
+                entries = entries.filter(entry => categories.includes(entry.category));
+            }
+            // `readonly` is erased at runtime, and the cached array is handed straight to callers -
+            // freeze it so a caller cannot poison the registry for every subsequent lookup.
+            checks = Object.freeze(entries.map(entry => entry.check));
+            byType.set(type, checks);
+        }
+        return checks;
     }
 
     /**
