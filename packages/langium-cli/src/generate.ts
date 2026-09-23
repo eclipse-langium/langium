@@ -183,6 +183,12 @@ function embedReferencedGrammar(grammar: Grammar, map: Map<Grammar, GrammarEleme
         const grammarElements = map.get(importedGrammar) ?? [];
         for (const element of grammarElements) {
             const copy = AstUtils.copyAstNode(element, buildReference); // deeply copies all properties (ignores all $xxx-properties, except $type)
+            // Re-attach the original CST node: copyAstNode drops it, which hides the
+            // doc comments of embedded elements from comment consumers like the
+            // grammar serializer and the BNF generator (see #2065). The CST node
+            // still belongs to the imported grammar's document; embedded grammars
+            // are only used for read-only generation, so sharing it is safe.
+            Object.defineProperty(copy, '$cstNode', { value: element.$cstNode, writable: true });
             // Deactivate copied entry rule
             if (GrammarAST.isParserRule(copy)) {
                 copy.entry = false;
