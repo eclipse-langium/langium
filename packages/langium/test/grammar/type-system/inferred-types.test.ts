@@ -42,6 +42,56 @@ describe('Inferred types', () => {
         `);
     });
 
+    test('Should infer optional property when same property has mixed optionality in alternatives', async () => {
+        // both A and B should produce `name?: string` regardless of alternative order
+        await expectTypes(`
+            A: 'a1' name=ID | 'a2' name=ID?;
+            B: 'b1' name=ID? | 'b2' name=ID;
+
+            terminal ID returns string: /string/;
+        `, expandToString`
+            export interface A extends langium.AstNode {
+                readonly $type: 'A';
+                name?: string;
+            }
+            export interface B extends langium.AstNode {
+                readonly $type: 'B';
+                name?: string;
+            }
+        `);
+    });
+
+    test('Rule with action inferring same type produces a non optional property', async () => {
+        await expectTypes(`
+             Entry: {infer Entry} ref=ID;
+             terminal ID returns string: /string/;
+        `, expandToString`
+            export interface Entry extends langium.AstNode {
+                readonly $type: 'Entry';
+                ref: string;
+            }
+        `);
+    });
+
+    test('Rule with action inferring same type on alternative has req property', async () => {
+        await expectTypes(`
+             Entry: A | B;
+             A: {infer A} 'a1' ref=ID | 'a2' ref=ID;
+             B: 'b1' ref=ID | {infer B} 'b2' ref=ID;
+             terminal ID returns string: /string/;
+        `, expandToString`
+            export interface A extends langium.AstNode {
+                readonly $type: 'A';
+                ref: string;
+            }
+            export interface B extends langium.AstNode {
+                readonly $type: 'B';
+                ref: string;
+            }
+            export type Entry = A | B;
+        `);
+    });
+
     test('Should infer types for alternatives', async () => {
         await expectTypes(`
             A: name=ID | name=NUMBER;
