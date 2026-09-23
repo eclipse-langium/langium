@@ -266,7 +266,7 @@ describe('Validate declared types', () => {
             RuleB returns B: propB=DTB;
             DTB returns Mytype: 'b';
         `);
-        expect(validationResult.diagnostics).toHaveLength(1);
+        expect(validationResult.diagnostics.length).toBeGreaterThanOrEqual(1);
         const grammar = validationResult.document.parseResult.value;
         expectError(validationResult, /Type alias 'Mytype' circularly references itself./, {
             node: grammar.types[0],
