@@ -81,6 +81,21 @@ describe('DefaultLexer', () => {
         expect(result.hidden).toHaveLength(0);
     });
 
+    test('should use custom pattern terminals as longer alt for keywords', async () => {
+        // Unicode-flagged regexes are compiled into custom matcher functions.
+        // Keywords still need to register them as LONGER_ALT, otherwise 'abcd' lexes as 'abc' + 'd'.
+        const lexer = await getLexer(`
+        grammar Test
+        entry Y: 'abc' name=ID;
+        terminal ID: /[\\p{L}]+/u;
+        hidden terminal WS: /\\s+/;
+        `);
+        const result = lexer.tokenize('abc abcd');
+        expect(result.errors).toHaveLength(0);
+        expect(result.tokens.map(t => t.image)).toEqual(['abc', 'abcd']);
+        expect(result.tokens[1].tokenType.name).toBe('ID');
+    });
+
 });
 
 async function getLexer(grammar: string): Promise<Lexer> {
