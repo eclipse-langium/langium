@@ -1,0 +1,15 @@
+{
+  "extends": "./tsconfig.json",
+  "compilerOptions": {
+    "noEmit": true,
+    "rootDir": "test"
+  },
+  "references": [{
+    "path": "./tsconfig.json"
+  }, {
+    "path": "../langium/tsconfig.src.json"
+  }],
+  "include": [
+    "test/**/*"
+  ]
+}
