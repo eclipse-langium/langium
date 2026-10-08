@@ -141,7 +141,7 @@ describe('Inferred types', () => {
         `);
     });
 
-    test('Should correctly infer types using unassinged and assigned actions', async () => {
+    test('Should correctly infer types using unassigned and assigned actions', async () => {
         await expectTypes(`
             A: ({infer X} x=ID | {infer Y} y=ID | {infer Z} z=ID) {infer B.front=current} back=ID;
             terminal ID returns string: /string/;
@@ -292,37 +292,6 @@ describe('Inferred types', () => {
         `);
     });
 
-    test('Should infer data type rules as unions', async () => {
-        await expectTypes(`
-            Strings returns string: 'a' | 'b' | 'c';
-            MoreStrings returns string: Strings | 'd' | 'e';
-            Complex returns string: ID ('.' ID)*;
-            DateLike returns Date: 'x';
-            terminal ID: /[a-zA-Z_][a-zA-Z0-9_]*/;
-        `, expandToString`
-            export type Complex = string;
-
-            export function isComplex(item: unknown): item is Complex {
-                return typeof item === 'string';
-            }
-            export type DateLike = Date;
-
-            export function isDateLike(item: unknown): item is DateLike {
-                return item instanceof Date;
-            }
-            export type MoreStrings = 'd' | 'e' | Strings;
-
-            export function isMoreStrings(item: unknown): item is MoreStrings {
-                return isStrings(item) || item === 'd' || item === 'e';
-            }
-            export type Strings = 'a' | 'b' | 'c';
-
-            export function isStrings(item: unknown): item is Strings {
-                return item === 'a' || item === 'b' || item === 'c';
-            }
-        `);
-    });
-
     test('Infers X as a super interface of Y and Z with property `id`', async () => {
         await expectTypes(`
             entry X: id=ID ({infer Y} 'a' | {infer Z} 'b');
@@ -355,6 +324,703 @@ describe('Inferred types', () => {
                 value: 'Z';
             }
             export type X = Y | Z;
+        `);
+    });
+});
+
+describe('Data type rules', () => {
+    test('Should not include regex for a string data type rule with a date terminal', async () => {
+        await expectTypes(`
+            terminal DATE returns Date: /\\d{4}-\\d{2}-\\d{2}/;
+            A returns string: DATE;
+        `, expandToString`
+            export type A = string;
+
+            export function isA(item: unknown): item is A {
+                return typeof item === 'string';
+            }
+        `);
+    });
+
+    // Since langium 4.2, data type rule fragments are not allowed anymore
+    // (data type rules require a return type, but fragments must not have one)
+    // This test exists to ensure a defined behavior for invalid grammars, and
+    // as an entry point for future support of data type rule fragments.
+    test('Should infer unknown for string data type rule referencing a string fragment', async () => {
+        await expectTypes(`
+            fragment F returns string: 'a' | 'b';
+            A returns string: F;
+        `, expandToString`
+            export type A = unknown;
+        `);
+    });
+
+    // Since langium 4.2, data type rule fragments are not allowed anymore
+    // (data type rules require a return type, but fragments must not have one)
+    // This test exists to ensure a defined behavior for invalid grammars, and
+    // as an entry point for future support of data type rule fragments.
+    test('Should infer string for string data type rule referencing a number fragment', async () => {
+        await expectTypes(`
+            terminal INT returns number: /[0-9]+/;
+            fragment F returns number: INT;
+            A returns string: F;
+        `, expandToString`
+            export type A = string;
+
+            export function isA(item: unknown): item is A {
+                return typeof item === 'string';
+            }
+        `);
+    });
+
+    test('Should infer type of referenced number fragment data type rule with string literal union from its definition', async () => {
+        await expectTypes(`
+            fragment F returns number: '0' | '1';
+            A returns string: F;
+        `, expandToString`
+            export type A = string;
+
+            export function isA(item: unknown): item is A {
+                return typeof item === 'string';
+            }            
+        `);
+    });
+
+    test('Should infer string data type rules as unions', async () => {
+        // Note: langium requires an explicit return type on data type rules.
+        // The data type rules without a return type exist only
+        // to ensure defined behavior for invalid grammars.
+        await expectTypes(`
+            Strings returns string: 'a' | 'b' | 'c';
+            MoreStrings returns string: Strings | 'd' | 'e';
+            InferredStrings: 'f' | 'g';
+            InferredNumbers: '3' | '4';
+            InferredStringOrNumber: ID | INT;
+            StringOrNumber returns string: ID | INT;
+            SingleString returns string: 'h';
+            Complex returns string: ID ('.' ID)*;
+            DateLike returns Date: 'x';
+            terminal ID: /[a-zA-Z_][a-zA-Z0-9_]*/;
+            terminal INT returns number: /[0-9]+/;
+        `, expandToString`
+            export type Complex = string;
+
+            export function isComplex(item: unknown): item is Complex {
+                return typeof item === 'string';
+            }
+            export type DateLike = Date;
+
+            export function isDateLike(item: unknown): item is DateLike {
+                return item instanceof Date;
+            }
+            export type InferredNumbers = '3' | '4';
+            export type InferredStringOrNumber = number | string;
+            export type InferredStrings = 'f' | 'g';
+            export type MoreStrings = 'd' | 'e' | Strings;
+
+            export function isMoreStrings(item: unknown): item is MoreStrings {
+                return isStrings(item) || item === 'd' || item === 'e';
+            }
+            export type SingleString = 'h';
+
+            export function isSingleString(item: unknown): item is SingleString {
+                return item === 'h';
+            }
+            export type StringOrNumber = string;
+
+            export type Strings = 'a' | 'b' | 'c';
+
+            export function isStrings(item: unknown): item is Strings {
+                return item === 'a' || item === 'b' || item === 'c';
+            }
+        `);
+    });
+
+    test('Should infer non-string data type rules as plain type', async () => {
+        await expectTypes(`
+            Boolean returns boolean: 'false' | 'true';
+            Numbers returns number: '0' | '1' | '2';
+        `, expandToString`
+            export type Boolean = boolean;
+
+            export function isBoolean(item: unknown): item is Boolean {
+                return typeof item === 'boolean';
+            }
+            export type Numbers = number;
+            
+            export function isNumbers(item: unknown): item is Numbers {
+                return typeof item === 'number';
+            }
+        `);
+    });
+
+    test('Should infer number type for data type rule with no return type and single terminal of type number', async () => {
+        await expectTypes(`
+            terminal INT returns number: /[0-9]+/;
+            B: INT;
+            A: b=B;
+        `, expandToString`
+            export interface A extends langium.AstNode {
+                readonly $type: 'A';
+                b: B;
+            }
+            export type B = number;
+        `);
+    });
+
+    test('Should infer string type for data type rule with explicit string return type and single terminal of type number', async () => {
+        await expectTypes(`
+            terminal INT returns number: /[0-9]+/;
+            B returns string: INT;
+            A: b=B;
+        `, expandToString`
+            export interface A extends langium.AstNode {
+                readonly $type: 'A';
+                b: B;
+            }
+            export type B = string;
+
+            export function isB(item: unknown): item is B {
+                return typeof item === 'string';
+            }
+        `);
+    });
+
+    test('Should infer boolean type for data type rule with explicit boolean return type and single terminal of type string', async () => {
+        await expectTypes(`
+            terminal FALSE_OR_TRUE returns string: /false|true/;
+            B returns boolean: FALSE_OR_TRUE;
+            A: b=B;
+        `, expandToString`
+            export interface A extends langium.AstNode {
+                readonly $type: 'A';
+                b: B;
+            }
+            export type B = boolean;
+
+            export function isB(item: unknown): item is B {
+                return typeof item === 'boolean';
+            }
+        `);
+    });
+
+    test('Should infer string type for data type rule with explicit string return type and a group with a single int terminal', async () => {
+        await expectTypes(`
+        terminal INT returns number: /[0-9]+/;
+        B returns string: (INT)+;
+        A: b=B;
+        `, expandToString`
+            export interface A extends langium.AstNode {
+                readonly $type: 'A';
+                b: B;
+            }
+            export type B = string;
+
+            export function isB(item: unknown): item is B {
+                return typeof item === 'string';
+            }
+        `);
+    });
+
+    test('Should infer string type for data type rule with no return type and multiple terminals', async () => {
+        await expectTypes(`
+            terminal INT returns number: /[0-9]+/;
+            B: INT INT;
+            A: b=B;
+        `, expandToString`
+            export interface A extends langium.AstNode {
+                readonly $type: 'A';
+                b: B;
+            }
+            export type B = string;
+        `);
+    });
+
+    test('Should infer string type for data type rule with explicit string return type and multiple terminals', async () => {
+        await expectTypes(`
+            terminal INT returns number: /[0-9]+/;
+            B returns string: INT INT;
+            A: b=B;
+        `, expandToString`
+            export interface A extends langium.AstNode {
+                readonly $type: 'A';
+                b: B;
+            }
+            export type B = string;
+
+            export function isB(item: unknown): item is B {
+                return typeof item === 'string';
+            }
+        `);
+    });
+
+    test('Should infer boolean type for data type rule with explicit boolean return type and multiple terminals', async () => {
+        await expectTypes(`
+            terminal ZERO_OR_ONE returns string: /0|1/;
+            B returns boolean: 'b' ZERO_OR_ONE;
+            A: b=B;
+        `, expandToString`
+            export interface A extends langium.AstNode {
+                readonly $type: 'A';
+                b: B;
+            }
+            export type B = boolean;
+
+            export function isB(item: unknown): item is B {
+                return typeof item === 'boolean';
+            }
+        `);
+    });
+
+    test('Should infer the declared type for a keyword', async () => {
+        await expectTypes(`
+            Zero returns number: '0';
+        `, expandToString`
+            export type Zero = number;
+
+            export function isZero(item: unknown): item is Zero {
+                return typeof item === 'number';
+            }
+        `);
+    });
+
+    test('Should use the declared return type for a data type rule that references another primitive type', async () => {
+        await expectTypes(`
+            type ABC = "a" | "b" | "c";
+            OnlyAB returns ABC: 'a' | 'b';
+        `, expandToString`
+            export type ABC = 'a' | 'b' | 'c';
+            export type OnlyAB = ABC;
+        `);
+    });
+
+    test('Should infer string-compatible types for an alternative of keywords and an integer terminal', async () => {
+        await expectTypes(`
+            terminal INT returns number: /[0-9]+/;
+            ABInt returns string: 'a' | 'b' | INT;
+        `, expandToString`
+            export type ABInt = 'a' | 'b' | string;
+        `);
+    });
+
+    test('Should return string for explicit string return type with alternative of integer terminals', async () => {
+        await expectTypes(`
+            terminal INT returns number: /[0-9]+/;
+            terminal INT_ARABIC returns number: INT;
+            terminal INT_SINO returns number: /[◯一二三四五六七八九]+/;
+            PlainText returns string: INT_ARABIC | INT_SINO;
+        `, expandToString`
+            export type PlainText = string;
+        `);
+    });
+
+    test('Should return string for explicit string return type with alternative of data type rules', async () => {
+        await expectTypes(`
+            terminal INT_ARABIC returns number: /[0-9]+/;
+            terminal INT_SINO returns number: /[◯一二三四五六七八九]+/;
+            A returns number: INT_ARABIC;
+            B returns number: INT_SINO;
+            C returns string: A | B;
+        `, expandToString`
+            export type A = number;
+
+            export function isA(item: unknown): item is A {
+                return typeof item === 'number';
+            }
+            export type B = number;
+
+            export function isB(item: unknown): item is B {
+                return typeof item === 'number';
+            }
+            export type C = string;
+        `);
+    });
+
+    test('Should infer string when referencing another data type rule with a non-string compatible data type', async () => {
+        await expectTypes(`
+            A returns number: '1' | '2';
+            B returns string: A;
+        `, expandToString`
+            export type A = number;
+
+            export function isA(item: unknown): item is A {
+                return typeof item === 'number';
+            }
+            export type B = string;
+
+            export function isB(item: unknown): item is B {
+                return typeof item === 'string';
+            }
+        `);
+    });
+
+    test('Should infer referenced-type when referencing another data type rule with a string compatible data type', async () => {
+        await expectTypes(`
+            A returns string: '1' | '2';
+            B returns string: A;
+        `, expandToString`
+            export type A = '1' | '2';
+
+            export function isA(item: unknown): item is A {
+                return item === '1' || item === '2';
+            }
+            export type B = A;
+        `);
+    });
+
+    test('Should infer string when referencing another data type rule with a non-string compatible return type', async () => {
+        await expectTypes(`
+            type OneOrTwo = number;
+            Rule1 returns OneOrTwo: '1' | '2';
+            Rule2 returns string: Rule1;
+        `, expandToString`
+            export type OneOrTwo = number;
+            export type Rule1 = OneOrTwo;
+            export type Rule2 = string;
+
+            export function isRule2(item: unknown): item is Rule2 {
+                return typeof item === 'string';
+            }
+        `);
+    });
+
+    test('Should infer string when referencing another data type rule with a partly string compatible return type', async () => {
+        await expectTypes(`
+            type NumberOrFoo = 'foo' | number;
+            Rule1 returns NumberOrFoo: '0' | '1' | 'foo';
+            Rule2 returns string: Rule1;
+        `, expandToString`
+            export type NumberOrFoo = 'foo' | number;
+            export type Rule1 = NumberOrFoo;
+            export type Rule2 = string;
+
+            export function isRule2(item: unknown): item is Rule2 {
+                return typeof item === 'string';
+            }
+        `);
+    });
+
+    test('Should infer referenced type when referencing another data type rule with a string compatible return type', async () => {
+        await expectTypes(`
+            type ABC = 'a' | 'b' | 'c';
+            AB returns ABC: 'a' | 'b';
+            Rule returns string: AB | 'd';
+        `, expandToString`
+            export type AB = ABC;
+            export type ABC = 'a' | 'b' | 'c';
+            export type Rule = 'd' | AB;
+        `);
+    });
+
+    test('Should infer referenced type when referencing another string data type rule with a string type terminal', async () => {
+        await expectTypes(`
+            terminal ID returns string: /[a-z]+/;
+            A returns string: ID;
+            B returns string: A;
+        `, expandToString`
+            export type A = string;
+
+            export function isA(item: unknown): item is A {
+                return (typeof item === 'string' && (/[a-z]+/.test(item)));
+            }
+            export type B = A;
+        `);
+    });
+
+    test('Should infer string type when referencing another string data type rule with a non-string type terminal', async () => {
+        await expectTypes(`
+            terminal INT returns number: /[0-9]+/;
+            A returns string: INT;
+            B returns string: A;
+        `, expandToString`
+            export type A = string;
+
+            export function isA(item: unknown): item is A {
+                return typeof item === 'string';
+            }
+            export type B = A;
+        `);
+    });
+
+    test('Should infer referenced type when referencing another string data type rule with a non-string terminal of plural cardinality', async () => {
+        await expectTypes(`
+            terminal INT returns number: /[0-9]+/;
+            A returns string: INT+;
+            B returns string: A;
+        `, expandToString`
+            export type A = string;
+
+            export function isA(item: unknown): item is A {
+                return typeof item === 'string';
+            }
+            export type B = A;
+        `);
+    });
+
+    test('Should infer referenced type when referencing another string data type rule with an alternative of strings', async () => {
+        await expectTypes(`
+            A returns string: 'a' | 'b';
+            B returns string: A;
+        `, expandToString`
+            export type A = 'a' | 'b';
+
+            export function isA(item: unknown): item is A {
+                return item === 'a' || item === 'b';
+            }
+            export type B = A;
+        `);
+    });
+
+    test('Should infer string when referencing another string data type rule with an alternative of numbers', async () => {
+        await expectTypes(`
+            N1 returns number: '1';
+            N2 returns number: '2';
+            A returns string: N1 | N2;
+            B returns string: A;
+        `, expandToString`
+            export type A = string;
+
+            export type B = A;
+
+            export type N1 = number;
+
+            export function isN1(item: unknown): item is N1 {
+                return typeof item === 'number';
+            }
+            export type N2 = number;
+
+            export function isN2(item: unknown): item is N2 {
+                return typeof item === 'number';
+            }
+        `);
+    });
+
+    test('Should infer referenced type when referencing another string data type rule with a keyword', async () => {
+        await expectTypes(`
+            A returns string: 'a';
+            B returns string: A;
+        `, expandToString`
+            export type A = 'a';
+            
+            export function isA(item: unknown): item is A {
+                return item === 'a';
+            }
+            export type B = A;        
+        `);
+    });
+
+    test('Should infer referenced type when referencing another string data type rule with a reference to another string-compatible rule', async () => {
+        await expectTypes(`
+            A returns string: 'a';
+            B returns string: A;
+            C returns string: B;
+        `, expandToString`
+            export type A = 'a';
+            
+            export function isA(item: unknown): item is A {
+                return item === 'a';
+            }
+            export type B = A;
+
+            export type C = B;        
+        `);
+    });
+
+    test('Should infer string when referencing another string data type rule with a reference to another non-string-compatible rule', async () => {
+        await expectTypes(`
+            A returns number: '0';
+            B returns string: A;
+            C returns string: B;
+        `, expandToString`
+            export type A = number;
+            
+            export function isA(item: unknown): item is A {
+                return typeof item === 'number';
+            }
+            export type B = string;
+            
+            export function isB(item: unknown): item is B {
+                return typeof item === 'string';
+            }
+            export type C = B;
+        `);
+    });
+
+    test('Should infer referenced type when referencing another string data type rule with a group', async () => {
+        await expectTypes(`
+            A returns string: 'a' 'b';
+            B returns string: A;
+        `, expandToString`
+            export type A = string;
+            
+            export function isA(item: unknown): item is A {
+                return typeof item === 'string';
+            }
+            export type B = A;
+        `);
+    });
+
+    test('Should infer referenced type when referencing another string data type rule with an unordered group', async () => {
+        await expectTypes(`
+            A returns string: 'a' & 'b';
+            B returns string: A;
+        `, expandToString`
+            export type A = string;
+            
+            export function isA(item: unknown): item is A {
+                return typeof item === 'string';
+            }
+            export type B = A;
+        `);
+    });
+
+    test('Should infer referenced type when referencing another rule with a return type that is a primitive string type', async () => {
+        await expectTypes(`
+            type String = string;
+            A returns String: 'a';
+            B returns string: A;
+        `, expandToString`
+            export type A = String;
+            export type B = A;
+            
+            export type String = string;
+        `);
+    });
+
+    test('Should infer referenced type when referencing another rule with a return type that is a string literal type', async () => {
+        await expectTypes(`
+            type String = 'a';
+            A returns String: 'a';
+            B returns string: A;
+        `, expandToString`
+            export type A = String;
+            export type B = A;
+            
+            export type String = 'a';
+        `);
+    });
+
+    test('Should infer referenced type when referencing another rule with a return type that references another string-compatible type', async () => {
+        await expectTypes(`
+            type String1 = 'a';
+            type String2 = String1;
+            A returns String2: 'a';
+            B returns string: A;
+        `, expandToString`
+            export type A = String2;
+            export type B = A;
+            
+            export type String1 = 'a';
+            export type String2 = String1;
+        `);
+    });
+
+    test('Should infer string when referencing another rule with a return type that references another non-string-compatible type', async () => {
+        await expectTypes(`
+            type Number1 = number;
+            type Number2 = Number1;
+            A returns Number2: '0';
+            B returns string: A;
+        `, expandToString`
+            export type A = Number2;
+            export type B = string;
+            
+            export function isB(item: unknown): item is B {
+                return typeof item === 'string';
+            }
+            export type Number1 = number;
+            export type Number2 = Number1;
+        `);
+    });
+
+    test('Should allow multiple non-circular reference to another rule', async () => {
+        await expectTypes(`
+            A returns string: 'a';
+            B returns string: 'b';
+            ABC returns string: A | B | 'c';
+            Rule returns string: A | B | ABC;
+        `, expandToString`
+            export type A = 'a';
+
+            export function isA(item: unknown): item is A {
+                return item === 'a';
+            }
+            export type ABC = 'c' | A | B;
+
+            export function isABC(item: unknown): item is ABC {
+                return isA(item) || isB(item) || item === 'c';
+            }
+            export type B = 'b';
+
+            export function isB(item: unknown): item is B {
+                return item === 'b';
+            }
+            export type Rule = A | ABC | B;
+
+            export function isRule(item: unknown): item is Rule {
+                return isA(item) || isB(item) || isABC(item);
+            }            
+        `);
+    });
+
+    test('Should not error when a data type rule references itself', async () => {
+        await expectTypes(`
+            Rule returns string: 'a' | Rule | 'b';
+        `, expandToString`
+            export type Rule = 'a' | 'b' | Rule;
+        `);
+    });
+
+    test('Should not error when a data type rule references a fragment that forms a cycle with another fragment', async () => {
+        await expectTypes(`
+            fragment A returns string: 'a' | B;
+            fragment B returns string: 'b' | A;
+            C returns string: B;
+        `, expandToString`
+            export type C = unknown;
+        `);
+    });
+
+    test('Should not error when a data type rule is part of a cycle with another rule', async () => {
+        await expectTypes(`
+            Rule1 returns string: Rule2;
+            Rule2 returns string: Rule1;
+        `, expandToString`
+            export type Rule1 = Rule2;
+
+            export type Rule2 = Rule1;
+        `);
+    });
+
+    test('Should not error when a data type rule references a rule that forms a cycle with another rule', async () => {
+        await expectTypes(`
+            Rule1 returns string: Rule3;
+            Rule2 returns string: Rule1;
+            Rule3 returns string: Rule2;
+        `, expandToString`
+            export type Rule1 = Rule3;
+
+            export type Rule2 = Rule1;
+
+            export type Rule3 = Rule2;
+        `);
+    });
+
+    test('Should not error when a data type rule\'s return type forms a circular reference with another type', async () => {
+        await expectTypes(`
+            type A = B;
+            type B = A;
+            Rule1 returns A: 'foo';
+            Rule2 returns string: Rule1;
+        `, expandToString`
+            export type A = B;
+            export type B = A;
+            export type Rule1 = A;
+            export type Rule2 = string;
+
+            export function isRule2(item: unknown): item is Rule2 {
+                return typeof item === 'string';
+            }
         `);
     });
 });

@@ -2256,3 +2256,25 @@ describe('Strict type validation', () => {
         expectNoIssues(validationResult);
     });
 });
+
+describe('Cyclic references', () => {
+    test('does not error on cyclic references in data type rules', async () => {
+        const validationResult = await validate(`
+        grammar Test
+        entry A: a=B;
+        B returns string: C;
+        C returns string: B;
+        `);
+        expectNoIssues(validationResult);
+    });
+
+    test('does not error on cyclic references in parser rules', async () => {
+        const validationResult = await validate(`
+        grammar Test
+        entry A: a=B;
+        B: b=C;
+        C: c=B;
+        `);
+        expectNoIssues(validationResult);
+    });
+});

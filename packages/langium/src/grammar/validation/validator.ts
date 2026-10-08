@@ -536,39 +536,53 @@ export class LangiumGrammarValidator {
             return;
         }
 
+        const visited = new Map<ast.AbstractElement, boolean>();
         const consumesAnything = (element: ast.AbstractElement): boolean => {
+            if (visited.has(element)) {
+                return visited.get(element)!;
+            }
+            visited.set(element, true); // no error for cycles, cycles should be handled by other checks
+
+            let consumes: boolean;
             // First, check cardinality of the element.
             if (element.cardinality === '?' || element.cardinality === '*') {
-                return false;
+                consumes = false;
             }
             // Actions themselves count as optional.
-            if (ast.isAction(element)) {
-                return false;
+            else if (ast.isAction(element)) {
+                consumes = false;
             }
             // Unordered groups act as alternatives surrounded by `*`
-            if (ast.isUnorderedGroup(element)) {
-                return false;
+            else if (ast.isUnorderedGroup(element)) {
+                consumes = false;
             }
             // Only one element of the group needs to consume something
-            if (ast.isGroup(element)) {
-                return element.elements.some(consumesAnything);
+            else if (ast.isGroup(element)) {
+                consumes = element.elements.some(consumesAnything);
             }
             // Every altneratives needs to consume something
-            if (ast.isAlternatives(element)) {
-                return element.elements.every(consumesAnything);
+            else if (ast.isAlternatives(element)) {
+                consumes = element.elements.every(consumesAnything);
             }
             // If the element is a direct rule call
             // We need to check whether the element consumes anything
-            if (ast.isRuleCall(element)) {
+            else if (ast.isRuleCall(element)) {
                 if (ast.isInfixRule(element.rule.ref)) {
                     // Infix rules always at least consume their operators
-                    return true;
+                    consumes = true;
                 } else if (element.rule.ref?.definition) {
-                    return consumesAnything(element.rule.ref.definition);
+                    consumes = consumesAnything(element.rule.ref.definition);
+                } else {
+                    // Else, assert that we consume something.
+                    consumes = true;
                 }
+            } else {
+                // Else, assert that we consume something.
+                consumes = true;
             }
-            // Else, assert that we consume something.
-            return true;
+
+            visited.set(element, consumes);
+            return consumes;
         };
         if (!consumesAnything(parserRule.definition)) {
             accept('warning', 'This parser rule potentially consumes no input.', { node: parserRule, property: 'name', code: IssueCodes.ParsingRuleEmpty });
