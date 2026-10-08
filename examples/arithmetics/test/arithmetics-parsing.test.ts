@@ -4,11 +4,11 @@
  * terms of the MIT License, which is available in the project root.
  ******************************************************************************/
 
+import { EmptyFileSystem } from 'langium';
 import { describe, expect, test } from 'vitest';
 import { createArithmeticsServices } from '../src/language-server/arithmetics-module.js';
-import { EmptyFileSystem } from 'langium';
 import type { Evaluation, Module } from '../src/language-server/generated/ast.js';
-import { isBinaryExpression, isFunctionCall, isNumberLiteral, type Expression } from '../src/language-server/generated/ast.js';
+import { isBinaryExpression, isFunctionCall, isNestedExpression, isNumberLiteral, type Expression } from '../src/language-server/generated/ast.js';
 
 describe('Test the arithmetics parsing', () => {
 
@@ -22,6 +22,8 @@ describe('Test the arithmetics parsing', () => {
             return expr.value.toString();
         } else if (isFunctionCall(expr)) {
             return expr.func.$refText;
+        } else if (isNestedExpression(expr)) {
+            return '(' + printExpression(expr.value) + ')';
         }
         return '';
     }
@@ -45,6 +47,6 @@ describe('Test the arithmetics parsing', () => {
         const expr = parseExpression('(1 + 2) ^ 3');
         // Assert that the nested expression is correctly represented in the AST
         // If the expression parsing would be too eager, the result would be (1 + (2 ^ 3))
-        expect(printExpression(expr)).toBe('((1 + 2) ^ 3)');
+        expect(printExpression(expr)).toBe('(((1 + 2)) ^ 3)');
     });
 });
