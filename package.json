@@ -37,7 +37,7 @@
     "@vitest/coverage-v8": "~4.1.11",
     "@vitest/ui": "~4.1.11",
     "@vscode/vsce": "~3.9.2",
-    "concurrently": "~10.0.5",
+    "concurrently": "~10.0.6",
     "editorconfig": "~3.0.2",
     "esbuild": "0.28.2",
     "eslint": "~10.11.0",
