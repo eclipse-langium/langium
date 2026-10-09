@@ -29,7 +29,7 @@
   "devDependencies": {
     "@eslint/js": "~10.0.1",
     "@stylistic/eslint-plugin": "~5.10.0",
-    "@types/node": "~20.19.43",
+    "@types/node": "~22.20.5",
     "@types/semver": "~7.8.0",
     "@types/vscode": "~1.91.0",
     "@typescript-eslint/eslint-plugin": "~8.70.0",
