@@ -3,7 +3,7 @@
   "private": true,
   "engineStrict": true,
   "engines": {
-    "node": "^20.19.0 || ^22.13.0 || >=24",
+    "node": "^22.22.2 || ^24.15.0 || >=26",
     "npm": ">=10.2.3"
   },
   "scripts": {

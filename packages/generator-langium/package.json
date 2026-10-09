@@ -4,7 +4,7 @@
   "description": "Yeoman generator for Langium - the language engineering tool",
   "homepage": "https://langium.org",
   "engines": {
-    "node": ">=20.10.0",
+    "node": "^22.22.2 || ^24.15.0 || >=26",
     "npm": ">=10.2.3"
   },
   "keywords": [
@@ -37,7 +37,7 @@
     "lodash": "~4.18.1",
     "which": "~7.0.0",
     "yeoman-environment": "~6.3.0",
-    "yeoman-generator": "~8.4.0"
+    "yeoman-generator": "~10.0.1"
   },
   "devDependencies": {
     "@types/lodash": "~4.17.25",
