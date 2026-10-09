@@ -5,7 +5,7 @@
   "description": "Example language built with Langium",
   "homepage": "https://langium.org",
   "engines": {
-    "vscode": "^1.91.0"
+    "vscode": "^1.101.0"
   },
   "license": "MIT",
   "categories": [

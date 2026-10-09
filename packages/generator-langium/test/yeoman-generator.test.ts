@@ -310,7 +310,7 @@ const PACKAGE_JSON_EXPECTATION: Record<string, any> = {
         'langium:watch': 'npm run --workspace packages/language langium:watch'
     },
     'devDependencies': {
-        '@types/node': '~20.19.43',
+        '@types/node': '~22.20.5',
         'shx':  '~0.4.0',
         'typescript': '~5.9.3'
     },
@@ -330,7 +330,7 @@ const PACKAGE_JSON_EXPECTATION_CLI: Record<string, any> = {
     version: '0.0.1',
     type: 'module',
     engines: {
-        'node': '>=20.10.0',
+        'node': '>=22.12.0',
         'npm': '>=10.2.3'
     },
     files: ['bin', 'out', 'src'],
@@ -356,7 +356,7 @@ const PACKAGE_JSON_EXPECTATION_EXTENSION: Record<string, any> = {
     version: '0.0.1',
     displayName: 'hello-world',
     engines: {
-        vscode: '^1.91.0'
+        vscode: '^1.101.0'
     },
     categories: [
         'Programming Languages'
@@ -392,8 +392,8 @@ const PACKAGE_JSON_EXPECTATION_EXTENSION: Record<string, any> = {
         'vscode-languageserver': '~10.1.0'
     },
     devDependencies: {
-        '@types/vscode': '~1.91.0',
-        'concurrently': '~10.0.5',
+        '@types/vscode': '~1.101.0',
+        'concurrently': '~10.0.6',
         'esbuild': '0.28.2'
     }
 };

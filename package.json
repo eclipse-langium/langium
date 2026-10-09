@@ -3,7 +3,7 @@
   "private": true,
   "engineStrict": true,
   "engines": {
-    "node": "^20.19.0 || ^22.13.0 || >=24",
+    "node": "^22.22.2 || ^24.15.0 || >=26",
     "npm": ">=10.2.3"
   },
   "scripts": {
@@ -29,15 +29,15 @@
   "devDependencies": {
     "@eslint/js": "~10.0.1",
     "@stylistic/eslint-plugin": "~5.10.0",
-    "@types/node": "~20.19.43",
+    "@types/node": "~22.20.5",
     "@types/semver": "~7.8.0",
-    "@types/vscode": "~1.91.0",
+    "@types/vscode": "~1.101.0",
     "@typescript-eslint/eslint-plugin": "~8.70.0",
     "@typescript-eslint/parser": "~8.70.0",
     "@vitest/coverage-v8": "~4.1.11",
     "@vitest/ui": "~4.1.11",
     "@vscode/vsce": "~3.9.2",
-    "concurrently": "~10.0.5",
+    "concurrently": "~10.0.6",
     "editorconfig": "~3.0.2",
     "esbuild": "0.28.2",
     "eslint": "~10.11.0",
