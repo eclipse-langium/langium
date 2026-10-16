@@ -191,6 +191,22 @@ describe('Ast generator (with a single *.langium file in the project only)', () 
         }
     `));
 
+    test('should escape quotes and backslashes of keywords in datatype rules', () => testGeneratedAst(`
+        grammar TestGrammar
+
+        A returns string:
+            "'" | '\\\\' | 'a';
+
+        hidden terminal WS: /\\s+/;
+        terminal ID: /[_a-zA-Z][\\w_]*/;
+    `, expandToString`
+        export type A = '\\'' | '\\\\' | 'a';
+
+        export function isA(item: unknown): item is A {
+            return item === '\\'' || item === '\\\\' || item === 'a';
+        }
+    `));
+
     test('should generate checker functions for datatype rules of type number', () => testGeneratedAst(`
         grammar TestGrammar
 

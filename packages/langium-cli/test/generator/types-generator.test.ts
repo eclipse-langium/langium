@@ -24,6 +24,21 @@ describe('Types generator', () => {
         expect(typesFileContent).toBe(EXPECTED_TYPES);
     });
 
+    test('should escape quotes and backslashes of keywords', async () => {
+        const result = (await parseHelper<Grammar>(grammar)(expandToStringWithNL`
+            grammar Test
+
+            entry Model:
+                operator=('"' | '\\\\' | 'a');
+        `)).parseResult;
+        expect(generateTypesFile(grammar, [result.value])).toBe(expandToStringWithNL`
+            interface Model {
+                operator: "\\"" | "\\\\" | "a";
+            }
+
+        `);
+    });
+
 });
 
 const EXPECTED_TYPES = expandToStringWithNL`

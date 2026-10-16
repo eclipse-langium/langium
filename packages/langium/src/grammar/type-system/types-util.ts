@@ -230,10 +230,15 @@ export function isAstTypeInternal(type: PropertyType, visited: Map<PropertyType,
     return result;
 }
 
+/**
+ * Escapes `str` for a string literal delimited by `type`. Backslashes are escaped as well, so the
+ * literal reads back as `str` in TypeScript and in a Langium grammar.
+ */
 export function escapeQuotes(str: string, type: '"' | "'" = '"'): string {
+    const escaped = str.replace(/\\/g, '\\\\');
     if (type === '"') {
-        return str.replace(/"/g, '\\"');
+        return escaped.replace(/"/g, '\\"');
     } else {
-        return str.replace(/'/g, "\\'");
+        return escaped.replace(/'/g, "\\'");
     }
 }
