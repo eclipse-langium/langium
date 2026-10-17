@@ -5,3 +5,4 @@
  ******************************************************************************/
 
 export * from './grammar-railroad.js';
+export * from './railroad-hover-provider.js';

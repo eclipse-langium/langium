@@ -91,16 +91,27 @@ export function createGrammarDiagramHtml(rules: GrammarAST.ParserRule[], options
  */
 export function createGrammarDiagramSvg(rules: GrammarAST.ParserRule[], options?: GrammarDiagramOptions): Map<string, string> {
     const diagrams = new Map<string, string>();
-    const style = styling(options);
-
     for (const nonTerminal of rules) {
-        const ruleDiagram = new rr.Diagram(toRailroad(nonTerminal.definition));
-        ruleDiagram.attrs.xmlns = 'http://www.w3.org/2000/svg';
-        ruleDiagram.children =
-            ruleDiagram.children.concat(style);
-        diagrams.set(nonTerminal.name, ruleDiagram.toString());
+        diagrams.set(nonTerminal.name, createRuleDiagramSvg(nonTerminal, options));
     }
     return diagrams;
+}
+
+/**
+ * Creates a standalone SVG diagram for a single non-terminal.
+ *
+ * @param rule
+ * @param options
+ * Use to add additional styling to the diagram.
+ *
+ * @returns The SVG content of the diagram, including its styling.
+ */
+export function createRuleDiagramSvg(rule: GrammarAST.ParserRule, options?: GrammarDiagramOptions): string {
+    const ruleDiagram = new rr.Diagram(toRailroad(rule.definition));
+    ruleDiagram.attrs.xmlns = 'http://www.w3.org/2000/svg';
+    ruleDiagram.children =
+        ruleDiagram.children.concat(styling(options));
+    return ruleDiagram.toString();
 }
 
 export function createGrammarDiagram(rules: GrammarAST.ParserRule[]): string {
@@ -120,25 +131,27 @@ function toRailroad(element: GrammarAST.AbstractElement): FakeSVG[] {
     if (GrammarAST.isAssignment(element)) {
         return wrapCardinality(element.cardinality, toRailroad(element.terminal));
     } else if (GrammarAST.isAlternatives(element)) {
-        return wrapCardinality(element.cardinality, new rr.Choice(0, element.elements.flatMap(e => toRailroad(e))));
+        return wrapCardinality(element.cardinality, toChoice(element.elements));
     } else if (GrammarAST.isUnorderedGroup(element)) {
-        const choice = new rr.Choice(0, element.elements.flatMap(e => toRailroad(e)));
-        const repetition = new rr.ZeroOrMore(choice);
+        const choice = toChoice(element.elements);
+        const repetition = choice.map(c => new rr.ZeroOrMore(c));
         return wrapCardinality(element.cardinality, repetition);
     } else if (GrammarAST.isGroup(element)) {
         return wrapCardinality(element.cardinality, new rr.Sequence(element.elements.flatMap(e => toRailroad(e))));
     } else if (GrammarAST.isKeyword(element)) {
         return wrapCardinality(element.cardinality, new rr.Terminal(element.value));
     } else if (GrammarAST.isRuleCall(element)) {
-        return wrapCardinality(element.cardinality, new rr.NonTerminal(element.rule.$refText));
+        return wrapCardinality(element.cardinality, new rr.NonTerminal(element.rule?.$refText ?? 'UNKNOWN'));
     } else if (GrammarAST.isCrossReference(element)) {
         if (GrammarAST.isKeyword(element.terminal)) {
             return wrapCardinality(element.cardinality, new rr.Terminal(element.terminal.value));
         } else if (GrammarAST.isRuleCall(element.terminal)) {
-            return wrapCardinality(element.cardinality, new rr.NonTerminal(element.terminal.rule.$refText));
+            return wrapCardinality(element.cardinality, new rr.NonTerminal(element.terminal.rule?.$refText ?? 'UNKNOWN'));
         } else {
-            const nameAssignment = element.type.ref && GrammarUtils.findNameAssignment(element.type.ref);
-            if (nameAssignment) {
+            const nameAssignment = element.type?.ref && GrammarUtils.findNameAssignment(element.type.ref);
+            // A name that is a cross-reference itself (e.g. `A: name=[A];`) would lead to an endless recursion.
+            // The parser doesn't support it either, so it's drawn like a missing name assignment.
+            if (nameAssignment && !GrammarAST.isCrossReference(nameAssignment.terminal)) {
                 return wrapCardinality(element.cardinality, toRailroad(nameAssignment));
             } else {
                 return wrapCardinality(element.cardinality, new rr.NonTerminal('UNKNOWN'));
@@ -147,6 +160,29 @@ function toRailroad(element: GrammarAST.AbstractElement): FakeSVG[] {
     } else {
         return [];
     }
+}
+
+/**
+ * Maps the given elements to a single choice. Elements without a railroad representation (e.g. actions)
+ * are drawn as an empty path, so the choice becomes optional. Never creates an empty `Choice`, as
+ * `railroad-diagrams` throws for those - this can happen for grammars that are still being written.
+ */
+function toChoice(elements: GrammarAST.AbstractElement[]): FakeSVG[] {
+    let hasEmptyPath = false;
+    const items: FakeSVG[] = [];
+    for (const element of elements) {
+        const item = toRailroad(element);
+        if (item.length === 0) {
+            hasEmptyPath = true;
+        } else {
+            items.push(item.length === 1 ? item[0] : new rr.Sequence(item));
+        }
+    }
+    if (items.length === 0) {
+        return [];
+    }
+    const choice = items.length === 1 ? items[0] : new rr.Choice(0, items);
+    return wrapCardinality(hasEmptyPath ? '?' : undefined, choice);
 }
 
 function wrapCardinality(cardinality: '?' | '*' | '+' | undefined, items: FakeSVG | FakeSVG[]): FakeSVG[] {
