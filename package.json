@@ -4,7 +4,7 @@
   "engineStrict": true,
   "engines": {
     "node": "^22.22.2 || ^24.15.0 || >=26",
-    "npm": ">=10.2.3"
+    "npm": ">=11.6.0"
   },
   "scripts": {
     "clean": "shx rm -rf packages/*/lib packages/*/*.tsbuildinfo packages/*/out packages/*/app packages/*/coverage packages/*/test/generator-tests examples/*/*.tsbuildinfo",
