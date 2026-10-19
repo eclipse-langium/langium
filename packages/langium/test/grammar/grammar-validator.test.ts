@@ -2515,6 +2515,91 @@ describe('Left recursion validation', () => {
         expectLeftRecursion(validationResult, 'Expr', 'BinaryExpr', 'Primary');
     });
 
+    test('Left recursion of infix rule on itself', async () => {
+        const validationResult = await validate(`
+        grammar Test
+        entry Model: expr=BinaryExpr;
+        infix BinaryExpr on BinaryExpr: '+' | '-';
+        hidden terminal WS: /\\s+/;
+        `);
+        expectLeftRecursion(validationResult, 'BinaryExpr');
+    });
+
+    test('Left recursion between two infix rules', async () => {
+        const validationResult = await validate(`
+        grammar Test
+        entry Model: expr=AddExpr;
+        infix AddExpr on MulExpr: '+' | '-';
+        infix MulExpr on AddExpr: '*' | '/';
+        hidden terminal WS: /\\s+/;
+        `);
+        expectLeftRecursion(validationResult, 'AddExpr', 'MulExpr');
+    });
+
+    test('Left recursion through infix rule called in leftmost position', async () => {
+        const validationResult = await validate(`
+        grammar Test
+        entry A: BinaryExpr 'a';
+        infix BinaryExpr on Primary: '+' | '-';
+        Primary: A | value=ID;
+        hidden terminal WS: /\\s+/;
+        terminal ID: /[a-zA-Z]+/;
+        `);
+        expectLeftRecursion(validationResult, 'A', 'BinaryExpr', 'Primary');
+    });
+
+    test('Left recursion after infix rule with nullable operand', async () => {
+        const validationResult = await validate(`
+        grammar Test
+        entry A: BinaryExpr A 'a';
+        infix BinaryExpr on Primary: '+' | '-';
+        Primary: value=ID?;
+        hidden terminal WS: /\\s+/;
+        terminal ID: /[a-zA-Z]+/;
+        `);
+        expectLeftRecursion(validationResult, 'A');
+    });
+
+    test('No left recursion after infix rule with non-nullable operand', async () => {
+        const validationResult = await validate(`
+        grammar Test
+        entry A: BinaryExpr A? 'a';
+        infix BinaryExpr on Primary: '+' | '-';
+        Primary: value=ID;
+        hidden terminal WS: /\\s+/;
+        terminal ID: /[a-zA-Z]+/;
+        `);
+        expect(getLeftRecursionDiagnostics(validationResult)).toHaveLength(0);
+    });
+
+    test('No left recursion in chained infix rules', async () => {
+        const validationResult = await validate(`
+        grammar Test
+        entry Model: expr=AddExpr;
+        infix AddExpr on MulExpr: '+' | '-';
+        infix MulExpr on Primary: '*' | '/';
+        Primary: '(' AddExpr ')' | value=ID;
+        hidden terminal WS: /\\s+/;
+        terminal ID: /[a-zA-Z]+/;
+        `);
+        expect(getLeftRecursionDiagnostics(validationResult)).toHaveLength(0);
+    });
+
+    test('Left recursion after imported infix rule with nullable operand', async () => {
+        const importedGrammar = await parse(`
+        grammar Imported
+        infix BinaryExpr on Primary: '+' | '-';
+        Primary: value=ID?;
+        terminal ID: /[a-zA-Z]+/;
+        `);
+        const validationResult = await validate(`
+        grammar Test
+        import ".${importedGrammar.uri.path}";
+        entry A: BinaryExpr A 'a';
+        `);
+        expectLeftRecursion(validationResult, 'A');
+    });
+
     test('No left recursion in typical infix rule usage', async () => {
         const validationResult = await validate(`
         grammar Test
