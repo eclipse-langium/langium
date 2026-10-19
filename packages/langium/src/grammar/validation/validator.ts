@@ -505,83 +505,160 @@ export class LangiumGrammarValidator {
     }
 
     checkLeftRecursion(grammar: ast.Grammar, accept: ValidationAcceptor): void {
-        const parserRules = grammar.rules.filter(ast.isParserRule).map(rule => rule as ast.ParserRule);
-        const graph = new Map<ast.ParserRule, Set<ast.ParserRule>>();
-        for (const rule of parserRules) {
-            this.fromAbstractElement(rule, rule.definition, graph);
+        const rules = this.collectReachableParserRules(grammar);
+        const nullableRules = this.computeNullableRules(rules);
+        const graph = new Map<ast.AbstractParserRule, Set<ast.AbstractParserRule>>();
+        for (const rule of rules) {
+            const leftmostCalls = new Set<ast.AbstractParserRule>();
+            this.collectLeftmostCalls(rule, nullableRules, leftmostCalls);
+            graph.set(rule, leftmostCalls);
         }
-        this.detectLeftRecursion(graph, accept);
+        this.detectLeftRecursion(grammar, graph, accept);
     }
 
-    private fromAbstractElement(from: ast.ParserRule, element: ast.AbstractElement, graph: Map<ast.ParserRule, Set<ast.ParserRule>>): void {
-        if (ast.isRuleCall(element)) {
-            const ref = (element as ast.RuleCall).rule.ref;
-            if (ast.isParserRule(ref)) {
-                if (!graph.has(from)) {
-                    graph.set(from, new Set());
+    /**
+     * Collects all parser and infix rules of the grammar, including imported rules that are reachable via rule calls.
+     */
+    private collectReachableParserRules(grammar: ast.Grammar): Set<ast.AbstractParserRule> {
+        const rules = new Set<ast.AbstractParserRule>(grammar.rules.filter(ast.isAbstractParserRule));
+        const queue = Array.from(rules);
+        while (queue.length > 0) {
+            const rule = queue.pop()!;
+            for (const ruleCall of streamAllContents(rule).filter(ast.isRuleCall)) {
+                const ref = ruleCall.rule.ref;
+                if (ast.isAbstractParserRule(ref) && !rules.has(ref)) {
+                    rules.add(ref);
+                    queue.push(ref);
                 }
-                graph.get(from)!.add(ref);
+            }
+        }
+        return rules;
+    }
+
+    /**
+     * Computes the set of rules that can potentially consume no input as a fixpoint over all given rules.
+     */
+    private computeNullableRules(rules: Set<ast.AbstractParserRule>): Set<ast.AbstractParserRule> {
+        const nullableRules = new Set<ast.AbstractParserRule>();
+        let changed = true;
+        while (changed) {
+            changed = false;
+            for (const rule of rules) {
+                if (!nullableRules.has(rule) && this.collectLeftmostCalls(rule, nullableRules, new Set())) {
+                    nullableRules.add(rule);
+                    changed = true;
+                }
+            }
+        }
+        return nullableRules;
+    }
+
+    /**
+     * Adds all rules to `calls` that may be called by the given rule or element before any input has been consumed.
+     * @returns `true` if the rule or element can potentially consume no input.
+     */
+    private collectLeftmostCalls(element: ast.AbstractParserRule | ast.AbstractElement | undefined, nullableRules: Set<ast.AbstractParserRule>, calls: Set<ast.AbstractParserRule>): boolean {
+        if (!element) {
+            return false;
+        }
+        if (ast.isParserRule(element)) {
+            return this.collectLeftmostCalls(element.definition, nullableRules, calls);
+        }
+        if (ast.isInfixRule(element)) {
+            // Infix rules start with their operand; the operators are only parsed afterwards
+            return this.collectLeftmostCalls(element.call, nullableRules, calls);
+        }
+        let nullable: boolean;
+        if (ast.isRuleCall(element)) {
+            const ref = element.rule.ref;
+            if (ast.isAbstractParserRule(ref)) {
+                calls.add(ref);
+                nullable = nullableRules.has(ref);
+            } else {
+                nullable = false;
             }
         } else if (ast.isGroup(element)) {
-            const first = (element as ast.Group).elements[0];
-            if (first) {
-                this.fromAbstractElement(from, first, graph);
+            // Only the elements up to (and including) the first non-nullable element are in leftmost position
+            nullable = true;
+            for (const child of element.elements) {
+                if (!this.collectLeftmostCalls(child, nullableRules, calls)) {
+                    nullable = false;
+                    break;
+                }
             }
         } else if (ast.isAlternatives(element)) {
-            (element as ast.Alternatives).elements.forEach(e => {
-                this.fromAbstractElement(from, e, graph);
-            });
-        } else if (ast.isUnorderedGroup(element)) {
-            (element as ast.UnorderedGroup).elements.forEach(e => {
-                this.fromAbstractElement(from, e, graph);
-            });
-        } else if (ast.isAssignment(element)) {
-            const terminal = (element as ast.Assignment).terminal;
-            if (terminal) {
-                this.fromAbstractElement(from, terminal, graph);
+            nullable = false;
+            for (const child of element.elements) {
+                nullable = this.collectLeftmostCalls(child, nullableRules, calls) || nullable;
             }
-        } else if (ast.isInfixRule(element)) {
-            const infix = element as ast.InfixRule;
-            this.fromAbstractElement(from, infix.call, graph);
+        } else if (ast.isUnorderedGroup(element)) {
+            // Every element of an unordered group can be parsed first
+            nullable = true;
+            for (const child of element.elements) {
+                nullable = this.collectLeftmostCalls(child, nullableRules, calls) && nullable;
+            }
+        } else if (ast.isAssignment(element)) {
+            nullable = this.collectLeftmostCalls(element.terminal, nullableRules, calls);
+        } else if (ast.isAction(element)) {
+            nullable = true;
+        } else {
+            // Keywords, cross-references, EOF, etc.
+            nullable = false;
         }
+        return nullable || isOptionalCardinality(element.cardinality, element);
     }
 
-    private detectLeftRecursion(graph: Map<ast.ParserRule, Set<ast.ParserRule>>, accept: ValidationAcceptor): void {
-        const accepted = new Set<ast.ParserRule>();
-        const visited = new Set<ast.ParserRule>();
-        const path = new Array<ast.ParserRule>();
+    /**
+     * Reports every rule of the grammar that is part of a cycle in the leftmost call graph.
+     * Cycles are found as strongly connected components using Tarjan's algorithm.
+     */
+    private detectLeftRecursion(grammar: ast.Grammar, graph: Map<ast.AbstractParserRule, Set<ast.AbstractParserRule>>, accept: ValidationAcceptor): void {
+        const indices = new Map<ast.AbstractParserRule, number>();
+        const lowLinks = new Map<ast.AbstractParserRule, number>();
+        const stack: ast.AbstractParserRule[] = [];
+        const onStack = new Set<ast.AbstractParserRule>();
 
-        const visit = (rule: ast.ParserRule) => {
-            const ruleIndex = path.indexOf(rule);
-            if (ruleIndex !== -1) {
-                for (let index = ruleIndex; index < path.length; index++) {
-                    const pathRule = path[index];
-                    if (accepted.has(pathRule)) {
-                        continue;
-                    }
-                    accepted.add(pathRule);
-                    accept('error', `Left recursion detected in rule '${pathRule.name}'`, {
-                        code: IssueCodes.LeftRecursion,
-                        node: pathRule,
-                        property: 'name'
-                    });
-                }
-                return;
-            }
-            if (visited.has(rule)) {
-                return;
-            }
-            visited.add(rule);
-            path.push(rule);
-            const neighbors = graph.get(rule) ?? [];
+        const visit = (rule: ast.AbstractParserRule) => {
+            indices.set(rule, indices.size);
+            lowLinks.set(rule, indices.get(rule)!);
+            stack.push(rule);
+            onStack.add(rule);
+            const neighbors = graph.get(rule) ?? new Set();
             for (const neighbor of neighbors) {
-                visit(neighbor);
+                if (!indices.has(neighbor)) {
+                    visit(neighbor);
+                    lowLinks.set(rule, Math.min(lowLinks.get(rule)!, lowLinks.get(neighbor)!));
+                } else if (onStack.has(neighbor)) {
+                    lowLinks.set(rule, Math.min(lowLinks.get(rule)!, indices.get(neighbor)!));
+                }
             }
-            path.pop();
+            if (lowLinks.get(rule) === indices.get(rule)) {
+                const component: ast.AbstractParserRule[] = [];
+                let member: ast.AbstractParserRule;
+                do {
+                    member = stack.pop()!;
+                    onStack.delete(member);
+                    component.push(member);
+                } while (member !== rule);
+                if (component.length > 1 || neighbors.has(rule)) {
+                    for (const recursiveRule of component) {
+                        // Rules of imported grammars are reported when validating their own grammar
+                        if (recursiveRule.$container === grammar) {
+                            accept('error', `Left recursion detected in rule '${recursiveRule.name}'`, {
+                                code: IssueCodes.LeftRecursion,
+                                node: recursiveRule,
+                                property: 'name'
+                            });
+                        }
+                    }
+                }
+            }
         };
 
         for (const rule of graph.keys()) {
-            visit(rule);
+            if (!indices.has(rule)) {
+                visit(rule);
+            }
         }
     }
 
