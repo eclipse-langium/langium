@@ -613,8 +613,12 @@ export class LangiumGrammarValidator {
      * Cycles are found as strongly connected components using Tarjan's algorithm.
      */
     private detectLeftRecursion(grammar: ast.Grammar, graph: Map<ast.AbstractParserRule, Set<ast.AbstractParserRule>>, accept: ValidationAcceptor): void {
+        // Order in which the depth-first search discovers each rule (0, 1, 2, ...); also marks a rule as visited
         const indices = new Map<ast.AbstractParserRule, number>();
+        // Smallest index reachable from a rule via its DFS subtree plus at most one edge back to a rule still on the stack.
+        // If a rule's low-link equals its own index, nothing below it reaches further up: it is the root of a component.
         const lowLinks = new Map<ast.AbstractParserRule, number>();
+        // Visited rules whose component has not been determined yet
         const stack: ast.AbstractParserRule[] = [];
         const onStack = new Set<ast.AbstractParserRule>();
 
@@ -626,12 +630,16 @@ export class LangiumGrammarValidator {
             const neighbors = graph.get(rule) ?? new Set();
             for (const neighbor of neighbors) {
                 if (!indices.has(neighbor)) {
+                    // Tree edge: whatever the neighbor can reach, this rule can reach as well
                     visit(neighbor);
                     lowLinks.set(rule, Math.min(lowLinks.get(rule)!, lowLinks.get(neighbor)!));
                 } else if (onStack.has(neighbor)) {
+                    // Back edge to a rule of the current, unfinished component: this rule is on a cycle with it
                     lowLinks.set(rule, Math.min(lowLinks.get(rule)!, indices.get(neighbor)!));
                 }
+                // Otherwise the neighbor belongs to an already completed component and is irrelevant here
             }
+            // Root of a component: all rules above it on the stack form one strongly connected component
             if (lowLinks.get(rule) === indices.get(rule)) {
                 const component: ast.AbstractParserRule[] = [];
                 let member: ast.AbstractParserRule;
