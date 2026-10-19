@@ -534,7 +534,7 @@ function containsOnlyStringTypes(propertyType: PropertyType): boolean {
 function createDataTypeCheckerFunctionReturnString(subTypes: string[], strings: string[], regexes: string[]): string {
     const allArray = [
         ...subTypes.map(e => `is${e}(item)`),
-        ...strings.map(e => `item === '${e}'`)
+        ...strings.map(e => `item === '${escapeQuotes(e, "'")}'`)
     ];
 
     if (regexes.length > 0) {
