@@ -86,6 +86,7 @@ export function registerValidationChecks(services: LangiumGrammarServices): void
             validator.checkGrammarForUnusedRules,
             validator.checkGrammarTypeInfer,
             validator.checkClashingTerminalNames,
+            validator.checkLeftRecursion,
         ],
         GrammarImport: validator.checkPackageImport,
         CharacterRange: validator.checkInvalidCharacterRange,
@@ -139,6 +140,7 @@ export namespace IssueCodes {
     export const SuperfluousInfer = 'superfluous-infer';
     export const OptionalUnorderedGroup = 'optional-unordered-group';
     export const ParsingRuleEmpty = 'parsing-rule-empty';
+    export const LeftRecursion = 'left-recursion';
 }
 
 export class LangiumGrammarValidator {
@@ -248,7 +250,7 @@ export class LangiumGrammarValidator {
     // ensures for the set of transitively imported grammars that all their resulting types have names which are different compared to the given input grammar name
     checkUniqueTypeAndGrammarNames(inputGrammar: ast.Grammar, accept: ValidationAcceptor): void {
         // Collect all relevant grammars. Grammars without name are ignored.
-        const allGrammars = [ inputGrammar, ...resolveTransitiveImports(this.documents, inputGrammar) ].filter(g => g.name);
+        const allGrammars = [inputGrammar, ...resolveTransitiveImports(this.documents, inputGrammar)].filter(g => g.name);
 
         // Try to find types which are declared in or inferred by the current grammar and all its transitively imported grammars, which have the same name as one of the grammars.
         //  Reuse precomputed types in order not to `streamAllContents` of all grammars to improve performance.
@@ -499,6 +501,87 @@ export class LangiumGrammarValidator {
             } else {
                 return `The type '${name}' is not explicitly declared and must be inferred.`;
             }
+        }
+    }
+
+    checkLeftRecursion(grammar: ast.Grammar, accept: ValidationAcceptor): void {
+        const parserRules = grammar.rules.filter(ast.isParserRule).map(rule => rule as ast.ParserRule);
+        const graph = new Map<ast.ParserRule, Set<ast.ParserRule>>();
+        for (const rule of parserRules) {
+            this.fromAbstractElement(rule, rule.definition, graph);
+        }
+        this.detectLeftRecursion(graph, accept);
+    }
+
+    private fromAbstractElement(from: ast.ParserRule, element: ast.AbstractElement, graph: Map<ast.ParserRule, Set<ast.ParserRule>>): void {
+        if (ast.isRuleCall(element)) {
+            const ref = (element as ast.RuleCall).rule.ref;
+            if (ast.isParserRule(ref)) {
+                if (!graph.has(from)) {
+                    graph.set(from, new Set());
+                }
+                graph.get(from)!.add(ref);
+            }
+        } else if (ast.isGroup(element)) {
+            const first = (element as ast.Group).elements[0];
+            if (first) {
+                this.fromAbstractElement(from, first, graph);
+            }
+        } else if (ast.isAlternatives(element)) {
+            (element as ast.Alternatives).elements.forEach(e => {
+                this.fromAbstractElement(from, e, graph);
+            });
+        } else if (ast.isUnorderedGroup(element)) {
+            (element as ast.UnorderedGroup).elements.forEach(e => {
+                this.fromAbstractElement(from, e, graph);
+            });
+        } else if (ast.isAssignment(element)) {
+            const terminal = (element as ast.Assignment).terminal;
+            if (terminal) {
+                this.fromAbstractElement(from, terminal, graph);
+            }
+        } else if (ast.isInfixRule(element)) {
+            const infix = element as ast.InfixRule;
+            this.fromAbstractElement(from, infix.call, graph);
+        }
+    }
+
+    private detectLeftRecursion(graph: Map<ast.ParserRule, Set<ast.ParserRule>>, accept: ValidationAcceptor): void {
+        const accepted = new Set<ast.ParserRule>();
+        const visited = new Set<ast.ParserRule>();
+        const path = new Array<ast.ParserRule>();
+
+        const visit = (rule: ast.ParserRule) => {
+            const ruleIndex = path.indexOf(rule);
+            if (ruleIndex !== -1) {
+                for (let index = ruleIndex; index < path.length; index++) {
+                    const pathRule = path[index];
+                    if (accepted.has(pathRule)) {
+                        continue;
+                    }
+                    accepted.add(pathRule);
+                    accept('error', `Left recursion detected in rule '${pathRule.name}'`, {
+                        code: IssueCodes.LeftRecursion,
+                        node: pathRule,
+                        property: 'name'
+                    });
+                }
+                return;
+            }
+            if (visited.has(rule)) {
+                return;
+            }
+            visited.add(rule);
+            path.push(rule);
+            const neighbors = graph.get(rule) ?? [];
+            for (const neighbor of neighbors) {
+                visit(neighbor);
+            }
+            path.pop();
+        };
+
+        for (const rule of graph.keys()) {
+            visit(rule);
         }
     }
 
@@ -1259,7 +1342,7 @@ export class LangiumGrammarValidator {
         if (ast.isType(reference.type.ref) && ast.isUnionType(reference.type.ref.type)) {
             const errors = checkTypeUnionContainsOnlyParseRules(reference.type.ref.type);
             if (errors.length > 0) {
-                accept('error', `Cross-reference on type union is only valid if all alternatives are AST nodes. ${errors.join(', ')} ${errors.length > 1 ? 'are' : 'is'} not ${errors.length > 1 ? '' : 'an '}AST node${errors.length > 1 ? 's':''}.`, { node: reference, property: 'type' });
+                accept('error', `Cross-reference on type union is only valid if all alternatives are AST nodes. ${errors.join(', ')} ${errors.length > 1 ? 'are' : 'is'} not ${errors.length > 1 ? '' : 'an '}AST node${errors.length > 1 ? 's' : ''}.`, { node: reference, property: 'type' });
             }
         }
     }
@@ -1387,7 +1470,7 @@ function checkTypeUnionContainsOnlyParseRules(type: ast.UnionType): string[] {
     type.types.forEach(type => {
         if (ast.isSimpleType(type)) {
             if (type.typeRef?.ref) {
-                if(ast.isType(type.typeRef.ref)) {
+                if (ast.isType(type.typeRef.ref)) {
                     if (ast.isUnionType(type.typeRef.ref.type)) {
                         errors.push(...checkTypeUnionContainsOnlyParseRules(type.typeRef.ref.type));
                     } else {
