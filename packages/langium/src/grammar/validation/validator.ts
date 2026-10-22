@@ -86,6 +86,7 @@ export function registerValidationChecks(services: LangiumGrammarServices): void
             validator.checkGrammarForUnusedRules,
             validator.checkGrammarTypeInfer,
             validator.checkClashingTerminalNames,
+            validator.checkLeftRecursion,
         ],
         GrammarImport: validator.checkPackageImport,
         CharacterRange: validator.checkInvalidCharacterRange,
@@ -139,6 +140,7 @@ export namespace IssueCodes {
     export const SuperfluousInfer = 'superfluous-infer';
     export const OptionalUnorderedGroup = 'optional-unordered-group';
     export const ParsingRuleEmpty = 'parsing-rule-empty';
+    export const LeftRecursion = 'left-recursion';
 }
 
 export class LangiumGrammarValidator {
@@ -248,7 +250,7 @@ export class LangiumGrammarValidator {
     // ensures for the set of transitively imported grammars that all their resulting types have names which are different compared to the given input grammar name
     checkUniqueTypeAndGrammarNames(inputGrammar: ast.Grammar, accept: ValidationAcceptor): void {
         // Collect all relevant grammars. Grammars without name are ignored.
-        const allGrammars = [ inputGrammar, ...resolveTransitiveImports(this.documents, inputGrammar) ].filter(g => g.name);
+        const allGrammars = [inputGrammar, ...resolveTransitiveImports(this.documents, inputGrammar)].filter(g => g.name);
 
         // Try to find types which are declared in or inferred by the current grammar and all its transitively imported grammars, which have the same name as one of the grammars.
         //  Reuse precomputed types in order not to `streamAllContents` of all grammars to improve performance.
@@ -498,6 +500,172 @@ export class LangiumGrammarValidator {
                 return `The type '${name}' is already explicitly declared and cannot be inferred.`;
             } else {
                 return `The type '${name}' is not explicitly declared and must be inferred.`;
+            }
+        }
+    }
+
+    checkLeftRecursion(grammar: ast.Grammar, accept: ValidationAcceptor): void {
+        const rules = this.collectReachableParserRules(grammar);
+        const nullableRules = this.computeNullableRules(rules);
+        const graph = new Map<ast.AbstractParserRule, Set<ast.AbstractParserRule>>();
+        for (const rule of rules) {
+            const leftmostCalls = new Set<ast.AbstractParserRule>();
+            this.collectLeftmostCalls(rule, nullableRules, leftmostCalls);
+            graph.set(rule, leftmostCalls);
+        }
+        this.detectLeftRecursion(grammar, graph, accept);
+    }
+
+    /**
+     * Collects all parser and infix rules of the grammar, including imported rules that are reachable via rule calls.
+     */
+    private collectReachableParserRules(grammar: ast.Grammar): Set<ast.AbstractParserRule> {
+        const rules = new Set<ast.AbstractParserRule>(grammar.rules.filter(ast.isAbstractParserRule));
+        const queue = Array.from(rules);
+        while (queue.length > 0) {
+            const rule = queue.pop()!;
+            for (const ruleCall of streamAllContents(rule).filter(ast.isRuleCall)) {
+                const ref = ruleCall.rule.ref;
+                if (ast.isAbstractParserRule(ref) && !rules.has(ref)) {
+                    rules.add(ref);
+                    queue.push(ref);
+                }
+            }
+        }
+        return rules;
+    }
+
+    /**
+     * Computes the set of rules that can potentially consume no input as a fixpoint over all given rules.
+     */
+    private computeNullableRules(rules: Set<ast.AbstractParserRule>): Set<ast.AbstractParserRule> {
+        const nullableRules = new Set<ast.AbstractParserRule>();
+        let changed = true;
+        while (changed) {
+            changed = false;
+            for (const rule of rules) {
+                if (!nullableRules.has(rule) && this.collectLeftmostCalls(rule, nullableRules, new Set())) {
+                    nullableRules.add(rule);
+                    changed = true;
+                }
+            }
+        }
+        return nullableRules;
+    }
+
+    /**
+     * Adds all rules to `calls` that may be called by the given rule or element before any input has been consumed.
+     * @returns `true` if the rule or element can potentially consume no input.
+     */
+    private collectLeftmostCalls(element: ast.AbstractParserRule | ast.AbstractElement | undefined, nullableRules: Set<ast.AbstractParserRule>, calls: Set<ast.AbstractParserRule>): boolean {
+        if (!element) {
+            return false;
+        }
+        if (ast.isParserRule(element)) {
+            return this.collectLeftmostCalls(element.definition, nullableRules, calls);
+        }
+        if (ast.isInfixRule(element)) {
+            // Infix rules start with their operand; the operators are only parsed afterwards
+            return this.collectLeftmostCalls(element.call, nullableRules, calls);
+        }
+        let nullable: boolean;
+        if (ast.isRuleCall(element)) {
+            const ref = element.rule.ref;
+            if (ast.isAbstractParserRule(ref)) {
+                calls.add(ref);
+                nullable = nullableRules.has(ref);
+            } else {
+                nullable = false;
+            }
+        } else if (ast.isGroup(element)) {
+            // Only the elements up to (and including) the first non-nullable element are in leftmost position
+            nullable = true;
+            for (const child of element.elements) {
+                if (!this.collectLeftmostCalls(child, nullableRules, calls)) {
+                    nullable = false;
+                    break;
+                }
+            }
+        } else if (ast.isAlternatives(element)) {
+            nullable = false;
+            for (const child of element.elements) {
+                nullable = this.collectLeftmostCalls(child, nullableRules, calls) || nullable;
+            }
+        } else if (ast.isUnorderedGroup(element)) {
+            // Every element of an unordered group can be parsed first
+            nullable = true;
+            for (const child of element.elements) {
+                nullable = this.collectLeftmostCalls(child, nullableRules, calls) && nullable;
+            }
+        } else if (ast.isAssignment(element)) {
+            nullable = this.collectLeftmostCalls(element.terminal, nullableRules, calls);
+        } else if (ast.isAction(element)) {
+            nullable = true;
+        } else {
+            // Keywords, cross-references, EOF, etc.
+            nullable = false;
+        }
+        return nullable || isOptionalCardinality(element.cardinality, element);
+    }
+
+    /**
+     * Reports every rule of the grammar that is part of a cycle in the leftmost call graph.
+     * Cycles are found as strongly connected components using Tarjan's algorithm.
+     */
+    private detectLeftRecursion(grammar: ast.Grammar, graph: Map<ast.AbstractParserRule, Set<ast.AbstractParserRule>>, accept: ValidationAcceptor): void {
+        // Order in which the depth-first search discovers each rule (0, 1, 2, ...); also marks a rule as visited
+        const indices = new Map<ast.AbstractParserRule, number>();
+        // Smallest index reachable from a rule via its DFS subtree plus at most one edge back to a rule still on the stack.
+        // If a rule's low-link equals its own index, nothing below it reaches further up: it is the root of a component.
+        const lowLinks = new Map<ast.AbstractParserRule, number>();
+        // Visited rules whose component has not been determined yet
+        const stack: ast.AbstractParserRule[] = [];
+        const onStack = new Set<ast.AbstractParserRule>();
+
+        const visit = (rule: ast.AbstractParserRule) => {
+            indices.set(rule, indices.size);
+            lowLinks.set(rule, indices.get(rule)!);
+            stack.push(rule);
+            onStack.add(rule);
+            const neighbors = graph.get(rule) ?? new Set();
+            for (const neighbor of neighbors) {
+                if (!indices.has(neighbor)) {
+                    // Tree edge: whatever the neighbor can reach, this rule can reach as well
+                    visit(neighbor);
+                    lowLinks.set(rule, Math.min(lowLinks.get(rule)!, lowLinks.get(neighbor)!));
+                } else if (onStack.has(neighbor)) {
+                    // Back edge to a rule of the current, unfinished component: this rule is on a cycle with it
+                    lowLinks.set(rule, Math.min(lowLinks.get(rule)!, indices.get(neighbor)!));
+                }
+                // Otherwise the neighbor belongs to an already completed component and is irrelevant here
+            }
+            // Root of a component: all rules above it on the stack form one strongly connected component
+            if (lowLinks.get(rule) === indices.get(rule)) {
+                const component: ast.AbstractParserRule[] = [];
+                let member: ast.AbstractParserRule;
+                do {
+                    member = stack.pop()!;
+                    onStack.delete(member);
+                    component.push(member);
+                } while (member !== rule);
+                if (component.length > 1 || neighbors.has(rule)) {
+                    for (const recursiveRule of component) {
+                        // Rules of imported grammars are reported when validating their own grammar
+                        if (recursiveRule.$container === grammar) {
+                            accept('error', `Left recursion detected in rule '${recursiveRule.name}'`, {
+                                code: IssueCodes.LeftRecursion,
+                                node: recursiveRule,
+                                property: 'name'
+                            });
+                        }
+                    }
+                }
+            }
+        };
+
+        for (const rule of graph.keys()) {
+            if (!indices.has(rule)) {
+                visit(rule);
             }
         }
     }
@@ -1259,7 +1427,7 @@ export class LangiumGrammarValidator {
         if (ast.isType(reference.type.ref) && ast.isUnionType(reference.type.ref.type)) {
             const errors = checkTypeUnionContainsOnlyParseRules(reference.type.ref.type);
             if (errors.length > 0) {
-                accept('error', `Cross-reference on type union is only valid if all alternatives are AST nodes. ${errors.join(', ')} ${errors.length > 1 ? 'are' : 'is'} not ${errors.length > 1 ? '' : 'an '}AST node${errors.length > 1 ? 's':''}.`, { node: reference, property: 'type' });
+                accept('error', `Cross-reference on type union is only valid if all alternatives are AST nodes. ${errors.join(', ')} ${errors.length > 1 ? 'are' : 'is'} not ${errors.length > 1 ? '' : 'an '}AST node${errors.length > 1 ? 's' : ''}.`, { node: reference, property: 'type' });
             }
         }
     }
@@ -1387,7 +1555,7 @@ function checkTypeUnionContainsOnlyParseRules(type: ast.UnionType): string[] {
     type.types.forEach(type => {
         if (ast.isSimpleType(type)) {
             if (type.typeRef?.ref) {
-                if(ast.isType(type.typeRef.ref)) {
+                if (ast.isType(type.typeRef.ref)) {
                     if (ast.isUnionType(type.typeRef.ref.type)) {
                         errors.push(...checkTypeUnionContainsOnlyParseRules(type.typeRef.ref.type));
                     } else {
