@@ -36,7 +36,7 @@
   "dependencies": {
     "langium": "~4.4.0",
     "sprotty-protocol": "^1.0.0",
-    "vscode-languageserver": "~10.1.0"
+    "vscode-languageserver": "~11.0.0"
   },
   "repository": {
     "type": "git",
