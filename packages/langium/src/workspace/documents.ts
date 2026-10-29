@@ -261,7 +261,8 @@ export class DefaultLangiumDocumentFactory implements LangiumDocumentFactory {
                 textDocument
             };
         } else {
-            const textDocumentGetter = this.createTextDocumentGetter(uri, text);
+            // Prefer the text held by the CST: a parser running in a worker thread hands back a copy of `text`
+            const textDocumentGetter = this.createTextDocumentGetter(uri, parseResult.value.$cstNode?.root.fullText ?? text);
             document = {
                 parseResult,
                 uri,
@@ -282,6 +283,13 @@ export class DefaultLangiumDocumentFactory implements LangiumDocumentFactory {
         const textDocument = this.textDocuments?.get(document.uri.toString());
         const text = await this.getUpdatedText(document, textDocument, cancellationToken);
 
+        // Some of these documents can be pretty large, so parsing them again can be quite expensive.
+        // Therefore, we only parse if the text has actually changed.
+        if (oldText !== text) {
+            document.parseResult = await this.parseAsync(document.uri, text, cancellationToken);
+            (document.parseResult.value as Mutable<AstNode>).$document = document;
+        }
+
         if (textDocument) {
             Object.defineProperty(
                 document,
@@ -291,7 +299,9 @@ export class DefaultLangiumDocumentFactory implements LangiumDocumentFactory {
                 }
             );
         } else {
-            const textDocumentGetter = this.createTextDocumentGetter(document.uri, text);
+            // Prefer the text held by the CST: if the content is unchanged, `text` is a second copy of it
+            const currentText = document.parseResult.value.$cstNode?.root.fullText ?? text;
+            const textDocumentGetter = this.createTextDocumentGetter(document.uri, currentText);
             Object.defineProperty(
                 document,
                 'textDocument',
@@ -299,13 +309,6 @@ export class DefaultLangiumDocumentFactory implements LangiumDocumentFactory {
                     get: textDocumentGetter
                 }
             );
-        }
-
-        // Some of these documents can be pretty large, so parsing them again can be quite expensive.
-        // Therefore, we only parse if the text has actually changed.
-        if (oldText !== text) {
-            document.parseResult = await this.parseAsync(document.uri, text, cancellationToken);
-            (document.parseResult.value as Mutable<AstNode>).$document = document;
         }
         document.state = DocumentState.Parsed;
         return document;

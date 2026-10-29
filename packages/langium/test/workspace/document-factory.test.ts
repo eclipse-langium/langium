@@ -4,10 +4,10 @@
  * terms of the MIT License, which is available in the project root.
  ******************************************************************************/
 
-import type { Grammar } from 'langium';
+import type { Grammar, LangiumDocument } from 'langium';
 import type { LangiumServices } from 'langium/lsp';
 import { describe, expect, test } from 'vitest';
-import { DocumentState, EmptyFileSystem, TextDocument } from 'langium';
+import { DefaultLangiumDocumentFactory, DocumentState, EmptyFileSystem, TextDocument, URI } from 'langium';
 import { createLangiumGrammarServices } from 'langium/grammar';
 import { CancellationToken } from 'vscode-languageserver';
 
@@ -45,7 +45,44 @@ describe('DefaultLangiumDocumentFactory', () => {
         // Confirm that the parse result wasn't updated.
         expect(updated.parseResult.value.name).toBe('HELLO');
     });
+
+    test('closed document: re-parses and updates the text document when the file content changed', async () => {
+        const services = createLangiumGrammarServices(EmptyFileSystem).grammar;
+        const documentFactory = new TestDocumentFactory(services.shared);
+        const uri = URI.parse('file:///test.langium');
+        const document = documentFactory.fromString<Grammar>('grammar X', uri);
+        document.state = DocumentState.Changed;
+        documentFactory.files.set(uri.toString(), 'grammar Y');
+        const updated = await documentFactory.update(document, CancellationToken.None);
+        expect(updated.parseResult.value.name).toBe('Y');
+        expect(updated.textDocument.getText()).toBe('grammar Y');
+    });
+
+    test('closed document: keeps the parse result and text when the file content is unchanged', async () => {
+        const services = createLangiumGrammarServices(EmptyFileSystem).grammar;
+        const documentFactory = new TestDocumentFactory(services.shared);
+        const uri = URI.parse('file:///test.langium');
+        const document = documentFactory.fromString<Grammar>('grammar X', uri);
+        document.parseResult.value.name = 'HELLO';
+        document.state = DocumentState.Changed;
+        documentFactory.files.set(uri.toString(), 'grammar X');
+        const updated = await documentFactory.update(document, CancellationToken.None);
+        // Confirm that the parse result wasn't updated.
+        expect(updated.parseResult.value.name).toBe('HELLO');
+        expect(updated.textDocument.getText()).toBe('grammar X');
+    });
 });
+
+/**
+ * Serves the text of closed documents (no `TextDocuments` entry) from a map instead of the file system.
+ */
+class TestDocumentFactory extends DefaultLangiumDocumentFactory {
+    readonly files = new Map<string, string>();
+
+    protected override async getUpdatedText(document: LangiumDocument): Promise<string> {
+        return this.files.get(document.uri.toString())!;
+    }
+}
 
 function createTextDocument(uri: string, text: string, services: LangiumServices): TextDocument {
     const document = TextDocument.create(uri, 'langium', 0, text);
