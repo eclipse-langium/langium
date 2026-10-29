@@ -5,6 +5,7 @@
  ******************************************************************************/
 
 import type { ValidationAcceptor, ValidationChecks } from 'langium';
+import { MarkupKind } from 'vscode-languageserver-types';
 import { MultiMap, stream } from 'langium';
 import { evalExpression } from './arithmetics-evaluator.js';
 import type { ArithmeticsServices } from './arithmetics-module.js';
@@ -127,7 +128,7 @@ export class ArithmeticsValidator {
         for (const cycle of callCycles) {
             const cycleMessage = FunctionCallCycle.print(cycle, callsTree);
             for (const { call } of FunctionCallCycle.iterateBack(cycle, callsTree)) {
-                accept('error', `Recursion is not allowed [${cycleMessage}]`, { node: call, property: 'func' });
+                accept('error', { kind: MarkupKind.Markdown, value: `Recursion is not allowed:\n\`${cycleMessage}\`` }, { node: call, property: 'func' });
             }
         }
     }
