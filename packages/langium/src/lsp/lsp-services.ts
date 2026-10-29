@@ -9,7 +9,7 @@ import type { DeepPartial, LangiumCoreServices, LangiumSharedCoreServices } from
 import type { TextDocument } from '../workspace/documents.js';
 import type { CallHierarchyProvider } from './call-hierarchy-provider.js';
 import type { CodeActionProvider } from './code-action.js';
-import type { CodeLensProvider } from './code-lens-provider.js';
+import type { CodeLensProvider, SharedCodeLensProvider } from './code-lens-provider.js';
 import type { CompletionProvider } from './completion/completion-provider.js';
 import type { DeclarationProvider } from './declaration-provider.js';
 import type { DefinitionProvider } from './definition-provider.js';
@@ -81,6 +81,8 @@ export type LangiumLSPServices = {
  */
 export type LangiumSharedLSPServices = {
     readonly lsp: {
+        /** Takes precedence over language-specific code lens providers. */
+        readonly CodeLensProvider?: SharedCodeLensProvider
         readonly Connection?: Connection
         readonly DocumentUpdateHandler: DocumentUpdateHandler
         readonly ExecuteCommandHandler?: ExecuteCommandHandler
