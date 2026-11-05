@@ -388,8 +388,8 @@ const PACKAGE_JSON_EXPECTATION_EXTENSION: Record<string, any> = {
     },
     dependencies: {
         'hello-world-language': '0.0.1',
-        'vscode-languageclient': '~10.1.0',
-        'vscode-languageserver': '~10.1.0'
+        'vscode-languageclient': '~11.0.0',
+        'vscode-languageserver': '~11.0.0'
     },
     devDependencies: {
         '@types/vscode': '~1.120.0',
