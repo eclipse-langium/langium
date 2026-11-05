@@ -7,7 +7,7 @@
 import type { Grammar, GrammarAST as GrammarTypes} from 'langium';
 import { beforeAll, describe, expect, test } from 'vitest';
 import { EmptyFileSystem, GrammarUtils, stream, GrammarAST } from 'langium';
-import { LangiumGrammarGrammar, createLangiumGrammarServices } from 'langium/grammar';
+import { LangiumGrammarGrammar, createLangiumGrammarServices, extractAssignments } from 'langium/grammar';
 import { parseHelper } from 'langium/test';
 
 const { isDataTypeRule, findNameAssignment, getEntryRule, getTypeName, terminalRegex } = GrammarUtils;
@@ -101,6 +101,21 @@ describe('Find name assignment in parser rules', () => {
 
 test('Langium grammar entry rule', () => {
     expect(getEntryRule(LangiumGrammarGrammar())?.name).toBe('Grammar');
+});
+
+describe('extractAssignments', () => {
+
+    test('terminates on recursive fragments and rule calls', async () => {
+        const grammar = (await parseHelper<Grammar>(createLangiumGrammarServices(EmptyFileSystem).grammar)(`
+        grammar Foo
+        entry A: F B;
+        fragment F: a='x' ('.' F)?;
+        B: '(' A ')' | b='y';
+        `)).parseResult.value;
+        const rule = grammar.rules[0] as GrammarTypes.ParserRule;
+        expect(extractAssignments(rule.definition).map(a => a.feature)).toEqual(['a', 'b']);
+    });
+
 });
 
 describe('Get Name from Type', () => {
