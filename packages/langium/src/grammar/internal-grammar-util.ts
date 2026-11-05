@@ -148,17 +148,22 @@ function resolveTransitiveImportsInternal(documents: LangiumDocuments, grammar: 
     return Array.from(grammars);
 }
 
-export function extractAssignments(element: ast.AbstractElement, visited = new Set<ast.AbstractElement>()): ast.Assignment[] {
-    if (visited.has(element)) {
-        return [];
-    }
-    visited.add(element);
+export function extractAssignments(element: ast.AbstractElement): ast.Assignment[] {
+    return extractAssignmentsInternal(element, new Set());
+}
+
+function extractAssignmentsInternal(element: ast.AbstractElement, visited: Set<ast.ParserRule>): ast.Assignment[] {
     if (ast.isAssignment(element)) {
         return [element];
     } else if (ast.isAlternatives(element) || ast.isGroup(element) || ast.isUnorderedGroup(element)) {
-        return element.elements.flatMap(e => extractAssignments(e, visited));
+        return element.elements.flatMap(e => extractAssignmentsInternal(e, visited));
     } else if (ast.isRuleCall(element) && ast.isParserRule(element.rule?.ref)) {
-        return extractAssignments(element.rule.ref.definition, visited);
+        const rule = element.rule.ref;
+        if (visited.has(rule)) {
+            return [];
+        }
+        visited.add(rule);
+        return extractAssignmentsInternal(rule.definition, visited);
     }
     return [];
 }
