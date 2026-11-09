@@ -155,6 +155,35 @@ describe('IndentationAwareLexer', () => {
         expect(dedent.tokenType.name).toBe('DEDENT');
     });
 
+    test.each(['\n', '\r\n'])('should compute line numbers of dedent tokens for line ending %j', async eol => {
+        const lexer = await getLexer(sampleGrammar);
+        const lines = (tokens: Array<{ tokenType: TokenType, startLine?: number }>) =>
+            tokens.filter(e => e.tokenType.name === 'DEDENT').map(e => e.startLine);
+
+        const first = lexer.tokenize(['{', '    a', '        b', '}', '    c', '}'].join(eol));
+        expect(lines(first.tokens)).toEqual([4, 4, 6]);
+
+        // a second run on the same lexer must not reuse line information of the first one
+        const second = lexer.tokenize(['{', '    a'].join(eol));
+        expect(lines(second.tokens)).toEqual([2]);
+    });
+
+    test('should tokenize large inputs in linear time', async () => {
+        const lexer = await getLexer(sampleGrammar);
+        const repetitions = 10_000;
+        const text = ['{', '    a', '        b', '}', ''].join('\n').repeat(repetitions);
+
+        const start = performance.now();
+        const { tokens, errors } = lexer.tokenize(text);
+        const duration = performance.now() - start;
+
+        expect(errors).toHaveLength(0);
+        // '{', INDENT, 'a', INDENT, 'b', DEDENT, DEDENT, '}'
+        expect(tokens).toHaveLength(8 * repetitions);
+        // Computing the line number of each dedent token from the start of the text took several seconds here
+        expect(duration).toBeLessThan(1000);
+    });
+
     test('should ignore indent tokens before comments', async () => {
         const lexer = await getLexer(sampleGrammar);
         const { tokens, errors } = lexer.tokenize(expandToString`
