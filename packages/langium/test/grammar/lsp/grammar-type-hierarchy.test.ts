@@ -5,6 +5,7 @@
  ******************************************************************************/
 
 import { EmptyFileSystem } from 'langium';
+import { expandToString } from 'langium/generate';
 import { createLangiumGrammarServices } from 'langium/grammar';
 import { parseHelper, replaceIndices } from 'langium/test';
 import { describe, expect, test } from 'vitest';
@@ -15,6 +16,29 @@ const typeHierarchyProvider = services.lsp.TypeHierarchyProvider!;
 const parse = parseHelper(services);
 
 describe('LangiumGrammarTypeHierarchyProvider', async () => {
+    test('uses the declaration URI for a cross-file reference', async () => {
+        const grammarServices = createLangiumGrammarServices(EmptyFileSystem).grammar;
+        const parseDocument = parseHelper(grammarServices);
+        const base = await parseDocument('interface Root {}\ninterface Base extends Root {}', {
+            documentUri: 'file:///base.langium'
+        });
+        const { output, indices } = replaceIndices({ text: expandToString`
+            grammar Use
+            import './base'
+            entry Main: name='main';
+            interface Child extends <|>Base {}
+        ` });
+        const use = await parseDocument(output, { documentUri: 'file:///use.langium' });
+        const provider = grammarServices.lsp.TypeHierarchyProvider!;
+        const items = await provider.prepareTypeHierarchy(use, {
+            textDocument: { uri: use.uri.toString() },
+            position: use.textDocument.positionAt(indices[0])
+        });
+        expect(items).toMatchObject([{ name: 'Base', uri: base.uri.toString() }]);
+        const supertypes = await provider.supertypes({ item: items![0] });
+        expect(supertypes).toMatchObject([{ name: 'Root', uri: base.uri.toString() }]);
+    });
+
     describe('supertypes', () => {
         const testCases: TypeHierarchyProviderTest[] = [
             {
