@@ -51,6 +51,37 @@ describe('Grammar serializer', () => {
         expect(moduleString).toMatch('"$comment": "/**\\\\n * This is the entry rule\\\\n */"');
     });
 
+    test('should omit comments of AST elements when serializeGrammarComments is false', async () => {
+        // arrange
+        const config: LangiumConfig = {
+            projectName: 'Magic',
+            languages: [],
+            serializeGrammarComments: false,
+            [RelativePath]: '/path/to/magic',
+        };
+
+        const grammarText = expandToString`
+        grammar Test
+
+        /**
+         * This is the entry rule
+         */
+        entry Model: /** This is the name assignment */ name='test';
+        `;
+
+        const document = grammarServices.shared.workspace.LangiumDocumentFactory.fromString<Grammar>(grammarText, URI.file('test.langium'));
+        grammarServices.shared.workspace.LangiumDocuments.addDocument(document);
+        await grammarServices.shared.workspace.DocumentBuilder.build([document]);
+        const grammar = document.parseResult.value;
+
+        // act
+        const moduleString = serializeGrammar(grammarServices.grammar, [grammar], config);
+
+        // assert
+        expect(moduleString).not.toMatch('$comment');
+        expect(moduleString).toMatch('"name": "Model"');
+    });
+
     test('should escape template strings in development mode', async () => {
         // arrange
         const config: LangiumConfig = {
