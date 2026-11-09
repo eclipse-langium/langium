@@ -1,11 +1,17 @@
 # Change Log of `langium-vscode`
 
+## v4.4.1 (Nov. 2026)
+
+* Update the internal `langium` version to 4.4.1.
+* Update `vscode-languageclient` and `vscode-languageserver` to 11.0 ([#2249](https://github.com/eclipse-langium/langium/pull/2249)).
+* The extension now requires VS Code 1.123 or newer ([#2238](https://github.com/eclipse-langium/langium/pull/2238)).
+
 ## v4.4.0 (Sep. 2026)
 
 * Update the internal `langium` version to 4.4.0.
 * Fix `langium.build.ignorePatterns` being ignored during initial workspace indexing ([#2206](https://github.com/eclipse-langium/langium/pull/2206)).
 
-## v4.4.0 (Jun)
+## v4.3.0 (Jun. 2026)
 
 * Update the internal `langium` version to 4.3.0.
 
