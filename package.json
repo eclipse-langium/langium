@@ -36,14 +36,14 @@
     "@typescript-eslint/parser": "~8.72.1",
     "@vitest/coverage-v8": "~4.1.12",
     "@vitest/ui": "~4.1.12",
-    "@vscode/vsce": "~3.9.2",
+    "@vscode/vsce": "~4.1.0",
     "concurrently": "~10.0.7",
     "editorconfig": "~3.0.2",
     "esbuild": "0.28.2",
     "eslint": "~10.14.0",
     "eslint-plugin-unused-imports": "~4.4.1",
-    "globals": "~17.12.0",
-    "ovsx": "^1.2.0",
+    "globals": "~17.14.0",
+    "ovsx": "^1.3.0",
     "semver": "~7.8.6",
     "shx": "~0.4.0",
     "tsx": "~4.23.15",
@@ -66,9 +66,8 @@
     "examples/statemachine"
   ],
   "allowScripts": {
-    "@vscode/vsce-sign@2.0.9": true,
+    "@vscode/vsce-sign@2.1.0": true,
     "esbuild@0.28.2": true,
-    "fsevents@2.3.3": true,
-    "keytar@7.9.0": true
+    "fsevents@2.3.3": true
   }
 }
