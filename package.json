@@ -34,8 +34,8 @@
     "@types/vscode": "~1.120.0",
     "@typescript-eslint/eslint-plugin": "~8.72.1",
     "@typescript-eslint/parser": "~8.72.1",
-    "@vitest/coverage-v8": "~4.1.12",
-    "@vitest/ui": "~4.1.12",
+    "@vitest/coverage-v8": "~5.1.0",
+    "@vitest/ui": "~5.1.0",
     "@vscode/vsce": "~4.1.0",
     "concurrently": "~10.0.7",
     "editorconfig": "~3.0.2",
@@ -48,7 +48,7 @@
     "shx": "~0.4.0",
     "tsx": "~4.23.15",
     "typescript": "~5.9.3",
-    "vitest": "~4.1.12"
+    "vitest": "~5.1.0"
   },
   "optionalDependencies": {
     "@rollup/rollup-linux-x64-gnu": "^4"

@@ -344,7 +344,7 @@ const PACKAGE_JSON_EXPECTATION_CLI: Record<string, any> = {
     },
     dependencies: {
         'hello-world-language': '0.0.1',
-        'chalk': '~5.6.2',
+        'chalk': '~6.0.1',
         'commander': '~15.1.0'
     }
 };
