@@ -39,7 +39,7 @@
     "yeoman-generator": "~10.0.1"
   },
   "devDependencies": {
-    "@types/lodash": "~4.17.25",
+    "@types/lodash": "~4.17.27",
     "@types/which": "~3.0.4",
     "@yeoman/types": "~1.13.1",
     "yeoman-environment": "~8.2.0",
