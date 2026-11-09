@@ -64,10 +64,22 @@ function generateDiagnosticInfo(marker: SDiagnosticMarker): string {
         <div class="sprotty-infoRow">
             ${marker.issues.map(issue => expandToString`
                 <div class="sprotty-infoText">
-                    <span class="sprotty-${issue.severity}">${issue.message}</span>
+                    <span class="sprotty-${escapeHtml(issue.severity)}">${escapeHtml(issue.message)}</span>
                 </div>
-            `).join()}
+            `).join('')}
         </div>
     </div>
     `;
+}
+
+const htmlEscapes: Record<string, string> = {
+    '&': '&amp;',
+    '<': '&lt;',
+    '>': '&gt;',
+    '"': '&quot;',
+    "'": '&#39;'
+};
+
+function escapeHtml(text: string): string {
+    return text.replace(/[&<>"']/g, c => htmlEscapes[c]);
 }
