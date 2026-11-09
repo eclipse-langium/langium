@@ -1,6 +1,6 @@
 {
   "name": "langium-sprotty",
-  "version": "4.4.0",
+  "version": "4.4.1",
   "description": "Use Langium as source for Sprotty diagram models",
   "homepage": "https://langium.org",
   "keywords": [
