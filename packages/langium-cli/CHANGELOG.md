@@ -1,5 +1,11 @@
 # Change Log of `langium-cli`
 
+## v4.4.1 (Nov. 2026)
+
+* Keywords containing quotes or backslashes are now correctly escaped in the generated AST ([#2243](https://github.com/eclipse-langium/langium/pull/2243)).
+* Keep the doc comments of imported grammar elements when embedding grammars ([#2231](https://github.com/eclipse-langium/langium/pull/2231)).
+* The `engines` field now requires Node.js `^22.22.2 || ^24.15.0 || >=26` ([#2238](https://github.com/eclipse-langium/langium/pull/2238)).
+
 ## v4.4.0 (Sep. 2026)
 
 * Update the internal `langium` version to 4.4.0.

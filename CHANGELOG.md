@@ -4,6 +4,7 @@ We maintain separate change logs for the individual packages:
 
 * [langium](./packages/langium/CHANGELOG.md) &ndash; Core package
 * [langium-cli](./packages/langium-cli/CHANGELOG.md) &ndash; CLI for processing Langium grammars
+* [langium-sprotty](./packages/langium-sprotty/CHANGELOG.md) &ndash; Sprotty integration for Langium
 * [langium-vscode](./packages/langium-vscode/CHANGELOG.md) &ndash; VS Code extension for the grammar language
 * [generator-langium](./packages/generator-langium/CHANGELOG.md) &ndash; Yeoman generator for creating new projects
 

@@ -1,5 +1,20 @@
 # Change Log of `langium`
 
+## v4.4.2 (Nov. 2026)
+
+* Dropped the update to `vscode-languageserver` version 11.0. The dependency is back to version `~10.1.0`. Version 4.5.0 will feature an update to the dependency instead.
+
+## v4.4.1 (Nov. 2026)
+
+* Fix a performance issue in indentation-aware lexing that slowed down large documents ([#2257](https://github.com/eclipse-langium/langium/pull/2257)).
+* Remove per-node allocations on the parsing and validation hot paths ([#2234](https://github.com/eclipse-langium/langium/pull/2234)).
+* Avoid keeping a second copy of the document text after a document update ([#2251](https://github.com/eclipse-langium/langium/pull/2251)).
+* Keywords now correctly take terminals into account as longer alternatives when the terminal's regular expression requires a custom token pattern ([#2226](https://github.com/eclipse-langium/langium/pull/2226)).
+* Preserve the optionality of properties when merging the inferred types of rule alternatives ([#2162](https://github.com/eclipse-langium/langium/pull/2162)).
+* Fix an endless recursion when extracting assignments from recursive parser rules ([#2254](https://github.com/eclipse-langium/langium/pull/2254)).
+* Update `vscode-languageserver` to 11.0 as well as `vscode-languageserver-protocol` and `vscode-languageserver-types` to 3.18.5 ([#2249](https://github.com/eclipse-langium/langium/pull/2249)).
+* The `engines` field now properly documents the required Node.js version `^22.22.2 || ^24.15.0 || >=26` ([#2238](https://github.com/eclipse-langium/langium/pull/2238)).
+
 ## v4.4.0 (Sep. 2026)
 
 * Significantly reduce the memory usage of the CST and improve parsing performance ([#2191](https://github.com/eclipse-langium/langium/pull/2191)).
