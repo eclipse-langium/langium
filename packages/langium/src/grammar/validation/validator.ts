@@ -589,13 +589,13 @@ export class LangiumGrammarValidator {
         } else if (ast.isAlternatives(element)) {
             nullable = false;
             for (const child of element.elements) {
-                nullable = this.collectLeftmostCalls(child, nullableRules, calls) || nullable;
+                nullable ||= this.collectLeftmostCalls(child, nullableRules, calls);
             }
         } else if (ast.isUnorderedGroup(element)) {
             // Every element of an unordered group can be parsed first
             nullable = true;
             for (const child of element.elements) {
-                nullable = this.collectLeftmostCalls(child, nullableRules, calls) && nullable;
+                nullable &&= this.collectLeftmostCalls(child, nullableRules, calls);
             }
         } else if (ast.isAssignment(element)) {
             nullable = this.collectLeftmostCalls(element.terminal, nullableRules, calls);
