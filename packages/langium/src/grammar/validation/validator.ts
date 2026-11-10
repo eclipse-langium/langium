@@ -143,6 +143,11 @@ export namespace IssueCodes {
     export const LeftRecursion = 'left-recursion';
 }
 
+/**
+ * Maps each parser or infix rule to the rule calls it may execute before any input has been consumed.
+ */
+type LeftmostCallGraph = Map<ast.AbstractParserRule, ast.RuleCall[]>;
+
 export class LangiumGrammarValidator {
 
     options: LangiumGrammarValidationOptions = {};
@@ -507,9 +512,9 @@ export class LangiumGrammarValidator {
     checkLeftRecursion(grammar: ast.Grammar, accept: ValidationAcceptor): void {
         const rules = this.collectReachableParserRules(grammar);
         const nullableRules = this.computeNullableRules(rules);
-        const graph = new Map<ast.AbstractParserRule, Set<ast.AbstractParserRule>>();
+        const graph: LeftmostCallGraph = new Map();
         for (const rule of rules) {
-            const leftmostCalls = new Set<ast.AbstractParserRule>();
+            const leftmostCalls: ast.RuleCall[] = [];
             this.collectLeftmostCalls(rule, nullableRules, leftmostCalls);
             graph.set(rule, leftmostCalls);
         }
@@ -544,7 +549,7 @@ export class LangiumGrammarValidator {
         while (changed) {
             changed = false;
             for (const rule of rules) {
-                if (!nullableRules.has(rule) && this.collectLeftmostCalls(rule, nullableRules, new Set())) {
+                if (!nullableRules.has(rule) && this.collectLeftmostCalls(rule, nullableRules, [])) {
                     nullableRules.add(rule);
                     changed = true;
                 }
@@ -554,10 +559,10 @@ export class LangiumGrammarValidator {
     }
 
     /**
-     * Adds all rules to `calls` that may be called by the given rule or element before any input has been consumed.
+     * Adds all calls of parser or infix rules to `calls` that may be executed by the given rule or element before any input has been consumed.
      * @returns `true` if the rule or element can potentially consume no input.
      */
-    private collectLeftmostCalls(element: ast.AbstractParserRule | ast.AbstractElement | undefined, nullableRules: Set<ast.AbstractParserRule>, calls: Set<ast.AbstractParserRule>): boolean {
+    private collectLeftmostCalls(element: ast.AbstractParserRule | ast.AbstractElement | undefined, nullableRules: Set<ast.AbstractParserRule>, calls: ast.RuleCall[]): boolean {
         if (!element) {
             return false;
         }
@@ -572,7 +577,7 @@ export class LangiumGrammarValidator {
         if (ast.isRuleCall(element)) {
             const ref = element.rule.ref;
             if (ast.isAbstractParserRule(ref)) {
-                calls.add(ref);
+                calls.push(element);
                 nullable = nullableRules.has(ref);
             } else {
                 nullable = false;
@@ -587,15 +592,18 @@ export class LangiumGrammarValidator {
                 }
             }
         } else if (ast.isAlternatives(element)) {
+            // Every alternative needs to be visited, so the calls must not be short-circuited
             nullable = false;
             for (const child of element.elements) {
-                nullable ||= this.collectLeftmostCalls(child, nullableRules, calls);
+                const childNullable = this.collectLeftmostCalls(child, nullableRules, calls);
+                nullable ||= childNullable;
             }
         } else if (ast.isUnorderedGroup(element)) {
-            // Every element of an unordered group can be parsed first
+            // Every element of an unordered group can be parsed first, so the calls must not be short-circuited
             nullable = true;
             for (const child of element.elements) {
-                nullable &&= this.collectLeftmostCalls(child, nullableRules, calls);
+                const childNullable = this.collectLeftmostCalls(child, nullableRules, calls);
+                nullable &&= childNullable;
             }
         } else if (ast.isAssignment(element)) {
             nullable = this.collectLeftmostCalls(element.terminal, nullableRules, calls);
@@ -609,10 +617,11 @@ export class LangiumGrammarValidator {
     }
 
     /**
-     * Reports every rule of the grammar that is part of a cycle in the leftmost call graph.
-     * Cycles are found as strongly connected components using Tarjan's algorithm.
+     * Reports every leftmost rule call of the grammar that is part of a cycle in the leftmost call graph.
+     * Cycles are found as strongly connected components of rules using Tarjan's algorithm.
+     * A call is part of a cycle if and only if the calling and the called rule belong to the same cyclic component.
      */
-    private detectLeftRecursion(grammar: ast.Grammar, graph: Map<ast.AbstractParserRule, Set<ast.AbstractParserRule>>, accept: ValidationAcceptor): void {
+    private detectLeftRecursion(grammar: ast.Grammar, graph: LeftmostCallGraph, accept: ValidationAcceptor): void {
         // Order in which the depth-first search discovers each rule (0, 1, 2, ...); also marks a rule as visited
         const indices = new Map<ast.AbstractParserRule, number>();
         // Smallest index reachable from a rule via its DFS subtree plus at most one edge back to a rule still on the stack.
@@ -627,8 +636,9 @@ export class LangiumGrammarValidator {
             lowLinks.set(rule, indices.get(rule)!);
             stack.push(rule);
             onStack.add(rule);
-            const neighbors = graph.get(rule) ?? new Set();
-            for (const neighbor of neighbors) {
+            const calls = graph.get(rule) ?? [];
+            for (const call of calls) {
+                const neighbor = call.rule.ref as ast.AbstractParserRule;
                 if (!indices.has(neighbor)) {
                     // Tree edge: whatever the neighbor can reach, this rule can reach as well
                     visit(neighbor);
@@ -641,31 +651,43 @@ export class LangiumGrammarValidator {
             }
             // Root of a component: all rules above it on the stack form one strongly connected component
             if (lowLinks.get(rule) === indices.get(rule)) {
-                const component: ast.AbstractParserRule[] = [];
+                const component = new Set<ast.AbstractParserRule>();
                 let member: ast.AbstractParserRule;
                 do {
                     member = stack.pop()!;
                     onStack.delete(member);
-                    component.push(member);
+                    component.add(member);
                 } while (member !== rule);
-                if (component.length > 1 || neighbors.has(rule)) {
-                    for (const recursiveRule of component) {
-                        // Rules of imported grammars are reported when validating their own grammar
-                        if (recursiveRule.$container === grammar) {
-                            accept('error', `Left recursion detected in rule '${recursiveRule.name}'`, {
-                                code: IssueCodes.LeftRecursion,
-                                node: recursiveRule,
-                                property: 'name'
-                            });
-                        }
-                    }
-                }
+                this.reportLeftRecursiveCalls(grammar, graph, component, accept);
             }
         };
 
         for (const rule of graph.keys()) {
             if (!indices.has(rule)) {
                 visit(rule);
+            }
+        }
+    }
+
+    /**
+     * Reports all calls between rules of the given strongly connected component.
+     * Each of these calls closes a cycle, whereas calls leaving the component merely lead into other components.
+     */
+    private reportLeftRecursiveCalls(grammar: ast.Grammar, graph: LeftmostCallGraph, component: Set<ast.AbstractParserRule>, accept: ValidationAcceptor): void {
+        for (const rule of component) {
+            // Calls of imported rules are reported when validating their own grammar
+            if (rule.$container !== grammar) {
+                continue;
+            }
+            for (const call of graph.get(rule) ?? []) {
+                const calledRule = call.rule.ref as ast.AbstractParserRule;
+                if (component.has(calledRule)) {
+                    accept('error', `Left recursion: call to rule '${calledRule.name}' leads back to rule '${rule.name}'`, {
+                        code: IssueCodes.LeftRecursion,
+                        node: call,
+                        property: 'rule'
+                    });
+                }
             }
         }
     }
