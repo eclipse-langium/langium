@@ -43,9 +43,9 @@
     "publish:latest": "npm publish --tag latest --access public"
   },
   "dependencies": {
-    "chalk": "~5.6.2",
-    "commander": "~15.0.0",
-    "fs-extra": "~11.4.0",
+    "chalk": "~6.0.1",
+    "commander": "~15.1.0",
+    "fs-extra": "~11.4.1",
     "jsonschema": "~1.5.0",
     "langium": "~4.4.0",
     "langium-railroad": "~4.4.0",
