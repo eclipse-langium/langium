@@ -2256,3 +2256,536 @@ describe('Strict type validation', () => {
         expectNoIssues(validationResult);
     });
 });
+
+describe('Left recursion validation', () => {
+
+    function getLeftRecursionDiagnostics(validationResult: ValidationResult<GrammarAST.Grammar>) {
+        return validationResult.diagnostics.filter(d => d.code === IssueCodes.LeftRecursion);
+    }
+
+    /**
+     * Expects exactly the given left recursive calls to be reported.
+     * Each call is given as `[callingRule, calledRule, occurrence?]`, where `occurrence` selects among multiple calls
+     * of `calledRule` within `callingRule` in document order (defaults to the first one).
+     */
+    function expectLeftRecursion(validationResult: ValidationResult<GrammarAST.Grammar>, ...calls: Array<[string, string, number?]>) {
+        const message = (caller: string, callee: string) => `Left recursion: call to rule '${callee}' leads back to rule '${caller}'`;
+        const diagnostics = getLeftRecursionDiagnostics(validationResult);
+        expect(diagnostics.map(d => d.message).sort()).toEqual(
+            calls.map(([caller, callee]) => message(caller, callee)).sort()
+        );
+        for (const [caller, callee, occurrence] of calls) {
+            const rule = validationResult.document.parseResult.value.rules.find(r => r.name === caller)!;
+            const ruleCall = AstUtils.streamAst(rule)
+                .filter(GrammarAST.isRuleCall)
+                .filter(call => call.rule.ref?.name === callee)
+                .toArray()[occurrence ?? 0];
+            expect(ruleCall, `call of '${callee}' in rule '${caller}'`).toBeDefined();
+            expectError(validationResult, message(caller, callee), {
+                node: ruleCall,
+                property: 'rule'
+            });
+        }
+    }
+
+    test('Direct left recursion', async () => {
+        const validationResult = await validate(`
+        grammar Test
+        entry Expr: Expr '+' value=ID;
+        terminal ID: /[a-zA-Z]+/;
+        `);
+        expectLeftRecursion(validationResult, ['Expr', 'Expr']);
+    });
+
+    test('Indirect left recursion over two rules', async () => {
+        const validationResult = await validate(`
+        grammar Test
+        entry A: B 'a';
+        B: A 'b';
+        terminal ID: /[a-zA-Z]+/;
+        `);
+        expectLeftRecursion(validationResult, ['A', 'B'], ['B', 'A']);
+    });
+
+    test('Indirect left recursion over three rules', async () => {
+        const validationResult = await validate(`
+        grammar Test
+        entry A: B 'a';
+        B: C 'b';
+        C: A 'c';
+        terminal ID: /[a-zA-Z]+/;
+        `);
+        expectLeftRecursion(validationResult, ['A', 'B'], ['B', 'C'], ['C', 'A']);
+    });
+
+    test('Calls leading into a cycle are not reported', async () => {
+        const validationResult = await validate(`
+        grammar Test
+        entry Model: A;
+        A: B 'a';
+        B: A 'b';
+        terminal ID: /[a-zA-Z]+/;
+        `);
+        expectLeftRecursion(validationResult, ['A', 'B'], ['B', 'A']);
+    });
+
+    test('Left recursion in alternatives', async () => {
+        const validationResult = await validate(`
+        grammar Test
+        entry Expr: value=ID | Expr '+' value=ID;
+        terminal ID: /[a-zA-Z]+/;
+        `);
+        expectLeftRecursion(validationResult, ['Expr', 'Expr']);
+    });
+
+    test('Left recursion in alternative after a nullable alternative', async () => {
+        const validationResult = await validate(`
+        grammar Test
+        entry Expr: value=ID? | Expr '+' value=ID;
+        terminal ID: /[a-zA-Z]+/;
+        `);
+        expectLeftRecursion(validationResult, ['Expr', 'Expr']);
+    });
+
+    test('Left recursion in unordered groups', async () => {
+        const validationResult = await validate(`
+        grammar Test
+        entry Expr: (value=ID & Expr);
+        terminal ID: /[a-zA-Z]+/;
+        `);
+        expectLeftRecursion(validationResult, ['Expr', 'Expr']);
+    });
+
+    test('Left recursion in assignments', async () => {
+        const validationResult = await validate(`
+        grammar Test
+        entry Expr: left=Expr '+' right=ID;
+        terminal ID: /[a-zA-Z]+/;
+        `);
+        expectLeftRecursion(validationResult, ['Expr', 'Expr']);
+    });
+
+    test('Left recursion in nested groups', async () => {
+        const validationResult = await validate(`
+        grammar Test
+        entry Expr: ((Expr '+') value=ID);
+        terminal ID: /[a-zA-Z]+/;
+        `);
+        expectLeftRecursion(validationResult, ['Expr', 'Expr']);
+    });
+
+    test('No left recursion if the recursive call is not in first position', async () => {
+        const validationResult = await validate(`
+        grammar Test
+        entry Expr: value=ID ('+' next=Expr)?;
+        terminal ID: /[a-zA-Z]+/;
+        `);
+        expect(getLeftRecursionDiagnostics(validationResult)).toHaveLength(0);
+    });
+
+    test('No left recursion for the typical expression grammar', async () => {
+        const validationResult = await validate(`
+        grammar Test
+        entry Expression: Addition;
+        Addition infers Expression: Primary ({infer BinaryExpr.left=current} '+' right=Primary)*;
+        Primary infers Expression: '(' Expression ')' | {infer Literal} value=ID;
+        terminal ID: /[a-zA-Z]+/;
+        `);
+        expect(getLeftRecursionDiagnostics(validationResult)).toHaveLength(0);
+    });
+
+    test('No left recursion via calls to terminal rules', async () => {
+        const validationResult = await validate(`
+        grammar Test
+        entry A: ID B;
+        B: ID A;
+        terminal ID: /[a-zA-Z]+/;
+        `);
+        expect(getLeftRecursionDiagnostics(validationResult)).toHaveLength(0);
+    });
+
+    test('Every call of an interleaved cycle is reported', async () => {
+        const validationResult = await validate(`
+        grammar Test
+        entry A: B | C;
+        B: A 'b';
+        C: B 'c';
+        terminal ID: /[a-zA-Z]+/;
+        `);
+        expectLeftRecursion(validationResult, ['A', 'B'], ['A', 'C'], ['B', 'A'], ['C', 'B']);
+    });
+
+    test.each([
+        ['optional keyword', "'x'? A 'a'"],
+        ['keyword with * cardinality', "'x'* A 'a'"],
+        ['optional group', "('x' name=ID)? A 'a'"],
+        ['optional assignment', "name=ID? A 'a'"],
+        ['action', "{infer X} A 'a'"],
+        ['action with assignment', "{infer X} name=ID? A 'a'"],
+        ['nested optional elements', "('x'? ('y' | 'z')?) A 'a'"]
+    ])('Left recursion after %s', async (_, definition) => {
+        const validationResult = await validate(`
+        grammar Test
+        entry A: ${definition};
+        terminal ID: /[a-zA-Z]+/;
+        `);
+        expectLeftRecursion(validationResult, ['A', 'A']);
+    });
+
+    test('Left recursion after guarded group', async () => {
+        const validationResult = await validate(`
+        grammar Test
+        entry Model: A<true>;
+        A<P>: (<P> 'x') A<P> 'a';
+        terminal ID: /[a-zA-Z]+/;
+        `);
+        expectLeftRecursion(validationResult, ['A', 'A']);
+    });
+
+    test('Left recursion after call to a nullable rule', async () => {
+        const validationResult = await validate(`
+        grammar Test
+        entry A: B A 'a';
+        B: name=ID?;
+        terminal ID: /[a-zA-Z]+/;
+        `);
+        expectLeftRecursion(validationResult, ['A', 'A']);
+    });
+
+    test('Left recursion after call to a transitively nullable rule', async () => {
+        const validationResult = await validate(`
+        grammar Test
+        entry A: B A 'a';
+        B: C D;
+        C: name=ID?;
+        D: 'd'* | value=ID?;
+        terminal ID: /[a-zA-Z]+/;
+        `);
+        expectLeftRecursion(validationResult, ['A', 'A']);
+    });
+
+    test('Left recursion after call to a nullable fragment', async () => {
+        const validationResult = await validate(`
+        grammar Test
+        entry A: F A 'a';
+        fragment F: name=ID?;
+        terminal ID: /[a-zA-Z]+/;
+        `);
+        expectLeftRecursion(validationResult, ['A', 'A']);
+    });
+
+    test('Left recursion through a fragment', async () => {
+        const validationResult = await validate(`
+        grammar Test
+        entry A: F 'a';
+        fragment F: A;
+        terminal ID: /[a-zA-Z]+/;
+        `);
+        expectLeftRecursion(validationResult, ['A', 'F'], ['F', 'A']);
+    });
+
+    test('Left recursion in unordered group, not in first position', async () => {
+        const validationResult = await validate(`
+        grammar Test
+        entry A: ('x' & A);
+        terminal ID: /[a-zA-Z]+/;
+        `);
+        expectLeftRecursion(validationResult, ['A', 'A']);
+    });
+
+    test('No left recursion after call to a non-nullable rule', async () => {
+        const validationResult = await validate(`
+        grammar Test
+        entry A: B A? 'a';
+        B: name=ID;
+        terminal ID: /[a-zA-Z]+/;
+        `);
+        expect(getLeftRecursionDiagnostics(validationResult)).toHaveLength(0);
+    });
+
+    test('No left recursion after call to a recursive, but non-nullable rule', async () => {
+        const validationResult = await validate(`
+        grammar Test
+        entry A: B A? 'a';
+        B: 'b' B?;
+        terminal ID: /[a-zA-Z]+/;
+        `);
+        expect(getLeftRecursionDiagnostics(validationResult)).toHaveLength(0);
+    });
+
+    test('No left recursion after mandatory keyword following optional elements', async () => {
+        const validationResult = await validate(`
+        grammar Test
+        entry A: 'x'? {infer X} 'y' A 'a';
+        terminal ID: /[a-zA-Z]+/;
+        `);
+        expect(getLeftRecursionDiagnostics(validationResult)).toHaveLength(0);
+    });
+
+    test('Left recursion through infix rule operand', async () => {
+        const validationResult = await validate(`
+        grammar Test
+        entry Model: expr=Expr;
+        Expr: BinaryExpr;
+        infix BinaryExpr on Primary: '+' | '-' > '*' | '/';
+        Primary: Expr | value=ID;
+        hidden terminal WS: /\\s+/;
+        terminal ID: /[a-zA-Z]+/;
+        `);
+        expectLeftRecursion(validationResult, ['Expr', 'BinaryExpr'], ['BinaryExpr', 'Primary'], ['Primary', 'Expr']);
+    });
+
+    test('Left recursion of infix rule on itself', async () => {
+        const validationResult = await validate(`
+        grammar Test
+        entry Model: expr=BinaryExpr;
+        infix BinaryExpr on BinaryExpr: '+' | '-';
+        hidden terminal WS: /\\s+/;
+        `);
+        expectLeftRecursion(validationResult, ['BinaryExpr', 'BinaryExpr']);
+    });
+
+    test('Left recursion between two infix rules', async () => {
+        const validationResult = await validate(`
+        grammar Test
+        entry Model: expr=AddExpr;
+        infix AddExpr on MulExpr: '+' | '-';
+        infix MulExpr on AddExpr: '*' | '/';
+        hidden terminal WS: /\\s+/;
+        `);
+        expectLeftRecursion(validationResult, ['AddExpr', 'MulExpr'], ['MulExpr', 'AddExpr']);
+    });
+
+    test('Left recursion through infix rule called in leftmost position', async () => {
+        const validationResult = await validate(`
+        grammar Test
+        entry A: BinaryExpr 'a';
+        infix BinaryExpr on Primary: '+' | '-';
+        Primary: A | value=ID;
+        hidden terminal WS: /\\s+/;
+        terminal ID: /[a-zA-Z]+/;
+        `);
+        expectLeftRecursion(validationResult, ['A', 'BinaryExpr'], ['BinaryExpr', 'Primary'], ['Primary', 'A']);
+    });
+
+    test('Left recursion after infix rule with nullable operand', async () => {
+        const validationResult = await validate(`
+        grammar Test
+        entry A: BinaryExpr A 'a';
+        infix BinaryExpr on Primary: '+' | '-';
+        Primary: value=ID?;
+        hidden terminal WS: /\\s+/;
+        terminal ID: /[a-zA-Z]+/;
+        `);
+        expectLeftRecursion(validationResult, ['A', 'A']);
+    });
+
+    test('No left recursion after infix rule with non-nullable operand', async () => {
+        const validationResult = await validate(`
+        grammar Test
+        entry A: BinaryExpr A? 'a';
+        infix BinaryExpr on Primary: '+' | '-';
+        Primary: value=ID;
+        hidden terminal WS: /\\s+/;
+        terminal ID: /[a-zA-Z]+/;
+        `);
+        expect(getLeftRecursionDiagnostics(validationResult)).toHaveLength(0);
+    });
+
+    test('No left recursion in chained infix rules', async () => {
+        const validationResult = await validate(`
+        grammar Test
+        entry Model: expr=AddExpr;
+        infix AddExpr on MulExpr: '+' | '-';
+        infix MulExpr on Primary: '*' | '/';
+        Primary: '(' AddExpr ')' | value=ID;
+        hidden terminal WS: /\\s+/;
+        terminal ID: /[a-zA-Z]+/;
+        `);
+        expect(getLeftRecursionDiagnostics(validationResult)).toHaveLength(0);
+    });
+
+    test('Left recursion after imported infix rule with nullable operand', async () => {
+        const importedGrammar = await parse(`
+        grammar Imported
+        infix BinaryExpr on Primary: '+' | '-';
+        Primary: value=ID?;
+        terminal ID: /[a-zA-Z]+/;
+        `);
+        const validationResult = await validate(`
+        grammar Test
+        import ".${importedGrammar.uri.path}";
+        entry A: BinaryExpr A 'a';
+        `);
+        expectLeftRecursion(validationResult, ['A', 'A']);
+    });
+
+    test('No left recursion in typical infix rule usage', async () => {
+        const validationResult = await validate(`
+        grammar Test
+        entry Model: expr=Expr;
+        Expr: BinaryExpr;
+        infix BinaryExpr on Primary: '+' | '-' > '*' | '/';
+        Primary: '(' Expr ')' | value=ID;
+        hidden terminal WS: /\\s+/;
+        terminal ID: /[a-zA-Z]+/;
+        `);
+        expect(getLeftRecursionDiagnostics(validationResult)).toHaveLength(0);
+    });
+
+    test('Left recursion after call to a nullable imported rule', async () => {
+        const importedGrammar = await parse(`
+        grammar Imported
+        B: name=ID?;
+        terminal ID: /[a-zA-Z]+/;
+        `);
+        const validationResult = await validate(`
+        grammar Test
+        import ".${importedGrammar.uri.path}";
+        entry A: B A 'a';
+        `);
+        expectLeftRecursion(validationResult, ['A', 'A']);
+    });
+
+    test('No left recursion through non-recursive imported rules', async () => {
+        const importedGrammar = await parse(`
+        grammar Imported
+        B: A 'b';
+        A: 'a';
+        terminal ID: /[a-zA-Z]+/;
+        `);
+        const validationResult = await validate(`
+        grammar Test
+        import ".${importedGrammar.uri.path}";
+        entry Model: B 'm';
+        `);
+        expect(getLeftRecursionDiagnostics(validationResult)).toHaveLength(0);
+    });
+
+    test('Left recursion of imported grammar is not reported in importing grammar', async () => {
+        const importedGrammar = await parse(`
+        grammar Imported
+        A: B 'a';
+        B: A 'b';
+        terminal ID: /[a-zA-Z]+/;
+        `);
+        const validationResult = await validate(`
+        grammar Test
+        import ".${importedGrammar.uri.path}";
+        entry Model: A;
+        `);
+        expect(getLeftRecursionDiagnostics(validationResult)).toHaveLength(0);
+    });
+
+    test('Every left recursive call to the same rule is reported', async () => {
+        const validationResult = await validate(`
+        grammar Test
+        entry A: A 'x' | A 'y' | value=ID;
+        terminal ID: /[a-zA-Z]+/;
+        `);
+        expectLeftRecursion(validationResult, ['A', 'A', 0], ['A', 'A', 1]);
+    });
+
+    test('Calls of a cycle rule that are not in leftmost position are not reported', async () => {
+        const validationResult = await validate(`
+        grammar Test
+        entry A: A 'x' A;
+        terminal ID: /[a-zA-Z]+/;
+        `);
+        expectLeftRecursion(validationResult, ['A', 'A', 0]);
+    });
+
+    test('Calls leaving a cycle are not reported', async () => {
+        const validationResult = await validate(`
+        grammar Test
+        entry A: B 'a';
+        B: A 'b' | C;
+        C: value=ID;
+        terminal ID: /[a-zA-Z]+/;
+        `);
+        expectLeftRecursion(validationResult, ['A', 'B'], ['B', 'A']);
+    });
+
+    test('Calls between two separate cycles are not reported', async () => {
+        const validationResult = await validate(`
+        grammar Test
+        entry A: A 'a' | B;
+        B: B 'b' | value=ID;
+        terminal ID: /[a-zA-Z]+/;
+        `);
+        expectLeftRecursion(validationResult, ['A', 'A'], ['B', 'B']);
+    });
+
+    /**
+     * Builds and validates all given grammars together, so that they can import each other.
+     */
+    async function validateAll(...grammars: Array<[filename: string, text: string]>): Promise<Array<ValidationResult<GrammarAST.Grammar>>> {
+        const documents = grammars.map(([filename, text]) => {
+            const document = services.shared.workspace.LangiumDocumentFactory.fromString<Grammar>(text, URI.parse(`file:///${filename}`));
+            services.shared.workspace.LangiumDocuments.addDocument(document);
+            return document;
+        });
+        await services.shared.workspace.DocumentBuilder.build(documents, { validation: true });
+        return documents.map(document => ({
+            document,
+            diagnostics: document.diagnostics ?? [],
+            dispose: () => clearDocuments(services.grammar, [document])
+        }));
+    }
+
+    test('Left recursion across mutually importing grammars is reported in both grammars', async () => {
+        const [first, second] = await validateAll(
+            ['first.langium', `
+            grammar First
+            import "./second";
+            entry A: B 'a';
+            `],
+            ['second.langium', `
+            grammar Second
+            import "./first";
+            B: A 'b';
+            `]
+        );
+        expectLeftRecursion(first, ['A', 'B']);
+        expectLeftRecursion(second, ['B', 'A']);
+    });
+
+    test('Left recursion across mutually importing grammars through further imported rules', async () => {
+        const [first, second] = await validateAll(
+            ['first.langium', `
+            grammar First
+            import "./second";
+            entry Model: A;
+            A: B 'a' | value=ID;
+            C: A 'c';
+            terminal ID: /[a-zA-Z]+/;
+            `],
+            ['second.langium', `
+            grammar Second
+            import "./first";
+            B: Opt C 'b';
+            Opt: 'opt'?;
+            `]
+        );
+        expectLeftRecursion(first, ['A', 'B'], ['C', 'A']);
+        expectLeftRecursion(second, ['B', 'C']);
+    });
+
+    test('Left recursion across grammars after imported nullable rule', async () => {
+        const [first, second] = await validateAll(
+            ['first.langium', `
+            grammar First
+            import "./second";
+            entry A: Opt B 'a';
+            `],
+            ['second.langium', `
+            grammar Second
+            import "./first";
+            B: Opt A 'b';
+            Opt: 'opt'?;
+            `]
+        );
+        expectLeftRecursion(first, ['A', 'B']);
+        expectLeftRecursion(second, ['B', 'A']);
+    });
+});
