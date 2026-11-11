@@ -13,6 +13,9 @@ import { createToken, createTokenInstance, Lexer } from 'chevrotain';
 import { DefaultTokenBuilder } from './token-builder.js';
 import { DEFAULT_TOKENIZE_OPTIONS, DefaultLexer, isTokenTypeArray } from './lexer.js';
 
+const LINE_FEED = '\n'.charCodeAt(0);
+const CARRIAGE_RETURN = '\r'.charCodeAt(0);
+
 type IndentationAwareDelimiter<TokenName extends string> = [begin: TokenName, end: TokenName];
 
 export interface IndentationTokenBuilderOptions<TerminalName extends string = string, KeywordName extends string = string> {
@@ -246,8 +249,26 @@ export class IndentationAwareTokenBuilder<Terminals extends string = string, Key
      * @returns The line number at the given offset
      */
     protected getLineNumber(text: string, offset: number): number {
-        return text.substring(0, offset).split(/\r\n|\r|\n/).length;
+        // Offsets are requested in ascending order during lexing, so resume counting from the previous request
+        let last = this.lastLineNumber;
+        if (last.text !== text || offset < last.offset) {
+            last = this.lastLineNumber = { text, offset: 0, line: 1 };
+        }
+        for (let i = last.offset; i < offset; i++) {
+            const char = text.charCodeAt(i);
+            // `\r\n` counts as a single line break
+            if (char === CARRIAGE_RETURN || (char === LINE_FEED && text.charCodeAt(i - 1) !== CARRIAGE_RETURN)) {
+                last.line++;
+            }
+        }
+        last.offset = offset;
+        return last.line;
     }
+
+    /**
+     * The result of the previous {@link getLineNumber} call, used to avoid rescanning the text from the start.
+     */
+    protected lastLineNumber = { text: '', offset: 0, line: 1 };
 
     /**
      * A custom pattern for matching indents
@@ -312,7 +333,11 @@ export class IndentationAwareTokenBuilder<Terminals extends string = string, Key
         }
 
         const numberOfDedents = this.indentationStack.length - matchIndentIndex - 1;
-        const newlinesBeforeDedent = text.substring(0, offset).match(/[\r\n]+$/)?.[0].length ?? 1;
+        let newlinesStart = offset;
+        while (newlinesStart > 0 && '\r\n'.includes(text[newlinesStart - 1])) {
+            newlinesStart--;
+        }
+        const newlinesBeforeDedent = (offset - newlinesStart) || 1;
 
         for (let i = 0; i < numberOfDedents; i++) {
             const token = this.createIndentationTokenInstance(
@@ -363,6 +388,7 @@ export class IndentationAwareTokenBuilder<Terminals extends string = string, Key
         }
 
         this.indentationStack = [0];
+        this.lastLineNumber = { text: '', offset: 0, line: 1 };
         return remainingDedents;
     }
 }
