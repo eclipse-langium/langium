@@ -5,8 +5,9 @@
  ******************************************************************************/
 
 import { type Module } from 'langium';
-import { createLangiumGrammarServices } from 'langium/grammar';
-import { startLanguageServer, type LangiumSharedServices, type PartialLangiumSharedServices } from 'langium/lsp';
+import { RailroadHoverProvider } from 'langium-railroad';
+import { createLangiumGrammarServices, type LangiumGrammarServices } from 'langium/grammar';
+import { startLanguageServer, type LangiumSharedServices, type PartialLangiumServices, type PartialLangiumSharedServices } from 'langium/lsp';
 import { NodeFileSystem } from 'langium/node';
 import { ProposedFeatures, createConnection } from 'vscode-languageserver/node';
 import { LangiumGrammarWorkspaceManager } from './grammar-workspace-manager.js';
@@ -21,7 +22,13 @@ export const LangiumGrammarSharedModule: Module<LangiumSharedServices, PartialLa
     }
 };
 
-const { shared, grammar } = createLangiumGrammarServices({ connection, ...NodeFileSystem }, LangiumGrammarSharedModule);
+export const LangiumGrammarLspModule: Module<LangiumGrammarServices, PartialLangiumServices> = {
+    lsp: {
+        HoverProvider: (services) => new RailroadHoverProvider(services)
+    }
+};
+
+const { shared, grammar } = createLangiumGrammarServices({ connection, ...NodeFileSystem }, LangiumGrammarSharedModule, LangiumGrammarLspModule);
 registerLangiumConfigHandler(connection, shared, grammar);
 registerRailroadConnectionHandler(connection, grammar);
 startLanguageServer(shared);
