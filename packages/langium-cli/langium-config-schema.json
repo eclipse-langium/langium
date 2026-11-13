@@ -210,6 +210,11 @@
             "type": "string",
             "enum": ["development", "production"]
         },
+        "serializeGrammarComments": {
+            "description": "Whether to keep the doc comments of grammar elements in the serialized grammar, as their `$comment` property. They are read at runtime by the hover on keywords and by code that uses the CommentProvider on grammar elements. Set to false to make the generated grammar module smaller when nothing reads them.",
+            "type": "boolean",
+            "default": true
+        },
         "validation": {
             "description": "Options for grammar validation",
             "type": "object",
