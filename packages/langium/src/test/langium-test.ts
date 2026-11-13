@@ -659,7 +659,7 @@ export function filterByOptions<T extends AstNode = AstNode, N extends AstNode =
     }
     if (options.message) {
         if (typeof options.message === 'string') {
-            filters.push(d => d.message === options.message);
+            filters.push(d => Diagnostic.getMessageString(d) === options.message);
         } else if (options.message instanceof RegExp) {
             const regexp = options.message as RegExp;
             filters.push(d => regexp.test(Diagnostic.getMessageString(d)));

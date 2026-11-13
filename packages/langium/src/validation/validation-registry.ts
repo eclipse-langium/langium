@@ -4,7 +4,7 @@
  * terms of the MIT License, which is available in the project root.
  ******************************************************************************/
 
-import type { CodeDescription, DiagnosticRelatedInformation, DiagnosticTag, integer, Range } from 'vscode-languageserver-types';
+import type { CodeDescription, DiagnosticRelatedInformation, DiagnosticTag, integer, MarkupContent, Range } from 'vscode-languageserver-types';
 import { assertUnreachable } from '../index.js';
 import type { LangiumCoreServices } from '../services.js';
 import type { AstNode, AstReflection, Properties } from '../syntax-tree.js';
@@ -60,7 +60,7 @@ export function diagnosticData(code: string): DiagnosticData {
 
 export type ValidationSeverity = 'error' | 'warning' | 'info' | 'hint';
 
-export type ValidationAcceptor = <N extends AstNode>(severity: ValidationSeverity, message: string, info: DiagnosticInfo<N>) => void
+export type ValidationAcceptor = <N extends AstNode>(severity: ValidationSeverity, message: string | MarkupContent, info: DiagnosticInfo<N>) => void
 
 export type ValidationCheck<T extends AstNode = AstNode> = (node: T, accept: ValidationAcceptor, cancelToken: CancellationToken) => MaybePromise<void>;
 
