@@ -36,7 +36,7 @@
     "@typescript-eslint/parser": "~8.72.1",
     "@vitest/coverage-v8": "~5.1.0",
     "@vitest/ui": "~5.1.0",
-    "@vscode/vsce": "~4.1.0",
+    "@vscode/vsce": "~4.1.1",
     "concurrently": "~10.0.7",
     "editorconfig": "~3.0.2",
     "esbuild": "0.28.2",
@@ -66,7 +66,7 @@
     "examples/statemachine"
   ],
   "allowScripts": {
-    "@vscode/vsce-sign@2.1.0": true,
+    "@vscode/vsce-sign@2.1.1": true,
     "esbuild@0.28.2": true,
     "fsevents@2.3.3": true
   }
