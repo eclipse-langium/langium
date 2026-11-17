@@ -141,10 +141,9 @@ export abstract class AbstractLangiumParser implements BaseParser {
     protected mainRule!: RuleResult;
 
     /**
-     * Chevrotain only records the grammar while `finalize()` runs its self-analysis.
-     * Once that is done, `isRecording()` can answer without asking the wrapper on every token and rule call.
-     * A subclass that overrides `finalize()` without calling `super.finalize()` never sets this field, so its
-     * `isRecording()` keeps asking the wrapper: still correct, just without the shortcut.
+     * Whether `finalize()` has completed Chevrotain's self-analysis. Rule bodies only run while Chevrotain records
+     * the grammar during that self-analysis, or while parsing afterwards, so this alone answers `isRecording()`.
+     * Subclasses that override `finalize()` must call `super.finalize()`.
      */
     private selfAnalysisDone = false;
 
@@ -193,7 +192,7 @@ export abstract class AbstractLangiumParser implements BaseParser {
     }
 
     isRecording(): boolean {
-        return !this.selfAnalysisDone && this.wrapper.IS_RECORDING;
+        return !this.selfAnalysisDone;
     }
 
     get unorderedGroups(): Map<string, boolean[]> {
@@ -849,10 +848,6 @@ class ChevrotainWrapper extends EmbeddedActionsParser {
                 }),
             ...config,
         });
-    }
-
-    get IS_RECORDING(): boolean {
-        return this.RECORDING_PHASE;
     }
 
     DEFINE_RULE(name: string, impl: RuleImpl, config?: IRuleConfig<any>): RuleResult {
