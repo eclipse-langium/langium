@@ -206,16 +206,26 @@ export interface ParserOptions {
     /**
      * Whether to build the concrete syntax tree (CST). Defaults to `true`.
      *
-     * With `false`, the parser builds only the AST: AST nodes have no `$cstNode`, references have no
-     * `$refNode`, and hidden tokens (e.g. comments) are not kept. The AST, the lexer errors and the
-     * parser errors are the same as with a CST. Use this for documents that are never mapped back to
-     * source positions, e.g. documents that a headless batch build only resolves references against.
-     * Everything that reads the CST (ranges, comments, formatting and most LSP services) gets nothing
-     * for such documents.
+     * With `false`, the parser builds only the AST. The AST, the lexer errors and the parser errors are
+     * the same as with a CST. Use this for documents that are never mapped back to source positions,
+     * e.g. documents that a headless batch build only resolves references against. Such a document lacks:
+     * - `$cstNode` on its AST nodes;
+     * - `$refNode` on its references. The reference index skips references without `$refNode`, so it
+     *   doesn't know what the document depends on, and an incremental build doesn't relink the
+     *   document when the targets of its references change;
+     * - comments and other hidden tokens;
+     * - ranges and positions: diagnostics fall back to an empty range at the start of the document,
+     *   and exported names have no name segment.
      *
-     * This is only honoured if the language's {@link ValueConverter} declares
+     * So everything that reads the CST gets nothing for such a document, e.g. comment providers,
+     * formatting, hover, document symbols, find references and the other LSP services that map
+     * between the AST and the text.
+     *
+     * This option is only honoured if the language's {@link ValueConverter} declares
      * {@link ValueConverter.supportsCstFreeConversion}, since without a CST its `convert` method
-     * receives a stand-in node that only carries `grammarSource`. Otherwise the CST is built as usual.
+     * receives a stand-in node that only carries `grammarSource`. Otherwise the CST is built anyway,
+     * without notice. Callers can check whether a CST was built by checking `$cstNode` on the
+     * parse result's root node.
      */
     buildCst?: boolean
 }
@@ -259,8 +269,6 @@ export class LangiumParser extends AbstractLangiumParser {
      * composite node below a new node, so later tokens do not count for the subrule's assignment.
      */
     private readonly ruleCallCut: number[] = [];
-    /** The stand-in for a CST node that is passed to the value converter in CST-free parser runs. */
-    private readonly grammarSourceStub: { grammarSource: AbstractElement | undefined } = { grammarSource: undefined };
 
     private get current(): any {
         return this.stack[this.stack.length - 1];
@@ -450,12 +458,11 @@ export class LangiumParser extends AbstractLangiumParser {
     /**
      * Returns the stand-in for a CST node that is passed to the value converter when no CST is built.
      * It only carries the grammar element; see {@link ValueConverter.supportsCstFreeConversion}.
-     * The same object is reused for every call.
+     * Every call creates a new object, so a converter that keeps the node it receives
+     * still sees its own grammar element later.
      */
     private grammarSourceNode(feature: AbstractElement | undefined): CstNode {
-        const stub = this.grammarSourceStub;
-        stub.grammarSource = feature;
-        return stub as CstNode;
+        return { grammarSource: feature } as CstNode;
     }
 
     /**

@@ -313,19 +313,51 @@ describe('parse with buildCst: false', () => {
     }
 
     test('values of all built-in kinds are converted', () => {
-        const result = expectSameParse(parsers.get('Values')!, valuesInputs[2]);
-        const withoutCst = parsers.get('Values')!.parse(valuesInputs[2], { buildCst: false }).value;
+        const parser = parsers.get('Values')!;
+        expectSameParse(parser, valuesInputs[2]);
+        // Not only the same in both modes, but the expected values: a conversion that is wrong in both modes passes the parity checks
+        for (const options of [{}, { buildCst: false }]) {
+            const result = parser.parse(valuesInputs[2], options);
+            expect(result.parserErrors).toHaveLength(0);
+            expect(astSnapshot(result.value)).toMatchObject({
+                elements: [{
+                    name: 'string:a', ext: 'string:x.y.z::u.v', int: 'number:42', str: 'string:s\t"q"', dec: 'number:3.25', flag: 'boolean:true',
+                    date: { date: new Date('2022-10-12T00:00').toISOString() }, big: 'bigint:149587349587234971', kw: 'string:second',
+                    num: 'number:-1.5', bool: 'boolean:true', bigdt: 'bigint:12345', datedt: { date: new Date('2022-10-12T00:00').toISOString() }
+                }],
+                refs: [{ single: { ref: 'a' }, qualified: { ref: 'x.y' }, multi: { multiRef: 'a' } }]
+            });
+        }
         // single, qualified and multi reference
-        expect(expectNoCst(withoutCst)).toBe(3);
-        expect(astSnapshot(withoutCst)).toMatchObject({
-            elements: [{
-                name: 'string:a', ext: 'string:x.y.z::u.v', int: 'number:42', str: 'string:s\t"q"', dec: 'number:3.25', flag: 'boolean:true',
-                date: { date: new Date('2022-10-12T00:00').toISOString() }, big: 'bigint:149587349587234971', kw: 'string:second',
-                num: 'number:-1.5', bool: 'boolean:true', bigdt: 'bigint:12345', datedt: { date: new Date('2022-10-12T00:00').toISOString() }
-            }],
-            refs: [{ single: { ref: 'a' }, qualified: { ref: 'x.y' }, multi: { multiRef: 'a' } }]
-        });
-        expect(result.parserErrors).toHaveLength(0);
+        expect(expectNoCst(parser.parse(valuesInputs[2], { buildCst: false }).value)).toBe(3);
+    });
+
+    // Pins existing behaviour in both modes; `buildCst` doesn't change it. With a CST, the value converter gets the
+    // root CST node for a datatype rule that is parsed as entry rule, and the root node has no grammar element.
+    // Without a CST, no rule call invoked the rule either. So `DefaultValueConverter` can't tell which rule produced
+    // the text and returns it as a string, while the same rule called from another rule is converted to its type.
+    // The terminals inside the rule are still converted (`^` and the quotes are removed).
+    test('a datatype rule as entry rule returns its text as a string in both modes', () => {
+        const parser = parsers.get('Values')!;
+        const date = { date: new Date('2022-10-12T00:00').toISOString() };
+        const cases: Array<{ rule: string, input: string, entry: unknown, property: string, nested: unknown }> = [
+            { rule: 'NumberDT', input: '-1.5', entry: 'string:-1.5', property: 'num', nested: 'number:-1.5' },
+            { rule: 'BoolDT', input: 'true', entry: 'string:true', property: 'bool', nested: 'boolean:true' },
+            { rule: 'BigDT', input: '12', entry: 'string:12', property: 'bigdt', nested: 'bigint:12' },
+            { rule: 'DateDT', input: '"2022-10-12T00:00"', entry: 'string:2022-10-12T00:00', property: 'datedt', nested: date },
+            { rule: 'FQN', input: '^a.b::c', entry: 'string:a.b::c', property: 'ext', nested: 'string:a.b::c' }
+        ];
+        for (const { rule, input, entry, property, nested } of cases) {
+            for (const options of [{}, { buildCst: false }]) {
+                const asEntry = parser.parse(input, { ...options, rule });
+                expect(asEntry.lexerErrors).toHaveLength(0);
+                expect(asEntry.parserErrors).toHaveLength(0);
+                expect(astSnapshot(asEntry.value)).toEqual(entry);
+                const asProperty = parser.parse(`element x ${property} ${input}`, options);
+                expect(asProperty.parserErrors).toHaveLength(0);
+                expect(astSnapshot((asProperty.value as AstNode & { elements: Array<Record<string, unknown>> }).elements[0][property])).toEqual(nested);
+            }
+        }
     });
 
     test('a datatype rule as entry rule is converted the same way', () => {
@@ -550,6 +582,23 @@ describe('value converter contract for CST-free parsing', () => {
         for (const node of converter.received) {
             expect(Object.keys(node)).toEqual(['grammarSource']);
         }
+    });
+
+    test('a converter that keeps the nodes it receives sees the grammar element of each conversion', async () => {
+        const converter = new RecordingConverter();
+        const services = await createServices(() => converter);
+        const parser = services.parser.LangiumParser;
+        const input = 'a = 7 b ext x.y c = 8';
+        // With a CST, the converter receives the leaf and composite nodes, which keep their grammar elements
+        parser.parse(input);
+        const expected = converter.received.map(node => node.grammarSource);
+        converter.received.length = 0;
+
+        parser.parse(input, { buildCst: false });
+        // Terminal rule calls of `name`, `value` and `QualifiedName`, plus the `ext` rule call of the datatype rule
+        expect(new Set(expected).size).toBeGreaterThanOrEqual(4);
+        expect(converter.received.map(node => node.grammarSource)).toEqual(expected);
+        expect(new Set(converter.received).size).toBe(converter.received.length);
     });
 });
 

@@ -20,7 +20,11 @@ import type { AstNode, CompositeCstNode, CstNode, LeafCstNode, RootCstNode } fro
  */
 export class CstNodeBuilder {
 
-    /** The root of the tree being built; undefined before the first `buildRootNode` call and after `clear`. */
+    /**
+     * The root of the tree being built; undefined before the first `buildRootNode` call and after `clear`.
+     * So after `clear`, the builder holds no tree until the next `buildRootNode` call, and all other
+     * methods must not be called until then.
+     */
     private rootNode: RootCstNodeImpl | undefined;
     private nodeStack: CompositeCstNodeImpl[] = [];
 
@@ -29,6 +33,9 @@ export class CstNodeBuilder {
      * the innermost parser rule invocation that has not been completed with `construct` yet.
      */
     get current(): CompositeCstNodeImpl {
+        // `rootNode` is only undefined after `clear` (or before the first `buildRootNode`), i.e. in a parser run
+        // that builds no CST. `LangiumParser` guards every call into the builder by its `buildCst` flag in
+        // such runs, so the root is always set here.
         return this.nodeStack[this.nodeStack.length - 1] ?? this.rootNode!;
     }
 

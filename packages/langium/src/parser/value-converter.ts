@@ -39,6 +39,9 @@ export class DefaultValueConverter implements ValueConverter {
      *     return true;
      * }
      * ```
+     *
+     * The check compares with the prototype of the class that defines this getter, so an instance of this
+     * class from a second copy of the package (e.g. a duplicated dependency) opts in too; only subclasses don't.
      */
     get supportsCstFreeConversion(): boolean {
         return Object.getPrototypeOf(this) === DefaultValueConverter.prototype;
