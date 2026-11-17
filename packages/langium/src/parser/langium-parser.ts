@@ -526,6 +526,11 @@ export class LangiumParser extends AbstractLangiumParser {
                 }
                 this.ruleCallStack.pop();
                 const start = this.ruleCallStart.pop()!;
+                // Only the tokens consumed before the subrule's first assigned action count. With a CST, `action()`
+                // doesn't extend the subrule's composite node: it moves that node below the action's new composite
+                // node. Tokens consumed after the action go into the action's node, so the original node's `length`,
+                // which `subrule` checks, stops growing at the first action. A later action moves the previous
+                // action's node, not the original node, so its cut doesn't matter (`action()` keeps the first one).
                 const cut = this.ruleCallCut.pop()!;
                 const end = cut >= 0 ? cut : this.consumedTokens;
                 if (result !== undefined && end > start) {
@@ -560,23 +565,22 @@ export class LangiumParser extends AbstractLangiumParser {
     action($type: string, action: Action): void {
         if (!this.isRecording()) {
             let last = this.current;
-            if (action.feature && action.operator && !this.buildCst) {
-                // Tokens consumed from here on no longer count for the enclosing subrule call, see `subruleWithoutCst`
-                const top = this.ruleCallCut.length - 1;
-                if (top >= 0 && this.ruleCallCut[top] < 0) {
-                    this.ruleCallCut[top] = this.consumedTokens;
+            if (action.feature && action.operator) {
+                last = this.construct();
+                if (this.buildCst) {
+                    this.nodeBuilder.removeNode(last.$cstNode);
+                    const node = this.nodeBuilder.buildCompositeNode(action);
+                    this.nodeBuilder.appendChild(node, last.$cstNode);
+                } else {
+                    // Tokens consumed from here on no longer count for the enclosing subrule call, see `subruleWithoutCst`
+                    const top = this.ruleCallCut.length - 1;
+                    if (top >= 0 && this.ruleCallCut[top] < 0) {
+                        this.ruleCallCut[top] = this.consumedTokens;
+                    }
                 }
-                last = this.construct();
                 const newItem = { $type };
                 this.stack.push(newItem);
-                this.assign(action.operator, action.feature, last, undefined);
-            } else if (action.feature && action.operator) {
-                last = this.construct();
-                this.nodeBuilder.removeNode(last.$cstNode);
-                const node = this.nodeBuilder.buildCompositeNode(action);
-                this.nodeBuilder.appendChild(node, last.$cstNode);
-                const newItem = { $type };
-                this.stack.push(newItem);
+                // Without a CST, `last.$cstNode` is undefined
                 this.assign(action.operator, action.feature, last, last.$cstNode);
             } else {
                 last.$type = $type;
