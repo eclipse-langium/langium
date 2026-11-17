@@ -601,7 +601,11 @@ export class LangiumParser extends AbstractLangiumParser {
     }
 
     private assignWithoutOverride(target: any, source: any): any {
-        for (const [name, existingValue] of Object.entries(source)) {
+        for (const name in source) {
+            if (!Object.prototype.hasOwnProperty.call(source, name)) {
+                continue;
+            }
+            const existingValue = source[name];
             const newValue = target[name];
             if (newValue === undefined) {
                 target[name] = existingValue;
@@ -856,10 +860,16 @@ class ChevrotainWrapper extends EmbeddedActionsParser {
         return this.consume(idx, tokenType, undefined);
     }
 
+    /**
+     * Options object reused by all `wrapSubrule` calls. Chevrotain spreads `ARGS` into the rule invocation
+     * synchronously and doesn't keep a reference to the options, so the object can be reused even for nested calls.
+     */
+    private readonly subruleOptions: { ARGS: [Args] } = { ARGS: [{}] };
+
     wrapSubrule(idx: number, rule: RuleResult, args: Args): unknown {
-        return this.subrule(idx, rule, {
-            ARGS: [args]
-        });
+        const options = this.subruleOptions;
+        options.ARGS[0] = args;
+        return this.subrule(idx, rule, options);
     }
 
     wrapOr(idx: number, choices: Array<IOrAlt<any>>): void {
