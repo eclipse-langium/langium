@@ -4,9 +4,13 @@
  * terms of the MIT License, which is available in the project root.
  ******************************************************************************/
 
-import type { AstNode, LangiumCoreServices, LangiumDocument, Reference, ReferenceDescription, ReferenceInfo } from 'langium';
-import { AstUtils, Cancellation, DefaultLinker, DefaultReferenceDescriptionProvider, interruptAndCheck, isOperationCancelled, setInterruptionPeriod, URI } from 'langium';
-import { createServicesForGrammar } from 'langium/grammar';
+// `walkReferences` is internal, so it is imported from the sources. Everything else is imported from the sources
+// as well, so that the walk, the linker and the test share the state of `promise-utils` (`setInterruptionPeriod`)
+// and the `OperationCancelled` symbol.
+import type { AstNode, LangiumCoreServices, LangiumDocument, Reference, ReferenceDescription, ReferenceInfo } from '../../src/index.js';
+import { AstUtils, Cancellation, DefaultLinker, DefaultReferenceDescriptionProvider, interruptAndCheck, isOperationCancelled, setInterruptionPeriod, URI } from '../../src/index.js';
+import { createServicesForGrammar } from '../../src/grammar/index.js';
+import { walkReferences } from '../../src/utils/walk-references.js';
 import { afterEach, beforeAll, describe, expect, test } from 'vitest';
 
 // `walkReferences` replaces this loop in `DefaultLinker.link` and `DefaultReferenceDescriptionProvider.createDescriptions`.
@@ -65,7 +69,7 @@ function parse(text: string): LangiumDocument {
     return services.shared.workspace.LangiumDocumentFactory.fromString(text, URI.parse(`memory:/walk${documentCounter++}.txt`));
 }
 
-async function collect(walk: typeof AstUtils.walkReferences, root: AstNode): Promise<ReferenceInfo[]> {
+async function collect(walk: typeof walkReferences, root: AstNode): Promise<ReferenceInfo[]> {
     const visited: ReferenceInfo[] = [];
     await walk(root, info => visited.push(info));
     return visited;
@@ -79,7 +83,11 @@ function blockFor(ms: number): void {
     }
 }
 
-describe('AstUtils.walkReferences', () => {
+describe('walkReferences', () => {
+
+    test('is internal, i.e. not part of AstUtils', () => {
+        expect(AstUtils).not.toHaveProperty('walkReferences');
+    });
 
     afterEach(() => {
         setInterruptionPeriod(10);
@@ -89,7 +97,7 @@ describe('AstUtils.walkReferences', () => {
         const root = parse(TREE).parseResult.value;
         const expected = await collect(streamLoop, root);
         expect(expected.map(describeInfo)).toEqual(TREE_REFERENCES);
-        const visited = await collect(AstUtils.walkReferences, root);
+        const visited = await collect(walkReferences, root);
         expect(visited).toEqual(expected);
         // the very same reference objects and containers
         visited.forEach((info, i) => {
@@ -98,7 +106,7 @@ describe('AstUtils.walkReferences', () => {
         });
         // and for every subtree
         for (const node of AstUtils.streamAllContents(root)) {
-            expect((await collect(AstUtils.walkReferences, node)).map(describeInfo)).toEqual((await collect(streamLoop, node)).map(describeInfo));
+            expect((await collect(walkReferences, node)).map(describeInfo)).toEqual((await collect(streamLoop, node)).map(describeInfo));
         }
     });
 
@@ -116,7 +124,7 @@ describe('AstUtils.walkReferences', () => {
         });
         const expected = (await collect(streamLoop, root)).map(describeInfo);
         expect(expected).toEqual(['Model.last=last', 'child.target=own']);
-        expect((await collect(AstUtils.walkReferences, root)).map(describeInfo)).toEqual(expected);
+        expect((await collect(walkReferences, root)).map(describeInfo)).toEqual(expected);
     });
 
     test.each([
@@ -127,7 +135,7 @@ describe('AstUtils.walkReferences', () => {
         }]
     ])('visits all references without awaiting, with %s', async (_, createToken) => {
         const visited: string[] = [];
-        const walk = AstUtils.walkReferences(parse(TREE).parseResult.value, info => visited.push(describeInfo(info)), createToken());
+        const walk = walkReferences(parse(TREE).parseResult.value, info => visited.push(describeInfo(info)), createToken());
         // every reference was visited before the walk awaited anything
         expect(visited).toEqual(TREE_REFERENCES);
         await walk;
@@ -137,7 +145,7 @@ describe('AstUtils.walkReferences', () => {
         const source = new Cancellation.CancellationTokenSource();
         source.cancel();
         const visited: string[] = [];
-        const rejection = await AstUtils.walkReferences(parse(TREE).parseResult.value, info => visited.push(describeInfo(info)), source.token)
+        const rejection = await walkReferences(parse(TREE).parseResult.value, info => visited.push(describeInfo(info)), source.token)
             .then(() => undefined, (err: unknown) => err);
         expect(isOperationCancelled(rejection)).toBe(true);
         expect(visited).toEqual([]);
@@ -146,7 +154,7 @@ describe('AstUtils.walkReferences', () => {
     test('stops at the next node once the token is cancelled', async () => {
         const source = new Cancellation.CancellationTokenSource();
         const visited: string[] = [];
-        const rejection = await AstUtils.walkReferences(parse(TREE).parseResult.value, info => {
+        const rejection = await walkReferences(parse(TREE).parseResult.value, info => {
             visited.push(describeInfo(info));
             source.cancel();
         }, source.token).then(() => undefined, (err: unknown) => err);
@@ -162,7 +170,7 @@ describe('AstUtils.walkReferences', () => {
         let turnTaken = false;
         let turnTakenBeforeLastReference: boolean | undefined;
         let visits = 0;
-        await AstUtils.walkReferences(parse(text).parseResult.value, () => {
+        await walkReferences(parse(text).parseResult.value, () => {
             if (visits === 0) {
                 // queued during the walk, so it can only run if the walk yields
                 setImmediate(() => turnTaken = true);

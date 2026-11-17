@@ -11,7 +11,8 @@ import type { LangiumDocument, LangiumDocuments } from '../workspace/documents.j
 import type { ScopeProvider } from './scope-provider.js';
 import { CancellationToken } from '../utils/cancellation.js';
 import { isAstNode, isAstNodeDescription, isLinkingError } from '../syntax-tree.js';
-import { findRootNode, streamAst, streamReferences, walkReferences } from '../utils/ast-utils.js';
+import { findRootNode, streamAst, streamReferences } from '../utils/ast-utils.js';
+import { walkReferences } from '../utils/walk-references.js';
 import { interruptAndCheck } from '../utils/promise-utils.js';
 import { DocumentState } from '../workspace/documents.js';
 import type { LangiumProfiler } from '../workspace/profiler.js';

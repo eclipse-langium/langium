@@ -12,7 +12,8 @@ import type { AstNodeLocator } from './ast-node-locator.js';
 import type { DocumentSegment, LangiumDocument } from './documents.js';
 import { CancellationToken } from '../utils/cancellation.js';
 import { isMultiReference, isReference } from '../syntax-tree.js';
-import { getDocument, walkReferences } from '../utils/ast-utils.js';
+import { getDocument } from '../utils/ast-utils.js';
+import { walkReferences } from '../utils/walk-references.js';
 import { toDocumentSegment } from '../utils/cst-utils.js';
 import { UriUtils } from '../utils/uri-utils.js';
 
