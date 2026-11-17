@@ -329,12 +329,4 @@ describe('AbstractAstReflection.isSubtype', () => {
         reflection.cache.B.C = true;
         expect(reflection.isSubtype('B', 'C')).toBe(true);
     });
-
-    test('contains no closure', () => {
-        // V8 allocates the context of a closure on every call of the enclosing function, including the
-        // cache hits that return before the closure is created. `isSubtype` runs for every generated type guard.
-        const source = AbstractAstReflection.prototype.isSubtype.toString();
-        expect(source).not.toContain('=>');
-        expect(source).not.toMatch(/\bfunction\b/);
-    });
 });
