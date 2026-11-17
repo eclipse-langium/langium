@@ -140,6 +140,12 @@ export abstract class AbstractLangiumParser implements BaseParser {
     protected allRules = new Map<string, RuleResult>();
     protected mainRule!: RuleResult;
 
+    /**
+     * Chevrotain only records the grammar while `finalize()` runs its self-analysis.
+     * Once that is done, `isRecording()` can answer without asking the wrapper on every token and rule call.
+     */
+    private selfAnalysisDone = false;
+
     constructor(services: LangiumCoreServices, incomplete: boolean) {
         this.lexer = services.parser.Lexer;
         const tokens = this.lexer.definition;
@@ -185,7 +191,7 @@ export abstract class AbstractLangiumParser implements BaseParser {
     }
 
     isRecording(): boolean {
-        return this.wrapper.IS_RECORDING;
+        return !this.selfAnalysisDone && this.wrapper.IS_RECORDING;
     }
 
     get unorderedGroups(): Map<string, boolean[]> {
@@ -197,7 +203,10 @@ export abstract class AbstractLangiumParser implements BaseParser {
     }
 
     finalize(): void {
+        // Reset first: a repeated self-analysis records the grammar again.
+        this.selfAnalysisDone = false;
         this.wrapper.wrapSelfAnalysis();
+        this.selfAnalysisDone = true;
     }
 }
 
