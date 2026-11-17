@@ -143,6 +143,8 @@ export abstract class AbstractLangiumParser implements BaseParser {
     /**
      * Chevrotain only records the grammar while `finalize()` runs its self-analysis.
      * Once that is done, `isRecording()` can answer without asking the wrapper on every token and rule call.
+     * A subclass that overrides `finalize()` without calling `super.finalize()` never sets this field, so its
+     * `isRecording()` keeps asking the wrapper: still correct, just without the shortcut.
      */
     private selfAnalysisDone = false;
 
