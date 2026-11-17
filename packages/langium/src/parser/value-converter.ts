@@ -63,6 +63,10 @@ type ConverterKind = 'INT' | 'STRING' | 'ID' | 'number' | 'boolean' | 'bigint' |
 /**
  * Caches the converter kind per rule. Computing it allocates new strings (`toUpperCase`, `toLowerCase`),
  * which would otherwise happen for every converted token, although the result only depends on the rule.
+ *
+ * This assumes the grammar is fully linked before the first conversion, as it is when the parser is built:
+ * `getRuleType` follows a parser rule's `returnType` reference, and an unresolved reference at that point would
+ * cache `'none'` for good.
  */
 const converterKinds = new WeakMap<AbstractRule, ConverterKind>();
 
