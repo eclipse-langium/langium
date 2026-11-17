@@ -4,7 +4,7 @@
  * terms of the MIT License, which is available in the project root.
  ******************************************************************************/
 
-import type { CstNode, Grammar, GrammarAST as GrammarTypes, ValueType } from 'langium';
+import type { CstNode, Grammar, GrammarAST as GrammarTypes, ValueConverterKind, ValueType } from 'langium';
 import { beforeAll, describe, expect, test } from 'vitest';
 import { DefaultValueConverter, EmptyFileSystem, GrammarAST } from 'langium';
 import { createLangiumGrammarServices, createServicesForGrammar } from 'langium/grammar';
@@ -108,6 +108,23 @@ describe('DefaultValueConverter.runConverter', () => {
         const converter = new TestValueConverter();
         const results = ['INT', 'Num', 'Flag', 'Plain', 'ID', 'Big'].map(name => converter.run(findRule(name), '1'));
         expect(results).toEqual([1, 1, false, '1', '1', BigInt(1)]);
+    });
+
+    test('computes the converter kind once per rule and lets subclasses override it', () => {
+        const computed: string[] = [];
+        class CountingValueConverter extends TestValueConverter {
+            protected override computeConverterKind(rule: GrammarTypes.AbstractRule): ValueConverterKind {
+                computed.push(rule.name);
+                // treat values of `Plain` as numbers, keep the default for every other rule
+                return rule.name === 'Plain' ? 'number' : super.computeConverterKind(rule);
+            }
+        }
+        const converter = new CountingValueConverter();
+        expect(converter.run(findRule('Plain'), '4.5')).toBe(4.5);
+        expect(converter.run(findRule('Plain'), '1.5')).toBe(1.5);
+        expect(converter.run(findRule('Num'), '2.5')).toBe(2.5);
+        expect(converter.run(findRule('Num'), '3.5')).toBe(3.5);
+        expect(computed).toEqual(['Plain', 'Num']);
     });
 
 });
