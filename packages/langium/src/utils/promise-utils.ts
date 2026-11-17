@@ -75,7 +75,7 @@ export async function interruptAndCheck(token: CancellationToken): Promise<void>
         return;
     }
     const current = performance.now();
-    if (current - lastTick >= globalInterruptionPeriod) {
+    if (interruptionPeriodElapsed(current)) {
         lastTick = current;
         await delayNextTick();
         // prevent calling delayNextTick every iteration of loop
@@ -104,7 +104,15 @@ export async function interruptAndCheck(token: CancellationToken): Promise<void>
  */
 export function interruptionDue(token: CancellationToken): boolean {
     return token !== CancellationToken.None
-        && (token.isCancellationRequested || performance.now() - lastTick >= globalInterruptionPeriod);
+        && (token.isCancellationRequested || interruptionPeriodElapsed());
+}
+
+/**
+ * Whether the interruption period has elapsed since `lastTick`, i.e. whether {@link interruptAndCheck} would yield
+ * to the event loop now. Both `interruptAndCheck` and {@link interruptionDue} use it, so that they can't disagree.
+ */
+function interruptionPeriodElapsed(now = performance.now()): boolean {
+    return now - lastTick >= globalInterruptionPeriod;
 }
 
 /**
