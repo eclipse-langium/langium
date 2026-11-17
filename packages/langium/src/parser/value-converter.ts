@@ -40,18 +40,53 @@ export class DefaultValueConverter implements ValueConverter {
 
     // eslint-disable-next-line @typescript-eslint/no-unused-vars
     protected runConverter(rule: AbstractRule, input: string, cstNode: CstNode): ValueType {
-        switch (rule.name.toUpperCase()) {
+        switch (getConverterKind(rule)) {
             case 'INT': return ValueConverter.convertInt(input);
             case 'STRING': return ValueConverter.convertString(input);
             case 'ID': return ValueConverter.convertID(input);
-        }
-        switch (getRuleType(rule)?.toLowerCase()) {
             case 'number': return ValueConverter.convertNumber(input);
             case 'boolean': return ValueConverter.convertBoolean(input);
             case 'bigint': return ValueConverter.convertBigint(input);
             case 'date': return ValueConverter.convertDate(input);
-            default: return input;
+            case 'none': return input;
         }
+    }
+}
+
+/**
+ * The conversion that `DefaultValueConverter.runConverter` applies to the values of a rule:
+ * by rule name (`INT`, `STRING` and `ID`, case-insensitive), otherwise by the rule's type (case-insensitive),
+ * or none.
+ */
+type ConverterKind = 'INT' | 'STRING' | 'ID' | 'number' | 'boolean' | 'bigint' | 'date' | 'none';
+
+/**
+ * Caches the converter kind per rule. Computing it allocates new strings (`toUpperCase`, `toLowerCase`),
+ * which would otherwise happen for every converted token, although the result only depends on the rule.
+ */
+const converterKinds = new WeakMap<AbstractRule, ConverterKind>();
+
+function getConverterKind(rule: AbstractRule): ConverterKind {
+    let kind = converterKinds.get(rule);
+    if (kind === undefined) {
+        kind = computeConverterKind(rule);
+        converterKinds.set(rule, kind);
+    }
+    return kind;
+}
+
+function computeConverterKind(rule: AbstractRule): ConverterKind {
+    switch (rule.name.toUpperCase()) {
+        case 'INT': return 'INT';
+        case 'STRING': return 'STRING';
+        case 'ID': return 'ID';
+    }
+    switch (getRuleType(rule)?.toLowerCase()) {
+        case 'number': return 'number';
+        case 'boolean': return 'boolean';
+        case 'bigint': return 'bigint';
+        case 'date': return 'date';
+        default: return 'none';
     }
 }
 
