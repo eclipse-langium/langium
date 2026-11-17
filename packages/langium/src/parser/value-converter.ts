@@ -17,11 +17,32 @@ export interface ValueConverter {
      * Converts a string value from the source text format into a value to be held in the AST.
      */
     convert(input: string, cstNode: CstNode): ValueType;
+    /**
+     * Whether `convert` only reads `cstNode.grammarSource`. When parsing with `buildCst: false`
+     * (see `ParserOptions`), `convert` receives a stand-in node that carries nothing else, so that option
+     * is only honoured if the converter declares this; otherwise the CST is built as usual.
+     * Defaults to `false`.
+     */
+    readonly supportsCstFreeConversion?: boolean;
 }
 
 export type ValueType = string | number | boolean | bigint | Date;
 
 export class DefaultValueConverter implements ValueConverter {
+
+    /**
+     * The default conversion only reads `cstNode.grammarSource`. This is `true` for this class only:
+     * a subclass may read more of the CST node (e.g. in `runConverter`), so it has to opt in itself:
+     *
+     * ```ts
+     * override get supportsCstFreeConversion(): boolean {
+     *     return true;
+     * }
+     * ```
+     */
+    get supportsCstFreeConversion(): boolean {
+        return Object.getPrototypeOf(this) === DefaultValueConverter.prototype;
+    }
 
     convert(input: string, cstNode: CstNode): ValueType {
         let feature: AbstractElement | undefined = cstNode.grammarSource;
