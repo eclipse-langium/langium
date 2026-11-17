@@ -9,13 +9,13 @@ import type { DiagnosticSeverity, Position, Range, Diagnostic } from 'vscode-lan
 import type { LanguageMetaData } from '../languages/language-meta-data.js';
 import type { ParseResult } from '../parser/langium-parser.js';
 import type { LangiumCoreServices } from '../services.js';
-import type { AstNode, CstNode, GenericAstNode } from '../syntax-tree.js';
+import type { AstNode, CstNode } from '../syntax-tree.js';
 import type { LangiumDocument } from '../workspace/documents.js';
 import type { DiagnosticData, DiagnosticInfo, ValidationAcceptor, ValidationCategory, ValidationRegistry, ValidationSeverity } from './validation-registry.js';
 import { CancellationToken } from '../utils/cancellation.js';
 import { findNodeForKeyword, findNodeForProperty } from '../utils/grammar-utils.js';
 import { streamAst } from '../utils/ast-utils.js';
-import { isAstNode } from '../syntax-tree.js';
+import { pushChildrenInDocumentOrder } from '../utils/ast-walk.js';
 import { isValidTokenRange, tokenToRange } from '../utils/cst-utils.js';
 import { interruptAndCheck, interruptionDue, isOperationCancelled } from '../utils/promise-utils.js';
 import { diagnosticData } from './validation-registry.js';
@@ -266,31 +266,7 @@ export class DefaultDocumentValidator implements DocumentValidator {
                     }
                 }
                 if (nodeOptions.validateChildren) {
-                    // The children are pushed and then that part of the stack is reversed,
-                    // so that they are visited in document order.
-                    const first = stack.length;
-                    for (const property in node) {
-                        // own properties only, to match `streamContents`/`streamAst`
-                        if (property.charCodeAt(0) === 36 /* '$' */
-                            || !Object.prototype.hasOwnProperty.call(node, property)) {
-                            continue;
-                        }
-                        const value = (node as GenericAstNode)[property];
-                        if (isAstNode(value)) {
-                            stack.push(value);
-                        } else if (Array.isArray(value)) {
-                            for (const element of value) {
-                                if (isAstNode(element)) {
-                                    stack.push(element);
-                                }
-                            }
-                        }
-                    }
-                    for (let lo = first, hi = stack.length - 1; lo < hi; lo++, hi--) {
-                        const swap = stack[lo];
-                        stack[lo] = stack[hi];
-                        stack[hi] = swap;
-                    }
+                    pushChildrenInDocumentOrder(stack, node);
                 }
             }
         }
