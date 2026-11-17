@@ -8,7 +8,7 @@
 
 import type { TokenType, TokenVocabulary } from 'chevrotain';
 import type { AstNode, CstNode, GenericAstNode, Grammar, GrammarAST, LangiumParser, ParseResult, ReferenceInfo, Scope, TokenBuilderOptions } from 'langium';
-import { EmptyFileSystem, DefaultTokenBuilder, GrammarUtils, CstUtils, DefaultScopeProvider, URI } from 'langium';
+import { EmptyFileSystem, DefaultTokenBuilder, GrammarUtils, CstUtils, DefaultScopeProvider, URI, isAstNode, isLeafCstNode } from 'langium';
 import { describe, expect, test, onTestFailed, beforeAll } from 'vitest';
 import { createLangiumGrammarServices, createServicesForGrammar } from 'langium/grammar';
 import { expandToString } from 'langium/generate';
@@ -156,6 +156,214 @@ describe('Predicated groups', () => {
         expectErrorneousParse('star:false xxx');
         expectCorrectParse('star:true xxxx', 4);
         expectCorrectParse('star:true', 0);
+    });
+
+});
+
+describe('Rule arguments in nested and recursive rule calls', () => {
+
+    // Every rule flips its parameter `Odd` on each nesting level. The keyword 'odd' is only allowed in nodes
+    // parsed with `Odd` set to true, 'even' only in nodes parsed with `Odd` set to false.
+    // The inputs nest each construct (alternatives, `*`, `+`, `?`, guarded groups, unordered groups, infix rules)
+    // in itself, and continue parsing the outer construct after the nested one returns.
+    // This checks that every invocation sees its own rule arguments, also when the same grammar element
+    // has been invoked recursively with different arguments in the meantime.
+    const content = `
+    grammar RuleArguments
+
+    entry Model:
+          'star' node=Star<false>
+        | 'plus' node=Plus<false>
+        | 'guardedStar' node=GuardedStar<false>
+        | 'guardedPlus' node=GuardedPlus<true>
+        | 'optional' node=Optional<false>
+        | 'guardedGroup' node=GuardedGroup<true>
+        | 'unordered' node=Unordered<false>
+        | 'infix' node=Sum<false>;
+
+    Star<Odd>: '[' (children+=Star<!Odd> | <Odd> marks+='odd' | <!Odd> marks+='even')* ']';
+    Plus<Odd>: '[' (children+=Plus<!Odd> | <Odd> marks+='odd' | <!Odd> marks+='even')+ ']';
+    GuardedStar<Odd>: '[' (<Odd> marks+='odd' children+=GuardedStar<!Odd>)* (<!Odd> marks+='even' children+=GuardedStar<!Odd>)* ']';
+    GuardedPlus<Odd>: '[' (<Odd> marks+='odd' children+=GuardedPlus<!Odd>)+ (<!Odd> marks+='even' children+=GuardedPlus<!Odd>)* ']';
+    Optional<Odd>: '[' (<Odd> marks+='odd')? (children+=Optional<!Odd>)? (<!Odd> marks+='even')? ']';
+    GuardedGroup<Odd>: '[' (<Odd> marks+='odd' children+=GuardedGroup<!Odd>) (<!Odd> marks+='even' children+=GuardedGroup<!Odd>)? ']';
+    Unordered<Odd>: '[' (('(' children+=Unordered<!Odd> ')') & (<Odd> marks+='odd') & (<!Odd> marks+='even')) ']';
+
+    infix Sum<Odd> on Operand<Odd>: '+';
+    Operand<Odd>: <Odd> value='odd' | <!Odd> value='even' | '(' inner=Sum<!Odd> ')';
+
+    hidden terminal WS: /\\s+/;
+    `;
+
+    let parser: LangiumParser;
+
+    beforeAll(async () => {
+        parser = await parserFromGrammar(content);
+    });
+
+    /** Prints the properties of an AST node (sorted by name) and its children. */
+    function printAst(value: unknown): string {
+        if (Array.isArray(value)) {
+            return '[' + value.map(printAst).join(', ') + ']';
+        } else if (isAstNode(value)) {
+            const node = value as GenericAstNode;
+            const properties = Object.keys(node).filter(key => !key.startsWith('$')).sort();
+            return `${node.$type}(${properties.map(key => `${key}=${printAst(node[key])}`).join(', ')})`;
+        } else if (typeof value === 'string') {
+            return `'${value}'`;
+        }
+        return String(value);
+    }
+
+    /** Prints each non-hidden token of the CST, prefixed with the nesting depth of the AST node it belongs to. */
+    function printCst(root: AstNode): string {
+        const depth = (node: AstNode): number => node.$container ? depth(node.$container) + 1 : 0;
+        return CstUtils.streamCst(root.$cstNode!)
+            .filter(isLeafCstNode)
+            .filter(leaf => !leaf.hidden)
+            .map(leaf => `${depth(leaf.astNode)}:${leaf.text}`)
+            .join(' ');
+    }
+
+    test.each([
+        {
+            input: 'star [ even [ odd [ even [ ] ] odd [ ] ] even [ ] ]',
+            ast: "Model(node=Star(children=[Star(children=[Star(children=[Star(children=[], marks=[])], marks=['even']), Star(children=[], marks=[])], marks=['odd', 'odd']), Star(children=[], marks=[])], marks=['even', 'even']))",
+            cst: '0:star 1:[ 1:even 2:[ 2:odd 3:[ 3:even 4:[ 4:] 3:] 2:odd 3:[ 3:] 2:] 1:even 2:[ 2:] 1:]',
+            errors: []
+        },
+        {
+            input: 'star [ odd ]',
+            ast: 'Model(node=Star(children=[], marks=[]))',
+            cst: '0:star 1:[',
+            errors: [
+                { offset: 7, message: "Expecting: one of these possible Token sequences:\n  1. [[]\n  2. [odd]\n  3. [even]\nbut found: 'odd'" },
+            ]
+        },
+        {
+            input: 'plus [ even [ odd [ even ] odd ] even ]',
+            ast: "Model(node=Plus(children=[Plus(children=[Plus(children=[], marks=['even'])], marks=['odd', 'odd'])], marks=['even', 'even']))",
+            cst: '0:plus 1:[ 1:even 2:[ 2:odd 3:[ 3:even 3:] 2:odd 2:] 1:even 1:]',
+            errors: []
+        },
+        {
+            input: 'plus [ even [ even ] ]',
+            ast: "Model(node=Plus(children=[Plus(children=[], marks=[])], marks=['even', 'even']))",
+            cst: '0:plus 1:[ 1:even 2:[ 1:even 1:]',
+            errors: [
+                { offset: 14, message: "Expecting: one of these possible Token sequences:\n  1. [[]\n  2. [odd]\n  3. [even]\nbut found: 'even'" },
+                { offset: 21, message: 'Expecting end of file but found `]`.' },
+            ]
+        },
+        {
+            input: 'guardedStar [ even [ odd [ even [ ] ] odd [ ] ] even [ ] ]',
+            ast: "Model(node=GuardedStar(children=[GuardedStar(children=[GuardedStar(children=[GuardedStar(children=[], marks=[])], marks=['even']), GuardedStar(children=[], marks=[])], marks=['odd', 'odd']), GuardedStar(children=[], marks=[])], marks=['even', 'even']))",
+            cst: '0:guardedStar 1:[ 1:even 2:[ 2:odd 3:[ 3:even 4:[ 4:] 3:] 2:odd 3:[ 3:] 2:] 1:even 2:[ 2:] 1:]',
+            errors: []
+        },
+        {
+            input: 'guardedStar [ odd [ ] ]',
+            ast: 'Model(node=GuardedStar(children=[], marks=[]))',
+            cst: '0:guardedStar 1:[ 1:]',
+            errors: [
+                { offset: 14, message: "Expecting token of type ']' but found `odd`." },
+                { offset: 22, message: 'Expecting end of file but found `]`.' },
+            ]
+        },
+        {
+            input: 'guardedPlus [ odd [ even [ odd [ ] ] ] odd [ ] ]',
+            ast: "Model(node=GuardedPlus(children=[GuardedPlus(children=[GuardedPlus(children=[GuardedPlus(children=[], marks=[])], marks=['odd'])], marks=['even']), GuardedPlus(children=[], marks=[])], marks=['odd', 'odd']))",
+            cst: '0:guardedPlus 1:[ 1:odd 2:[ 2:even 3:[ 3:odd 4:[ 4:] 3:] 2:] 1:odd 2:[ 2:] 1:]',
+            errors: []
+        },
+        {
+            input: 'guardedPlus [ odd [ odd [ ] ] ]',
+            ast: "Model(node=GuardedPlus(children=[GuardedPlus(children=[], marks=[]), GuardedPlus(children=[], marks=[])], marks=['odd', 'odd']))",
+            cst: '0:guardedPlus 1:[ 1:odd 2:[ 1:odd 2:[ 2:] 1:]',
+            errors: [
+                { offset: 20, message: "Expecting: one of these possible Token sequences:\n  1. [odd]\n  2. []\nbut found: 'odd'" },
+                { offset: 30, message: 'Expecting end of file but found `]`.' },
+            ]
+        },
+        {
+            input: 'optional [ [ odd [ even ] ] even ]',
+            ast: "Model(node=Optional(children=[Optional(children=[Optional(children=[], marks=['even'])], marks=['odd'])], marks=['even']))",
+            cst: '0:optional 1:[ 2:[ 2:odd 3:[ 3:even 3:] 2:] 1:even 1:]',
+            errors: []
+        },
+        {
+            input: 'optional [ odd ]',
+            ast: 'Model(node=Optional(children=[], marks=[]))',
+            cst: '0:optional 1:[ 1:]',
+            errors: [
+                { offset: 11, message: "Expecting token of type ']' but found `odd`." },
+            ]
+        },
+        {
+            input: 'guardedGroup [ odd [ even [ odd [ ] ] ] ]',
+            ast: "Model(node=GuardedGroup(children=[GuardedGroup(children=[GuardedGroup(children=[GuardedGroup(children=[], marks=[])], marks=['odd'])], marks=['even'])], marks=['odd']))",
+            cst: '0:guardedGroup 1:[ 1:odd 2:[ 2:even 3:[ 3:odd 4:[ 4:] 3:] 2:] 1:]',
+            errors: []
+        },
+        {
+            input: 'guardedGroup [ odd [ odd [ ] ] ]',
+            ast: "Model(node=GuardedGroup(children=[GuardedGroup(children=[], marks=[])], marks=['odd']))",
+            cst: '0:guardedGroup 1:[ 1:odd 2:[ 1:]',
+            errors: [
+                { offset: 21, message: "Expecting: one of these possible Token sequences:\n  1. [odd]\n  2. []\nbut found: 'odd'" },
+                { offset: 29, message: 'Expecting end of file but found `]`.' },
+            ]
+        },
+        {
+            input: 'unordered [ even ( [ ( [ ] ) odd ] ) ]',
+            ast: "Model(node=Unordered(children=[Unordered(children=[Unordered(children=[], marks=[])], marks=['odd'])], marks=['even']))",
+            cst: '0:unordered 1:[ 1:even 1:( 2:[ 2:( 3:[ 3:] 2:) 2:odd 2:] 1:) 1:]',
+            errors: []
+        },
+        {
+            input: 'unordered [ ( [ odd ( [ even ] ) ] ) even ]',
+            ast: "Model(node=Unordered(children=[Unordered(children=[Unordered(children=[], marks=['even'])], marks=['odd'])], marks=['even']))",
+            cst: '0:unordered 1:[ 1:( 2:[ 2:odd 2:( 3:[ 3:even 3:] 2:) 2:] 1:) 1:even 1:]',
+            errors: []
+        },
+        {
+            input: 'unordered [ ( [ even ] ) ]',
+            ast: 'Model(node=Unordered(children=[Unordered(children=[], marks=[])], marks=[]))',
+            cst: '0:unordered 1:[ 1:( 2:[ 1:) 1:]',
+            errors: [
+                { offset: 16, message: "Expecting: one of these possible Token sequences:\n  1. [(]\n  2. [odd]\n  3. [even]\nbut found: 'even'" },
+            ]
+        },
+        {
+            input: 'infix even + ( odd + ( even + even ) + odd ) + even',
+            ast: "Model(node=Sum(left=Sum(left=Operand(value='even'), operator='+', right=Operand(inner=Sum(left=Sum(left=Operand(value='odd'), operator='+', right=Operand(inner=Sum(left=Operand(value='even'), operator='+', right=Operand(value='even')))), operator='+', right=Operand(value='odd')))), operator='+', right=Operand(value='even')))",
+            cst: '0:infix 3:even 1:+ 3:( 6:odd 4:+ 6:( 8:even 7:+ 8:even 6:) 4:+ 5:odd 3:) 1:+ 2:even',
+            errors: []
+        },
+        {
+            input: 'infix even + odd',
+            ast: "Model(node=Operand(value='even'))",
+            cst: '0:infix 1:even 0:+',
+            errors: [
+                { offset: 13, message: "Expecting: one of these possible Token sequences:\n  1. [odd]\n  2. [even]\n  3. [(]\nbut found: 'odd'" },
+            ]
+        },
+    ])('$input', ({ input, ast, cst, errors }) => {
+        const result = parser.parse(input);
+        expect(result.lexerErrors).toHaveLength(0);
+        expect(result.parserErrors.map(error => ({ offset: error.token.startOffset, message: error.message }))).toEqual(errors);
+        expect(printAst(result.value)).toBe(ast);
+        expect(printCst(result.value)).toBe(cst);
+    });
+
+    test('parses the same input repeatedly with the same result', () => {
+        const input = 'guardedStar [ even [ odd [ even [ ] ] odd [ ] ] even [ ] ]';
+        const first = printAst(parser.parse(input).value);
+        // A failed parse in between must not leave rule arguments behind
+        expect(parser.parse('guardedStar [ odd [ ] ]').parserErrors).not.toHaveLength(0);
+        const second = parser.parse(input);
+        expect(second.parserErrors).toHaveLength(0);
+        expect(printAst(second.value)).toBe(first);
     });
 
 });
