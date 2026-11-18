@@ -4,8 +4,9 @@
  * terms of the MIT License, which is available in the project root.
  ******************************************************************************/
 
-import { describe, expectTypeOf, test } from 'vitest';
-import type { AstNode, AstNodeTypesWithCrossReferences, AstTypeList, CrossReferencesOfAstNodeType, Reference } from '../src/syntax-tree.js';
+import { describe, expect, expectTypeOf, test } from 'vitest';
+import type { AstMetaData, AstNode, AstNodeTypesWithCrossReferences, AstTypeList, CrossReferencesOfAstNodeType, Reference } from '../src/syntax-tree.js';
+import { AbstractAstReflection } from '../src/syntax-tree.js';
 
 describe('Utility types revealing cross-reference properties', () => {
 
@@ -256,5 +257,76 @@ describe('Utility types revealing cross-reference properties', () => {
                 return;
             }
         }
+    });
+});
+
+describe('AbstractAstReflection.isSubtype', () => {
+
+    // D is a diamond (B and C both extend A), E extends D, and F declares a super type that has no meta data.
+    class TestReflection extends AbstractAstReflection {
+        override readonly types: AstMetaData = {
+            A: { name: 'A', properties: {}, superTypes: [] },
+            B: { name: 'B', properties: {}, superTypes: ['A'] },
+            C: { name: 'C', properties: {}, superTypes: ['A'] },
+            D: { name: 'D', properties: {}, superTypes: ['B', 'C'] },
+            E: { name: 'E', properties: {}, superTypes: ['D'] },
+            F: { name: 'F', properties: {}, superTypes: ['Unknown'] }
+        };
+
+        get cache(): Record<string, Record<string, boolean | undefined>> {
+            return this.subtypes;
+        }
+    }
+
+    const expectedSupertypes: Record<string, string[]> = {
+        A: ['A'],
+        B: ['B', 'A'],
+        C: ['C', 'A'],
+        D: ['D', 'B', 'C', 'A'],
+        E: ['E', 'D', 'B', 'C', 'A'],
+        F: ['F', 'Unknown'],
+        Unknown: ['Unknown'],
+        NotAType: ['NotAType']
+    };
+    const candidates = Object.keys(expectedSupertypes);
+
+    test('agrees with the transitive closure of the declared super types, on cache misses and hits', () => {
+        const reflection = new TestReflection();
+        // The first round computes and caches every pair, the second round answers from the cache.
+        for (let round = 0; round < 2; round++) {
+            for (const subtype of candidates) {
+                for (const supertype of candidates) {
+                    const expected = expectedSupertypes[subtype].includes(supertype);
+                    expect(reflection.isSubtype(subtype, supertype), `round ${round}: isSubtype(${subtype}, ${supertype})`).toBe(expected);
+                }
+            }
+        }
+    });
+
+    test('caches the result of every pair it computes', () => {
+        const reflection = new TestReflection();
+        expect(reflection.isSubtype('E', 'C')).toBe(true);
+        // B is checked before C, so the walk visits E, D, B and A; the identity C === C is not cached.
+        expect(reflection.cache).toEqual({
+            E: { C: true },
+            D: { C: true },
+            B: { C: false },
+            A: { C: false }
+        });
+
+        expect(reflection.isSubtype('F', 'A')).toBe(false);
+        expect(reflection.isSubtype('NotAType', 'A')).toBe(false);
+        expect(reflection.cache).toMatchObject({
+            F: { A: false },
+            Unknown: { A: false },
+            NotAType: { A: false }
+        });
+    });
+
+    test('answers from the cache once a pair is cached', () => {
+        const reflection = new TestReflection();
+        expect(reflection.isSubtype('B', 'C')).toBe(false);
+        reflection.cache.B.C = true;
+        expect(reflection.isSubtype('B', 'C')).toBe(true);
     });
 });

@@ -5,8 +5,7 @@
  ******************************************************************************/
 
 import type { AstNode, Reference } from '../../src/syntax-tree.js';
-import { streamAst, streamContents } from '../../src/utils/ast-utils.js';
-import { pushChildrenInDocumentOrder } from '../../src/utils/ast-walk.js';
+import { pushChildrenInDocumentOrder, streamAst, streamContents } from '../../src/utils/ast-utils.js';
 import { describe, expect, test } from 'vitest';
 
 function node(name: string, properties: Record<string, unknown> = {}): AstNode {

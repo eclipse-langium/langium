@@ -140,6 +140,13 @@ export abstract class AbstractLangiumParser implements BaseParser {
     protected allRules = new Map<string, RuleResult>();
     protected mainRule!: RuleResult;
 
+    /**
+     * Whether `finalize()` has completed Chevrotain's self-analysis. Rule bodies only run while Chevrotain records
+     * the grammar during that self-analysis, or while parsing afterwards, so this alone answers `isRecording()`.
+     * Subclasses that override `finalize()` must call `super.finalize()`.
+     */
+    private selfAnalysisDone = false;
+
     constructor(services: LangiumCoreServices, incomplete: boolean) {
         this.lexer = services.parser.Lexer;
         const tokens = this.lexer.definition;
@@ -185,7 +192,7 @@ export abstract class AbstractLangiumParser implements BaseParser {
     }
 
     isRecording(): boolean {
-        return this.wrapper.IS_RECORDING;
+        return !this.selfAnalysisDone;
     }
 
     get unorderedGroups(): Map<string, boolean[]> {
@@ -197,7 +204,10 @@ export abstract class AbstractLangiumParser implements BaseParser {
     }
 
     finalize(): void {
+        // Reset first: a repeated self-analysis records the grammar again.
+        this.selfAnalysisDone = false;
         this.wrapper.wrapSelfAnalysis();
+        this.selfAnalysisDone = true;
     }
 }
 
@@ -601,7 +611,11 @@ export class LangiumParser extends AbstractLangiumParser {
     }
 
     private assignWithoutOverride(target: any, source: any): any {
-        for (const [name, existingValue] of Object.entries(source)) {
+        for (const name in source) {
+            if (!Object.prototype.hasOwnProperty.call(source, name)) {
+                continue;
+            }
+            const existingValue = source[name];
             const newValue = target[name];
             if (newValue === undefined) {
                 target[name] = existingValue;
@@ -840,10 +854,6 @@ class ChevrotainWrapper extends EmbeddedActionsParser {
         });
     }
 
-    get IS_RECORDING(): boolean {
-        return this.RECORDING_PHASE;
-    }
-
     DEFINE_RULE(name: string, impl: RuleImpl, config?: IRuleConfig<any>): RuleResult {
         return this.RULE(name, impl, config);
     }
@@ -856,10 +866,16 @@ class ChevrotainWrapper extends EmbeddedActionsParser {
         return this.consume(idx, tokenType, undefined);
     }
 
+    /**
+     * Options object reused by all `wrapSubrule` calls. Chevrotain spreads `ARGS` into the rule invocation
+     * synchronously and doesn't keep a reference to the options, so the object can be reused even for nested calls.
+     */
+    private readonly subruleOptions: { ARGS: [Args] } = { ARGS: [{}] };
+
     wrapSubrule(idx: number, rule: RuleResult, args: Args): unknown {
-        return this.subrule(idx, rule, {
-            ARGS: [args]
-        });
+        const options = this.subruleOptions;
+        options.ARGS[0] = args;
+        return this.subrule(idx, rule, options);
     }
 
     wrapOr(idx: number, choices: Array<IOrAlt<any>>): void {

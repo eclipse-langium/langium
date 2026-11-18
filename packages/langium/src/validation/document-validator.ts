@@ -14,8 +14,7 @@ import type { LangiumDocument } from '../workspace/documents.js';
 import type { DiagnosticData, DiagnosticInfo, ValidationAcceptor, ValidationCategory, ValidationRegistry, ValidationSeverity } from './validation-registry.js';
 import { CancellationToken } from '../utils/cancellation.js';
 import { findNodeForKeyword, findNodeForProperty } from '../utils/grammar-utils.js';
-import { streamAst } from '../utils/ast-utils.js';
-import { pushChildrenInDocumentOrder } from '../utils/ast-walk.js';
+import { pushChildrenInDocumentOrder, streamAst } from '../utils/ast-utils.js';
 import { isValidTokenRange, tokenToRange } from '../utils/cst-utils.js';
 import { interruptAndCheck, interruptionDue, isOperationCancelled } from '../utils/promise-utils.js';
 import { diagnosticData } from './validation-registry.js';
@@ -223,9 +222,10 @@ export class DefaultDocumentValidator implements DocumentValidator {
             try {
                 const nodes = streamAst(rootNode).iterator();
                 for (const node of nodes) {
-                    task.startSubTask(node.$type);
                     const nodeOptions = this.validateSingleNodeOptions(node, options);
                     if (nodeOptions.validateNode) {
+                        // only nodes that are validated get a sub-task, so that every started sub-task is stopped
+                        task.startSubTask(node.$type);
                         try {
                             const checks = this.validationRegistry.getChecks(node.$type, options.categories);
                             for (const check of checks) {
