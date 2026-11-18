@@ -150,6 +150,12 @@ function sameCategories(a: readonly ValidationCategory[], b: readonly Validation
     return true;
 }
 
+function isPromiseLike(value: unknown): value is PromiseLike<unknown> {
+    return value !== null
+        && (typeof value === 'object' || typeof value === 'function')
+        && typeof (value as PromiseLike<unknown>).then === 'function';
+}
+
 export class ValidationRegistry {
     protected readonly entries = new MultiMap<string, ValidationCheckEntry>();
     protected readonly knownCategories = new Set(ValidationCategory.defaults);
@@ -211,8 +217,19 @@ export class ValidationRegistry {
     }
 
     protected wrapValidationException(check: ValidationCheck, thisObj: unknown): ValidationCheck {
-        return async (node, accept, cancelToken) => {
-            await this.handleException(() => check.call(thisObj, node, accept, cancelToken), 'An error occurred during validation', accept, node);
+        // Most checks are synchronous. They run without creating a promise, and the wrapped check returns one
+        // only if the check itself returned one. Errors are passed to `handleException` in either case.
+        return (node, accept, cancelToken) => {
+            let result: MaybePromise<void>;
+            try {
+                result = check.call(thisObj, node, accept, cancelToken);
+            } catch (err) {
+                return this.handleException(() => { throw err; }, 'An error occurred during validation', accept, node);
+            }
+            if (isPromiseLike(result)) {
+                return this.handleException(() => result, 'An error occurred during validation', accept, node);
+            }
+            return undefined;
         };
     }
 

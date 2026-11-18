@@ -9,15 +9,14 @@ import type { DiagnosticSeverity, Position, Range, Diagnostic } from 'vscode-lan
 import type { LanguageMetaData } from '../languages/language-meta-data.js';
 import type { ParseResult } from '../parser/langium-parser.js';
 import type { LangiumCoreServices } from '../services.js';
-import type { AstNode, CstNode, GenericAstNode } from '../syntax-tree.js';
+import type { AstNode, CstNode } from '../syntax-tree.js';
 import type { LangiumDocument } from '../workspace/documents.js';
 import type { DiagnosticData, DiagnosticInfo, ValidationAcceptor, ValidationCategory, ValidationRegistry, ValidationSeverity } from './validation-registry.js';
 import { CancellationToken } from '../utils/cancellation.js';
 import { findNodeForKeyword, findNodeForProperty } from '../utils/grammar-utils.js';
-import { streamAst } from '../utils/ast-utils.js';
-import { isAstNode } from '../syntax-tree.js';
+import { pushChildrenInDocumentOrder, streamAst } from '../utils/ast-utils.js';
 import { isValidTokenRange, tokenToRange } from '../utils/cst-utils.js';
-import { interruptAndCheck, isOperationCancelled } from '../utils/promise-utils.js';
+import { interruptAndCheck, interruptionDue, isOperationCancelled } from '../utils/promise-utils.js';
 import { diagnosticData } from './validation-registry.js';
 import type { LexingDiagnostic, LexingDiagnosticSeverity } from '../parser/token-builder.js';
 import type { LangiumProfiler } from '../workspace/profiler.js';
@@ -250,37 +249,24 @@ export class DefaultDocumentValidator implements DocumentValidator {
             const stack: AstNode[] = [rootNode];
             while (stack.length > 0) {
                 const node = stack.pop()!;
-                await interruptAndCheck(cancelToken);
+                // Awaiting `interruptAndCheck` costs a promise even when it does nothing, so only await it
+                // when it would yield or throw.
+                if (interruptionDue(cancelToken)) {
+                    await interruptAndCheck(cancelToken);
+                }
                 const nodeOptions = this.validateSingleNodeOptions(node, options);
                 if (nodeOptions.validateNode) {
                     const checks = this.validationRegistry.getCheckArray(node.$type, options.categories);
                     for (const check of checks) {
-                        await check(node, acceptor, cancelToken);
+                        // Wrapped checks return a promise only if the check is asynchronous.
+                        const pending = check(node, acceptor, cancelToken);
+                        if (pending !== undefined) {
+                            await pending;
+                        }
                     }
                 }
                 if (nodeOptions.validateChildren) {
-                    // Children are pushed in reverse so that they are visited in document order.
-                    const children: AstNode[] = [];
-                    for (const property in node) {
-                        // own properties only, to match `streamContents`/`streamAst`
-                        if (property.charCodeAt(0) === 36 /* '$' */
-                            || !Object.prototype.hasOwnProperty.call(node, property)) {
-                            continue;
-                        }
-                        const value = (node as GenericAstNode)[property];
-                        if (isAstNode(value)) {
-                            children.push(value);
-                        } else if (Array.isArray(value)) {
-                            for (const element of value) {
-                                if (isAstNode(element)) {
-                                    children.push(element);
-                                }
-                            }
-                        }
-                    }
-                    for (let i = children.length - 1; i >= 0; i--) {
-                        stack.push(children[i]);
-                    }
+                    pushChildrenInDocumentOrder(stack, node);
                 }
             }
         }
