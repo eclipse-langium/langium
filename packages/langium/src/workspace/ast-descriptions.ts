@@ -12,9 +12,8 @@ import type { AstNodeLocator } from './ast-node-locator.js';
 import type { DocumentSegment, LangiumDocument } from './documents.js';
 import { CancellationToken } from '../utils/cancellation.js';
 import { isMultiReference, isReference } from '../syntax-tree.js';
-import { getDocument, streamAst, streamReferences } from '../utils/ast-utils.js';
+import { getDocument, walkReferences } from '../utils/ast-utils.js';
 import { toDocumentSegment } from '../utils/cst-utils.js';
-import { interruptAndCheck } from '../utils/promise-utils.js';
 import { UriUtils } from '../utils/uri-utils.js';
 
 /**
@@ -116,14 +115,11 @@ export class DefaultReferenceDescriptionProvider implements ReferenceDescription
     async createDescriptions(document: LangiumDocument, cancelToken = CancellationToken.None): Promise<ReferenceDescription[]> {
         const descr: ReferenceDescription[] = [];
         const rootNode = document.parseResult.value;
-        for (const astNode of streamAst(rootNode)) {
-            await interruptAndCheck(cancelToken);
-            streamReferences(astNode).forEach(refInfo => {
-                if (!refInfo.reference.error) {
-                    descr.push(...this.createInfoDescriptions(refInfo));
-                }
-            });
-        }
+        await walkReferences(rootNode, refInfo => {
+            if (!refInfo.reference.error) {
+                descr.push(...this.createInfoDescriptions(refInfo));
+            }
+        }, cancelToken);
         return descr;
     }
 

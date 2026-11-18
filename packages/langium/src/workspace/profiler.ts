@@ -135,7 +135,7 @@ export class ProfilingTask {
 
     protected readonly identifier: string;
     protected readonly stack: Array<{ id: string, start: number, content: number }> = [];
-    protected readonly entries = new MultiMap<string, number>();
+    protected entries = new MultiMap<string, number>();
 
     constructor(addRecord: (record: ProfilingRecord) => void, identifier: string) {
         this.addRecord = addRecord;
@@ -164,7 +164,8 @@ export class ProfilingTask {
         };
         this.addRecord(record);
         this.startTime = undefined;
-        this.entries.clear();
+        // The record keeps the entries collected so far, so start a fresh map instead of clearing it.
+        this.entries = new MultiMap<string, number>();
     }
 
     startSubTask(subTaskId: string): void {

@@ -223,9 +223,10 @@ export class DefaultDocumentValidator implements DocumentValidator {
             try {
                 const nodes = streamAst(rootNode).iterator();
                 for (const node of nodes) {
-                    task.startSubTask(node.$type);
                     const nodeOptions = this.validateSingleNodeOptions(node, options);
                     if (nodeOptions.validateNode) {
+                        // only nodes that are validated get a sub-task, so that every started sub-task is stopped
+                        task.startSubTask(node.$type);
                         try {
                             const checks = this.validationRegistry.getChecks(node.$type, options.categories);
                             for (const check of checks) {

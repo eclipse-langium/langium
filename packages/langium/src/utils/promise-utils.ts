@@ -75,7 +75,7 @@ export async function interruptAndCheck(token: CancellationToken): Promise<void>
         return;
     }
     const current = performance.now();
-    if (current - lastTick >= globalInterruptionPeriod) {
+    if (interruptionPeriodElapsed(current)) {
         lastTick = current;
         await delayNextTick();
         // prevent calling delayNextTick every iteration of loop
@@ -86,6 +86,33 @@ export async function interruptAndCheck(token: CancellationToken): Promise<void>
     if (token.isCancellationRequested) {
         throw OperationCancelled;
     }
+}
+
+/**
+ * Whether {@link interruptAndCheck} would do anything right now, i.e. yield to the event loop or throw
+ * `OperationCancelled`. It is `false` for `CancellationToken.None`.
+ *
+ * Every call of `interruptAndCheck` creates a promise and every `await` of it costs a microtask, even when
+ * it returns immediately, which is almost always the case. Loops that check once per element can skip that:
+ * ```ts
+ * if (interruptionDue(token)) {
+ *     await interruptAndCheck(token);
+ * }
+ * ```
+ * The loop then yields and stops on cancellation at the same elements as with an unconditional
+ * `await interruptAndCheck(token)`.
+ */
+export function interruptionDue(token: CancellationToken): boolean {
+    return token !== CancellationToken.None
+        && (token.isCancellationRequested || interruptionPeriodElapsed());
+}
+
+/**
+ * Whether the interruption period has elapsed since `lastTick`, i.e. whether {@link interruptAndCheck} would yield
+ * to the event loop now. Both `interruptAndCheck` and {@link interruptionDue} use it, so that they can't disagree.
+ */
+function interruptionPeriodElapsed(now = performance.now()): boolean {
+    return now - lastTick >= globalInterruptionPeriod;
 }
 
 /**
