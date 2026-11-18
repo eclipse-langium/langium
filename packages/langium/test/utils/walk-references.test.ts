@@ -4,14 +4,14 @@
  * terms of the MIT License, which is available in the project root.
  ******************************************************************************/
 
-// `walkReferences` is internal, so it is imported from the sources. Everything else is imported from the sources
-// as well, so that the walk, the linker and the test share the state of `promise-utils` (`setInterruptionPeriod`)
-// and the `OperationCancelled` symbol.
+// Everything is imported from the sources, so that the walk, the linker and the test share the state of
+// `promise-utils` (`setInterruptionPeriod`) and the `OperationCancelled` symbol.
 import type { AstNode, LangiumCoreServices, LangiumDocument, Reference, ReferenceDescription, ReferenceInfo } from '../../src/index.js';
 import { AstUtils, Cancellation, DefaultLinker, DefaultReferenceDescriptionProvider, interruptAndCheck, isOperationCancelled, setInterruptionPeriod, URI } from '../../src/index.js';
 import { createServicesForGrammar } from '../../src/grammar/index.js';
-import { walkReferences } from '../../src/utils/walk-references.js';
 import { afterEach, beforeAll, describe, expect, test } from 'vitest';
+
+const { walkReferences } = AstUtils;
 
 // `walkReferences` replaces this loop in `DefaultLinker.link` and `DefaultReferenceDescriptionProvider.createDescriptions`.
 async function streamLoop(root: AstNode, action: (refInfo: ReferenceInfo) => void, cancelToken = Cancellation.CancellationToken.None): Promise<void> {
@@ -85,8 +85,9 @@ function blockFor(ms: number): void {
 
 describe('walkReferences', () => {
 
-    test('is internal, i.e. not part of AstUtils', () => {
-        expect(AstUtils).not.toHaveProperty('walkReferences');
+    test('is part of AstUtils', () => {
+        expect(AstUtils.walkReferences).toBeTypeOf('function');
+        expect(AstUtils.pushChildrenInDocumentOrder).toBeTypeOf('function');
     });
 
     afterEach(() => {
