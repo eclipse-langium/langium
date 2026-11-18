@@ -90,20 +90,6 @@ class InterpretedAstReflection extends AbstractAstReflection {
         Object.defineProperty(this, 'types', { value: types });
     }
 
-    protected computeIsSubtype(subtype: string, originalSuperType: string): boolean {
-        const typeMetaData = this.types[subtype];
-        if (!typeMetaData) {
-            return false;
-        }
-
-        for (const superType of typeMetaData.superTypes) {
-            if (this.isSubtype(superType, originalSuperType)) {
-                return true;
-            }
-        }
-        return false;
-    }
-
 }
 
 function buildReferenceTypes(astTypes: AstTypes): Map<string, string> {
