@@ -4,6 +4,7 @@
         { "path": "./packages/langium/tsconfig.src.json" },
         { "path": "./packages/langium/tsconfig.test.json" },
         { "path": "./packages/langium-railroad/tsconfig.json" },
+        { "path": "./packages/langium-railroad/tsconfig.test.json" },
         { "path": "./packages/langium-cli/tsconfig.src.json" },
         { "path": "./packages/langium-cli/tsconfig.test.json" },
         { "path": "./packages/langium-sprotty/tsconfig.src.json" },
