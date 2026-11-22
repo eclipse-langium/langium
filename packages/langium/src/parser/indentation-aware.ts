@@ -437,20 +437,20 @@ export class IndentationAwareLexer extends DefaultLexer {
         const indentTokenIdx = indentTokenType.tokenTypeIdx;
         const dedentTokenIdx = dedentTokenType.tokenTypeIdx;
         const cleanTokens: IToken[] = [];
-        const length = result.tokens.length - 1;
-        for (let i = 0; i < length; i++) {
+        const lastIndex = result.tokens.length - 1;
+        for (let i = 0; i <= lastIndex; i++) {
             const token = result.tokens[i];
             const nextToken = result.tokens[i + 1];
-            if (token.tokenTypeIdx === indentTokenIdx && nextToken.tokenTypeIdx === dedentTokenIdx) {
+            if (token.tokenTypeIdx === indentTokenIdx && nextToken?.tokenTypeIdx === dedentTokenIdx) {
+                const isTrailingPair = i + 1 === lastIndex;
+                if (isTrailingPair && options.mode !== 'full') {
+                    // Completion uses the final DEDENT to find suggestions at the cursor.
+                    cleanTokens.push(nextToken);
+                }
                 i++;
-                continue;
+            } else {
+                cleanTokens.push(token);
             }
-
-            cleanTokens.push(token);
-        }
-        // Push last token separately
-        if (length >= 0) {
-            cleanTokens.push(result.tokens[length]);
         }
         result.tokens = cleanTokens;
 

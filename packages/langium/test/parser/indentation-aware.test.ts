@@ -351,6 +351,21 @@ describe('IndentationAware parsing', () => {
         hidden terminal WS: /[\\t ]+/;
     `;
 
+    test.each(['\n    ', '\n    // note', '\r\n    // note\r\n'])('ignores an empty trailing indent in %j', async suffix => {
+        const parser = await getParser(sampleGrammar + String.raw`hidden terminal SL_COMMENT: /\/\/[^\r\n]*/;`);
+        const result = parser.parse('return true' + suffix);
+        expect(result.lexerErrors).toHaveLength(0);
+        expect(result.parserErrors).toHaveLength(0);
+        expect(result.value).toMatchObject({ $type: 'Return', value: true });
+    });
+
+    test('offers else after blank lines of different indentation', async () => {
+        const services = await createIndentationAwareServices(sampleGrammar);
+        const completion = expectCompletion(services);
+        const text = ['if true:', '  return false', '    ', '  ', 'e<|>lse:', '  return true'].join('\n');
+        await completion({ text, index: 0, expectedItems: ['else'] });
+    });
+
     test('should parse correctly indented code', async () => {
         const parser = await getParser(sampleGrammar);
         const { parserErrors } = parser.parse(expandToString`
