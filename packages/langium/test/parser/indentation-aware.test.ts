@@ -234,6 +234,44 @@ describe('IndentationAwareLexer', () => {
         expect(indent.tokenType.name).toBe('INDENT');
     });
 
+    test('should add remaining dedents to the end if partial tokenizing ends at the start of a line', async () => {
+        const lexer = await getLexer(sampleGrammar);
+        const { tokens } = lexer.tokenize('{\n    name\n', { mode: 'partial' });
+        expect(tokens.map(token => token.tokenType.name)).toEqual(['{', 'INDENT', 'ID', 'DEDENT']);
+    });
+
+    test('should use the line start rules of the token builder if partial tokenizing', async () => {
+        class FormFeedTokenBuilder extends IndentationAwareTokenBuilder {
+            protected override isStartOfLine(text: string, offset: number): boolean {
+                return super.isStartOfLine(text, offset) || text[offset - 1] === '\f';
+            }
+        }
+        const services = await createServicesForGrammar({
+            grammar: sampleGrammar.replace('[\\r\\n]+', '[\\r\\n\\f]+'),
+            module: {
+                parser: {
+                    TokenBuilder: () => new FormFeedTokenBuilder(),
+                    Lexer: services => new IndentationAwareLexer(services)
+                }
+            } satisfies Module<LangiumServices, PartialLangiumServices>
+        });
+        const { tokens } = services.parser.Lexer.tokenize('{\f    name\f', { mode: 'partial' });
+        expect(tokens.map(token => token.tokenType.name)).toEqual(['{', 'INDENT', 'ID', 'DEDENT']);
+    });
+
+    test.each([
+        ['a deeper indented comment', ['{', '    a', '        // comment', '    b', '}']],
+        ['a shallower indented comment', ['{', '    a', '  // comment', '    b', '}']],
+        ['comments of unrelated indentation', ['{', '    a', '      // comment', '  // comment', '        // comment', '    b', '}']],
+        ['a shallower line of whitespace', ['{', '    a', '  ', '    b', '}']],
+    ])('should not let %s affect the indentation', async (_, lines) => {
+        const lexer = await getLexer(sampleGrammar);
+        const { tokens, errors, report } = lexer.tokenize(lines.join('\n'));
+        expect(errors).toHaveLength(0);
+        expect(report?.diagnostics).toEqual([]);
+        expect(tokens.map(token => token.tokenType.name)).toEqual(['{', 'INDENT', 'ID', 'ID', 'DEDENT', '}']);
+    });
+
     test('should not return any tokens for empty input', async () => {
         const lexer = await getLexer(sampleGrammar);
         const { tokens } = lexer.tokenize('');
@@ -269,12 +307,13 @@ describe('IndentationAwareTokenBuilder#ignoreIndentationDelimiters', async () =>
         hidden terminal SL_COMMENT: /\\/\\/[^\\n\\r]*/;
     `;
 
-    const lexer = await getLexer(grammar, {
+    const services = await createIndentationAwareServices(grammar, {
         ignoreIndentationDelimiters: [
             ['(', ')'],
             ['[', ']'],
         ],
     });
+    const lexer = services.parser.Lexer;
 
     test('should behave as usual without the given tokens in the input', async () => {
         const { errors } = lexer.tokenize(expandToString`
@@ -303,6 +342,27 @@ describe('IndentationAwareTokenBuilder#ignoreIndentationDelimiters', async () =>
         const tokenNames = tokens.map(token => token.tokenType.name);
         expect(tokenNames).not.toContain('INDENT');
         expect(tokenNames).not.toContain('DEDENT');
+    });
+
+    test('should not add remaining dedents inside the given delimiters if partial tokenizing', async () => {
+        const names = (text: string) => lexer.tokenize(text, { mode: 'partial' }).tokens.map(token => token.tokenType.name);
+        expect(names('if true:\n  return [\n')).toEqual(['if', 'BOOLEAN', ':', 'INDENT', 'return', '[']);
+        expect(names('if true:\n  return [(true),\n')).not.toContain('DEDENT');
+        expect(names('if true:\n  return [(true)]\n').at(-1)).toBe('DEDENT');
+    });
+
+    test('should offer list elements at the start of a line inside the given delimiters', async () => {
+        // The entry rule of the grammar above matches empty input, so it can't be used in its own blocks by a parser.
+        // Also, the completion only offers keywords that contain letters.
+        const completionGrammar = grammar
+            .replace('(If | Return)*', 'If | Return')
+            .replace('Expression: List | Tuple | BOOLEAN;', "Expression: List | Tuple | None | BOOLEAN; None: {infer None} 'none';");
+        const completionServices = await createIndentationAwareServices(completionGrammar, {
+            ignoreIndentationDelimiters: [['[', ']']],
+        });
+        const completion = expectCompletion(completionServices);
+        const text = ['if true:', '  return [', '<|>true', '  ]'].join('\n');
+        await completion({ text, index: 0, expectedItems: ['none'] });
     });
 
     test('should handle nested delimiters', async () => {
@@ -350,6 +410,105 @@ describe('IndentationAware parsing', () => {
         hidden terminal NL: /[\\r\\n]+/;
         hidden terminal WS: /[\\t ]+/;
     `;
+
+    test.each(['\n    ', '\n    // note', '\r\n    // note\r\n'])('ignores an empty trailing indent in %j', async suffix => {
+        const parser = await getParser(sampleGrammar + String.raw`hidden terminal SL_COMMENT: /\/\/[^\r\n]*/;`);
+        const result = parser.parse('return true' + suffix);
+        expect(result.lexerErrors).toHaveLength(0);
+        expect(result.parserErrors).toHaveLength(0);
+        expect(result.value).toMatchObject({ $type: 'Return', value: true });
+    });
+
+    test.each([
+        'return true\n  // a\n    // b',
+        'return true\r\n  // a\r\n    // b\r\n',
+        'return true\n    // a\n  // b\n      // c\n',
+    ])('ignores nested empty trailing indents in %j', async text => {
+        const parser = await getParser(sampleGrammar + String.raw`hidden terminal SL_COMMENT: /\/\/[^\r\n]*/;`);
+        const result = parser.parse(text);
+        expect(result.lexerErrors).toHaveLength(0);
+        expect(result.lexerReport?.diagnostics).toEqual([]);
+        expect(result.parserErrors).toHaveLength(0);
+        expect(result.value).toMatchObject({ $type: 'Return', value: true });
+    });
+
+    test('ignores nested empty indents in the middle of a document', async () => {
+        const services = await createIndentationAwareServices(sampleGrammar + String.raw`hidden terminal SL_COMMENT: /\/\/[^\r\n]*/;`);
+        const text = ['if true:', '  return false', '    // a', '      // b', 'else:', '  return true'].join('\n');
+        const result = services.parser.LangiumParser.parse(text);
+        expect(result.lexerErrors).toHaveLength(0);
+        expect(result.lexerReport?.diagnostics).toEqual([]);
+        expect(result.parserErrors).toHaveLength(0);
+        expect(result.value).toMatchObject({
+            $type: 'If',
+            thenBlock: [{ $type: 'Return', value: false }],
+            elseBlock: [{ $type: 'Return', value: true }]
+        });
+        const tokenNames = services.parser.Lexer.tokenize(text).tokens.map(token => token.tokenType.name);
+        expect(tokenNames.filter(name => name === 'INDENT')).toHaveLength(2);
+        expect(tokenNames.filter(name => name === 'DEDENT')).toHaveLength(2);
+    });
+
+    test.each([
+        ['directly after the block', ['if true:', '  return false']],
+        ['after a blank line of the same indentation', ['if true:', '  return false', '  ']],
+        ['after a blank line of deeper indentation', ['if true:', '  return false', '    ']],
+        ['after blank lines of different indentation', ['if true:', '  return false', '    ', '  ']],
+        ['after blank lines of increasing indentation', ['if true:', '  return false', '    ', '      ']],
+        ['after a deeper indented comment', ['if true:', '  return false', '    // note']],
+    ])('offers else %s', async (_, lines) => {
+        const services = await createIndentationAwareServices(sampleGrammar + String.raw`hidden terminal SL_COMMENT: /\/\/[^\r\n]*/;`);
+        const completion = expectCompletion(services);
+        const withPrefix = [...lines, 'e<|>lse:', '  return true'].join('\n');
+        await completion({ text: withPrefix, index: 0, expectedItems: ['else'] });
+        const withoutPrefix = [...lines, '<|>else:', '  return true'].join('\n');
+        await completion({ text: withoutPrefix, index: 0, expectedItems: ['else'] });
+    });
+
+    test('offers statements inside of a block after a deeper indented blank line', async () => {
+        const services = await createIndentationAwareServices(sampleGrammar);
+        const completion = expectCompletion(services);
+        const text = ['if true:', '  return false', '    ', '  <|>r<|>eturn true'].join('\n');
+        await completion({ text, index: 0, expectedItems: ['if', 'return'] });
+        await completion({ text, index: 1, expectedItems: ['return'] });
+    });
+
+    test('offers else on a blank line without indentation in the middle of a block', async () => {
+        // Whatever is inserted at the cursor has no indentation, so it is located behind the block
+        const services = await createIndentationAwareServices(sampleGrammar);
+        const completion = expectCompletion(services);
+        const text = ['if true:', '  return false', '<|>', '  return true'].join('\n');
+        await completion({ text, index: 0, expectedItems: ['else'] });
+    });
+
+    test('offers statements after a block header only if the cursor is indented', async () => {
+        const services = await createIndentationAwareServices(sampleGrammar);
+        const completion = expectCompletion(services);
+        const indented = ['if true:', '    ', '  <|>'].join('\n');
+        await completion({ text: indented, index: 0, expectedItems: ['if', 'return'] });
+        // Without indentation, the cursor is not located inside of the block, independent of previous blank lines
+        const notIndented = ['if true:', '<|>'].join('\n');
+        await completion({ text: notIndented, index: 0, expectedItems: [] });
+        const notIndentedAfterBlankLine = ['if true:', '    ', '<|>'].join('\n');
+        await completion({ text: notIndentedAfterBlankLine, index: 0, expectedItems: [] });
+    });
+
+    test.each([
+        ['a deeper indented comment before the block', ['if true:', '    // note', '  return false', 'else:', '  return true']],
+        ['a shallower indented comment inside the block', ['if true:', '    return false', '  // note', 'else:', '    return true']],
+        ['a shallower line of whitespace inside the block', ['if true:', '    return false', '  ', 'else:', '    return true']],
+    ])('ignores the indentation of %s', async (_, lines) => {
+        const parser = await getParser(sampleGrammar + String.raw`hidden terminal SL_COMMENT: /\/\/[^\r\n]*/;`);
+        const result = parser.parse(lines.join('\n'));
+        expect(result.lexerErrors).toHaveLength(0);
+        expect(result.lexerReport?.diagnostics).toEqual([]);
+        expect(result.parserErrors).toHaveLength(0);
+        expect(result.value).toMatchObject({
+            $type: 'If',
+            thenBlock: [{ $type: 'Return', value: false }],
+            elseBlock: [{ $type: 'Return', value: true }]
+        });
+    });
 
     test('should parse correctly indented code', async () => {
         const parser = await getParser(sampleGrammar);
