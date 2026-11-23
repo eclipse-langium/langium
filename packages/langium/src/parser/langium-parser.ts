@@ -140,6 +140,13 @@ export abstract class AbstractLangiumParser implements BaseParser {
     protected allRules = new Map<string, RuleResult>();
     protected mainRule!: RuleResult;
 
+    /**
+     * Whether `finalize()` has completed Chevrotain's self-analysis. Rule bodies only run while Chevrotain records
+     * the grammar during that self-analysis, or while parsing afterwards, so this alone answers `isRecording()`.
+     * Subclasses that override `finalize()` must call `super.finalize()`.
+     */
+    private selfAnalysisDone = false;
+
     constructor(services: LangiumCoreServices, incomplete: boolean) {
         this.lexer = services.parser.Lexer;
         const tokens = this.lexer.definition;
@@ -185,7 +192,7 @@ export abstract class AbstractLangiumParser implements BaseParser {
     }
 
     isRecording(): boolean {
-        return this.wrapper.IS_RECORDING;
+        return !this.selfAnalysisDone;
     }
 
     get unorderedGroups(): Map<string, boolean[]> {
@@ -197,7 +204,10 @@ export abstract class AbstractLangiumParser implements BaseParser {
     }
 
     finalize(): void {
+        // Reset first: a repeated self-analysis records the grammar again.
+        this.selfAnalysisDone = false;
         this.wrapper.wrapSelfAnalysis();
+        this.selfAnalysisDone = true;
     }
 }
 
@@ -842,10 +852,6 @@ class ChevrotainWrapper extends EmbeddedActionsParser {
                 }),
             ...config,
         });
-    }
-
-    get IS_RECORDING(): boolean {
-        return this.RECORDING_PHASE;
     }
 
     DEFINE_RULE(name: string, impl: RuleImpl, config?: IRuleConfig<any>): RuleResult {

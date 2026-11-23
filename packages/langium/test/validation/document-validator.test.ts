@@ -4,12 +4,12 @@
  * terms of the MIT License, which is available in the project root.
  ******************************************************************************/
 
-import { AstUtils, type AstNode, type ValidationAcceptor, type ValidationChecks } from 'langium';
+import { AstUtils, DefaultDocumentValidator, DefaultLangiumProfiler, URI, type AstNode, type LangiumCoreServices, type ValidationAcceptor, type ValidationChecks, type ValidationOptions } from 'langium';
 import { createServicesForGrammar } from 'langium/grammar';
 import type { LangiumServices } from 'langium/lsp';
 import type { ValidationHelperOptions, ValidationResult } from 'langium/test';
 import { validationHelper } from 'langium/test';
-import { beforeAll, describe, expect, test } from 'vitest';
+import { beforeAll, describe, expect, test, vi } from 'vitest';
 import { Position, Range } from 'vscode-languageserver';
 
 // Related to https://github.com/eclipse-langium/langium/issues/571
@@ -334,6 +334,51 @@ describe('Register Before/AfterDocument logic for validations with state', () =>
             expect(diagnostics.filter(d => d.severity === 1)).toHaveLength(1); // 1 error
             expect(diagnostics.filter(d => d.severity === 2)).toHaveLength(1); // 1 warning
         });
+    });
+
+});
+
+describe('Profiled validation with nodes that are not validated', () => {
+
+    const grammar = `grammar ProfiledSkip
+
+    entry Model: items+=Item*;
+    Item: 'item' name=ID;
+
+    hidden terminal WS: /\\s+/;
+    terminal ID: /[_a-zA-Z][\\w_]*/;
+    `;
+
+    /** Skips the checks of the item named `skipped`, but still validates its children. */
+    class SkippingDocumentValidator extends DefaultDocumentValidator {
+        protected override validateSingleNodeOptions(node: AstNode, options: ValidationOptions) {
+            const result = super.validateSingleNodeOptions(node, options);
+            return (node as AstNode & { name?: string }).name === 'skipped' ? { ...result, validateNode: false } : result;
+        }
+    }
+
+    test('Reports the diagnostics of the other nodes and records the profiling task', async () => {
+        const profiler = new DefaultLangiumProfiler(new Set(['validating']));
+        const services = await createServicesForGrammar({
+            grammar,
+            module: { validation: { DocumentValidator: (s: LangiumCoreServices) => new SkippingDocumentValidator(s) } },
+            sharedModule: { profilers: { LangiumProfiler: () => profiler } }
+        });
+        services.validation.ValidationRegistry.register({
+            Item: (item: AstNode & { name: string }, accept: ValidationAcceptor) => accept('warning', `item ${item.name}`, { node: item })
+        });
+        const consoleError = vi.spyOn(console, 'error').mockImplementation(() => undefined);
+        try {
+            const document = services.shared.workspace.LangiumDocumentFactory.fromString('item a item skipped item b', URI.parse('memory:/profiled-skip.txt'));
+            services.shared.workspace.LangiumDocuments.addDocument(document);
+            await services.shared.workspace.DocumentBuilder.build([document], { validation: true });
+
+            expect(document.diagnostics?.map(d => d.message)).toEqual(['item a', 'item b']);
+            expect(consoleError).not.toHaveBeenCalled();
+            expect(profiler.getRecords('validating').toArray()).toHaveLength(1);
+        } finally {
+            consoleError.mockRestore();
+        }
     });
 
 });
