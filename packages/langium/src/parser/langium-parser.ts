@@ -234,8 +234,8 @@ export interface ParserOptions {
      * This option is only honoured if the language's {@link ValueConverter} declares
      * {@link ValueConverter.supportsCstFreeConversion}, since without a CST its `convert` method
      * receives a stand-in node that only carries `grammarSource`. Otherwise the CST is built anyway,
-     * without notice. Callers can check whether a CST was built by checking `$cstNode` on the
-     * parse result's root node.
+     * without notice. This only depends on the language, so callers can check it before parsing,
+     * with `services.parser.ValueConverter.supportsCstFreeConversion === true`.
      */
     buildCst?: boolean
 }
