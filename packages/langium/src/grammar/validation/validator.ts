@@ -600,13 +600,23 @@ export class LangiumGrammarValidator {
             }
         } else if (ast.isUnorderedGroup(element)) {
             // Every element of an unordered group can be parsed first, so the calls must not be short-circuited
-            nullable = true;
+            let allNullable = true;
             for (const child of element.elements) {
                 const childNullable = this.collectLeftmostCalls(child, nullableRules, calls);
-                nullable &&= childNullable;
+                allNullable &&= childNullable;
             }
+            // The parser wraps unordered groups with more than one element in a `*` repetition (see `buildUnorderedGroup`),
+            // so such a group can always be skipped. A single-element group is parsed like its element.
+            nullable = element.elements.length > 1 || allNullable;
         } else if (ast.isAssignment(element)) {
             nullable = this.collectLeftmostCalls(element.terminal, nullableRules, calls);
+        } else if (ast.isCrossReference(element)) {
+            // The parser calls the data type rule of the cross-reference (explicit or inferred from the name assignment of
+            // the target type, see `buildCrossReference`), so the cross-reference is nullable if that rule is nullable.
+            // Data type rules can only call other data type rules and therefore never lead back to the calling rule,
+            // so their calls are not collected.
+            const terminal = element.terminal ?? (element.type.ref && findNameAssignment(element.type.ref)?.terminal);
+            nullable = this.collectLeftmostCalls(terminal, nullableRules, []);
         } else if (ast.isAction(element)) {
             nullable = true;
         } else {

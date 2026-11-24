@@ -2422,7 +2422,8 @@ describe('Left recursion validation', () => {
         ['optional assignment', "name=ID? A 'a'"],
         ['action', "{infer X} A 'a'"],
         ['action with assignment', "{infer X} name=ID? A 'a'"],
-        ['nested optional elements', "('x'? ('y' | 'z')?) A 'a'"]
+        ['nested optional elements', "('x'? ('y' | 'z')?) A 'a'"],
+        ['unordered group', "(x='x' & y='y') A 'a'"]
     ])('Left recursion after %s', async (_, definition) => {
         const validationResult = await validate(`
         grammar Test
@@ -2430,6 +2431,37 @@ describe('Left recursion validation', () => {
         terminal ID: /[a-zA-Z]+/;
         `);
         expectLeftRecursion(validationResult, ['A', 'A']);
+    });
+
+    test('Left recursion after cross-reference with nullable data type rule', async () => {
+        const validationResult = await validate(`
+        grammar Test
+        entry A: ref=[A:OptName] A 'a';
+        OptName returns string: ID?;
+        terminal ID: /[a-zA-Z]+/;
+        `);
+        expectLeftRecursion(validationResult, ['A', 'A']);
+    });
+
+    test('Left recursion after cross-reference with inferred nullable data type rule', async () => {
+        const validationResult = await validate(`
+        grammar Test
+        entry A: ref=[N] A 'a';
+        N: name=OptName;
+        OptName returns string: ID?;
+        terminal ID: /[a-zA-Z]+/;
+        `);
+        expectLeftRecursion(validationResult, ['A', 'A']);
+    });
+
+    test('No left recursion after cross-reference with non-nullable data type rule', async () => {
+        const validationResult = await validate(`
+        grammar Test
+        entry A: ref=[A:Name] A 'a';
+        Name returns string: ID;
+        terminal ID: /[a-zA-Z]+/;
+        `);
+        expect(getLeftRecursionDiagnostics(validationResult)).toHaveLength(0);
     });
 
     test('Left recursion after guarded group', async () => {
