@@ -33,8 +33,7 @@ export const StatemachineModelGrammar = (): Grammar => loadedStatemachineModelGr
                 "$ref": "#/rules@6"
               },
               "arguments": []
-            },
-            "$comment": "/** The name of the machine */"
+            }
           },
           {
             "$type": "Group",
@@ -54,8 +53,7 @@ export const StatemachineModelGrammar = (): Grammar => loadedStatemachineModelGr
                   },
                   "arguments": []
                 },
-                "cardinality": "+",
-                "$comment": "/** The list of recognized event names */"
+                "cardinality": "+"
               }
             ],
             "cardinality": "?"
@@ -98,8 +96,7 @@ export const StatemachineModelGrammar = (): Grammar => loadedStatemachineModelGr
               },
               "deprecatedSyntax": false,
               "isMulti": false
-            },
-            "$comment": "/** The starting state for the machine */"
+            }
           },
           {
             "$type": "Assignment",
@@ -112,14 +109,12 @@ export const StatemachineModelGrammar = (): Grammar => loadedStatemachineModelGr
               },
               "arguments": []
             },
-            "cardinality": "*",
-            "$comment": "/** Definitions of available states */"
+            "cardinality": "*"
           }
         ]
       },
       "fragment": false,
-      "parameters": [],
-      "$comment": "/** A textual representation of a state machine */"
+      "parameters": []
     },
     {
       "$type": "ParserRule",
@@ -138,8 +133,7 @@ export const StatemachineModelGrammar = (): Grammar => loadedStatemachineModelGr
       },
       "entry": false,
       "fragment": false,
-      "parameters": [],
-      "$comment": "/** An event is the trigger for a transition */"
+      "parameters": []
     },
     {
       "$type": "ParserRule",
@@ -225,8 +219,7 @@ export const StatemachineModelGrammar = (): Grammar => loadedStatemachineModelGr
               },
               "arguments": []
             },
-            "cardinality": "*",
-            "$comment": "/** The transitions to other states that can take place from the current one */"
+            "cardinality": "*"
           },
           {
             "$type": "Keyword",
@@ -236,8 +229,7 @@ export const StatemachineModelGrammar = (): Grammar => loadedStatemachineModelGr
       },
       "entry": false,
       "fragment": false,
-      "parameters": [],
-      "$comment": "/** A description of the status of a system */"
+      "parameters": []
     },
     {
       "$type": "ParserRule",
@@ -256,8 +248,7 @@ export const StatemachineModelGrammar = (): Grammar => loadedStatemachineModelGr
               },
               "deprecatedSyntax": false,
               "isMulti": false
-            },
-            "$comment": "/** The event triggering the transition */"
+            }
           },
           {
             "$type": "Keyword",
@@ -274,16 +265,13 @@ export const StatemachineModelGrammar = (): Grammar => loadedStatemachineModelGr
               },
               "deprecatedSyntax": false,
               "isMulti": false
-            },
-            "$comment": "/** The target state */"
+            }
           }
-        ],
-        "$comment": "/** The event triggering the transition */"
+        ]
       },
       "entry": false,
       "fragment": false,
-      "parameters": [],
-      "$comment": "/** A change from one state to another */"
+      "parameters": []
     },
     {
       "$type": "TerminalRule",

@@ -29,12 +29,15 @@ export interface LangiumConfig {
     /** Mode used to generate optimized files for development or production environments */
     mode?: 'development' | 'production';
     /**
-     * Whether to keep the doc comments of grammar elements in the serialized grammar, as their `$comment` property.
-     * `true` by default. At runtime, these comments are read by the hover on keywords and by any code that asks the
-     * `CommentProvider` for the comment of a grammar element. Set to `false` to make the generated grammar module
-     * smaller when nothing reads them. Does not affect the doc comments in the generated AST types.
+     * Which doc comments of grammar elements to keep in the serialized grammar, as their `$comment` property:
+     * - `'keywords'` (default): only the comments of keywords, which the hover on keywords reads at runtime;
+     * - `'all'`: the comments of all grammar elements, for code that asks the `CommentProvider` for the comment of
+     *   another grammar element, such as a rule or an assignment;
+     * - `'none'`: no comments, for the smallest grammar module.
+     *
+     * Does not affect the doc comments in the generated AST types.
      */
-    serializeGrammarComments?: boolean
+    serializeGrammarComments?: 'all' | 'keywords' | 'none'
     /** Options for grammar validation */
     validation?: LangiumGrammarValidationOptions
     /** Configure the chevrotain parser for all languages */
