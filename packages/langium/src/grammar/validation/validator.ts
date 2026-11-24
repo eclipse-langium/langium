@@ -255,7 +255,7 @@ export class LangiumGrammarValidator {
     // ensures for the set of transitively imported grammars that all their resulting types have names which are different compared to the given input grammar name
     checkUniqueTypeAndGrammarNames(inputGrammar: ast.Grammar, accept: ValidationAcceptor): void {
         // Collect all relevant grammars. Grammars without name are ignored.
-        const allGrammars = [inputGrammar, ...resolveTransitiveImports(this.documents, inputGrammar)].filter(g => g.name);
+        const allGrammars = [ inputGrammar, ...resolveTransitiveImports(this.documents, inputGrammar) ].filter(g => g.name);
 
         // Try to find types which are declared in or inferred by the current grammar and all its transitively imported grammars, which have the same name as one of the grammars.
         //  Reuse precomputed types in order not to `streamAllContents` of all grammars to improve performance.
@@ -1449,7 +1449,7 @@ export class LangiumGrammarValidator {
         if (ast.isType(reference.type.ref) && ast.isUnionType(reference.type.ref.type)) {
             const errors = checkTypeUnionContainsOnlyParseRules(reference.type.ref.type);
             if (errors.length > 0) {
-                accept('error', `Cross-reference on type union is only valid if all alternatives are AST nodes. ${errors.join(', ')} ${errors.length > 1 ? 'are' : 'is'} not ${errors.length > 1 ? '' : 'an '}AST node${errors.length > 1 ? 's' : ''}.`, { node: reference, property: 'type' });
+                accept('error', `Cross-reference on type union is only valid if all alternatives are AST nodes. ${errors.join(', ')} ${errors.length > 1 ? 'are' : 'is'} not ${errors.length > 1 ? '' : 'an '}AST node${errors.length > 1 ? 's':''}.`, { node: reference, property: 'type' });
             }
         }
     }
@@ -1577,7 +1577,7 @@ function checkTypeUnionContainsOnlyParseRules(type: ast.UnionType): string[] {
     type.types.forEach(type => {
         if (ast.isSimpleType(type)) {
             if (type.typeRef?.ref) {
-                if (ast.isType(type.typeRef.ref)) {
+                if(ast.isType(type.typeRef.ref)) {
                     if (ast.isUnionType(type.typeRef.ref.type)) {
                         errors.push(...checkTypeUnionContainsOnlyParseRules(type.typeRef.ref.type));
                     } else {
