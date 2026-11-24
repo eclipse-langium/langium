@@ -21,6 +21,13 @@ export interface ValueConverter {
 
 export type ValueType = string | number | boolean | bigint | Date;
 
+/**
+ * The conversion that `DefaultValueConverter.runConverter` applies to the values of a rule:
+ * by rule name (`INT`, `STRING` and `ID`, case-insensitive), otherwise by the rule's type (case-insensitive),
+ * or none.
+ */
+export type ValueConverterKind = 'INT' | 'STRING' | 'ID' | 'number' | 'boolean' | 'bigint' | 'date' | 'none';
+
 export class DefaultValueConverter implements ValueConverter {
 
     convert(input: string, cstNode: CstNode): ValueType {
@@ -40,17 +47,57 @@ export class DefaultValueConverter implements ValueConverter {
 
     // eslint-disable-next-line @typescript-eslint/no-unused-vars
     protected runConverter(rule: AbstractRule, input: string, cstNode: CstNode): ValueType {
-        switch (rule.name.toUpperCase()) {
+        switch (this.getConverterKind(rule)) {
             case 'INT': return ValueConverter.convertInt(input);
             case 'STRING': return ValueConverter.convertString(input);
             case 'ID': return ValueConverter.convertID(input);
-        }
-        switch (getRuleType(rule)?.toLowerCase()) {
             case 'number': return ValueConverter.convertNumber(input);
             case 'boolean': return ValueConverter.convertBoolean(input);
             case 'bigint': return ValueConverter.convertBigint(input);
             case 'date': return ValueConverter.convertDate(input);
-            default: return input;
+            case 'none': return input;
+        }
+    }
+
+    /**
+     * Caches the converter kind per rule. Computing it allocates new strings (`toUpperCase`, `toLowerCase`),
+     * which would otherwise happen for every converted token, although the result only depends on the rule.
+     *
+     * This assumes the grammar is fully linked before the first conversion, as it is when the parser is built:
+     * `getRuleType` follows a parser rule's `returnType` reference, and an unresolved reference at that point would
+     * cache `'none'` for good.
+     */
+    protected readonly converterKinds = new Map<AbstractRule, ValueConverterKind>();
+
+    /**
+     * The converter kind of `rule`, computed by {@link computeConverterKind} on first use and cached in
+     * {@link converterKinds}.
+     */
+    protected getConverterKind(rule: AbstractRule): ValueConverterKind {
+        let kind = this.converterKinds.get(rule);
+        if (kind === undefined) {
+            kind = this.computeConverterKind(rule);
+            this.converterKinds.set(rule, kind);
+        }
+        return kind;
+    }
+
+    /**
+     * Decides how the values of `rule` are converted: by rule name (`INT`, `STRING`, `ID`, case-insensitive)
+     * first, then by the rule's type (case-insensitive), otherwise not at all.
+     */
+    protected computeConverterKind(rule: AbstractRule): ValueConverterKind {
+        switch (rule.name.toUpperCase()) {
+            case 'INT': return 'INT';
+            case 'STRING': return 'STRING';
+            case 'ID': return 'ID';
+        }
+        switch (getRuleType(rule)?.toLowerCase()) {
+            case 'number': return 'number';
+            case 'boolean': return 'boolean';
+            case 'bigint': return 'bigint';
+            case 'date': return 'date';
+            default: return 'none';
         }
     }
 }

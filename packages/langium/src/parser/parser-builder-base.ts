@@ -37,6 +37,43 @@ type Predicate = (args: Args) => boolean;
 
 type Method = (args: Args) => void;
 
+/**
+ * The arguments of a rule call without arguments. Shared by all such calls, so it must not be modified.
+ */
+const EMPTY_ARGS: Args = Object.freeze({});
+
+/**
+ * Holds the rule arguments of the current invocation of a grammar site, see {@link withArgsSlot}.
+ */
+interface ArgsSlot {
+    args: Args
+}
+
+/**
+ * Creates the method of a grammar site (e.g. an alternatives or a `*` element) whose Chevrotain options
+ * (`ALT`, `DEF` and `GATE` callbacks) are built only once instead of on every invocation.
+ *
+ * The callbacks read the rule arguments from `slot.args`. The returned method stores its arguments in the slot
+ * for the duration of the call. This is sufficient because Chevrotain invokes these callbacks synchronously
+ * within the call. Afterwards, the previous value is restored: if the same site is entered recursively,
+ * e.g. through a rule call inside a `*` loop, the outer invocation continues with its own arguments.
+ *
+ * @param build Receives the slot and returns the function that runs the grammar site.
+ */
+function withArgsSlot(build: (slot: ArgsSlot) => () => void): Method {
+    const slot: ArgsSlot = { args: EMPTY_ARGS };
+    const run = build(slot);
+    return (args) => {
+        const previous = slot.args;
+        slot.args = args;
+        try {
+            run();
+        } finally {
+            slot.args = previous;
+        }
+    };
+}
+
 export function createParser<T extends BaseParser>(grammar: Grammar, parser: T, tokens: TokenTypeDictionary): T {
     const parserContext: ParserContext = {
         parser,
@@ -122,16 +159,19 @@ function buildInfixRule(ctx: ParserContext, rule: InfixRule): Method {
         ALT: () => ctx.parser.consume(index, token, operatorAssignment)
     }));
     let subrule: Rule;
-    return (args) => {
-        subrule ??= getRule(ctx, expressionRule);
-        ctx.parser.subrule(0, subrule, false, part1Assignment, args);
-        ctx.parser.many(0, {
+    return withArgsSlot(slot => {
+        const many = {
             DEF: () => {
                 ctx.parser.alternatives(0, orAlts);
-                ctx.parser.subrule(1, subrule, false, part2Assignment, args);
+                ctx.parser.subrule(1, subrule, false, part2Assignment, slot.args);
             }
-        });
-    };
+        };
+        return () => {
+            subrule ??= getRule(ctx, expressionRule);
+            ctx.parser.subrule(0, subrule, false, part1Assignment, slot.args);
+            ctx.parser.many(0, many);
+        };
+    });
 }
 
 function buildElement(ctx: RuleContext, element: AbstractElement, ignoreGuard = false): Method {
@@ -171,7 +211,7 @@ function buildRuleCall(ctx: RuleContext, ruleCall: RuleCall): Method {
     if (isAbstractParserRule(rule)) {
         const idx = ctx.subrule++;
         const fragment = isParserRule(rule) && rule.fragment;
-        const predicate = ruleCall.arguments.length > 0 ? buildRuleCallPredicate(rule, ruleCall.arguments) : () => ({});
+        const predicate = ruleCall.arguments.length > 0 ? buildRuleCallPredicate(rule, ruleCall.arguments) : () => EMPTY_ARGS;
         let subrule: Rule;
         return (args) => {
             subrule ??= getRule(ctx, rule);
@@ -267,16 +307,19 @@ function buildAlternatives(ctx: RuleContext, alternatives: Alternatives): Method
         }
 
         const idx = ctx.or++;
-        return (args) => ctx.parser.alternatives(idx, methods.map(method => {
-            const alt: IOrAlt<unknown> = {
-                ALT: () => method.ALT(args)
-            };
-            const gate = method.GATE;
-            if (gate) {
-                alt.GATE = () => gate(args);
-            }
-            return alt;
-        }));
+        return withArgsSlot(slot => {
+            const alts = methods.map(method => {
+                const alt: IOrAlt<unknown> = {
+                    ALT: () => method.ALT(slot.args)
+                };
+                const gate = method.GATE;
+                if (gate) {
+                    alt.GATE = () => gate(slot.args);
+                }
+                return alt;
+            });
+            return () => ctx.parser.alternatives(idx, alts);
+        });
     }
 }
 
@@ -305,36 +348,39 @@ function buildUnorderedGroup(ctx: RuleContext, group: UnorderedGroup): Method {
         const stackId = lParser.getRuleStack().join('-');
         return `uGroup_${groupIdx}_${stackId}`;
     };
-    const alternatives: Method = (args) => ctx.parser.alternatives(orIdx, methods.map((method, idx) => {
-        const alt: IOrAlt<unknown> = { ALT: () => true };
+    const alternatives = withArgsSlot(slot => {
         const parser = ctx.parser;
-        alt.ALT = () => {
-            method.ALT(args);
-            if (!parser.isRecording()) {
-                const key = idFunc(orIdx, parser);
-                if (!parser.unorderedGroups.get(key)) {
-                    // init after clear state
-                    parser.unorderedGroups.set(key, []);
+        const alts = methods.map((method, idx) => {
+            const alt: IOrAlt<unknown> = { ALT: () => true };
+            alt.ALT = () => {
+                method.ALT(slot.args);
+                if (!parser.isRecording()) {
+                    const key = idFunc(orIdx, parser);
+                    if (!parser.unorderedGroups.get(key)) {
+                        // init after clear state
+                        parser.unorderedGroups.set(key, []);
+                    }
+                    const groupState = parser.unorderedGroups.get(key)!;
+                    if (typeof groupState?.[idx] === 'undefined') {
+                        // Not accessed yet
+                        groupState[idx] = true;
+                    }
                 }
-                const groupState = parser.unorderedGroups.get(key)!;
-                if (typeof groupState?.[idx] === 'undefined') {
-                    // Not accessed yet
-                    groupState[idx] = true;
-                }
-            }
-        };
-        const gate = method.GATE;
-        if (gate) {
-            alt.GATE = () => gate(args);
-        } else {
-            alt.GATE = () => {
-                const trackedAlternatives = parser.unorderedGroups.get(idFunc(orIdx, parser));
-                const allow = !trackedAlternatives?.[idx];
-                return allow;
             };
-        }
-        return alt;
-    }));
+            const gate = method.GATE;
+            if (gate) {
+                alt.GATE = () => gate(slot.args);
+            } else {
+                alt.GATE = () => {
+                    const trackedAlternatives = parser.unorderedGroups.get(idFunc(orIdx, parser));
+                    const allow = !trackedAlternatives?.[idx];
+                    return allow;
+                };
+            }
+            return alt;
+        });
+        return () => parser.alternatives(orIdx, alts);
+    });
     const wrapped = wrap(ctx, getGuardCondition(group), alternatives, '*');
     return (args) => {
         wrapped(args);
@@ -346,7 +392,11 @@ function buildUnorderedGroup(ctx: RuleContext, group: UnorderedGroup): Method {
 
 function buildGroup(ctx: RuleContext, group: Group): Method {
     const methods = group.elements.map(e => buildElement(ctx, e));
-    return (args) => methods.forEach(method => method(args));
+    return (args) => {
+        for (const method of methods) {
+            method(args);
+        }
+    };
 }
 
 function getGuardCondition(element: AbstractElement): Condition | undefined {
@@ -405,16 +455,19 @@ function wrap(ctx: RuleContext, guard: Condition | undefined, method: Method, ca
     if (!cardinality) {
         if (gate) {
             const idx = ctx.or++;
-            return (args) => ctx.parser.alternatives(idx, [
-                {
-                    ALT: () => method(args),
-                    GATE: () => gate(args)
-                },
-                {
-                    ALT: EMPTY_ALT(),
-                    GATE: () => !gate(args)
-                }
-            ]);
+            return withArgsSlot(slot => {
+                const alts = [
+                    {
+                        ALT: () => method(slot.args),
+                        GATE: () => gate(slot.args)
+                    },
+                    {
+                        ALT: EMPTY_ALT(),
+                        GATE: () => !gate(slot.args)
+                    }
+                ];
+                return () => ctx.parser.alternatives(idx, alts);
+            });
         } else {
             return method;
         }
@@ -422,9 +475,12 @@ function wrap(ctx: RuleContext, guard: Condition | undefined, method: Method, ca
 
     if (cardinality === '*') {
         const idx = ctx.many++;
-        return (args) => ctx.parser.many(idx, {
-            DEF: () => method(args),
-            GATE: gate ? () => gate(args) : undefined
+        return withArgsSlot(slot => {
+            const options = {
+                DEF: () => method(slot.args),
+                GATE: gate ? () => gate(slot.args) : undefined
+            };
+            return () => ctx.parser.many(idx, options);
         });
     } else if (cardinality === '+') {
         const idx = ctx.many++;
@@ -434,28 +490,38 @@ function wrap(ctx: RuleContext, guard: Condition | undefined, method: Method, ca
             // We combine it with an empty alternative
             // If the condition returns true, it needs to parse at least a single iteration
             // If its false, it is not allowed to parse anything
-            return (args) => ctx.parser.alternatives(orIdx, [
-                {
-                    ALT: () => ctx.parser.atLeastOne(idx, {
-                        DEF: () => method(args)
-                    }),
-                    GATE: () => gate(args)
-                },
-                {
-                    ALT: EMPTY_ALT(),
-                    GATE: () => !gate(args)
-                }
-            ]);
+            return withArgsSlot(slot => {
+                const options = {
+                    DEF: () => method(slot.args)
+                };
+                const alts = [
+                    {
+                        ALT: () => ctx.parser.atLeastOne(idx, options),
+                        GATE: () => gate(slot.args)
+                    },
+                    {
+                        ALT: EMPTY_ALT(),
+                        GATE: () => !gate(slot.args)
+                    }
+                ];
+                return () => ctx.parser.alternatives(orIdx, alts);
+            });
         } else {
-            return (args) => ctx.parser.atLeastOne(idx, {
-                DEF: () => method(args),
+            return withArgsSlot(slot => {
+                const options = {
+                    DEF: () => method(slot.args)
+                };
+                return () => ctx.parser.atLeastOne(idx, options);
             });
         }
     } else if (cardinality === '?') {
         const idx = ctx.optional++;
-        return (args) => ctx.parser.optional(idx, {
-            DEF: () => method(args),
-            GATE: gate ? () => gate(args) : undefined
+        return withArgsSlot(slot => {
+            const options = {
+                DEF: () => method(slot.args),
+                GATE: gate ? () => gate(slot.args) : undefined
+            };
+            return () => ctx.parser.optional(idx, options);
         });
     } else {
         assertUnreachable(cardinality);

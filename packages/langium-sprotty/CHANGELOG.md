@@ -9,11 +9,6 @@
 * Diagnostic messages are now HTML-escaped in the hover popup, and multiple messages are no longer separated by stray commas ([#2258](https://github.com/eclipse-langium/langium/pull/2258)).
 * Update `vscode-languageserver` to 11.0 ([#2249](https://github.com/eclipse-langium/langium/pull/2249)).
 
-## v4.4.1 (Nov. 2026)
-
-* Diagnostic messages are now HTML-escaped in the hover popup, and multiple messages are no longer separated by stray commas ([#2258](https://github.com/eclipse-langium/langium/pull/2258)).
-* Update `vscode-languageserver` to 11.0 ([#2249](https://github.com/eclipse-langium/langium/pull/2249)).
-
 ## v4.4.0 (Sep. 2026)
 
 * Update the `langium` dependency to 4.4.0.

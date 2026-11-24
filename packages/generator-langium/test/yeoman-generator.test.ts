@@ -344,8 +344,8 @@ const PACKAGE_JSON_EXPECTATION_CLI: Record<string, any> = {
     },
     dependencies: {
         'hello-world-language': '0.0.1',
-        'chalk': '~5.6.2',
-        'commander': '~15.0.0'
+        'chalk': '~6.0.1',
+        'commander': '~15.1.0'
     }
 };
 
@@ -393,7 +393,7 @@ const PACKAGE_JSON_EXPECTATION_EXTENSION: Record<string, any> = {
     },
     devDependencies: {
         '@types/vscode': '~1.120.0',
-        'concurrently': '~10.0.6',
+        'concurrently': '~10.0.7',
         'esbuild': '0.28.2'
     }
 };

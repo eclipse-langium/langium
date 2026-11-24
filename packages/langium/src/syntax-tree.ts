@@ -229,11 +229,19 @@ export abstract class AbstractAstReflection implements AstReflection {
         if (existing !== undefined) {
             return existing;
         } else {
-            const metaData = this.types[subtype];
-            const result = metaData ? metaData.superTypes.some(s => this.isSubtype(s, supertype)) : false;
+            const result = this.isSubtypeViaSuperTypes(subtype, supertype);
             nested[supertype] = result;
             return result;
         }
+    }
+
+    // The cache-miss path lives in its own method so that `isSubtype` contains no closure.
+    // The closure object itself is only created when the miss path runs, but V8 allocates the heap context for the
+    // variables a closure captures whenever the enclosing function is entered, so a closure in `isSubtype` would
+    // cost that context allocation even on the cache hits that return before reaching it.
+    private isSubtypeViaSuperTypes(subtype: string, supertype: string): boolean {
+        const metaData = this.types[subtype];
+        return metaData ? metaData.superTypes.some(s => this.isSubtype(s, supertype)) : false;
     }
 
     getAllSubTypes(type: string): string[] {
