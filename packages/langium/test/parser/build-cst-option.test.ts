@@ -137,14 +137,18 @@ const infixInputs = [
 
 // Indentation-aware lexing: DEDENT tokens are valid but empty. A subrule that consumes only empty tokens at one
 // offset has an empty CST node and is not assigned. `More` runs an assigned action right after an empty token.
+// In `PadClose`, an empty composite node (see the empty actions below) starts the span at offset 0, before a DEDENT.
 const indentationGrammar = `
 grammar Indentation
 entry Model: (blocks+=Block)*;
-Block: 'block' name=ID ':' INDENT (items+=Item)* close=Close;
+Block: 'block' name=ID ':' INDENT (items+=Item)* close=Close
+    | 'pad' name=ID ':' INDENT (items+=Item)* close=PadClose;
 Item: Block | Leaf;
 Leaf: name=ID;
 Close: {infer Close} DEDENT (more=More)?;
 More: {infer More} DEDENT ({infer After.before=current} label=ID)?;
+PadClose: {infer PadClose} Empty DEDENT;
+Empty: {infer Empty} {infer Wrap.inner=current};
 terminal ID: /[a-z]+/;
 hidden terminal SL_COMMENT: /\\/\\/[^\\n\\r]*/;
 hidden terminal NL: /[\\r\\n]+/;
@@ -164,6 +168,29 @@ const indentationInputs = [
     'block a:\n    block b:\n        x\n    // note\nblock c:\n    y\n',
     // an assigned action after a DEDENT
     'block a:\n    block b:\n        x\nq\n',
+    // an empty composite node before a DEDENT
+    'pad a:\n    x\nblock b:\n    pad c:\n        y\n',
+];
+
+// An assigned action that runs before its rule consumed any token: the CST-building parser keeps the rule's empty
+// composite node below the action's node, and an empty composite node has offset 0 and end 0. So it can end the
+// span of the enclosing subrule call at 0 ('item'), and start it at 0. Only an empty node is not assigned ('only').
+const emptyActionsGrammar = `
+grammar EmptyActions
+entry Model: (items+=Item)*;
+Item: 'item' name=ID Empty
+    | 'only' e=Empty
+    | 'tail' name=ID Tail;
+Empty: {infer Empty} {infer Wrap.inner=current};
+Tail: {infer Tail} {infer TailWrap.inner=current} label=ID;
+terminal ID: /[a-z]+/;
+hidden terminal WS: /\\s+/;
+`;
+
+const emptyActionsInputs = [
+    'item x',
+    'tail x y item z only',
+    'only tail x y item',
 ];
 
 // A lexer may also emit empty tokens at different offsets, with only hidden text between them. Then the composite
@@ -336,7 +363,7 @@ interface Corpus {
 
 describe('parse with buildCst: false', () => {
     const parsers = new Map<string, LangiumParser>();
-    const grammars: Record<string, string> = { Values: valuesGrammar, Expressions: expressionGrammar, Infix: infixGrammar };
+    const grammars: Record<string, string> = { Values: valuesGrammar, Expressions: expressionGrammar, Infix: infixGrammar, EmptyActions: emptyActionsGrammar };
     const grammarFiles = ['langium-grammar.langium', 'langium-types.langium'].map(file =>
         readFileSync(fileURLToPath(new URL(`../../src/grammar/${file}`, import.meta.url)), 'utf-8'));
 
@@ -369,6 +396,7 @@ describe('parse with buildCst: false', () => {
         { name: 'Infix', parser: () => parsers.get('Infix')!, inputs: infixInputs },
         { name: 'Indentation', parser: () => parsers.get('Indentation')!, inputs: indentationInputs },
         { name: 'Markers', parser: () => parsers.get('Markers')!, inputs: markerInputs },
+        { name: 'EmptyActions', parser: () => parsers.get('EmptyActions')!, inputs: emptyActionsInputs },
         // The grammar language: datatype rules, actions, cross-references, string and regex conversion
         { name: 'Langium', parser: () => parsers.get('Langium')!, inputs: [...grammarFiles, valuesGrammar, expressionGrammar, infixGrammar] }
     ];
@@ -481,6 +509,12 @@ describe('parse with buildCst: false', () => {
             // Empty MARKs at one offset: not assigned; at two offsets: assigned
             expect(items(markerInputs[0])[0].marks).toBeUndefined();
             expect(items(markerInputs[1]).map(item => item.marks?.$type)).toEqual(['Marks', 'Marks', undefined]);
+            // An empty composite node at offset 0 before a DEDENT: assigned
+            expect(blocks(indentationInputs[5]).map(block => [block.close?.$type, block.items[0].close?.$type])).toEqual([['PadClose', undefined], [undefined, 'PadClose']]);
+            // An empty composite node that ends the span at offset 0: not assigned
+            const named = (input: string) => (parsers.get('EmptyActions')!.parse(input, options).value as AstNode & { items: Array<{ name?: string }> }).items.map(item => item.name);
+            expect(named(emptyActionsInputs[0])).toEqual([]);
+            expect(named(emptyActionsInputs[1])).toEqual(['x']);
         }
     });
 

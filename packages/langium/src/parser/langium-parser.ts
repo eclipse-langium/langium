@@ -271,18 +271,21 @@ export class LangiumParser extends AbstractLangiumParser {
      *    the converter receives {@link grammarSourceNode} instead.
      * 2. A subrule result is only assigned if the subrule's composite node has a non-empty source span
      *    (`cstNode.length > 0`): the span of the consumed tokens is tracked instead, through
-     *    {@link ruleCallFirst} and {@link lastTokenEnd} (see {@link subruleWithoutCst}).
+     *    {@link ruleCallFirst} and {@link lastNodeEnd} (see {@link subruleWithoutCst}).
      * 3. A datatype rule is converted with the grammar element that invoked it:
      *    {@link ruleCallStack} tracks the invoking elements.
      */
     private buildCst = true;
-    /** End offset (exclusive) of the last valid token consumed in the current CST-free parser run; 0 before the first. */
-    private lastTokenEnd = 0;
+    /**
+     * End offset (exclusive) of the last node in the current CST-free parser run, see {@link extendSpan}: the last
+     * consumed valid token, or an empty composite node that an assigned action keeps (end 0). 0 before the first.
+     */
+    private lastNodeEnd = 0;
     /** The grammar elements of the active non-fragment subrule calls of a CST-free parser run. */
     private readonly ruleCallStack: AbstractElement[] = [];
     /**
-     * Per entry of {@link ruleCallStack}: the start offset of the first valid token consumed during the subrule
-     * call, or -1 if there was none yet. `consume` sets it for the entries from {@link firstPending} upwards.
+     * Per entry of {@link ruleCallStack}: the start offset of the first node of the subrule call (usually its first
+     * valid token), or -1 if there was none yet. {@link extendSpan} sets it for the entries from {@link firstPending} upwards.
      */
     private readonly ruleCallFirst: number[] = [];
     /**
@@ -291,7 +294,7 @@ export class LangiumParser extends AbstractLangiumParser {
      */
     private firstPending = 0;
     /**
-     * Per entry of {@link ruleCallStack}: the value of {@link lastTokenEnd} at the first assigned action of the
+     * Per entry of {@link ruleCallStack}: the value of {@link lastNodeEnd} at the first assigned action of the
      * subrule, {@link EMPTY_CUT} if the subrule had consumed no token by then, or {@link NO_CUT} if there was
      * no such action yet. With a CST, an assigned action moves the subrule's composite node below a new node,
      * so later tokens do not count for the subrule's assignment.
@@ -360,7 +363,7 @@ export class LangiumParser extends AbstractLangiumParser {
         } else {
             // Release the tree of a previous parser run, which would otherwise stay reachable from the builder
             this.nodeBuilder.clear();
-            this.lastTokenEnd = 0;
+            this.lastNodeEnd = 0;
             this.ruleCallStack.length = 0;
             this.ruleCallFirst.length = 0;
             this.firstPending = 0;
@@ -467,14 +470,8 @@ export class LangiumParser extends AbstractLangiumParser {
                 this.nodeBuilder.addHiddenNodes(hiddenTokens);
                 leafNode = this.nodeBuilder.buildLeafNode(token, feature);
             } else {
-                // The token is the first one of every subrule call entered since the previous token
-                const calls = this.ruleCallFirst.length;
-                for (let i = this.firstPending; i < calls; i++) {
-                    this.ruleCallFirst[i] = token.startOffset;
-                }
-                this.firstPending = calls;
                 // Like the end of a leaf node: a token may be empty, e.g. the DEDENT of an indentation-aware lexer
-                this.lastTokenEnd = token.startOffset + token.image.length;
+                this.extendSpan(token.startOffset, token.startOffset + token.image.length);
             }
             const { assignment, crossRef } = this.getAssignment(feature);
             const current = this.current;
@@ -580,13 +577,26 @@ export class LangiumParser extends AbstractLangiumParser {
                 // which `subrule` checks, stops growing at the first action. A later action moves the previous
                 // action's node, not the original node, so its cut doesn't matter (`action()` keeps the first one).
                 const cut = this.ruleCallCut.pop()!;
-                const end = cut === NO_CUT ? this.lastTokenEnd : cut;
+                const end = cut === NO_CUT ? this.lastNodeEnd : cut;
                 // An `EMPTY_CUT` is negative, so it never passes
                 if (result !== undefined && first >= 0 && end > first) {
                     this.performSubruleAssignment(result, feature, undefined);
                 }
             }
         }
+    }
+
+    /**
+     * Adds a node with the given offsets to the source spans of the active subrule calls of a CST-free parser run:
+     * it is the first node of every subrule call entered since the previous one, and the last node so far.
+     */
+    private extendSpan(offset: number, end: number): void {
+        const calls = this.ruleCallFirst.length;
+        for (let i = this.firstPending; i < calls; i++) {
+            this.ruleCallFirst[i] = offset;
+        }
+        this.firstPending = calls;
+        this.lastNodeEnd = end;
     }
 
     private performSubruleAssignment(result: any, feature: AbstractElement, cstNode: CompositeCstNode | undefined): void {
@@ -624,7 +634,15 @@ export class LangiumParser extends AbstractLangiumParser {
                     // Tokens consumed from here on no longer count for the enclosing subrule call, see `subruleWithoutCst`
                     const top = this.ruleCallCut.length - 1;
                     if (top >= 0 && this.ruleCallCut[top] === NO_CUT) {
-                        this.ruleCallCut[top] = this.ruleCallFirst[top] < 0 ? EMPTY_CUT : this.lastTokenEnd;
+                        if (this.ruleCallFirst[top] < 0) {
+                            this.ruleCallCut[top] = EMPTY_CUT;
+                            // With a CST, the subrule's composite node is still empty here. The action keeps it below
+                            // its own node, and an empty composite node has offset 0 and end 0 (it has no first or last
+                            // child). So for the enclosing subrule calls, it counts like an empty token at offset 0.
+                            this.extendSpan(0, 0);
+                        } else {
+                            this.ruleCallCut[top] = this.lastNodeEnd;
+                        }
                     }
                 }
                 const newItem = { $type };
