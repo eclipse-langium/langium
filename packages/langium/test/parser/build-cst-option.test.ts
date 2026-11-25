@@ -6,7 +6,7 @@
 
 import type { AstNode, CstNode, GrammarAST, LangiumCoreServices, LangiumParser, LexerResult, Module, ParseResult, ParserOptions, PartialLangiumCoreServices, ReferenceInfo, TokenizeOptions, ValueConverter, ValueType } from 'langium';
 import { createTokenInstance } from 'chevrotain';
-import { AstUtils, DefaultLexer, DefaultValueConverter, EmptyFileSystem, IndentationAwareLexer, IndentationAwareTokenBuilder, isCompositeCstNode, isLeafCstNode, isMultiReference, isReference, URI } from 'langium';
+import { AstUtils, DefaultLexer, DefaultValueConverter, EmptyFileSystem, IndentationAwareLexer, IndentationAwareTokenBuilder, isAstNode, isCompositeCstNode, isLeafCstNode, isMultiReference, isReference, URI } from 'langium';
 import { createLangiumGrammarServices, createServicesForGrammar } from 'langium/grammar';
 import type { LangiumServices, PartialLangiumServices } from 'langium/lsp';
 import { parseHelper } from 'langium/test';
@@ -333,9 +333,26 @@ function expectSameParse(parser: LangiumParser, input: string, options: Omit<Par
     const withoutCst = parser.parse(input, { ...options, buildCst: false });
     expect(withCst.value.$cstNode).toBeDefined();
     expect(astSnapshot(withoutCst.value)).toEqual(astSnapshot(withCst.value));
+    expect(containerSnapshot(withoutCst.value)).toEqual(containerSnapshot(withCst.value));
     expect(errorSnapshot(withoutCst)).toEqual(errorSnapshot(withCst));
     expectNoCst(withoutCst.value);
     return withCst;
+}
+
+/**
+ * The container links that `astSnapshot` leaves out: for every AST node in traversal order, its type,
+ * `$containerProperty`, `$containerIndex` and the position of its `$container` in the same order.
+ */
+function containerSnapshot(root: unknown): unknown[] {
+    if (!isAstNode(root)) {
+        return [];
+    }
+    const nodes = AstUtils.streamAst(root).toArray();
+    const positions = new Map<AstNode, number>(nodes.map((node, index) => [node, index]));
+    return nodes.map(node => [
+        node.$type, node.$containerProperty, node.$containerIndex,
+        node.$container ? positions.get(node.$container) ?? 'outside' : 'none'
+    ]);
 }
 
 /** Checks that no AST node has a CST node and no reference a `$refNode`; returns the number of references. */

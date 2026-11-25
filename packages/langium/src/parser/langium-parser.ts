@@ -223,11 +223,13 @@ export interface ParserOptions {
      * - `$cstNode` on its AST nodes;
      * - `$refNode` on its references. The reference index skips references without `$refNode`, so it
      *   doesn't know what the document depends on, and an incremental build doesn't relink the
-     *   document when the targets of its references change. If a target is deleted, the reference
-     *   stays resolved to the deleted node, without a linking error;
+     *   document when the targets of its references change (unless the document has linking errors,
+     *   which are always relinked). If a target is deleted, the reference stays resolved to the deleted
+     *   node, without a linking error;
      * - comments and other hidden tokens;
-     * - ranges and positions: diagnostics fall back to an empty range at the start of the document,
-     *   and exported names have no name segment.
+     * - ranges and positions: validation and linking diagnostics fall back to an empty range at the start
+     *   of the document, and exported names have no name segment. Lexer and parser diagnostics keep the
+     *   positions of their tokens.
      *
      * So everything that reads the CST gets nothing for such a document, e.g. comment providers,
      * formatting, hover, document symbols, find references and the other LSP services that map
