@@ -231,6 +231,9 @@ export interface ParserOptions {
      * formatting, hover, document symbols, find references and the other LSP services that map
      * between the AST and the text.
      *
+     * A document created this way doesn't stay CST-free: `LangiumDocumentFactory.update` re-parses it
+     * with a CST, e.g. when it is opened in an editor or changes on disk.
+     *
      * This option is only honoured if the language's {@link ValueConverter} declares
      * {@link ValueConverter.supportsCstFreeConversion}, since without a CST its `convert` method
      * receives a stand-in node that only carries `grammarSource`. Otherwise the CST is built anyway,
