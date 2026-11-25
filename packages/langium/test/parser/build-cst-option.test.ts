@@ -4,8 +4,9 @@
  * terms of the MIT License, which is available in the project root.
  ******************************************************************************/
 
-import type { AstNode, CstNode, GrammarAST, LangiumCoreServices, LangiumParser, Module, ParseResult, ParserOptions, ReferenceInfo, ValueConverter, ValueType } from 'langium';
-import { AstUtils, DefaultValueConverter, EmptyFileSystem, IndentationAwareLexer, IndentationAwareTokenBuilder, isCompositeCstNode, isLeafCstNode, isMultiReference, isReference, URI } from 'langium';
+import type { AstNode, CstNode, GrammarAST, LangiumCoreServices, LangiumParser, LexerResult, Module, ParseResult, ParserOptions, PartialLangiumCoreServices, ReferenceInfo, TokenizeOptions, ValueConverter, ValueType } from 'langium';
+import { createTokenInstance } from 'chevrotain';
+import { AstUtils, DefaultLexer, DefaultValueConverter, EmptyFileSystem, IndentationAwareLexer, IndentationAwareTokenBuilder, isCompositeCstNode, isLeafCstNode, isMultiReference, isReference, URI } from 'langium';
 import { createLangiumGrammarServices, createServicesForGrammar } from 'langium/grammar';
 import type { LangiumServices, PartialLangiumServices } from 'langium/lsp';
 import { parseHelper } from 'langium/test';
@@ -135,8 +136,7 @@ const infixInputs = [
 ];
 
 // Indentation-aware lexing: DEDENT tokens are valid but empty. A subrule that consumes only empty tokens at one
-// offset has an empty CST node and is not assigned; empty tokens at different offsets (here separated by a comment
-// line) give it a non-empty span. `More` runs an assigned action right after an empty token.
+// offset has an empty CST node and is not assigned. `More` runs an assigned action right after an empty token.
 const indentationGrammar = `
 grammar Indentation
 entry Model: (blocks+=Block)*;
@@ -160,10 +160,45 @@ const indentationInputs = [
     'block a:\n    block b:\n        x\n    y\nblock c:\n    z\n',
     // two DEDENTs at the same offset
     'block a:\n    block b:\n        x\nblock c:\n    z\n',
-    // DEDENTs at different offsets, with only a comment between them
+    // a comment line between the blocks, which doesn't change the indentation
     'block a:\n    block b:\n        x\n    // note\nblock c:\n    y\n',
     // an assigned action after a DEDENT
     'block a:\n    block b:\n        x\nq\n',
+];
+
+// A lexer may also emit empty tokens at different offsets, with only hidden text between them. Then the composite
+// node of a subrule that consumes only such tokens has a non-empty span, and the CST-building parser assigns it.
+// (The indentation-aware lexer emits all DEDENTs that close blocks at one offset.) `MarkerLexer` turns every
+// hidden '|' into an empty MARK token at its offset.
+const markerGrammar = `
+grammar Markers
+entry Model: (items+=Item)*;
+Item: name=ID (marks=Marks)? ';';
+Marks: {infer Marks} MARK (MARK)*;
+terminal ID: /[a-z]+/;
+hidden terminal BAR: '|';
+hidden terminal WS: /\\s+/;
+terminal MARK: '#';
+`;
+
+class MarkerLexer extends DefaultLexer {
+    override tokenize(text: string, options?: TokenizeOptions): LexerResult {
+        const result = super.tokenize(text, options);
+        const mark = this.definition.MARK;
+        const marks = result.hidden.filter(token => token.image === '|').map(token => createTokenInstance(
+            mark, '', token.startOffset, token.startOffset, token.startLine!, token.startLine!, token.startColumn!, token.startColumn!));
+        result.tokens = [...result.tokens, ...marks].sort((a, b) => a.startOffset - b.startOffset);
+        return result;
+    }
+}
+
+const markerInputs = [
+    // one MARK: an empty span
+    'a |; b;',
+    // MARKs at two offsets: a non-empty span
+    'a | |; b ||; c;',
+    // MARKs and a missing ';'
+    'a | | b |;',
 ];
 
 /** Deterministic pseudo-random numbers (Park-Miller), so every run tests the same inputs. */
@@ -321,6 +356,11 @@ describe('parse with buildCst: false', () => {
             } satisfies Module<LangiumServices, PartialLangiumServices>
         });
         parsers.set('Indentation', indentation.parser.LangiumParser);
+        const markers = await createServicesForGrammar({
+            grammar: markerGrammar,
+            module: { parser: { Lexer: services => new MarkerLexer(services) } } satisfies Module<LangiumCoreServices, PartialLangiumCoreServices>
+        });
+        parsers.set('Markers', markers.parser.LangiumParser);
     });
 
     const corpora: Corpus[] = [
@@ -328,6 +368,7 @@ describe('parse with buildCst: false', () => {
         { name: 'Expressions', parser: () => parsers.get('Expressions')!, inputs: expressionInputs },
         { name: 'Infix', parser: () => parsers.get('Infix')!, inputs: infixInputs },
         { name: 'Indentation', parser: () => parsers.get('Indentation')!, inputs: indentationInputs },
+        { name: 'Markers', parser: () => parsers.get('Markers')!, inputs: markerInputs },
         // The grammar language: datatype rules, actions, cross-references, string and regex conversion
         { name: 'Langium', parser: () => parsers.get('Langium')!, inputs: [...grammarFiles, valuesGrammar, expressionGrammar, infixGrammar] }
     ];
@@ -424,22 +465,22 @@ describe('parse with buildCst: false', () => {
         expect(withModifier.statements[0].modifiers).toMatchObject({ $type: 'Modifiers', static: true });
     });
 
-    // Parity alone would pass if the indentation corpus never produced these cases
+    // Parity alone would pass if the corpora never produced these cases
     test('a subrule that consumes only empty tokens is assigned by its source span, as with a CST', () => {
-        const parser = parsers.get('Indentation')!;
         type Block = { name: string, items: Block[], close?: { $type: string, more?: unknown } };
+        type Item = { name: string, marks?: { $type: string } };
         for (const options of [{}, { buildCst: false }]) {
-            const blocks = (input: string) => (parser.parse(input, options).value as AstNode & { blocks: Block[] }).blocks;
+            const blocks = (input: string) => (parsers.get('Indentation')!.parse(input, options).value as AstNode & { blocks: Block[] }).blocks;
+            const items = (input: string) => (parsers.get('Markers')!.parse(input, options).value as AstNode & { items: Item[] }).items;
             // Only an empty DEDENT: not assigned
             expect(blocks(indentationInputs[0])[0].close).toBeUndefined();
-            // Empty DEDENTs at two offsets: assigned
-            const close3 = blocks(indentationInputs[3])[0].items[0].close;
-            expect(close3?.$type).toBe('Close');
-            expect(close3?.more).toBeUndefined();
             // Only an empty DEDENT before the assigned action: `more` is not assigned, but `close` spans the label
-            const close4 = blocks(indentationInputs[4])[0].items[0].close;
-            expect(close4?.$type).toBe('Close');
-            expect(close4?.more).toBeUndefined();
+            const close = blocks(indentationInputs[4])[0].items[0].close;
+            expect(close?.$type).toBe('Close');
+            expect(close?.more).toBeUndefined();
+            // Empty MARKs at one offset: not assigned; at two offsets: assigned
+            expect(items(markerInputs[0])[0].marks).toBeUndefined();
+            expect(items(markerInputs[1]).map(item => item.marks?.$type)).toEqual(['Marks', 'Marks', undefined]);
         }
     });
 
