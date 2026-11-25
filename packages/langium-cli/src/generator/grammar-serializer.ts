@@ -6,6 +6,7 @@
 
 /* eslint-disable @stylistic/indent */
 import type { Grammar, LangiumCoreServices, URI } from 'langium';
+import { GrammarAST, isAstNode } from 'langium';
 import { expandToNode, joinToNode, normalizeEOL, toString } from 'langium/generate';
 import type { LangiumConfig } from '../package-types.js';
 import { generatedHeader } from './node-util.js';
@@ -34,9 +35,11 @@ export function serializeGrammar(services: LangiumCoreServices, grammars: Gramma
                     // We expect the grammar to be self-contained after the transformations we've done before
                     throw new Error(`Unexpected reference to element in document: ${uri.toString()}`);
                 };
+                const comments = config.serializeGrammarComments ?? 'keywords';
                 const serializedGrammar = services.serializer.JsonSerializer.serialize(grammar, {
                     space: production ? undefined : 2,
-                    comments: true,
+                    comments: comments !== 'none',
+                    replacer: comments === 'keywords' ? keywordCommentsOnly : undefined,
                     uriConverter
                 });
                 // The json serializer returns strings with \n line delimiter by default
@@ -59,4 +62,16 @@ export function serializeGrammar(services: LangiumCoreServices, grammars: Gramma
     );
 
     return toString(node);
+}
+
+/**
+ * Drops the `$comment` of every grammar element except keywords: the hover on keywords is the only place where
+ * Langium itself reads the comments of the serialized grammar.
+ */
+function keywordCommentsOnly(key: string, value: unknown, defaultReplacer: (key: string, value: unknown) => unknown): unknown {
+    const replaced = defaultReplacer(key, value);
+    if (isAstNode(value) && !GrammarAST.isKeyword(value) && replaced !== value && typeof replaced === 'object' && replaced !== null) {
+        delete (replaced as { $comment?: string }).$comment;
+    }
+    return replaced;
 }

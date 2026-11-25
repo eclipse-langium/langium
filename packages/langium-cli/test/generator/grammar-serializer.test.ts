@@ -21,11 +21,11 @@ describe('Grammar serializer', () => {
         clearDocuments(grammarServices.shared);
     });
 
-    test('should include comments of AST elements', async () => {
-        // arrange
+    async function serializeCommentedGrammar(serializeGrammarComments?: LangiumConfig['serializeGrammarComments']): Promise<string> {
         const config: LangiumConfig = {
             projectName: 'Magic',
             languages: [],
+            serializeGrammarComments,
             [RelativePath]: '/path/to/magic',
         };
 
@@ -35,20 +35,38 @@ describe('Grammar serializer', () => {
         /**
          * This is the entry rule
          */
-        entry Model: /** This is the name assignment */ name='test';
+        entry Model: /** This is the name assignment */ name='test' /** This is the end keyword */ 'end';
         `;
 
+        await clearDocuments(grammarServices.shared);
         const document = grammarServices.shared.workspace.LangiumDocumentFactory.fromString<Grammar>(grammarText, URI.file('test.langium'));
         grammarServices.shared.workspace.LangiumDocuments.addDocument(document);
         await grammarServices.shared.workspace.DocumentBuilder.build([document]);
-        const grammar = document.parseResult.value;
+        return serializeGrammar(grammarServices.grammar, [document.parseResult.value], config);
+    }
 
-        // act
-        const moduleString = serializeGrammar(grammarServices.grammar, [grammar], config);
+    test('should include comments of all AST elements with serializeGrammarComments: all', async () => {
+        const moduleString = await serializeCommentedGrammar('all');
 
-        // assert
         expect(moduleString).toMatch('"$comment": "/** This is the name assignment */"');
         expect(moduleString).toMatch('"$comment": "/**\\\\n * This is the entry rule\\\\n */"');
+        expect(moduleString).toMatch('"$comment": "/** This is the end keyword */"');
+    });
+
+    test('should include only the comments of keywords by default', async () => {
+        const moduleString = await serializeCommentedGrammar();
+
+        expect(moduleString).toMatch('"$comment": "/** This is the end keyword */"');
+        expect(moduleString).not.toMatch('This is the name assignment');
+        expect(moduleString).not.toMatch('This is the entry rule');
+        expect(await serializeCommentedGrammar('keywords')).toEqual(moduleString);
+    });
+
+    test('should omit all comments with serializeGrammarComments: none', async () => {
+        const moduleString = await serializeCommentedGrammar('none');
+
+        expect(moduleString).not.toMatch('$comment');
+        expect(moduleString).toMatch('"name": "Model"');
     });
 
     test('should escape template strings in development mode', async () => {
