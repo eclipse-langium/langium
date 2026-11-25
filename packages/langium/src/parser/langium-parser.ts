@@ -250,6 +250,8 @@ interface OperatorPrecedence {
     rightAssoc: boolean
 }
 
+/** {@link LangiumParser.ruleCallFirst}: the subrule call has no first node yet. */
+const NO_START = -1;
 /** {@link LangiumParser.ruleCallCut}: the subrule has run no assigned action yet. */
 const NO_CUT = -1;
 /** {@link LangiumParser.ruleCallCut}: the subrule ran an assigned action before it consumed any token. */
@@ -270,7 +272,7 @@ export class LangiumParser extends AbstractLangiumParser {
      *
      * The parser itself reads the CST in three places. Without a CST, each is replaced:
      * 1. Value conversion reads the grammar element of the leaf or composite node:
-     *    the converter receives {@link grammarSourceNode} instead.
+     *    the converter receives {@link cstNodeStandIn} instead.
      * 2. A subrule result is only assigned if the subrule's composite node has a non-empty source span
      *    (`cstNode.length > 0`): the span of the consumed tokens is tracked instead, through
      *    {@link ruleCallFirst} and {@link lastNodeEnd} (see {@link subruleWithoutCst}).
@@ -287,7 +289,7 @@ export class LangiumParser extends AbstractLangiumParser {
     private readonly ruleCallStack: AbstractElement[] = [];
     /**
      * Per entry of {@link ruleCallStack}: the start offset of the first node of the subrule call (usually its first
-     * valid token), or -1 if there was none yet. {@link extendSpan} sets it for the entries from {@link firstPending} upwards.
+     * valid token), or {@link NO_START} if there was none yet. {@link extendSpan} sets it for the entries from {@link firstPending} upwards.
      */
     private readonly ruleCallFirst: number[] = [];
     /**
@@ -478,12 +480,12 @@ export class LangiumParser extends AbstractLangiumParser {
             const { assignment, crossRef } = this.getAssignment(feature);
             const current = this.current;
             if (assignment) {
-                const convertedValue = isKeyword(feature) ? token.image : this.converter.convert(token.image, leafNode ?? this.grammarSourceNode(feature));
+                const convertedValue = isKeyword(feature) ? token.image : this.converter.convert(token.image, leafNode ?? this.cstNodeStandIn(feature));
                 this.assign(assignment.operator, assignment.feature, convertedValue, leafNode, crossRef);
             } else if (isDataTypeNode(current)) {
                 let text = token.image;
                 if (!isKeyword(feature)) {
-                    text = this.converter.convert(text, leafNode ?? this.grammarSourceNode(feature)).toString();
+                    text = this.converter.convert(text, leafNode ?? this.cstNodeStandIn(feature)).toString();
                 }
                 current.value += text;
             }
@@ -496,7 +498,7 @@ export class LangiumParser extends AbstractLangiumParser {
      * Every call creates a new object, so a converter that keeps the node it receives
      * still sees its own grammar element later.
      */
-    private grammarSourceNode(feature: AbstractElement | undefined): CstNode {
+    private cstNodeStandIn(feature: AbstractElement | undefined): CstNode {
         return { grammarSource: feature } as CstNode;
     }
 
@@ -557,7 +559,7 @@ export class LangiumParser extends AbstractLangiumParser {
         // Fragment rules only enrich the current AST node and are never assigned, see `subrule`
         if (!fragment) {
             this.ruleCallStack.push(feature);
-            this.ruleCallFirst.push(-1);
+            this.ruleCallFirst.push(NO_START);
             this.ruleCallCut.push(NO_CUT);
         }
         let result: any;
@@ -581,7 +583,7 @@ export class LangiumParser extends AbstractLangiumParser {
                 const cut = this.ruleCallCut.pop()!;
                 const end = cut === NO_CUT ? this.lastNodeEnd : cut;
                 // An `EMPTY_CUT` is negative, so it never passes
-                if (result !== undefined && first >= 0 && end > first) {
+                if (result !== undefined && first !== NO_START && end > first) {
                     this.performSubruleAssignment(result, feature, undefined);
                 }
             }
@@ -636,7 +638,7 @@ export class LangiumParser extends AbstractLangiumParser {
                     // Tokens consumed from here on no longer count for the enclosing subrule call, see `subruleWithoutCst`
                     const top = this.ruleCallCut.length - 1;
                     if (top >= 0 && this.ruleCallCut[top] === NO_CUT) {
-                        if (this.ruleCallFirst[top] < 0) {
+                        if (this.ruleCallFirst[top] === NO_START) {
                             this.ruleCallCut[top] = EMPTY_CUT;
                             // With a CST, the subrule's composite node is still empty here. The action keeps it below
                             // its own node, and an empty composite node has offset 0 and end 0 (it has no first or last
@@ -669,7 +671,7 @@ export class LangiumParser extends AbstractLangiumParser {
             return this.constructInfix(obj, this.operatorPrecedence.get(obj.$infixName)!);
         } else if (isDataTypeNode(obj)) {
             // With a CST, the datatype rule's composite node carries the grammar element that invoked the rule
-            const cstNode = this.buildCst ? obj.$cstNode : this.grammarSourceNode(this.ruleCallStack[this.ruleCallStack.length - 1]);
+            const cstNode = this.buildCst ? obj.$cstNode : this.cstNodeStandIn(this.ruleCallStack[this.ruleCallStack.length - 1]);
             return this.converter.convert(obj.value, cstNode);
         } else {
             assignMandatoryProperties(this.astReflection, obj);

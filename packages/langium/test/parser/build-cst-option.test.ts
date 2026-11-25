@@ -485,6 +485,20 @@ describe('parse with buildCst: false', () => {
         }
     });
 
+    test('a parser rule as entry rule is parsed the same way', () => {
+        const parser = parsers.get('Values')!;
+        const cases: Array<[string, string]> = [
+            ['Element', 'element a int 1 num -2 bool true'], ['Element', 'element a int'], ['Element', 'ref a'],
+            ['Ref', 'ref a qualified x.y multi a'], ['Ref', 'ref']
+        ];
+        for (const [rule, input] of cases) {
+            expectSameParse(parser, input, { rule });
+        }
+        const element = parser.parse('element a int 1 num -2', { rule: 'Element', buildCst: false });
+        expect(element.parserErrors).toHaveLength(0);
+        expect(element.value).toMatchObject({ $type: 'Element', name: 'a', int: 1, num: -2 });
+    });
+
     test('an empty optional subrule is not assigned, as with a CST', () => {
         const parser = parsers.get('Expressions')!;
         const result = parser.parse('def f: 1;', { buildCst: false }).value as AstNode & { statements: Array<{ modifiers?: unknown }> };
@@ -544,11 +558,13 @@ describe('parse with buildCst: false', () => {
     test('the CST builder does not keep the tree of a previous parse', () => {
         const parser = parsers.get('Expressions')!;
         const first = parser.parse('eval 1;');
-        const builder = (parser as unknown as { nodeBuilder: { rootNode?: unknown, nodeStack: unknown[] } }).nodeBuilder;
+        const builder = (parser as unknown as { nodeBuilder: { rootNode?: unknown, nodeStack: unknown[], current: unknown } }).nodeBuilder;
         expect(builder.rootNode).toBe(first.value.$cstNode!.root);
         parser.parse('eval 2;', { buildCst: false });
         expect(builder.rootNode).toBeUndefined();
         expect(builder.nodeStack).toHaveLength(0);
+        // A call into the builder without a tree fails with a clear message
+        expect(() => builder.current).toThrow('holds no tree');
         // The CST of the earlier parse result is not affected
         expect(first.value.$cstNode!.text).toBe('eval 1;');
     });
