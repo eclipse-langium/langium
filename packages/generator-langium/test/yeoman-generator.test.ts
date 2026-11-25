@@ -310,7 +310,7 @@ const PACKAGE_JSON_EXPECTATION: Record<string, any> = {
         'langium:watch': 'npm run --workspace packages/language langium:watch'
     },
     'devDependencies': {
-        '@types/node': '~22.20.5',
+        '@types/node': '~22.20.6',
         'shx':  '~0.4.0',
         'typescript': '~5.9.3'
     },
