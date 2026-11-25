@@ -248,6 +248,11 @@ interface OperatorPrecedence {
     rightAssoc: boolean
 }
 
+/** {@link LangiumParser.ruleCallCut}: the subrule has run no assigned action yet. */
+const NO_CUT = -1;
+/** {@link LangiumParser.ruleCallCut}: the subrule ran an assigned action before it consumed any token. */
+const EMPTY_CUT = -2;
+
 export class LangiumParser extends AbstractLangiumParser {
     private readonly linker: Linker;
     private readonly converter: ValueConverter;
@@ -264,22 +269,32 @@ export class LangiumParser extends AbstractLangiumParser {
      * The parser itself reads the CST in three places. Without a CST, each is replaced:
      * 1. Value conversion reads the grammar element of the leaf or composite node:
      *    the converter receives {@link grammarSourceNode} instead.
-     * 2. A subrule result is only assigned if the subrule's composite node received a token:
-     *    {@link consumedTokens} is compared at entry and exit of the subrule (see {@link subruleWithoutCst}).
+     * 2. A subrule result is only assigned if the subrule's composite node has a non-empty source span
+     *    (`cstNode.length > 0`): the span of the consumed tokens is tracked instead, through
+     *    {@link ruleCallFirst} and {@link lastTokenEnd} (see {@link subruleWithoutCst}).
      * 3. A datatype rule is converted with the grammar element that invoked it:
      *    {@link ruleCallStack} tracks the invoking elements.
      */
     private buildCst = true;
-    /** Number of valid tokens consumed in the current CST-free parser run. */
-    private consumedTokens = 0;
+    /** End offset (exclusive) of the last valid token consumed in the current CST-free parser run; 0 before the first. */
+    private lastTokenEnd = 0;
     /** The grammar elements of the active non-fragment subrule calls of a CST-free parser run. */
     private readonly ruleCallStack: AbstractElement[] = [];
-    /** Per entry of {@link ruleCallStack}: the value of {@link consumedTokens} when the subrule was entered. */
-    private readonly ruleCallStart: number[] = [];
     /**
-     * Per entry of {@link ruleCallStack}: the value of {@link consumedTokens} at the first assigned action
-     * of the subrule, or -1 if there was none yet. With a CST, an assigned action moves the subrule's
-     * composite node below a new node, so later tokens do not count for the subrule's assignment.
+     * Per entry of {@link ruleCallStack}: the start offset of the first valid token consumed during the subrule
+     * call, or -1 if there was none yet. `consume` sets it for the entries from {@link firstPending} upwards.
+     */
+    private readonly ruleCallFirst: number[] = [];
+    /**
+     * Index of the lowest entry of {@link ruleCallFirst} without a token yet. The entries above it have none
+     * either, since subrule calls receive their first token in the order they were entered.
+     */
+    private firstPending = 0;
+    /**
+     * Per entry of {@link ruleCallStack}: the value of {@link lastTokenEnd} at the first assigned action of the
+     * subrule, {@link EMPTY_CUT} if the subrule had consumed no token by then, or {@link NO_CUT} if there was
+     * no such action yet. With a CST, an assigned action moves the subrule's composite node below a new node,
+     * so later tokens do not count for the subrule's assignment.
      */
     private readonly ruleCallCut: number[] = [];
 
@@ -345,9 +360,10 @@ export class LangiumParser extends AbstractLangiumParser {
         } else {
             // Release the tree of a previous parser run, which would otherwise stay reachable from the builder
             this.nodeBuilder.clear();
-            this.consumedTokens = 0;
+            this.lastTokenEnd = 0;
             this.ruleCallStack.length = 0;
-            this.ruleCallStart.length = 0;
+            this.ruleCallFirst.length = 0;
+            this.firstPending = 0;
             this.ruleCallCut.length = 0;
         }
         const lexerResult = this.lexerResult = this.lexer.tokenize(input);
@@ -451,7 +467,14 @@ export class LangiumParser extends AbstractLangiumParser {
                 this.nodeBuilder.addHiddenNodes(hiddenTokens);
                 leafNode = this.nodeBuilder.buildLeafNode(token, feature);
             } else {
-                this.consumedTokens++;
+                // The token is the first one of every subrule call entered since the previous token
+                const calls = this.ruleCallFirst.length;
+                for (let i = this.firstPending; i < calls; i++) {
+                    this.ruleCallFirst[i] = token.startOffset;
+                }
+                this.firstPending = calls;
+                // Like the end of a leaf node: a token may be empty, e.g. the DEDENT of an indentation-aware lexer
+                this.lastTokenEnd = token.startOffset + token.image.length;
             }
             const { assignment, crossRef } = this.getAssignment(feature);
             const current = this.current;
@@ -524,17 +547,19 @@ export class LangiumParser extends AbstractLangiumParser {
     }
 
     /**
-     * The CST-free counterpart of {@link subrule}. Instead of checking whether the subrule's composite
-     * node received a token (`cstNode.length > 0`; a valid token always has a non-empty range), it compares
-     * the number of consumed tokens. If the subrule ran an assigned action, only the tokens consumed before
-     * that action count, since the CST-building parser moves the composite node below the action's node there.
+     * The CST-free counterpart of {@link subrule}. `subrule` assigns the result only if the subrule's composite
+     * node has a non-empty source span (`cstNode.length > 0`), i.e. from the start of its first token to the end
+     * of its last one. Counting tokens isn't enough, since a valid token can be empty: an indentation-aware
+     * lexer emits DEDENTs without text. So this compares the same span: the start offset of the first consumed
+     * token with the end offset of the last one. If the subrule ran an assigned action, the span ends at that
+     * action, since the CST-building parser moves the composite node below the action's node there.
      */
     private subruleWithoutCst(idx: number, rule: RuleResult, fragment: boolean, feature: AbstractElement, args: Args): void {
         // Fragment rules only enrich the current AST node and are never assigned, see `subrule`
         if (!fragment) {
             this.ruleCallStack.push(feature);
-            this.ruleCallStart.push(this.consumedTokens);
-            this.ruleCallCut.push(-1);
+            this.ruleCallFirst.push(-1);
+            this.ruleCallCut.push(NO_CUT);
         }
         let result: any;
         try {
@@ -545,15 +570,19 @@ export class LangiumParser extends AbstractLangiumParser {
                     result = this.construct();
                 }
                 this.ruleCallStack.pop();
-                const start = this.ruleCallStart.pop()!;
+                const first = this.ruleCallFirst.pop()!;
+                if (this.firstPending > this.ruleCallFirst.length) {
+                    this.firstPending = this.ruleCallFirst.length;
+                }
                 // Only the tokens consumed before the subrule's first assigned action count. With a CST, `action()`
                 // doesn't extend the subrule's composite node: it moves that node below the action's new composite
                 // node. Tokens consumed after the action go into the action's node, so the original node's `length`,
                 // which `subrule` checks, stops growing at the first action. A later action moves the previous
                 // action's node, not the original node, so its cut doesn't matter (`action()` keeps the first one).
                 const cut = this.ruleCallCut.pop()!;
-                const end = cut >= 0 ? cut : this.consumedTokens;
-                if (result !== undefined && end > start) {
+                const end = cut === NO_CUT ? this.lastTokenEnd : cut;
+                // An `EMPTY_CUT` is negative, so it never passes
+                if (result !== undefined && first >= 0 && end > first) {
                     this.performSubruleAssignment(result, feature, undefined);
                 }
             }
@@ -594,8 +623,8 @@ export class LangiumParser extends AbstractLangiumParser {
                 } else {
                     // Tokens consumed from here on no longer count for the enclosing subrule call, see `subruleWithoutCst`
                     const top = this.ruleCallCut.length - 1;
-                    if (top >= 0 && this.ruleCallCut[top] < 0) {
-                        this.ruleCallCut[top] = this.consumedTokens;
+                    if (top >= 0 && this.ruleCallCut[top] === NO_CUT) {
+                        this.ruleCallCut[top] = this.ruleCallFirst[top] < 0 ? EMPTY_CUT : this.lastTokenEnd;
                     }
                 }
                 const newItem = { $type };
