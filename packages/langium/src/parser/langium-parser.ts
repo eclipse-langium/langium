@@ -229,7 +229,9 @@ export interface ParserOptions {
      *
      * So everything that reads the CST gets nothing for such a document, e.g. comment providers,
      * formatting, hover, document symbols, find references and the other LSP services that map
-     * between the AST and the text.
+     * between the AST and the text. Validation checks that read the CST find nothing either, so a
+     * document can get fewer diagnostics, not only empty ranges. For example, the grammar language's
+     * duplicate-name check treats a rule without a CST as empty and skips it, also when it is imported.
      *
      * A document created this way doesn't stay CST-free: `LangiumDocumentFactory.update` re-parses it
      * with a CST, e.g. when it is opened in an editor or changes on disk.
