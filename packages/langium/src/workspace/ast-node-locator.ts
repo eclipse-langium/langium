@@ -38,13 +38,18 @@ export class DefaultAstNodeLocator implements AstNodeLocator {
     protected indexSeparator = '@';
 
     getAstNodePath(node: AstNode): string {
-        if (node.$container) {
-            const containerPath = this.getAstNodePath(node.$container);
-            const newSegment = this.getPathSegment(node);
-            const nodePath = containerPath + this.segmentSeparator + newSegment;
-            return nodePath;
+        if (!node.$container) {
+            return '';
         }
-        return '';
+        // Collect the segments and join them once: concatenating them one by one would make the path
+        // a tree of V8 cons strings, which stays in memory as long as the path does (e.g. in the index).
+        const segments: string[] = [];
+        for (let current: AstNode | undefined = node; current?.$container; current = current.$container) {
+            segments.push(this.getPathSegment(current));
+        }
+        // the root's empty segment yields the leading separator
+        segments.push('');
+        return segments.reverse().join(this.segmentSeparator);
     }
 
     protected getPathSegment({ $containerProperty, $containerIndex }: AstNode): string {

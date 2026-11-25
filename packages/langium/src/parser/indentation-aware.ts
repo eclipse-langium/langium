@@ -78,6 +78,26 @@ export interface IndentationLexingReport extends LexingReport {
 }
 
 /**
+ * The effects of matching the indentation of a line, used to revert them in case the line turns out to contain no token.
+ */
+export interface LineIndentation {
+    /** The offset of the start of the line. */
+    offset: number;
+    /** The tokens scanned so far. The lexer adds further tokens to this array. */
+    tokens: IToken[];
+    /** The number of tokens before the indentation of the line was matched. */
+    tokenCount: number;
+    /** The number of tokens after the indentation of the line was matched, including its indent or dedent tokens. */
+    endTokenCount: number;
+    /** The number of diagnostics before the indentation of the line was matched. */
+    diagnosticCount: number;
+    /** Whether the line has added its indentation level to the indentation stack. */
+    addedLevel: boolean;
+    /** The indentation levels that the line has removed from the indentation stack, in their original order. */
+    removedLevels: number[];
+}
+
+/**
  * A token builder that is sensitive to indentation in the input text.
  * It will generate tokens for indentation and dedentation based on the indentation level.
  *
@@ -93,6 +113,11 @@ export class IndentationAwareTokenBuilder<Terminals extends string = string, Key
      * The stack is valid for lexing
      */
     protected indentationStack: number[] = [0];
+
+    /**
+     * The effects of matching the indentation of the most recently started line.
+     */
+    protected currentLine: LineIndentation | undefined;
 
     readonly options: IndentationTokenBuilderOptions<Terminals, KeywordName>;
 
@@ -183,6 +208,11 @@ export class IndentationAwareTokenBuilder<Terminals extends string = string, Key
     }
 
     override flushLexingReport(text: string): IndentationLexingReport {
+        const lastLine = this.currentLine;
+        if (lastLine && this.isLineWithoutTokens(lastLine)) {
+            // The indentation of a line without tokens is irrelevant, see `startLine`
+            this.diagnostics.length = lastLine.diagnosticCount;
+        }
         const result = super.flushLexingReport(text);
         return {
             ...result,
@@ -199,6 +229,59 @@ export class IndentationAwareTokenBuilder<Terminals extends string = string, Key
      */
     protected isStartOfLine(text: string, offset: number): boolean {
         return offset === 0 || '\r\n'.includes(text[offset - 1]);
+    }
+
+    /**
+     * Whether the given text ends at the start of a new line, i.e. whether a token that is appended to the text
+     * would be the first one of its line. Uses the same rules as the indentation matching, see {@link isStartOfLine}.
+     *
+     * @param text The full input string.
+     */
+    endsAtStartOfLine(text: string): boolean {
+        return this.isStartOfLine(text, text.length);
+    }
+
+    /**
+     * Starts matching the indentation of the line at the given offset. Must be called before the indentation stack is modified.
+     *
+     * The indentation of a line is only relevant if the line contains at least one token.
+     * Lines that only consist of whitespace or hidden tokens (i.e. comments) neither open nor close a block.
+     * As this is unknown while their indentation is matched, its effects are reverted once the next line starts.
+     *
+     * @param offset The offset of the start of the line
+     * @param tokens Previously scanned tokens
+     * @returns The record in which to store the effects of matching the indentation of the line
+     */
+    protected startLine(offset: number, tokens: IToken[]): LineIndentation {
+        const previousLine = this.currentLine;
+        if (previousLine?.offset === offset && previousLine.tokens === tokens) {
+            // Indents and dedents are matched at the same offset
+            return previousLine;
+        }
+        if (previousLine && this.isLineWithoutTokens(previousLine)) {
+            tokens.length = previousLine.tokenCount;
+            if (previousLine.addedLevel) {
+                this.indentationStack.pop();
+            }
+            this.indentationStack.push(...previousLine.removedLevels);
+            this.diagnostics.length = previousLine.diagnosticCount;
+        }
+        return this.currentLine = {
+            offset,
+            tokens,
+            tokenCount: tokens.length,
+            endTokenCount: tokens.length,
+            diagnosticCount: this.diagnostics.length,
+            addedLevel: false,
+            removedLevels: []
+        };
+    }
+
+    /**
+     * Whether no token has been scanned since the indentation of the given line has been matched.
+     */
+    protected isLineWithoutTokens(line: LineIndentation): boolean {
+        return line.tokens.length === line.endTokenCount;
     }
 
     /**
@@ -283,6 +366,7 @@ export class IndentationAwareTokenBuilder<Terminals extends string = string, Key
             return null;
         }
 
+        const line = this.startLine(offset, tokens);
         const { currIndentLevel, prevIndentLevel, match } = this.matchWhitespace(text, offset, tokens, groups);
 
         if (currIndentLevel <= prevIndentLevel) {
@@ -292,6 +376,9 @@ export class IndentationAwareTokenBuilder<Terminals extends string = string, Key
         }
 
         this.indentationStack.push(currIndentLevel);
+        line.addedLevel = true;
+        // The indent token is added by the lexer once this matcher returns
+        line.endTokenCount = tokens.length + 1;
 
         return match;
     }
@@ -309,6 +396,7 @@ export class IndentationAwareTokenBuilder<Terminals extends string = string, Key
             return null;
         }
 
+        const line = this.startLine(offset, tokens);
         const { currIndentLevel, prevIndentLevel, match } = this.matchWhitespace(text, offset, tokens, groups);
 
         if (currIndentLevel >= prevIndentLevel) {
@@ -347,8 +435,9 @@ export class IndentationAwareTokenBuilder<Terminals extends string = string, Key
                 offset - (newlinesBeforeDedent - 1), // Place the dedent after the first new line character
             );
             tokens.push(token);
-            this.indentationStack.pop();
         }
+        line.removedLevels = this.indentationStack.splice(matchIndentIndex + 1);
+        line.endTokenCount = tokens.length;
 
         // Token already added, let the dedentation now be consumed as whitespace (if any) and ignored
         return null;
@@ -388,6 +477,7 @@ export class IndentationAwareTokenBuilder<Terminals extends string = string, Key
         }
 
         this.indentationStack = [0];
+        this.currentLine = undefined;
         this.lastLineNumber = { text: '', offset: 0, line: 1 };
         return remainingDedents;
     }
@@ -424,7 +514,7 @@ export class IndentationAwareLexer extends DefaultLexer {
 
         // consuming all remaining dedents and remove them as they might not be serializable
         const report = result.report as IndentationLexingReport;
-        if (options?.mode === 'full') {
+        if (options?.mode === 'full' || this.closesBlocksAtEnd(text, result.tokens)) {
             // auto-complete document with remaining dedents
             result.tokens.push(...report.remainingDedents);
         }
@@ -437,23 +527,55 @@ export class IndentationAwareLexer extends DefaultLexer {
         const indentTokenIdx = indentTokenType.tokenTypeIdx;
         const dedentTokenIdx = dedentTokenType.tokenTypeIdx;
         const cleanTokens: IToken[] = [];
-        const length = result.tokens.length - 1;
-        for (let i = 0; i < length; i++) {
-            const token = result.tokens[i];
-            const nextToken = result.tokens[i + 1];
-            if (token.tokenTypeIdx === indentTokenIdx && nextToken.tokenTypeIdx === dedentTokenIdx) {
-                i++;
-                continue;
+        for (const token of result.tokens) {
+            // A dedent that directly follows an indent closes an empty block, so drop both.
+            // Looking at the already cleaned tokens also removes nested empty blocks.
+            if (token.tokenTypeIdx === dedentTokenIdx && cleanTokens.at(-1)?.tokenTypeIdx === indentTokenIdx) {
+                cleanTokens.pop();
+            } else {
+                cleanTokens.push(token);
             }
-
-            cleanTokens.push(token);
-        }
-        // Push last token separately
-        if (length >= 0) {
-            cleanTokens.push(result.tokens[length]);
         }
         result.tokens = cleanTokens;
 
         return result;
+    }
+
+    /**
+     * Whether the end of a partial input closes all blocks that are still open.
+     *
+     * A partial input ends at the position for which completions are computed. Whatever is inserted there is indented
+     * by the whitespace in front of it. If the input ends with such whitespace, the token builder has already matched it
+     * like the indentation of any other line. If it ends at the start of a line instead, the indentation level is 0,
+     * which closes all open blocks, but there is no text left to match a dedent on.
+     *
+     * This doesn't apply inside of {@link IndentationTokenBuilderOptions.ignoreIndentationDelimiters},
+     * where the start of a line has no meaning for the indentation.
+     *
+     * @param text The partial input string.
+     * @param tokens The tokens of the partial input.
+     */
+    protected closesBlocksAtEnd(text: string, tokens: IToken[]): boolean {
+        return this.indentationTokenBuilder.endsAtStartOfLine(text) && !this.endsInsideIgnoredIndentation(tokens);
+    }
+
+    /**
+     * Whether the given tokens end inside of a pair of delimiters that ignore the indentation,
+     * see {@link IndentationTokenBuilderOptions.ignoreIndentationDelimiters}.
+     */
+    protected endsInsideIgnoredIndentation(tokens: IToken[]): boolean {
+        if (this.indentationTokenBuilder.options.ignoreIndentationDelimiters.length === 0) {
+            return false;
+        }
+        // The lexing mode at the end of the input isn't accessible, so retrace the mode changes of the delimiters
+        let depth = 0;
+        for (const { tokenType } of tokens) {
+            if (tokenType.PUSH_MODE !== undefined) {
+                depth++;
+            } else if (tokenType.POP_MODE && depth > 0) {
+                depth--;
+            }
+        }
+        return depth > 0;
     }
 }
