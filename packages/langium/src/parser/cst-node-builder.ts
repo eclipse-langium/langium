@@ -20,11 +20,7 @@ import type { AstNode, CompositeCstNode, CstNode, LeafCstNode, RootCstNode } fro
  */
 export class CstNodeBuilder {
 
-    /**
-     * The root of the tree being built; undefined before the first `buildRootNode` call and after `clear`.
-     * So after `clear`, the builder holds no tree until the next `buildRootNode` call, and all other
-     * methods must not be called until then.
-     */
+    /** The root of the tree being built; undefined before the first `buildRootNode` and after `clear`. */
     private rootNode: RootCstNodeImpl | undefined;
     private nodeStack: CompositeCstNodeImpl[] = [];
 
@@ -33,19 +29,7 @@ export class CstNodeBuilder {
      * the innermost parser rule invocation that has not been completed with `construct` yet.
      */
     get current(): CompositeCstNodeImpl {
-        return this.nodeStack[this.nodeStack.length - 1] ?? this.root;
-    }
-
-    /**
-     * The root of the tree being built. `rootNode` is only undefined after `clear` (or before the first
-     * `buildRootNode`), i.e. in a parser run that builds no CST. `LangiumParser` guards every call into the
-     * builder by its `buildCst` flag in such runs, so this only throws if a caller misses that guard.
-     */
-    private get root(): RootCstNodeImpl {
-        if (!this.rootNode) {
-            throw new Error('The CST node builder holds no tree: call buildRootNode first (the tree is dropped by clear).');
-        }
-        return this.rootNode;
+        return this.nodeStack[this.nodeStack.length - 1] ?? this.rootNode!;
     }
 
     /**
@@ -59,9 +43,8 @@ export class CstNodeBuilder {
     }
 
     /**
-     * Drop the tree of the previous parser run. The builder keeps it until the next `buildRootNode`
-     * call, so the parser calls this before a parser run that builds no CST
-     * (see `ParserOptions.buildCst`); otherwise the builder would keep the last CST alive.
+     * Drop the tree of the previous parser run, which the builder otherwise keeps until the next
+     * `buildRootNode`. The parser calls this before a run without a CST (`ParserOptions.buildCst`).
      */
     clear(): void {
         this.rootNode = undefined;
@@ -196,7 +179,7 @@ export class CstNodeBuilder {
         // If we arrive at the root node, we add the hidden nodes at the beginning
         // This is the case if the hidden nodes are the first nodes in the tree
         if (!added) {
-            this.insertChildren(this.root, 0, nodes);
+            this.insertChildren(this.rootNode!, 0, nodes);
         }
     }
 

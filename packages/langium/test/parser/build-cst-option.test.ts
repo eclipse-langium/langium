@@ -4,7 +4,7 @@
  * terms of the MIT License, which is available in the project root.
  ******************************************************************************/
 
-import type { AstNode, CstNode, GrammarAST, LangiumCoreServices, LangiumParser, LexerResult, Module, ParseResult, ParserOptions, PartialLangiumCoreServices, ReferenceInfo, TokenizeOptions, ValueConverter, ValueType } from 'langium';
+import type { AstNode, CstNode, LangiumCoreServices, LangiumParser, LexerResult, Module, ParseResult, ParserOptions, PartialLangiumCoreServices, ReferenceInfo, TokenizeOptions, ValueConverter, ValueType } from 'langium';
 import { createTokenInstance } from 'chevrotain';
 import { AstUtils, DefaultLexer, DefaultValueConverter, EmptyFileSystem, IndentationAwareLexer, IndentationAwareTokenBuilder, isAstNode, isCompositeCstNode, isLeafCstNode, isMultiReference, isReference, URI } from 'langium';
 import { createLangiumGrammarServices, createServicesForGrammar } from 'langium/grammar';
@@ -575,13 +575,11 @@ describe('parse with buildCst: false', () => {
     test('the CST builder does not keep the tree of a previous parse', () => {
         const parser = parsers.get('Expressions')!;
         const first = parser.parse('eval 1;');
-        const builder = (parser as unknown as { nodeBuilder: { rootNode?: unknown, nodeStack: unknown[], current: unknown } }).nodeBuilder;
+        const builder = (parser as unknown as { nodeBuilder: { rootNode?: unknown, nodeStack: unknown[] } }).nodeBuilder;
         expect(builder.rootNode).toBe(first.value.$cstNode!.root);
         parser.parse('eval 2;', { buildCst: false });
         expect(builder.rootNode).toBeUndefined();
         expect(builder.nodeStack).toHaveLength(0);
-        // A call into the builder without a tree fails with a clear message
-        expect(() => builder.current).toThrow('holds no tree');
         // The CST of the earlier parse result is not affected
         expect(first.value.$cstNode!.text).toBe('eval 1;');
     });
@@ -694,21 +692,8 @@ describe('value converter contract for CST-free parsing', () => {
     hidden terminal WS: /\\s+/;
     `;
 
-    /** Reads more of the CST node than its grammar element, so it must not be handed the stand-in. */
-    class TextReadingConverter extends DefaultValueConverter {
-        protected override runConverter(rule: GrammarAST.AbstractRule, input: string, cstNode: CstNode): ValueType {
-            if (rule.name === 'INT') {
-                return cstNode.text.length * 1000 + Number(input);
-            }
-            return super.runConverter(rule, input, cstNode);
-        }
-    }
-
     class RecordingConverter extends DefaultValueConverter {
         readonly received: CstNode[] = [];
-        override get supportsCstFreeConversion(): boolean {
-            return true;
-        }
         override convert(input: string, cstNode: CstNode): ValueType {
             this.received.push(cstNode);
             return super.convert(input, cstNode);
@@ -719,30 +704,7 @@ describe('value converter contract for CST-free parsing', () => {
         return createServicesForGrammar({ grammar, module: { parser: { ValueConverter: converter } } });
     }
 
-    test('DefaultValueConverter opts in for its own class only', () => {
-        class Subclass extends DefaultValueConverter { }
-        expect(new DefaultValueConverter().supportsCstFreeConversion).toBe(true);
-        expect(new Subclass().supportsCstFreeConversion).toBe(false);
-        expect(new TextReadingConverter().supportsCstFreeConversion).toBe(false);
-        expect(new RecordingConverter().supportsCstFreeConversion).toBe(true);
-    });
-
-    test('without the opt-in, buildCst: false still builds the CST', async () => {
-        const services = await createServices(() => new TextReadingConverter());
-        const parser = services.parser.LangiumParser;
-        const withCst = parser.parse('a = 7 b ext x.y');
-        const requested = parser.parse('a = 7 b ext x.y', { buildCst: false });
-        expect(requested.value.$cstNode).toBeDefined();
-        expect(requested.value).toMatchObject({ items: [{ name: 'a', value: 1007 }, { name: 'b', ext: 'x.y' }] });
-        expect(cstSnapshot(requested)).toEqual(cstSnapshot(withCst));
-    });
-
-    test('a converter that only implements the interface gets a CST', async () => {
-        const services = await createServices(() => ({ convert: (input, cstNode) => new DefaultValueConverter().convert(input, cstNode) }));
-        expect(services.parser.LangiumParser.parse('a = 7', { buildCst: false }).value.$cstNode).toBeDefined();
-    });
-
-    test('with the opt-in, the converter receives a stand-in that only carries the grammar element', async () => {
+    test('the converter receives a stand-in that only carries the grammar element', async () => {
         const converter = new RecordingConverter();
         const services = await createServices(() => converter);
         const parser = services.parser.LangiumParser;
