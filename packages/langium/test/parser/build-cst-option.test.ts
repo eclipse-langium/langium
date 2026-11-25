@@ -789,4 +789,23 @@ describe('documents parsed with buildCst: false', () => {
         expect(indexManager.isAffected(withCst, changed)).toBe(true);
         expect(indexManager.isAffected(withoutCst, changed)).toBe(false);
     });
+
+    // Pins the current limitation for incremental builds, see `ParserOptions.buildCst`
+    test('deleting a target does not relink a CST-free document', async () => {
+        const services = await createServicesForGrammar({ grammar });
+        const parse = parseHelper<AstNode & { elements: Array<{ parent?: { ref?: AstNode, error?: unknown } }> }>(services);
+        const base = await parse('element Base', { documentUri: 'file:///base.txt' });
+        const withoutCst = await parse('element A extends Base', { documentUri: 'file:///a.txt', parserOptions: { buildCst: false } });
+        const withCst = await parse('element B extends Base', { documentUri: 'file:///b.txt' });
+        const deleted = base.parseResult.value.elements[0];
+
+        await services.shared.workspace.DocumentBuilder.update([], [base.uri]);
+
+        // The document with a CST is relinked: its reference is unresolved now
+        expect(withCst.parseResult.value.elements[0].parent?.ref).toBeUndefined();
+        expect(withCst.parseResult.value.elements[0].parent?.error).toBeDefined();
+        // The CST-free document is not: its reference stays resolved to the deleted node, without an error
+        expect(withoutCst.parseResult.value.elements[0].parent?.ref).toBe(deleted);
+        expect(withoutCst.parseResult.value.elements[0].parent?.error).toBeUndefined();
+    });
 });

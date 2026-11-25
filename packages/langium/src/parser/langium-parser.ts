@@ -217,19 +217,23 @@ export interface ParserOptions {
      * Whether to build the concrete syntax tree (CST). Defaults to `true`.
      *
      * With `false`, the parser builds only the AST. The AST, the lexer errors and the parser errors are
-     * the same as with a CST. Use this for documents that are never mapped back to source positions,
-     * e.g. documents that a headless batch build only resolves references against. Such a document lacks:
+     * the same as with a CST. The option is meant for one-shot headless builds only: documents that are
+     * never mapped back to source positions and never updated incrementally, e.g. documents that a headless
+     * batch build only resolves references against. Such a document lacks:
      * - `$cstNode` on its AST nodes;
      * - `$refNode` on its references. The reference index skips references without `$refNode`, so it
      *   doesn't know what the document depends on, and an incremental build doesn't relink the
-     *   document when the targets of its references change;
+     *   document when the targets of its references change. If a target is deleted, the reference
+     *   stays resolved to the deleted node, without a linking error;
      * - comments and other hidden tokens;
      * - ranges and positions: diagnostics fall back to an empty range at the start of the document,
      *   and exported names have no name segment.
      *
      * So everything that reads the CST gets nothing for such a document, e.g. comment providers,
      * formatting, hover, document symbols, find references and the other LSP services that map
-     * between the AST and the text. Validation checks that read the CST find nothing either, so a
+     * between the AST and the text. A rename across documents with and without a CST produces an
+     * incomplete edit: it misses the declarations and the references in the CST-free documents.
+     * Validation checks that read the CST find nothing either, so a
      * document can get fewer diagnostics, not only empty ranges. For example, the grammar language's
      * duplicate-name check treats a rule without a CST as empty and skips it, also when it is imported.
      *
