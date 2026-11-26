@@ -6,7 +6,7 @@
 
 import { Deferred, delayNextTick, DocumentState, OperationCancelled, TextDocument, URI, type AstNode } from 'langium';
 import { createServicesForGrammar } from 'langium/grammar';
-import { addCodeLensHandler, WorkspaceState, type CodeLensProvider, type SharedCodeLensProvider, type ServiceRequirement } from 'langium/lsp';
+import { addCodeLensHandler, WorkspaceState, type CodeLensProvider, type ResolvingCodeLensProvider, type ServiceRequirement } from 'langium/lsp';
 import { describe, expect, test, vi } from 'vitest';
 import { CancellationToken, CancellationTokenSource, LSPErrorCodes, Range, ResponseError, type CodeLens, type Connection } from 'vscode-languageserver';
 
@@ -29,7 +29,7 @@ function lens(title?: string): CodeLens {
 }
 
 async function setup(options: {
-    shared?: SharedCodeLensProvider;
+    shared?: ResolvingCodeLensProvider;
     first?: CodeLensProvider;
     second?: CodeLensProvider;
     requiredState?: ServiceRequirement;

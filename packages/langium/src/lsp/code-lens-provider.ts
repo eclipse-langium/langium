@@ -14,10 +14,12 @@ export interface CodeLensProvider {
 }
 
 /**
- * Shared code lens service. Register as `LangiumSharedServices.lsp.CodeLensProvider`.
+ * Implement `resolveCodeLens` to defer expensive work, such as counting references,
+ * until the client asks to resolve a lens.
+ * Register as `LangiumSharedServices.lsp.CodeLensProvider`.
  * Takes precedence over language-specific providers, even when it returns no lenses.
  */
-export interface SharedCodeLensProvider extends CodeLensProvider {
+export interface ResolvingCodeLensProvider extends CodeLensProvider {
     /**
      * Resolve a lens returned by this provider. Use `CodeLens.data` to preserve its context.
      * Implementations must handle unavailable or invalid source data.
