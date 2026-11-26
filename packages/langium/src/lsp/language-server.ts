@@ -29,7 +29,7 @@ import type {
 import { DidChangeConfigurationNotification, Emitter, LSPErrorCodes, ResponseError, TextDocumentSyncKind } from 'vscode-languageserver-protocol';
 import { eagerLoad } from '../dependency-injection.js';
 import type { LangiumCoreServices } from '../services.js';
-import { isOperationCancelled, type MaybePromise } from '../utils/promise-utils.js';
+import { isOperationCancelled, OperationCancelled, type MaybePromise } from '../utils/promise-utils.js';
 import { URI } from '../utils/uri-utils.js';
 import type { ConfigurationInitializedParams } from '../workspace/configuration.js';
 import { DocumentState, type LangiumDocument } from '../workspace/documents.js';
@@ -124,7 +124,8 @@ export class DefaultLanguageServer implements LanguageServer {
         const hasRenameProvider = this.hasService(e => e.lsp?.RenameProvider);
         const hasCallHierarchyProvider = this.hasService(e => e.lsp?.CallHierarchyProvider);
         const hasTypeHierarchyProvider = this.hasService((e) => e.lsp?.TypeHierarchyProvider);
-        const hasCodeLensProvider = this.hasService(e => e.lsp?.CodeLensProvider);
+        const sharedCodeLensProvider = this.services.lsp?.CodeLensProvider;
+        const hasCodeLensProvider = sharedCodeLensProvider !== undefined || this.hasService(e => e.lsp?.CodeLensProvider);
         const hasDeclarationProvider = this.hasService(e => e.lsp?.DeclarationProvider);
         const hasInlayHintProvider = this.hasService(e => e.lsp?.InlayHintProvider);
         const workspaceSymbolProvider = this.services.lsp?.WorkspaceSymbolProvider;
@@ -181,7 +182,7 @@ export class DefaultLanguageServer implements LanguageServer {
                     ? { resolveProvider: false }
                     : undefined,
                 codeLensProvider: hasCodeLensProvider
-                    ? { resolveProvider: false }
+                    ? { resolveProvider: Boolean(sharedCodeLensProvider?.resolveCodeLens) }
                     : undefined,
                 declarationProvider: hasDeclarationProvider,
                 inlayHintProvider: hasInlayHintProvider
@@ -229,6 +230,7 @@ export class DefaultLanguageServer implements LanguageServer {
 export interface ServiceRequirements {
     readonly CallHierarchyProvider: ServiceRequirement
     readonly CodeActionProvider: ServiceRequirement
+    /** Required state for code lens creation; resolution awaits the same phase workspace-wide. */
     readonly CodeLensProvider: ServiceRequirement
     readonly CompletionProvider: ServiceRequirement
     readonly DeclarationProvider: ServiceRequirement
@@ -593,11 +595,35 @@ export function addSignatureHelpHandler(connection: Connection, services: Langiu
 }
 
 export function addCodeLensHandler(connection: Connection, services: LangiumSharedServices, requiredState: ServiceRequirement = DocumentState.IndexedReferences): void {
+    const sharedProvider = services.lsp.CodeLensProvider;
     connection.onCodeLens(createServerRequestHandler(
-        (services, document, params, cancelToken) => services.lsp?.CodeLensProvider?.provideCodeLens(document, params, cancelToken),
+        (language, document, params, cancelToken) => (sharedProvider ?? language.lsp?.CodeLensProvider)?.provideCodeLens(document, params, cancelToken),
         services,
         requiredState
     ));
+    const resolveCodeLens = sharedProvider?.resolveCodeLens?.bind(sharedProvider);
+    if (resolveCodeLens) {
+        const documentBuilder = services.workspace.DocumentBuilder;
+        const mutex = services.workspace.WorkspaceLock;
+        const state = isDocumentState(requiredState) ? requiredState : requiredState.state;
+        connection.onCodeLensResolve(async (codeLens, token) => {
+            try {
+                if (token.isCancellationRequested) {
+                    throw OperationCancelled;
+                }
+                // Resolve requests have no document URI, so await the workspace phase.
+                await documentBuilder.waitUntil(state, token);
+                return await mutex.read(() => {
+                    if (token.isCancellationRequested) {
+                        throw OperationCancelled;
+                    }
+                    return resolveCodeLens(codeLens, token);
+                }, ReadPriority.Immediate);
+            } catch (err) {
+                return responseError(err);
+            }
+        });
+    }
 }
 
 export function addTextDocumentContentRequestHandler(connection: Connection, services: LangiumSharedServices): void {
