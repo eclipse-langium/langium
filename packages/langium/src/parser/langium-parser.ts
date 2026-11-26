@@ -10,7 +10,7 @@ import type { AbstractElement, Action, Assignment, InfixRule, ParserRule } from 
 import type { DSLMethodOpts, ILexingError, IOrAlt, IParserErrorMessageProvider, IRecognitionException, IToken, ParserMethod, SubruleMethodOpts, TokenType, TokenVocabulary, IRuleConfig } from 'chevrotain';
 import type { Linker } from '../references/linker.js';
 import type { LangiumCoreServices } from '../services.js';
-import type { AstNode, AstReflection, CompositeCstNode, CstNode, Mutable } from '../syntax-tree.js';
+import type { AstNode, AstReflection, CompositeCstNode, CstNode, LeafCstNode, Mutable } from '../syntax-tree.js';
 import type { Lexer, LexerResult } from './lexer.js';
 import type { IParserConfig } from './parser-config.js';
 import type { ValueConverter } from './value-converter.js';
@@ -213,12 +213,51 @@ export abstract class AbstractLangiumParser implements BaseParser {
 
 export interface ParserOptions {
     rule?: string
+    /**
+     * Whether to build the concrete syntax tree (CST). Defaults to `true`.
+     *
+     * With `false`, the parser builds only the AST. The AST, the lexer errors and the parser errors are
+     * the same as with a CST. The option is meant for one-shot headless builds only: documents that are
+     * never mapped back to source positions and never updated incrementally, e.g. documents that a headless
+     * batch build only resolves references against. Such a document lacks:
+     * - `$cstNode` on its AST nodes;
+     * - `$refNode` on its references. The reference index skips references without `$refNode`, so it
+     *   doesn't know what the document depends on, and an incremental build doesn't relink the
+     *   document when the targets of its references change (unless the document has linking errors,
+     *   which are always relinked). If a target is deleted, the reference stays resolved to the deleted
+     *   node, without a linking error;
+     * - comments and other hidden tokens;
+     * - ranges and positions: validation and linking diagnostics fall back to an empty range at the start
+     *   of the document, and exported names have no name segment. Lexer and parser diagnostics keep the
+     *   positions of their tokens.
+     *
+     * So everything that reads the CST gets nothing for such a document, e.g. comment providers,
+     * formatting, hover, document symbols, find references and the other LSP services that map
+     * between the AST and the text. A rename across documents with and without a CST produces an
+     * incomplete edit: it misses the declarations and the references in the CST-free documents.
+     * Validation checks that read the CST find nothing either, so a
+     * document can get fewer diagnostics, not only empty ranges. For example, the grammar language's
+     * duplicate-name check treats a rule without a CST as empty and skips it, also when it is imported.
+     *
+     * A document created this way doesn't stay CST-free: `LangiumDocumentFactory.update` re-parses it
+     * with a CST, e.g. when it is opened in an editor or changes on disk.
+     *
+     * This option is only honoured if the language's {@link ValueConverter} declares
+     * {@link ValueConverter.supportsCstFreeConversion}, since without a CST its `convert` method
+     * receives a stand-in node that only carries `grammarSource`. Otherwise the CST is built anyway,
+     * without notice. This only depends on the language, so callers can check it before parsing,
+     * with `services.parser.ValueConverter.supportsCstFreeConversion === true`.
+     */
+    buildCst?: boolean
 }
 
 interface OperatorPrecedence {
     precedence: number
     rightAssoc: boolean
 }
+
+/** {@link LangiumParser.ruleCallEnd}: the subrule has run no assigned action yet. */
+const NO_END = -1;
 
 export class LangiumParser extends AbstractLangiumParser {
     private readonly linker: Linker;
@@ -229,6 +268,40 @@ export class LangiumParser extends AbstractLangiumParser {
     private stack: any[] = [];
     private assignmentMap = new Map<AbstractElement, AssignmentElement | undefined>();
     private operatorPrecedence = new Map<string, Map<string, OperatorPrecedence>>();
+
+    /**
+     * Whether the current parser run builds a CST, see {@link ParserOptions.buildCst}.
+     *
+     * The parser itself reads the CST in three places. Without a CST, each is replaced:
+     * 1. Value conversion reads the grammar element of the leaf or composite node:
+     *    the converter receives {@link cstNodeStandIn} instead.
+     * 2. A subrule result is only assigned if the subrule's composite node has a non-empty source span
+     *    (`cstNode.length > 0`): the span of the consumed tokens is tracked instead, through
+     *    {@link nodeStarts}, {@link ruleCallFrom} and {@link lastNodeEnd} (see {@link subruleWithoutCst}).
+     * 3. A datatype rule is converted with the grammar element that invoked it:
+     *    {@link ruleCallStack} tracks the invoking elements.
+     */
+    private buildCst = true;
+    /**
+     * The start offsets of the nodes of the current CST-free parser run, in order, see {@link addNode}: each
+     * consumed valid token, and each empty composite node that an assigned action keeps (offset 0).
+     */
+    private readonly nodeStarts: number[] = [];
+    /** End offset (exclusive) of the last node in {@link nodeStarts}; 0 before the first. */
+    private lastNodeEnd = 0;
+    /** The grammar elements of the active non-fragment subrule calls of a CST-free parser run. */
+    private readonly ruleCallStack: AbstractElement[] = [];
+    /**
+     * Per entry of {@link ruleCallStack}: the length of {@link nodeStarts} when the subrule was entered, i.e. the
+     * index of its first node. The subrule has no node yet while that index is still the length of `nodeStarts`.
+     */
+    private readonly ruleCallFrom: number[] = [];
+    /**
+     * Per entry of {@link ruleCallStack}: the value of {@link lastNodeEnd} at the first assigned action of the
+     * subrule, or {@link NO_END} if there was no such action yet. With a CST, an assigned action moves the
+     * subrule's composite node below a new node, so later tokens do not count for the subrule's assignment.
+     */
+    private readonly ruleCallEnd: number[] = [];
 
     private get current(): any {
         return this.stack[this.stack.length - 1];
@@ -284,7 +357,20 @@ export class LangiumParser extends AbstractLangiumParser {
     }
 
     parse<T extends AstNode = AstNode>(input: string, options: ParserOptions = {}): ParseResult<T> {
-        this.nodeBuilder.buildRootNode(input);
+        // Without a CST, the value converter only receives the grammar element. A converter that has
+        // not declared that this is enough for it gets a CST as before.
+        this.buildCst = options.buildCst !== false || this.converter.supportsCstFreeConversion !== true;
+        if (this.buildCst) {
+            this.nodeBuilder.buildRootNode(input);
+        } else {
+            // Release the tree of a previous parser run, which would otherwise stay reachable from the builder
+            this.nodeBuilder.clear();
+            this.nodeStarts.length = 0;
+            this.lastNodeEnd = 0;
+            this.ruleCallStack.length = 0;
+            this.ruleCallFrom.length = 0;
+            this.ruleCallEnd.length = 0;
+        }
         const lexerResult = this.lexerResult = this.lexer.tokenize(input);
         this.wrapper.input = lexerResult.tokens;
         const ruleMethod = options.rule ? this.allRules.get(options.rule) : this.mainRule;
@@ -292,7 +378,12 @@ export class LangiumParser extends AbstractLangiumParser {
             throw new Error(options.rule ? `No rule found with name '${options.rule}'` : 'No main rule available.');
         }
         const result = this.doParse(ruleMethod);
-        this.nodeBuilder.addHiddenNodes(lexerResult.hidden);
+        if (this.buildCst) {
+            this.nodeBuilder.addHiddenNodes(lexerResult.hidden);
+        } else {
+            // One entry per token: don't keep them until the next CST-free parser run
+            this.nodeStarts.length = 0;
+        }
         this.unorderedGroups.clear();
         this.lexerResult = undefined;
         linkContentToContainer(result, { deep: true });
@@ -374,26 +465,42 @@ export class LangiumParser extends AbstractLangiumParser {
     consume(idx: number, tokenType: TokenType, feature: AbstractElement): void {
         const token = this.wrapper.wrapConsume(idx, tokenType);
         if (!this.isRecording() && this.isValidToken(token)) {
-            // Before inserting the current token into the CST, we want add the hidden tokens (i.e. comments)
-            // These are located directly before the current token, but are not part of the token stream.
-            // Adding the hidden tokens to the CST requires searching through the CST and finding the correct position.
-            // Performing this work here is more efficient than doing it later on.
-            const hiddenTokens = this.extractHiddenTokens(token);
-            this.nodeBuilder.addHiddenNodes(hiddenTokens);
-            const leafNode = this.nodeBuilder.buildLeafNode(token, feature);
+            let leafNode: LeafCstNode | undefined;
+            if (this.buildCst) {
+                // Before inserting the current token into the CST, we want add the hidden tokens (i.e. comments)
+                // These are located directly before the current token, but are not part of the token stream.
+                // Adding the hidden tokens to the CST requires searching through the CST and finding the correct position.
+                // Performing this work here is more efficient than doing it later on.
+                const hiddenTokens = this.extractHiddenTokens(token);
+                this.nodeBuilder.addHiddenNodes(hiddenTokens);
+                leafNode = this.nodeBuilder.buildLeafNode(token, feature);
+            } else {
+                // Like the end of a leaf node: a token may be empty, e.g. the DEDENT of an indentation-aware lexer
+                this.addNode(token.startOffset, token.startOffset + token.image.length);
+            }
             const { assignment, crossRef } = this.getAssignment(feature);
             const current = this.current;
             if (assignment) {
-                const convertedValue = isKeyword(feature) ? token.image : this.converter.convert(token.image, leafNode);
+                const convertedValue = isKeyword(feature) ? token.image : this.converter.convert(token.image, leafNode ?? this.cstNodeStandIn(feature));
                 this.assign(assignment.operator, assignment.feature, convertedValue, leafNode, crossRef);
             } else if (isDataTypeNode(current)) {
                 let text = token.image;
                 if (!isKeyword(feature)) {
-                    text = this.converter.convert(text, leafNode).toString();
+                    text = this.converter.convert(text, leafNode ?? this.cstNodeStandIn(feature)).toString();
                 }
                 current.value += text;
             }
         }
+    }
+
+    /**
+     * Returns the stand-in for a CST node that is passed to the value converter when no CST is built.
+     * It only carries the grammar element; see {@link ValueConverter.supportsCstFreeConversion}.
+     * Every call creates a new object, so a converter that keeps the node it receives
+     * still sees its own grammar element later.
+     */
+    private cstNodeStandIn(feature: AbstractElement | undefined): CstNode {
+        return { grammarSource: feature } as CstNode;
     }
 
     /**
@@ -407,6 +514,10 @@ export class LangiumParser extends AbstractLangiumParser {
     }
 
     subrule(idx: number, rule: RuleResult, fragment: boolean, feature: AbstractElement, args: Args): void {
+        if (!this.buildCst && !this.isRecording()) {
+            this.subruleWithoutCst(idx, rule, fragment, feature, args);
+            return;
+        }
         let cstNode: CompositeCstNode | undefined;
         if (!this.isRecording() && !fragment) {
             // We only want to create a new CST node if the subrule actually creates a new AST node.
@@ -437,7 +548,55 @@ export class LangiumParser extends AbstractLangiumParser {
         }
     }
 
-    private performSubruleAssignment(result: any, feature: AbstractElement, cstNode: CompositeCstNode): void {
+    /**
+     * The CST-free counterpart of {@link subrule}. `subrule` assigns the result only if the subrule's composite
+     * node has a non-empty source span (`cstNode.length > 0`), i.e. from the start of its first token to the end
+     * of its last one. Counting tokens isn't enough, since a valid token can be empty: an indentation-aware
+     * lexer emits DEDENTs without text. So this compares the same span: the start offset of the first consumed
+     * token with the end offset of the last one. If the subrule ran an assigned action, the span ends at that
+     * action, since the CST-building parser moves the composite node below the action's node there.
+     */
+    private subruleWithoutCst(idx: number, rule: RuleResult, fragment: boolean, feature: AbstractElement, args: Args): void {
+        // Fragment rules only enrich the current AST node and are never assigned, see `subrule`
+        if (!fragment) {
+            this.ruleCallStack.push(feature);
+            this.ruleCallFrom.push(this.nodeStarts.length);
+            this.ruleCallEnd.push(NO_END);
+        }
+        let result: any;
+        try {
+            result = this.wrapper.wrapSubrule(idx, rule, args);
+        } finally {
+            if (!fragment) {
+                if (result === undefined) {
+                    result = this.construct();
+                }
+                this.ruleCallStack.pop();
+                const from = this.ruleCallFrom.pop()!;
+                // Only the tokens consumed before the subrule's first assigned action count. With a CST, `action()`
+                // doesn't extend the subrule's composite node: it moves that node below the action's new composite
+                // node. Tokens consumed after the action go into the action's node, so the original node's `length`,
+                // which `subrule` checks, stops growing at the first action. A later action moves the previous
+                // action's node, not the original node, so its cut doesn't matter (`action()` keeps the first one).
+                const cut = this.ruleCallEnd.pop()!;
+                const end = cut === NO_END ? this.lastNodeEnd : cut;
+                if (result !== undefined && from < this.nodeStarts.length && end > this.nodeStarts[from]) {
+                    this.performSubruleAssignment(result, feature, undefined);
+                }
+            }
+        }
+    }
+
+    /**
+     * Adds a node with the given offsets to the source spans of a CST-free parser run. It is the first node of
+     * every active subrule call entered since the previous node, and the last node so far.
+     */
+    private addNode(offset: number, end: number): void {
+        this.nodeStarts.push(offset);
+        this.lastNodeEnd = end;
+    }
+
+    private performSubruleAssignment(result: any, feature: AbstractElement, cstNode: CompositeCstNode | undefined): void {
         const { assignment, crossRef } = this.getAssignment(feature);
         if (assignment) {
             this.assign(assignment.operator, assignment.feature, result, cstNode, crossRef);
@@ -464,11 +623,27 @@ export class LangiumParser extends AbstractLangiumParser {
             let last = this.current;
             if (action.feature && action.operator) {
                 last = this.construct();
-                this.nodeBuilder.removeNode(last.$cstNode);
-                const node = this.nodeBuilder.buildCompositeNode(action);
-                this.nodeBuilder.appendChild(node, last.$cstNode);
+                if (this.buildCst) {
+                    this.nodeBuilder.removeNode(last.$cstNode);
+                    const node = this.nodeBuilder.buildCompositeNode(action);
+                    this.nodeBuilder.appendChild(node, last.$cstNode);
+                } else {
+                    // Tokens consumed from here on no longer count for the enclosing subrule call, see `subruleWithoutCst`
+                    const top = this.ruleCallEnd.length - 1;
+                    if (top >= 0 && this.ruleCallEnd[top] === NO_END) {
+                        if (this.ruleCallFrom[top] === this.nodeStarts.length) {
+                            // With a CST, the subrule's composite node is still empty here. The action keeps it below
+                            // its own node, and an empty composite node has offset 0 and end 0 (it has no first or last
+                            // child). So it counts like an empty token at offset 0, for the enclosing subrule calls and
+                            // for this one, whose span then ends at 0 and is not assigned.
+                            this.addNode(0, 0);
+                        }
+                        this.ruleCallEnd[top] = this.lastNodeEnd;
+                    }
+                }
                 const newItem = { $type };
                 this.stack.push(newItem);
+                // Without a CST, `last.$cstNode` is undefined
                 this.assign(action.operator, action.feature, last, last.$cstNode);
             } else {
                 last.$type = $type;
@@ -481,11 +656,15 @@ export class LangiumParser extends AbstractLangiumParser {
             return undefined;
         }
         const obj = this.stack.pop();
-        this.nodeBuilder.construct(obj);
+        if (this.buildCst) {
+            this.nodeBuilder.construct(obj);
+        }
         if ('$infixName' in obj) {
             return this.constructInfix(obj, this.operatorPrecedence.get(obj.$infixName)!);
         } else if (isDataTypeNode(obj)) {
-            return this.converter.convert(obj.value, obj.$cstNode);
+            // With a CST, the datatype rule's composite node carries the grammar element that invoked the rule
+            const cstNode = this.buildCst ? obj.$cstNode : this.cstNodeStandIn(this.ruleCallStack[this.ruleCallStack.length - 1]);
+            return this.converter.convert(obj.value, cstNode);
         } else {
             assignMandatoryProperties(this.astReflection, obj);
         }
@@ -580,7 +759,7 @@ export class LangiumParser extends AbstractLangiumParser {
         return this.assignmentMap.get(feature)!;
     }
 
-    private assign(operator: string, feature: string, value: unknown, cstNode: CstNode, crossRef?: 'multi' | 'single'): void {
+    private assign(operator: string, feature: string, value: unknown, cstNode: CstNode | undefined, crossRef?: 'multi' | 'single'): void {
         const obj = this.current;
         let item: unknown;
         if (crossRef === 'single' && typeof value === 'string') {

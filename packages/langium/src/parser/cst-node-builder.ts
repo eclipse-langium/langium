@@ -20,7 +20,12 @@ import type { AstNode, CompositeCstNode, CstNode, LeafCstNode, RootCstNode } fro
  */
 export class CstNodeBuilder {
 
-    private rootNode!: RootCstNodeImpl;
+    /**
+     * The root of the tree being built; undefined before the first `buildRootNode` call and after `clear`.
+     * So after `clear`, the builder holds no tree until the next `buildRootNode` call, and all other
+     * methods must not be called until then.
+     */
+    private rootNode: RootCstNodeImpl | undefined;
     private nodeStack: CompositeCstNodeImpl[] = [];
 
     /**
@@ -28,7 +33,19 @@ export class CstNodeBuilder {
      * the innermost parser rule invocation that has not been completed with `construct` yet.
      */
     get current(): CompositeCstNodeImpl {
-        return this.nodeStack[this.nodeStack.length - 1] ?? this.rootNode;
+        return this.nodeStack[this.nodeStack.length - 1] ?? this.root;
+    }
+
+    /**
+     * The root of the tree being built. `rootNode` is only undefined after `clear` (or before the first
+     * `buildRootNode`), i.e. in a parser run that builds no CST. `LangiumParser` guards every call into the
+     * builder by its `buildCst` flag in such runs, so this only throws if a caller misses that guard.
+     */
+    private get root(): RootCstNodeImpl {
+        if (!this.rootNode) {
+            throw new Error('The CST node builder holds no tree: call buildRootNode first (the tree is dropped by clear).');
+        }
+        return this.rootNode;
     }
 
     /**
@@ -39,6 +56,16 @@ export class CstNodeBuilder {
         this.rootNode = new RootCstNodeImpl(input);
         this.nodeStack = [this.rootNode];
         return this.rootNode;
+    }
+
+    /**
+     * Drop the tree of the previous parser run. The builder keeps it until the next `buildRootNode`
+     * call, so the parser calls this before a parser run that builds no CST
+     * (see `ParserOptions.buildCst`); otherwise the builder would keep the last CST alive.
+     */
+    clear(): void {
+        this.rootNode = undefined;
+        this.nodeStack = [];
     }
 
     /**
@@ -153,7 +180,9 @@ export class CstNodeBuilder {
             return;
         }
         // Otherwise we are at a newly created node
-        // Instead of adding the hidden nodes here, we search for the first parent node with content
+        // Instead of adding the hidden nodes here, we search for the first parent node with content.
+        // So a composite node never starts with a hidden node: its offset is the offset of its first non-hidden
+        // token. `LangiumParser` relies on this when it parses without a CST (see `subruleWithoutCst`).
         while (current.container) {
             const index = current.container.content.indexOf(current);
             if (index > 0) {
@@ -167,7 +196,7 @@ export class CstNodeBuilder {
         // If we arrive at the root node, we add the hidden nodes at the beginning
         // This is the case if the hidden nodes are the first nodes in the tree
         if (!added) {
-            this.insertChildren(this.rootNode, 0, nodes);
+            this.insertChildren(this.root, 0, nodes);
         }
     }
 
